@@ -86,10 +86,12 @@ int main(int argc, char **args)
     }
   
   if ((device == NULL) && (ll_driver == DRIVER_PARPORT))
-    if(getenv("XCPORT"))
-      device = strdup(getenv("XCPORT"));
-    else
-      device = strdup(PPDEV);
+    {
+      if(getenv("XCPORT"))
+	device = strdup(getenv("XCPORT"));
+      else
+	device = strdup(PPDEV);
+    }
 
   switch (ll_driver)
   {
