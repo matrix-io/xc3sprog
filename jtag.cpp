@@ -38,13 +38,20 @@ int Jtag::getChain()
   do{
     io->shiftTDITDO(zero,idx,32,false);
     unsigned long id=byteArrayToLong(idx);
-    if(id!=0){
+    if(id!=0 && id !=0xffffffff){
       numDevices++;
       chainParam_t dev;
       dev.idcode=id;
       devices.insert(devices.begin(),dev);
     }
-    else break;
+    else{
+      if (id == 0xffffffff && numDevices >0)
+       {
+         fprintf(stderr,"You probably have a broken Atmel device in your chain!\n");
+         fprintf(stderr,"No succeeding device can be identified\n");
+       }
+      break;
+    }
   }while(numDevices<MAXNUMDEVICES);
   io->setTapState(IOBase::TEST_LOGIC_RESET);
   return numDevices;

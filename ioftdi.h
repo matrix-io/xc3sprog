@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #define VENDOR 0x0403
 #define DEVICE 0x6010
 
+#define FTDI_NO_EN 0
+#define FTDI_IKDA  1
+
 class IOFtdi : public IOBase
 {
  protected:
@@ -35,9 +38,11 @@ class IOFtdi : public IOBase
   unsigned char *usbuf;
   int buflen, bptr, total;
   bool error, devopen;
+  int subtype;
  public:
   IOFtdi();
   virtual ~IOFtdi();
+  virtual void settype(int subtype);
   virtual void dev_open(const char *desc);
   virtual bool txrx(bool tms, bool tdi);
   virtual void tx(bool tms, bool tdi);
@@ -47,6 +52,7 @@ class IOFtdi : public IOBase
   virtual inline bool checkError(){return error;}
   virtual void mpsse_add_cmd(unsigned char *buf, int len);
   virtual void mpsse_send(void);
+  virtual void cycleTCK(int n, bool tdi);
 };
 
 

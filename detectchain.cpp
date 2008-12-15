@@ -45,8 +45,9 @@ extern char *optarg;
 
 void usage(void)
 {
-  fprintf(stderr, "Usage: detectchain [-c cable_type] [-d device]\n");
+  fprintf(stderr, "Usage: detectchain [-c cable_type] [-d device][-t subtype]\n");
   fprintf(stderr, "Supported cable types: pp, ftdi\n");
+  fprintf(stderr, "\tFTDI Subtypes: IKDA (EN_N on ACBUS2)\n");
   exit(255);
 }
 
@@ -54,13 +55,13 @@ int main(int argc, char **args)
 {
   char *device = NULL;
   char *devicedb = NULL;
-  int ch, ll_driver = DRIVER_PARPORT;
+  int ch, ll_driver = DRIVER_PARPORT, subtype = FTDI_NO_EN;
   IOBase *io;
   IOParport io_pp;
   IOFtdi io_ftdi;
   
   // Start from parsing command line arguments
-  while ((ch = getopt(argc, args, "c:d:")) != -1)
+  while ((ch = getopt(argc, args, "c:d:t:")) != -1)
     switch ((char)ch)
     {
       case 'c':
@@ -73,6 +74,12 @@ int main(int argc, char **args)
         break;
       case 'd':
         device = strdup(optarg);
+        break;
+      case 't':
+        if (strcasecmp(optarg, "ikda") == 0)
+          subtype = FTDI_IKDA;
+        else
+          usage();
         break;
       default:
         usage();
@@ -91,6 +98,7 @@ int main(int argc, char **args)
       break;
     case DRIVER_FTDI:
       io = &io_ftdi;
+      io->settype(subtype);
       break;
     default:
       usage();
