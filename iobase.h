@@ -64,6 +64,7 @@ class IOBase
  public:
   IOBase();
   virtual ~IOBase() {};
+  virtual void settype(int subtype) {}
   virtual void flush(void) {}
   virtual void dev_open(const char *device) {}
   virtual bool checkError() { return false;}

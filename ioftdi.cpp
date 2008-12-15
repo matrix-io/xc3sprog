@@ -39,6 +39,11 @@ IOFtdi::IOFtdi(void) : IOBase()
   error  = false;
 }
 
+void IOFtdi::settype(int sub_type)
+{
+  subtype = sub_type;
+}
+
 void IOFtdi::dev_open(const char *desc)
 {
   unsigned char buf[6];
@@ -92,14 +97,31 @@ void IOFtdi::dev_open(const char *desc)
     mpsse_add_cmd(buf, 1);
 
   /* Get ready for JTAG operation */
+  if (subtype == FTDI_NO_EN)
+    {
   buf[0] = SET_BITS_LOW;
   buf[1] = 0x08;
   buf[2] = 0x0b;
   buf[3] = TCK_DIVISOR;
   buf[4] = 0x00;
   buf[5] = 0x00;
-  
   mpsse_add_cmd(buf, 6);
+    }
+  else if (subtype == FTDI_IKDA)
+    {
+      buf[0] = SET_BITS_LOW;
+      buf[1] = 0x08;
+      buf[2] = 0x0b;
+      buf[3] = TCK_DIVISOR;
+      buf[4] = 0x00;
+      buf[5] = 0x00;
+      buf[6] = SET_BITS_HIGH;
+      buf[7] = ~0x04;
+      buf[8] = 0x04;
+  
+      mpsse_add_cmd(buf, 9);
+    }
+
   mpsse_send();
   
   error=false;
@@ -184,6 +206,13 @@ IOFtdi::~IOFtdi()
 
 void IOFtdi::mpsse_add_cmd(unsigned char *buf, int len)
 {
+  /* The TX FIFO has 128 Byte. It can easily be overrun
+     So send only chunks of the TX Buffersize and hope
+     that the OS USB scheduler gives the MPSSE machine 
+     enough time empty the buffer
+  */
+  if (bptr + len >= 128)
+    mpsse_send();
   /* Grow the buffer, if needed */
   if (bptr + len >= buflen)
     {
@@ -214,4 +243,28 @@ void IOFtdi::mpsse_send(void)
 void IOFtdi::flush(void)
 {
   mpsse_send();
+}
+
+void IOFtdi::cycleTCK(int n, bool tdi=1)
+{
+  
+  unsigned char buf[3];
+  
+  while (n)
+    {
+      buf[0] = MPSSE_WRITE_TMS|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
+      if (n >6)
+        {
+          buf[1] = 6;
+          n -= 7;
+        }
+      else
+        {
+          buf[1] = n -1;
+          n  = 0;
+        }
+      buf[2] = (tdi)?0x80:0 | (current_state==TEST_LOGIC_RESET)?0x7f:0x00;
+      mpsse_add_cmd(buf, 3);
+      if(n == 0) mpsse_send();
+   }
 }

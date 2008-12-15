@@ -55,10 +55,11 @@ extern int optind;
 
 void usage(void)
 {
-  fprintf(stderr, "Usage: xc3sprog [-v] [-c cable_type] [-d device] bitfile [POS]\n");
+  fprintf(stderr, "Usage: xc3sprog [-v] [-c cable_type] [-d device] [-t subtype] bitfile [POS]\n");
   fprintf(stderr, "\tSupported cable types: pp, ftdi\n\tArgument ""device"":");
   fprintf(stderr, "\n\t\tParallel port - /dev/parport0, /dev/parport1, etc.\n");
   fprintf(stderr, "\t\tFTDI USB      - optional descriptor string\n");
+  fprintf(stderr, "\t\tFTDI Subtypes: IKDA (EN_N on ACBUS2)\n");
   fprintf(stderr, "\tPOS  position in JTAG chain, 0=closest to TDI (default)\n\n");
   exit(255);
 }
@@ -67,7 +68,7 @@ int main(int argc, char **args)
 {
   bool verbose = false;
   char *device = NULL;
-  int ch, ll_driver = DRIVER_PARPORT;
+  int ch, ll_driver = DRIVER_PARPORT, subtype = FTDI_NO_EN;
   IOBase *io;
   IOParport io_pp;
   IOFtdi io_ftdi;
@@ -87,7 +88,7 @@ int main(int argc, char **args)
   printf("Release %s\n",loc0);
 
   // Start from parsing command line arguments
-  while ((ch = getopt(argc, args, "c:d:v")) != -1)
+  while ((ch = getopt(argc, args, "c:d:vt:")) != -1)
     switch ((char)ch)
     {
       case 'c':
@@ -100,6 +101,12 @@ int main(int argc, char **args)
         break;
       case 'd':
         device = strdup(optarg);
+        break;
+      case 't':
+        if (strcmp(optarg, "ikda") == 0)
+          subtype = FTDI_IKDA;
+        else
+          usage();
         break;
       case 'v':
         verbose = true;
@@ -121,6 +128,7 @@ int main(int argc, char **args)
       break;
     case DRIVER_FTDI:
       io = &io_ftdi;
+      io->settype(subtype);
       break;
     default:
       usage();
