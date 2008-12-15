@@ -79,7 +79,7 @@ class BitFile
   std::string date; // key 'c'
   std::string time; // key 'd'
   unsigned long length; // The length of the byte data that follows, multiply by 8 to get bitstream length.
-  byte *buffer; // Each byte is reversed, the byte order is reversed. Xilinx does things MSB first and JTAG does things LSB first!
+  byte *buffer; // Each byte is reversed, Xilinx does things MSB first and JTAG does things LSB first!
   std::string filename;
   byte bitRevTable[256]; // Bit reverse lookup table
   bool Error;

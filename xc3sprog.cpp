@@ -14,24 +14,64 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Changes:
+Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
+    Code cleanup for clean -Wall compile.
+    Added support for FT2232 driver.
+    Verbose support added.
+    Installable device database location.
+*/
 
 
 
+#include <unistd.h>
 
+#include "iodefs.h"
 #include "ioparport.h"
+#include "ioftdi.h"
 #include "bitfile.h"
 #include "jtag.h"
 #include "devicedb.h"
+#include "progalgxcf.h"
+#include "progalgxc3s.h"
 
+#ifndef PPDEV
 #define PPDEV "/dev/parport0"
+#endif
+#ifndef DEVICEDB
 #define DEVICEDB "devlist.txt"
+#endif
 
-void process(IOBase &io, BitFile &file, int chainpos);
+void process(IOBase &io, BitFile &file, int chainpos, bool verbose);
+void programXC3S(Jtag &jtag, IOBase &io, BitFile &file);
+void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs);
+
+extern char *optarg;
+extern int optind;
+
+void usage(void)
+{
+  fprintf(stderr, "Usage: xc3sprog [-v] [-c cable_type] [-d device] bitfile [POS]\n");
+  fprintf(stderr, "\tSupported cable types: pp, ftdi\n\tArgument ""device"":");
+  fprintf(stderr, "\n\t\tParallel port - /dev/parport0, /dev/parport1, etc.\n");
+  fprintf(stderr, "\t\tFTDI USB      - optional descriptor string\n");
+  fprintf(stderr, "\tPOS  position in JTAG chain, 0=closest to TDI (default)\n\n");
+  exit(255);
+}
 
 int main(int argc, char **args)
 {
-  char release[]={"$Name: Release-0-3 $"};
+  bool verbose = false;
+  char *device = NULL;
+  int ch, ll_driver = DRIVER_PARPORT;
+  IOBase *io;
+  IOParport io_pp;
+  IOFtdi io_ftdi;
+
+  // Produce release info from CVS tags
+  char release[]={"$Name: Release-0-5 $"};
   char *loc0=strchr(release,'-');
   if(loc0>0){
     loc0++;
@@ -42,88 +82,171 @@ int main(int argc, char **args)
     }while(loc);
     release[strlen(release)-1]='\0'; // Strip off $
   }
-
   printf("Release %s\n",loc0);
 
+  // Start from parsing command line arguments
+  while ((ch = getopt(argc, args, "c:d:v")) != -1)
+    switch ((char)ch)
+    {
+      case 'c':
+        if (strcmp(optarg, "pp") == 0)
+          ll_driver = DRIVER_PARPORT;
+        else if (strcmp(optarg, "ftdi") == 0)
+          ll_driver = DRIVER_FTDI;
+        else
+          usage();
+        break;
+      case 'd':
+        device = strdup(optarg);
+        break;
+      case 'v':
+        verbose = true;
+        break;
+      default:
+        usage();
+    }
   
-  
-  IOParport io(PPDEV);
-  int chainpos=0;
-  if(io.checkError()){
-    fprintf(stderr,"Could not access parallel device '%s'.\n",PPDEV);
-    fprintf(stderr,"You may need to set permissions of '%s' ",PPDEV);
-    fprintf(stderr,"by issuing the following command as root:\n\n# chmod 666 %s\n\n",PPDEV);
+  if ((device == NULL) && (ll_driver == DRIVER_PARPORT))
+    if(getenv("XCPORT"))
+      device = strdup(getenv("XCPORT"));
+    else
+      device = strdup(PPDEV);
+
+  switch (ll_driver)
+  {
+    case DRIVER_PARPORT:
+      io = &io_pp;
+      break;
+    case DRIVER_FTDI:
+      io = &io_ftdi;
+      break;
+    default:
+      usage();
   }
-  if(argc<=1){
-    fprintf(stderr,"\nUsage: %s infile.bit [POS]\n\n",args[0]);
-    fprintf(stderr,"\tPOS  position in JTAG chain, 0=closest to TDI (default)\n\n",args[0]);
+  
+  io->setVerbose(verbose);
+
+  printf("argc: %d\n", argc);
+
+  // Get rid of options
+  argc -=  optind;
+  args +=  optind;
+
+  printf("argc: %d\n", argc);
+  
+  if(argc<1) usage();
+
+  io->dev_open(device);
+  
+  if(io->checkError()){
+    if (ll_driver == DRIVER_FTDI)
+      fprintf(stderr, "Could not access USB device (%s).\n", 
+              (device == NULL) ? "*" : device);
+    else
+    {
+      fprintf(stderr,"Could not access parallel device '%s'.\n", device);
+      fprintf(stderr,"You may need to set permissions of '%s' \n", device);
+      fprintf(stderr,
+              "by issuing the following command as root:\n\n# chmod 666 %s\n\n",
+              device);
+    }
     return 1;
   }
-  if(argc>2)chainpos=atoi(args[2]);
+
+  free(device);
+  
+  
+  int chainpos=0;
+
+  if(argc>1)chainpos=atoi(args[1]);
+  if(verbose)
+    printf("JTAG chainpos: %d\n", chainpos);
+
+  int length;
   BitFile file;
-  if(file.load(args[1]))process(io,file,chainpos);
-  else return 1;
+  if((length = file.load(args[0])))
+  {
+    if (verbose)
+    {
+      printf("Created from NCD file: %s\n",file.getNCDFilename());
+      printf("Target device: %s\n",file.getPartName());
+      printf("Created: %s %s\n",file.getDate(),file.getTime());
+      printf("Bitstream length: %d bits\n",length);
+    }      
+    process(*io, file, chainpos, verbose);
+  }
+  else
+    return 1;
   return 0;
 }
 
-void process(IOBase &io, BitFile &file, int chainpos)
+void process(IOBase &io, BitFile &file, int chainpos, bool verbose)
 {
-  const byte IDCODE=0x09;
-  const byte XCF_IDCODE=0xfe;
-
+  char *devicedb = NULL;
+  unsigned id;
   Jtag jtag(&io);
   int num=jtag.getChain();
-  DeviceDB db(DEVICEDB);
+
+  // Synchronise database with chain of devices.
+
+  if(getenv("XCDB"))
+    devicedb = strdup(getenv("XCDB"));
+  else
+    devicedb = strdup(DEVICEDB);
+
+  DeviceDB db(devicedb);
   for(int i=0; i<num; i++){
     int length=db.loadDevice(jtag.getDeviceID(i));
     if(length>0)jtag.setDeviceIRLength(i,length);
     else{
-      byte *id=jtag.getDeviceID(i);
-      fprintf(stderr,"Cannot find device having IDCODE=%02x%02x%02x%02x\n",id[0],id[1],id[2],id[3]);
+      id=jtag.getDeviceID(i);
+      fprintf(stderr,"Cannot find device having IDCODE=%08x\n",id);
       return;
     }
   }
   
-
-  byte tdo[4];
-
   if(jtag.selectDevice(chainpos)<0){
-    fprintf(stderr,"Invalid chain position %d, position must be less than <%d.\n",chainpos,num);
+    fprintf(stderr,"Invalid chain position %d, position must be less than %d (but not less than 0).\n",chainpos,num);
     return;
   }
 
-  jtag.shiftIR(&IDCODE);
-  jtag.shiftDR(0,tdo,32);
-  printf("IDCODE: 0x%02x%02x%02x%02x\tDesc: %s\n",tdo[0],tdo[1],tdo[2],tdo[3],db.getDeviceDescription(chainpos)); 
+  // Find the programming algorithm required for device
+  const char *dd=db.getDeviceDescription(chainpos);
 
-  const byte JPROGRAM=0x0b;
-  const byte CFG_IN=0x05;
-  const byte JSHUTDOWN=0x0d;
-  const byte JSTART=0x0c;
-  const byte BYPASS=0x3f;
+  if (verbose)
+  {
+    id = jtag.getDeviceID(chainpos);
+    printf("Device IDCODE = 0x%08x\tDesc: %s\nProgramming: ", id, dd);
+    fflush(stdout);
+  }
 
-  jtag.shiftIR(&JPROGRAM);
-  jtag.shiftIR(&CFG_IN);
-  byte init[]={0x00, 0x00, 0x00, 0x00, // Flush
-	       0x00, 0x00, 0x00, 0x00, // Flush
-	       0xe0, 0x00, 0x00, 0x00, // Clear CRC
-	       0x80, 0x01, 0x00, 0x0c, // CMD
-	       0x66, 0xAA, 0x99, 0x55, // Sync
-	       0xff, 0xff, 0xff, 0xff  // Sync
-  };
-  jtag.shiftDR(init,0,192,32); // Align to 32 bits.
-  jtag.shiftIR(&JSHUTDOWN);
-  io.cycleTCK(12);
-  jtag.shiftIR(&CFG_IN);
-  byte hdr[]={0x00, 0x00, 0x00, 0x00, // Flush
-	      0x10, 0x00, 0x00, 0x00, // Assert GHIGH
-	      0x80, 0x01, 0x00, 0x0c  // CMD
-  };
-  jtag.shiftDR(hdr,0,96,32,false); // Align to 32 bits and do not goto EXIT1-DR
-  jtag.shiftDR(file.getData(),0,file.getLength()); 
-  io.tapTestLogicReset();
-  io.setTapState(IOBase::RUN_TEST_IDLE);
-  jtag.shiftIR(&JSTART);
-  io.cycleTCK(12);
-  jtag.shiftIR(&BYPASS); // Don't know why, but without this the FPGA will not reconfigure from Flash when PROG is asserted.
+  if(strncmp("XC3S",dd,4)==0) programXC3S(jtag,io,file);
+  else if(strncmp("XC2V",dd,4)==0) programXC3S(jtag,io,file);
+  else if(strncmp("XCF",dd,3)==0) { 
+      int bs=(dd[4]-'0'==1) ? 2048 : 4096;
+      if (verbose)
+	printf("Device block size is %d.\n", bs);
+      programXCF(jtag,io,file, bs);
+    }
+  else{
+    fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n",dd);
+    return;
+  }
+}
+
+void programXC3S(Jtag &jtag, IOBase &io, BitFile &file)
+{
+
+  ProgAlgXC3S alg(jtag,io);
+  alg.program(file);
+  return;
+}
+
+void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs)
+{
+  ProgAlgXCF alg(jtag,io,bs);
+  alg.erase();
+  alg.program(file);
+  alg.reconfig();
+  return;
 }

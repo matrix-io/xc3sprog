@@ -14,26 +14,38 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Changes:
+Sandro Amato [sdroamt@netscape.net] 26 Jun 2006 [applied 13 Jul 2006]:
+   Added a 'dotted' progress bar
+Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
+    Code cleanup for clean -Wall compile.
+    Extensive changes to support FT2232 driver.
+    Moved progress bar to ioparport.cpp and ioftdi.cpp.
+*/
 
 
 
 #include "iobase.h"
 
+#include <unistd.h>
 #include <stdio.h>
-
+ 
 using namespace std;
 
 IOBase::IOBase()
 {
+  verbose = false;
   current_state=UNKNOWN;
 }
 
-int IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
+void IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
 {
-  if(length==0)return 0;
+  if(length==0) return;
+
   int i=0;
-  int j=(length-1)/8;
+  int j=0;
   unsigned char tdo_byte=0;
   unsigned char tdi_byte=tdi[j];
   while(i<length-1){
@@ -43,40 +55,66 @@ int IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length
     if((i%8)==0){ // Next byte
       tdo[j]=tdo_byte; // Save the TDO byte
       tdo_byte=0;
-      j--;
+      j++;
       tdi_byte=tdi[j]; // Get the next TDI byte
     }
   };
   tdo_byte=tdo_byte+(txrx(last, (tdi_byte&1)==1)<<(i%8)); // TMS set if last=true
   tdo[j]=tdo_byte;
   nextTapState(last); // If TMS is set the the state of the tap changes
+  return;
 }
 
-int IOBase::shiftTDI(const unsigned char *tdi, int length, bool last)
+void IOBase::shiftTDI(const unsigned char *tdi, int length, bool last)
 {
-  if(length==0)return 0;
-  int i=0;
-  int j=(length-1)/8;
+  unsigned char *buf = (unsigned char *)tdi;
+  int i, j, k, bytes = length / 8;
+  
+  if (length==0) return;
+
+  if (bytes > 1)
+  {
+    for (k = 0; k < bytes/BLOCK_SIZE; k++)
+      tx_tdi_block(buf + k*BLOCK_SIZE, BLOCK_SIZE);
+
+    tx_tdi_block(buf + k*BLOCK_SIZE, bytes - 1 - k*BLOCK_SIZE);
+    j = bytes - 1;
+    i = (bytes - 1) * 8;
+  }
+  else
+  {
+    i = 0;
+    j = 0;
+  }
+/*
+  for (; j < bytes - 1; j++, i += 8)
+  {
+    tx_tdi_byte(tdi[j]);
+    if (verbose && j != 0 && (j % TICK_COUNT == 0))
+      write(0, ".", 1);
+  }
+*/    
   unsigned char tdi_byte=tdi[j];
   while(i<length-1){
     tx(false, (tdi_byte&1)==1);
     tdi_byte=tdi_byte>>1;
     i++;
     if((i%8)==0){ // Next byte
-      j--;
+      j++;
       tdi_byte=tdi[j]; //Get the next TDI byte
     }
   };
   tx(last, (tdi_byte&1)==1); // TMS set if last=true
   nextTapState(last); // If TMS is set the the state of the tap changes
+  return;
 }
 
 // TDI gets a load of zeros, we just record TDO.
-int IOBase::shiftTDO(unsigned char *tdo, int length, bool last)
+void IOBase::shiftTDO(unsigned char *tdo, int length, bool last)
 {
-  if(length==0)return 0;
+  if (length==0) return;
   int i=0;
-  int j=(length-1)/8;
+  int j=0;
   unsigned char tdo_byte=0;
   while(i<length-1){
     tdo_byte=tdo_byte+(txrx(false, false)<<(i%8));
@@ -84,18 +122,19 @@ int IOBase::shiftTDO(unsigned char *tdo, int length, bool last)
     if((i%8)==0){ // Next byte
       tdo[j]=tdo_byte; // Save the TDO byte
       tdo_byte=0;
-      j--;
+      j++;
     }
   };
   tdo_byte=tdo_byte+(txrx(last, false)<<(i%8)); // TMS set if last=true
   tdo[j]=tdo_byte;
   nextTapState(last); // If TMS is set the the state of the tap changes
+  return;
 }
 
 // TDI gets a load of zeros or ones, and we ignore TDO
-int IOBase::shift(bool tdi, int length, bool last)
+void IOBase::shift(bool tdi, int length, bool last)
 {
-  if(length==0)return 0;
+  if (length==0) return;
   int i=0;
   while(i<length-1){
     tx(false, tdi);
@@ -103,9 +142,10 @@ int IOBase::shift(bool tdi, int length, bool last)
   };
   tx(last, tdi); // TMS set if last=true
   nextTapState(last); // If TMS is set the the state of the tap changes
+  return;
 }
 
-int IOBase::setTapState(tapState_t state)
+void IOBase::setTapState(tapState_t state)
 {
   bool tms;
   while(current_state!=state){
@@ -327,7 +367,7 @@ int IOBase::setTapState(tapState_t state)
 
 // After shift data into the DR or IR we goto the next state
 // This function should only be called from the end of a shift function
-int IOBase::nextTapState(bool tms)
+void IOBase::nextTapState(bool tms)
 {
   if(current_state==SHIFT_DR){
     if(tms)current_state=EXIT1_DR; // If TMS was set then goto next state

@@ -31,16 +31,17 @@ int Jtag::getChain()
 {
   io->tapTestLogicReset();
   io->setTapState(IOBase::SHIFT_DR);
-  byte id[4];
+  byte idx[4];
   byte zero[4];
   numDevices=0;
   for(int i=0; i<4; i++)zero[i]=0;
   do{
-    io->shiftTDITDO(zero,id,32,false);
-    if(id[3]!=0){
+    io->shiftTDITDO(zero,idx,32,false);
+    unsigned long id=byteArrayToLong(idx);
+    if(id!=0){
       numDevices++;
       chainParam_t dev;
-      for(int i=0; i<4; i++)dev.idcode[i]=id[i];
+      dev.idcode=id;
       devices.insert(devices.begin(),dev);
     }
     else break;

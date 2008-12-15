@@ -1,4 +1,4 @@
-/* Xilinx .bit file parser
+/* Spartan3 JTAG programming algorithms
 
 Copyright (C) 2004 Andrew Rogers
 
@@ -14,7 +14,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 Changes:
 Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
@@ -23,25 +23,27 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 
 
-#include "bitfile.h"
+#ifndef PROGALGXC3S_H
+#define PROGALGXC3S_H
 
-int main(int argc, char**args)
+#include "bitfile.h"
+#include "jtag.h"
+#include "iobase.h"
+
+class ProgAlgXC3S
 {
-  BitFile file;
-  if(argc>1){
-    int length=file.load(args[1]);
-    
-    file.getData();
-    if(length>0){
-      printf("Created from NCD file: %s\n",file.getNCDFilename());
-      printf("Target device: %s\n",file.getPartName());
-      printf("Created: %s %s\n",file.getDate(),file.getTime());
-      printf("Bitstream length: %d bits\n",length);
-    }
-    else return 1;
-  }
-  if(argc>2)if(file.saveAsBin(args[2])>0)printf("Bitstream saved in binary format in file: %s\n",args[2]);
-  if(argc<2){
-    fprintf(stderr,"Usage: %s infile.bit [outfile.bin]\n",args[0]);
-  }
-}
+ private:
+  static const byte JPROGRAM;
+  static const byte CFG_IN;
+  static const byte JSHUTDOWN;
+  static const byte JSTART;
+  static const byte BYPASS;
+  Jtag *jtag;
+  IOBase *io;
+ public:
+  ProgAlgXC3S(Jtag &j, IOBase &i);
+  void program(BitFile &file);
+};
+
+
+#endif

@@ -14,7 +14,12 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+
+Changes:
+Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
+    Code cleanup for clean -Wall compile.
+*/
 
 
 
@@ -71,7 +76,7 @@ void BitFile::processData(FILE *fp)
   length=(t[0]<<24)+(t[1]<<16)+(t[2]<<8)+t[3];
   if(buffer) delete [] buffer;
   buffer=new byte[length];
-  for(int i=length-1; i>=0&&!feof(fp); i--){ // Reverse byte order
+  for(unsigned int i=0; i<length&&!feof(fp); i++){
     byte b;
     fread(&b,1,1,fp);
     buffer[i]=bitRevTable[b]; // Reverse the bit order.
@@ -95,7 +100,7 @@ unsigned long BitFile::saveAsBin(const char *fname)
     error(err);
     return 0;
   }
-  for(int i=length-1; i>=0; i--){  // Reverse byte order
+  for(unsigned int i=0; i<length; i++){
     byte b=bitRevTable[buffer[i]]; // Reverse bit order
     fwrite(&b,1,1,fptr);
   }

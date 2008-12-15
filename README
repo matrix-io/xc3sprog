@@ -18,7 +18,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 
-Please also read the file "COPYING" which is a copy of the GNU General Public License
+Please also read the file "COPYING" which is a copy of the GNU General
+Public License
 
 
 
@@ -30,11 +31,37 @@ To compile:
 $ make
 
 
-A simple example is included that copies the switches to the LEDs on the Xilinx Spartan3 Starter Kit.
+A simple example is included that copies the switches to the LEDs on the
+Xilinx Spartan3 Starter Kit.
 
-$ ./xc3sprog echo_out.bit
+$ ./xc3sprog -c pp echo_out.bit
 
 
-There is also a utility program included that parses and prints the header of a Xilinx .bit file.
+The Platform Flash PROM of the Xilinx Spartan3 Starter Kit can be programmed
+by specifying it's location in the JTAG chain. Example command line below.
+
+$ ./xc3sprog -c pp echo_out.bit 1
+
+
+There is also a utility program included that parses and prints the header
+of a Xilinx .bit file.
 
 $ ./bitparse echo_out.bit
+
+----------------------------------------------------------------------
+- jtagProgram.sh 
+----------------------------------------------------------------------
+
+
+The jtagProgram.sh use zenity (from gnome-utils-X.X.X.rpm) and sudo (from
+sudo-X.X.X.rpm) and assume xc3sprog installed in
+	/usr/local/jtag/XC3Sprog
+
+To configure sudo edit as root the file /etc/sudoers  whith the command
+visudo and add the follow:
+
+ALL  ALL=NOPASSWD: /bin/mknod /dev/parport0 c 99 0, /usr/local/jtag/XC3Sprog/detectchain, /usr/local/jtag/XC3Sprog/xc3sprog * *
+
+jtagProgram.sh and associated modifications were contributed by Sandro
+(sdroamt@netscape.net)
+

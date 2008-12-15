@@ -14,7 +14,14 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Changes:
+Dmitry Teytelman [dimtey@gmail.com] 19 May 2006 [applied 13 Aug 2006]:
+    Code cleanup for clean -Wall compile.
+    Modified loadDevice() to ignore 4 MSBs of IDCODE - used for device
+    revision code.
+*/
 
 
 #include "devicedb.h"
@@ -29,7 +36,7 @@ DeviceDB::DeviceDB(const char *fname)
   else fclose(fp);
 }
 
-int DeviceDB::loadDevice(byte *id)
+int DeviceDB::loadDevice(const u_int32_t id)
 {
   FILE *fp=fopen(filename.c_str(),"rt");
   if(fp==0){
@@ -39,15 +46,22 @@ int DeviceDB::loadDevice(byte *id)
   
   int irlen;
   while(!feof(fp)){
-    byte idr[4];
+    u_int32_t idr;
     char text[256];
     char buffer[256];
     fgets(buffer,256,fp);  // Get next line from file
-    sscanf(buffer,"%02x%02x%02x%02x %d %s",&idr[0],&idr[1],&idr[2],&idr[3],&irlen,text);
-    if(memcmp(idr,id,4)==0){
+    sscanf(buffer,"%08x %d %s", &idr, &irlen, text);
+    
+    /*
+      Modification by Dmitry Teytelman, 2006-05-19
+      Virtex-II and Spartan-3 use most significant 4 bits of
+      the IDCODE for the device revision code. We don't want
+      to have to list all revisions in the devlist.txt
+    */
+    if((id & 0x0fffffff) == (idr & 0x0fffffff)){
       device_t dev;
       dev.text=text;
-      for(int i=0; i<4; i++)dev.idcode[i]=idr[i];
+      dev.idcode=id;
       dev.irlen=irlen;
       devices.push_back(dev);
       fclose(fp);
@@ -58,13 +72,13 @@ int DeviceDB::loadDevice(byte *id)
   return 0;      
 }
 
-int DeviceDB::getIRLength(int i)
+int DeviceDB::getIRLength(unsigned int i)
 {
-  if(i>=devices.size())return 0;
+  if(i >= devices.size())return 0;
   return devices[i].irlen;
 }
 
-const char *DeviceDB::getDeviceDescription(int i)
+const char *DeviceDB::getDeviceDescription(unsigned int i)
 {
   if(i>=devices.size())return 0;
   return devices[i].text.c_str();

@@ -1,0 +1,29 @@
+The IO routines that shift data out to the JTAG port start with the first byte of the buffer given. Each byte is is output LSB first. If the byte order was the same as the SVF file then the entire buffer would have to be stored and then reversed, causing problems for embedded JTAG servers with limited memory. 
+
+
+
+The table below shows an example of the byte order reversal required for playing an SVF file.
+
+SVF	IO buffer
+..	ff
+..	aa
+..	33
+..	00
+00	..
+33	..
+aa	..
+ff	..
+
+
+
+For a Xilinx bit file, which is MSB first, each byte is bit-reversed as shown below.
+
+BIT	IO buffer
+ff	ff
+55	aa
+cc	33
+00	00
+..	..
+..	..
+..	..
+..	..

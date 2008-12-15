@@ -14,13 +14,22 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Changes:
+Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
+    Code cleanup for clean -Wall compile.
+    Extensive changes to support FT2232 driver.
+*/
 
 
 
 
 #ifndef IOBASE_H
 #define IOBASE_H
+
+#define BLOCK_SIZE 65536
+#define TICK_COUNT 2048
 
 class IOBase
 {
@@ -45,17 +54,26 @@ class IOBase
     UNKNOWN=999
   };
  protected:
+  bool verbose;
   tapState_t current_state;
-  virtual bool txrx(bool tms, bool tdi){}
-  virtual void tx(bool tms, bool tdi){}
-  int nextTapState(bool tms);
+  virtual bool txrx(bool tms, bool tdi){return false;}
+  virtual void tx(bool tms, bool tdi) {}
+  virtual void tx_tdi_byte(unsigned char tdi_byte) {}
+  virtual void tx_tdi_block(unsigned char *tdi_buf, int length) {}
+  void nextTapState(bool tms);
  public:
   IOBase();
-  virtual int shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last=true);
-  virtual int shiftTDI(const unsigned char *tdi, int length, bool last=true);
-  virtual int shiftTDO(unsigned char *tdo, int length, bool last=true);
-  virtual int shift(bool tdi, int length, bool last=true);
-  virtual int setTapState(tapState_t state);
+  virtual ~IOBase() {};
+  virtual void flush(void) {}
+  virtual void dev_open(const char *device) {}
+  virtual bool checkError() { return false;}
+  virtual void setVerbose(bool v) { verbose = v; }
+  virtual bool getVerbose(void) { return verbose; }
+  virtual void shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last=true);
+  virtual void shiftTDI(const unsigned char *tdi, int length, bool last=true);
+  virtual void shiftTDO(unsigned char *tdo, int length, bool last=true);
+  virtual void shift(bool tdi, int length, bool last=true);
+  virtual void setTapState(tapState_t state);
   virtual void tapTestLogicReset();
   virtual void cycleTCK(int n, bool tdi=1);
 };

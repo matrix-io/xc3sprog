@@ -14,7 +14,12 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Changes:
+Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
+    Code cleanup for clean -Wall compile.
+*/
 
 
 
@@ -23,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include <vector>
 #include <string>
+#include <sys/types.h>
 
 typedef unsigned char byte;
 
@@ -31,7 +37,7 @@ class DeviceDB
  private:
   struct device_t
   {
-    byte idcode[4]; // Store IDCODE
+    u_int32_t idcode; // Store IDCODE
     int irlen; // instruction register length.
     std::string text;
   };
@@ -39,9 +45,9 @@ class DeviceDB
   std::string filename;
  public:
   DeviceDB(const char *fname);
-  int loadDevice(byte *id);
-  int getIRLength(int i);
-  const char *getDeviceDescription(int i);
+  int loadDevice(const u_int32_t id);
+  int getIRLength(unsigned int i);
+  const char *getDeviceDescription(unsigned int i);
 };
 
 #endif
