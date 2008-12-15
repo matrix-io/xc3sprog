@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 /* JTAG routines
 
 Copyright (C) 2004 Andrew Rogers

@@ -1,3 +1,5 @@
+#include <string.h>
+
 /* JTAG chain detection
 
 Copyright (C) 2004 Andrew Rogers

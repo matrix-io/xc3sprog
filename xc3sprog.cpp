@@ -1,3 +1,5 @@
+#include <string.h>
+
 /* Spartan3 JTAG programmer
 
 Copyright (C) 2004 Andrew Rogers
