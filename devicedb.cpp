@@ -24,13 +24,22 @@ Dmitry Teytelman [dimtey@gmail.com] 19 May 2006 [applied 13 Aug 2006]:
 */
 
 
+#ifndef DEVICEDB
+#define DEVICEDB "devlist.txt"
+#endif
+
+#include <stdlib.h>
 #include "devicedb.h"
 
 using namespace std;
 
-DeviceDB::DeviceDB(const char *fname)
-{
-  filename=fname;
+DeviceDB::DeviceDB(const char *fname) {
+  // Fall back to environment or default if no file specified
+  if(!fname) {
+    if(!(fname = getenv("XCDB")))  fname = DEVICEDB;
+  }
+  
+  filename = fname;
   FILE *fp=fopen(fname,"rt");
   if(fp==0)fprintf(stderr,"Cannot open device database file '%s'\n",fname);
   else fclose(fp);
