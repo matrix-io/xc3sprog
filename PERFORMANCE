@@ -1,0 +1,10 @@
+Here is a tabulation of the byte transfer counts for various FTDI sending
+options. These were recorded for a XC3S400 bitstream of 1699136 bits (212392
+bytes).
+
+Byte-by-byte:	 703719 (expected bitstream-only part 637197)	1350 ms
+Block transfers: 278887 (expected bitstream-only part 212427)	422 ms
+
+
+Just for comparison, loading the same bitstream through the parallel port
+takes 6809 ms.

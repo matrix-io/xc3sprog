@@ -1,0 +1,67 @@
+Spartan3 JTAG programmer and other utilities
+
+Copyright (C) 2004 Andrew Rogers
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+
+
+
+Please also read the file "COPYING" which is a copy of the GNU General
+Public License
+
+
+
+
+This program should run without installation as root.
+
+To compile:
+
+$ make
+
+
+A simple example is included that copies the switches to the LEDs on the
+Xilinx Spartan3 Starter Kit.
+
+$ ./xc3sprog -c pp echo_out.bit
+
+
+The Platform Flash PROM of the Xilinx Spartan3 Starter Kit can be programmed
+by specifying it's location in the JTAG chain. Example command line below.
+
+$ ./xc3sprog -c pp echo_out.bit 1
+
+
+There is also a utility program included that parses and prints the header
+of a Xilinx .bit file.
+
+$ ./bitparse echo_out.bit
+
+----------------------------------------------------------------------
+- jtagProgram.sh 
+----------------------------------------------------------------------
+
+
+The jtagProgram.sh use zenity (from gnome-utils-X.X.X.rpm) and sudo (from
+sudo-X.X.X.rpm) and assume xc3sprog installed in
+	/usr/local/jtag/XC3Sprog
+
+To configure sudo edit as root the file /etc/sudoers  whith the command
+visudo and add the follow:
+
+ALL  ALL=NOPASSWD: /bin/mknod /dev/parport0 c 99 0, /usr/local/jtag/XC3Sprog/detectchain, /usr/local/jtag/XC3Sprog/xc3sprog * *
+
+jtagProgram.sh and associated modifications were contributed by Sandro
+(sdroamt@netscape.net)
+

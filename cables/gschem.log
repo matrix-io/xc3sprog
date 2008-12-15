@@ -1,0 +1,15 @@
+gEDA/gschem version 20060123
+gEDA/gschem comes with ABSOLUTELY NO WARRANTY; see COPYING for more details.
+This is free software, and you are welcome to redistribute it under certain
+conditions; please see the COPYING file for more details.
+
+Read system-gafrc file [/usr/local/share/gEDA/system-gafrc]
+Did not find optional ~/.gEDA/gafrc file [/home/dim/.gEDA]
+Read local gafrc file [/home/dim/designs/XC3Sprog/cables/gafrc]
+Read system-gschemrc file [/usr/local/share/gEDA/system-gschemrc]
+Did not find optional ~/.gEDA/gschemrc file [/home/dim/.gEDA]
+Did not find optional local gschemrc file [/home/dim/designs/XC3Sprog/cables/gschemrc]
+Read init scm file [/usr/local/share/gEDA/scheme/gschem.scm]
+RC file [/home/dim/designs/XC3Sprog/cables/gafrc] already read in.
+Opened file [/home/dim/designs/XC3Sprog/cables/par_cable.sch]
+Printed current schematic to [/home/dim/designs/XC3Sprog/cables/par_cable.ps]
