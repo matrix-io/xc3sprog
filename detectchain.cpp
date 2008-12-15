@@ -139,7 +139,7 @@ int main(int argc, char **args)
     printf("JTAG loc.: %d\tIDCODE: 0x%08lx\t", i, id);
     if(length>0){
       jtag.setDeviceIRLength(i,length);
-      printf("Desc: %s\tIR length: %d\n",db.getDeviceDescription(dblast),length);
+      printf("Desc: %15s\tIR length: %d\n",db.getDeviceDescription(dblast),length);
       dblast++;
     } 
     else{
