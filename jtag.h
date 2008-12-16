@@ -71,7 +71,8 @@ class Jtag
     b[3]=(byte)((l>>24)&0xff);
   }
   inline unsigned long byteArrayToLong(byte *b){
-    return (b[3]<<24)+(b[2]<<16)+(b[1]<<8)+b[0];
+    return ((unsigned long)b[3]<<24)+((unsigned long)b[2]<<16)+
+      ((unsigned long)b[1]<<8)+(unsigned long)b[0];
   }
 };
 
