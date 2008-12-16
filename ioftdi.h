@@ -37,22 +37,24 @@ class IOFtdi : public IOBase
   struct ftdi_context ftdi;
   unsigned char *usbuf;
   int buflen, bptr, total;
-  bool error, devopen;
   int subtype;
+
  public:
-  IOFtdi();
-  virtual ~IOFtdi();
-  virtual void settype(int subtype);
-  virtual void dev_open(const char *desc);
-  virtual bool txrx(bool tms, bool tdi);
-  virtual void tx(bool tms, bool tdi);
-  virtual void tx_tdi_byte(unsigned char tdi_byte);
-  virtual void tx_tdi_block(unsigned char *tdi_buf, int length);
-  virtual void flush(void);
-  virtual inline bool checkError(){return error;}
-  virtual void mpsse_add_cmd(unsigned char *buf, int len);
-  virtual void mpsse_send(void);
-  virtual void cycleTCK(int n, bool tdi);
+  IOFtdi(char const *dev, int subtype);
+  ~IOFtdi();
+
+ public:
+  void settype(int subtype);
+  bool txrx(bool tms, bool tdi);
+  void tx(bool tms, bool tdi);
+  void tx_tdi_byte(unsigned char tdi_byte);
+  void tx_tdi_block(unsigned char *tdi_buf, int length);
+  void flush(void);
+
+ private:
+  void mpsse_add_cmd(unsigned char const *buf, int len);
+  void mpsse_send(void);
+  void cycleTCK(int n, bool tdi);
 };
 
 

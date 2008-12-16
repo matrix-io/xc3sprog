@@ -93,9 +93,14 @@ class BitFile
   void processData(FILE *fp);
  
  public:
-  BitFile();
+  BitFile(char const *fname);
   ~BitFile();
-  unsigned long load(const char *fname);
+
+ public:
+  void append(unsigned long  val, unsigned cnt);
+  void append(char const *file);
+  
+ public:
   inline byte *getData(){return buffer;}
   inline unsigned long getLength(){return length*8;} // Returns length of bitstream
   inline const char *getError(){

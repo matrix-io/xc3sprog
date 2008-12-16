@@ -1,5 +1,3 @@
-#include <string.h>
-
 /* Spartan3 JTAG programmer
 
 Copyright (C) 2004 Andrew Rogers
@@ -26,11 +24,11 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Installable device database location.
 */
 
-
-
+#include <string.h>
 #include <unistd.h>
+#include <memory>
 
-#include "iodefs.h"
+#include "io_exception.h"
 #include "ioparport.h"
 #include "ioftdi.h"
 #include "bitfile.h"
@@ -39,13 +37,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgxcf.h"
 #include "progalgxc3s.h"
 
-#ifndef PPDEV
-#define PPDEV "/dev/parport0"
-#endif
-#ifndef DEVICEDB
-#define DEVICEDB "devlist.txt"
-#endif
-
 void process(IOBase &io, BitFile &file, int chainpos, bool verbose);
 void programXC3S(Jtag &jtag, IOBase &io, BitFile &file);
 void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs);
@@ -53,143 +44,153 @@ void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs);
 extern char *optarg;
 extern int optind;
 
-void usage(void)
-{
-  fprintf(stderr, "Usage: xc3sprog [-v] [-c cable_type] [-d device] [-t subtype] bitfile [POS]\n");
-  fprintf(stderr, "\tSupported cable types: pp, ftdi\n\tArgument ""device"":");
-  fprintf(stderr, "\n\t\tParallel port - /dev/parport0, /dev/parport1, etc.\n");
-  fprintf(stderr, "\t\tFTDI USB      - optional descriptor string\n");
-  fprintf(stderr, "\t\tFTDI Subtypes: IKDA (EN_N on ACBUS2)\n");
-  fprintf(stderr, "\tPOS  position in JTAG chain, 0=closest to TDI (default)\n\n");
+void usage() {
+  fprintf(stderr,
+    "\nUsage:\txc3sprog [-v] [-c cable_type] [-d device] [-t subtype] [-p chainpos] bitfile [+ (val[*cnt]|binfile) ...]\n"
+    "\txc3sprog [-v] [-c cable_type] [-d device] bitfile [chainpos]\n\n"
+    "   -?\tprint this help\n"
+    "   -v\tverbose output\n\n"
+    "   cable_type: device\n"
+    "\tpp   - Parallel Port: /dev/parport0 (default), /dev/parport1, ...\n"
+    "\tftdi - FTDI USB: optional descriptor string\n\n"
+    "\t\tFTDI Subtypes: IKDA (EN_N on ACBUS2)\n"
+    "   chainpos\n"
+    "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
+    "   val[*cnt]|binfile\n"
+    "\tAdditional data to append to bitfile when programming.\n"
+    "\tOnly sensible for programming platform flashes (PROMs).\n"
+    "\t   val[*cnt]  explicitly given 32-bit padding repeated cnt times\n"
+    "\t   binfile    binary file content to append\n\n");
   exit(255);
 }
 
 int main(int argc, char **args)
 {
-  bool verbose = false;
-  char *device = NULL;
-  int ch, ll_driver = DRIVER_PARPORT, subtype = FTDI_NO_EN;
-  IOBase *io;
-  IOParport io_pp;
-  IOFtdi io_ftdi;
+  bool        verbose   = false;
+  char const *cable     = "pp";
+  char const *dev       = 0;
+  int         chainpos  = 0;
+  int subtype = FTDI_NO_EN;
 
-  // Produce release info from CVS tags
-  char release[]={"$Name: Release-0-5 $"};
-  char *loc0=strchr(release,'-');
-  if(loc0>0){
-    loc0++;
-    char *loc=loc0;
-    do{
-      loc=strchr(loc,'-');
-      if(loc)*loc='.';
-    }while(loc);
-    release[strlen(release)-1]='\0'; // Strip off $
+  { // Produce release info from CVS tags
+    char  release[] = "$Name: Release-0-5 $";
+    char *loc0=strchr(release,'-');
+    if(loc0>0){
+      loc0++;
+      char *loc=loc0;
+      do{
+	loc=strchr(loc,'-');
+	if(loc)*loc='.';
+      }while(loc);
+      release[strlen(release)-1]='\0'; // Strip off $
+    }
+    printf("Release %s\n",loc0);
   }
-  printf("Release %s\n",loc0);
 
   // Start from parsing command line arguments
-  while ((ch = getopt(argc, args, "c:d:vt:")) != -1)
-    switch ((char)ch)
-    {
-      case 'c':
-        if (strcmp(optarg, "pp") == 0)
-          ll_driver = DRIVER_PARPORT;
-        else if (strcmp(optarg, "ftdi") == 0)
-          ll_driver = DRIVER_FTDI;
-        else
-          usage();
-        break;
-      case 'd':
-        device = strdup(optarg);
-        break;
-      case 't':
-        if (strcmp(optarg, "ikda") == 0)
-          subtype = FTDI_IKDA;
-        else
-          usage();
-        break;
-      case 'v':
-        verbose = true;
-        break;
-      default:
-        usage();
-    }
-  
-  if ((device == NULL) && (ll_driver == DRIVER_PARPORT))
-    {
-      if(getenv("XCPORT"))
-	device = strdup(getenv("XCPORT"));
-      else
-	device = strdup(PPDEV);
-    }
+  while(true) {
+    switch(getopt(argc, args, "?hvc:d:p:t:")) {
+    case -1:
+      goto args_done;
 
-  switch (ll_driver)
-  {
-    case DRIVER_PARPORT:
-      io = &io_pp;
+    case 'v':
+      verbose = true;
       break;
-    case DRIVER_FTDI:
-      io = &io_ftdi;
-      io->settype(subtype);
+
+    case 'c':
+      cable = optarg;
       break;
+
+     case 't':
+       if (strcmp(optarg, "ikda") == 0)
+         subtype = FTDI_IKDA;
+       else
+         usage();
+       break;
+
+    case 'd':
+      dev = optarg;
+      break;
+
+    case 'p':
+      chainpos = atoi(optarg);
+      break;
+
+    case '?':
+    case 'h':
     default:
       usage();
+    }
   }
-  
-  io->setVerbose(verbose);
-
-  printf("argc: %d\n", argc);
-
+ args_done:
   // Get rid of options
-  argc -=  optind;
-  args +=  optind;
+  //printf("argc: %d\n", argc);
+  argc -= optind;
+  args += optind;
+  //printf("argc: %d\n", argc);
+  if(argc < 1)  usage();
 
-  printf("argc: %d\n", argc);
-  
-  if(argc<1) usage();
+  std::auto_ptr<IOBase>  io;
+  try {  
+    if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
+    else if(strcmp(cable, "ftdi") == 0)  io.reset(new IOFtdi(dev, subtype));
+    else  usage();
 
-  io->dev_open(device);
-  
-  if(io->checkError()){
-    if (ll_driver == DRIVER_FTDI)
-      fprintf(stderr, "Could not access USB device (%s).\n", 
-              (device == NULL) ? "*" : device);
-    else
-    {
-      fprintf(stderr,"Could not access parallel device '%s'.\n", device);
-      fprintf(stderr,"You may need to set permissions of '%s' \n", device);
+    io->setVerbose(verbose);
+  }
+  catch(io_exception& e) {
+    if(strcmp(cable, "pp")) {
+      if(!dev)  dev = "*";
+      fprintf(stderr, "Could not access USB device (%s).\n", dev);
+    }
+    else {
+      fprintf(stderr,"Could not access parallel device '%s'.\n", dev);
+      fprintf(stderr,"You may need to set permissions of '%s' \n", dev);
       fprintf(stderr,
               "by issuing the following command as root:\n\n# chmod 666 %s\n\n",
-              device);
+              dev);
     }
     return 1;
   }
 
-  free(device);
-  
-  
-  int chainpos=0;
+  try {
+    BitFile  file(args[0]);
 
-  if(argc>1)chainpos=atoi(args[1]);
-  if(verbose)
-    printf("JTAG chainpos: %d\n", chainpos);
-
-  int length;
-  BitFile file;
-  if((length = file.load(args[0])))
-  {
-    if (verbose)
-    {
+    if(verbose) {
       printf("Created from NCD file: %s\n",file.getNCDFilename());
       printf("Target device: %s\n",file.getPartName());
       printf("Created: %s %s\n",file.getDate(),file.getTime());
-      printf("Bitstream length: %d bits\n",length);
+      printf("Bitstream length: %lu bits\n", file.getLength());
     }      
+
+    if(argc > 1) {
+      // Allow chainpos specification here for backwards compatibiity
+      if(*args[1] != '+')  chainpos = atoi(args[1]);
+      else {
+	for(int i = 2; i < argc; i++) {
+	  char *end;
+
+	  unsigned long const  val = strtoul(args[i], &end, 0);
+	  unsigned long        cnt = 1;
+	  switch(*end) {
+	  case '*':
+	  case 'x':
+	  case 'X':
+	    cnt = strtoul(end+1, &end, 0);
+	  }
+	  if(*end == '\0')  file.append(val, cnt);
+	  else  file.append(args[i]);
+	}
+      }
+    }
+    
+    if(verbose)  printf("JTAG chainpos: %d\n", chainpos);
     process(*io, file, chainpos, verbose);
   }
-  else
-    return 1;
-  return 0;
+  catch(io_exception& e) {
+    fprintf(stderr, "IOException: %s\n", e.getMessage().c_str());
+    return  1;
+  }
 }
 
 void process(IOBase &io, BitFile &file, int chainpos, bool verbose)
@@ -200,12 +201,6 @@ void process(IOBase &io, BitFile &file, int chainpos, bool verbose)
   int num=jtag.getChain();
 
   // Synchronise database with chain of devices.
-
-  if(getenv("XCDB"))
-    devicedb = strdup(getenv("XCDB"));
-  else
-    devicedb = strdup(DEVICEDB);
-
   DeviceDB db(devicedb);
   for(int i=0; i<num; i++){
     int length=db.loadDevice(jtag.getDeviceID(i));

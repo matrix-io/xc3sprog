@@ -25,12 +25,10 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include <stdio.h>
 
-#include "iodefs.h"
 #include "iobase.h"
 #include "ioparport.h"
 #include "ioftdi.h"
 #include "iodebug.h"
-
 
 using namespace std;
 
@@ -48,30 +46,27 @@ int main(int argc, char**args)
 
 void testDebug()
 {
-  IOBase *io;
-  io=new IODebug();
+  IODebug  io;
+
   unsigned char tdi[]={0x3a,0xa3};
   unsigned char tdo[10];
-  io->setTapState(IOBase::SHIFT_DR);
-  io->shiftTDITDO(tdi,tdo,16,false);
+  io.setTapState(IOBase::SHIFT_DR);
+  io.shiftTDITDO(tdi,tdo,16,false);
   for(int i=0; i<2; i++)printf("TDO %02x\n",tdo[i]);
-  delete io;
 }
 
 void testPP()
 {
-  IOBase *io;
-  io=new IOParport;
-  io->dev_open(PPDEV);
+  IOParport  io(0);
+
   unsigned char tdi[]={0,0,0,0,0,0,0,0};
   unsigned char tdo[100];
-  io->setTapState(IOBase::SHIFT_DR);
-  io->shiftTDITDO(tdi,tdo,64);
+  io.setTapState(IOBase::SHIFT_DR);
+  io.shiftTDITDO(tdi,tdo,64);
   for(int i=0; i<8; i++)printf("TDO %02x\n",tdo[i]);
   printf("\n");
-  getSwitches(io);
-  getID(io);
-  delete io;
+  getSwitches(&io);
+  getID(&io);
 }
 
 void printBit1(bool val)

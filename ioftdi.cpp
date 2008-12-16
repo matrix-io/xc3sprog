@@ -25,18 +25,54 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include <ftdi.h>
 
 #include "ioftdi.h"
+#include "io_exception.h"
 
 using namespace std;
 
-IOFtdi::IOFtdi(void) : IOBase()
-{
-  // Start from 0 in the usbuf
-  usbuf  = NULL;
-  bptr   = 0;
-  buflen = 0;
-  total  = 0;
-  devopen = false;
-  error  = false;
+IOFtdi::IOFtdi(char const * dev, int subtype)
+    : IOBase(), usbuf(0), buflen(0), bptr(0), total(0) {
+    
+    // initialize FTDI structure
+    ftdi_init(&ftdi);
+    
+    // Open device
+    if (ftdi_usb_open_desc(&ftdi, VENDOR, DEVICE, dev, NULL) < 0)
+	throw  io_exception(std::string("libftdi: ") + 
+					ftdi_get_error_string(&ftdi));
+
+  // Reset
+  if(ftdi_usb_reset(&ftdi) < 0) {
+    throw  io_exception(std::string("Failed to reset: ") + dev);
+  }
+
+  // Set interface
+  if(ftdi_set_interface(&ftdi, INTERFACE_A) < 0) {
+    throw  io_exception(std::string("Failed to set interface: ") + dev);
+  }
+	
+  // Set mode to MPSSE
+  if(ftdi_set_bitmode(&ftdi, 0xfb, BITMODE_MPSSE) < 0) {
+    throw  io_exception(std::string("Failed to set mode: ") + dev);
+  }
+
+  // Purge buffers
+  if(ftdi_usb_purge_buffers(&ftdi) < 0) {
+    throw  io_exception(std::string("Failed to purge buffers: ") + dev);
+  }
+  
+  // Clear the MPSSE buffers
+  unsigned char const  cmd = SEND_IMMEDIATE;
+  for(int n = 0; n < 65537; n++)  mpsse_add_cmd(&cmd, 1);
+
+  // Prepare for JTAG operation
+  static unsigned char const  buf[] = { SET_BITS_LOW, 0x08, 0x0b,
+					TCK_DIVISOR,  0x00, 0x00 ,
+                                        SET_BITS_HIGH, ~0x04, 0x04};
+  if (subtype == FTDI_NO_EN)
+    mpsse_add_cmd(buf, 6);
+  else if (subtype == FTDI_IKDA)
+      mpsse_add_cmd(buf, 9);
+  mpsse_send();
 }
 
 void IOFtdi::settype(int sub_type)
@@ -44,88 +80,6 @@ void IOFtdi::settype(int sub_type)
   subtype = sub_type;
 }
 
-void IOFtdi::dev_open(const char *desc)
-{
-  unsigned char buf[6];
-  int rc;
-
-  // initialize and open device
-  ftdi_init(&ftdi);
-  rc = ftdi_usb_open_desc(&ftdi, VENDOR, DEVICE, desc, NULL);
-	
-  if(rc < 0) 
-  {
-    error = true;
-    return;
-  }
-  else
-    devopen = true;
-
-  rc = ftdi_usb_reset(&ftdi);
-  if(rc < 0) 
-  {
-    error = true;
-    return;
-  }
-
-  // set interface
-  rc = ftdi_set_interface(&ftdi, INTERFACE_A);
-  if(rc < 0) 
-  {
-    error = true;
-    return;
-  }
-	
-  // set mode to MPSSE
-  rc = ftdi_set_bitmode(&ftdi, 0xfb, BITMODE_MPSSE);
-  if(rc < 0) 
-  {
-    error = true;
-    return;
-  }
-  
-  rc = ftdi_usb_purge_buffers(&ftdi);
-  if(rc < 0) 
-  {
-    error = true;
-    return;
-  }
-  
-  /* Clear the MPSSE buffers */
-  *buf = SEND_IMMEDIATE;
-  for (int n = 0; n < 65537; n ++)
-    mpsse_add_cmd(buf, 1);
-
-  /* Get ready for JTAG operation */
-  if (subtype == FTDI_NO_EN)
-    {
-  buf[0] = SET_BITS_LOW;
-  buf[1] = 0x08;
-  buf[2] = 0x0b;
-  buf[3] = TCK_DIVISOR;
-  buf[4] = 0x00;
-  buf[5] = 0x00;
-  mpsse_add_cmd(buf, 6);
-    }
-  else if (subtype == FTDI_IKDA)
-    {
-      buf[0] = SET_BITS_LOW;
-      buf[1] = 0x08;
-      buf[2] = 0x0b;
-      buf[3] = TCK_DIVISOR;
-      buf[4] = 0x00;
-      buf[5] = 0x00;
-      buf[6] = SET_BITS_HIGH;
-      buf[7] = ~0x04;
-      buf[8] = 0x04;
-  
-      mpsse_add_cmd(buf, 9);
-    }
-
-  mpsse_send();
-  
-  error=false;
-}
 
 bool IOFtdi::txrx(bool tms, bool tdi)
 {
@@ -196,23 +150,19 @@ void IOFtdi::tx_tdi_block(unsigned char *tdi_buf, int length)
  
 IOFtdi::~IOFtdi()
 {
-  if (devopen)
-  {
-    mpsse_send();
-    ftdi_usb_close(&ftdi);
-  }
-  if (verbose) printf("Total bytes sent: %d\n", total);
+  flush();
+  ftdi_usb_close(&ftdi);
+  if(verbose)  printf("Total bytes sent: %d\n", total);
 }
 
-void IOFtdi::mpsse_add_cmd(unsigned char *buf, int len)
-{
-  /* The TX FIFO has 128 Byte. It can easily be overrun
-     So send only chunks of the TX Buffersize and hope
-     that the OS USB scheduler gives the MPSSE machine 
-     enough time empty the buffer
-  */
-  if (bptr + len >= 128)
-    mpsse_send();
+void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
+ /* The TX FIFO has 128 Byte. It can easily be overrun
+    So send only chunks of the TX Buffersize and hope
+    that the OS USB scheduler gives the MPSSE machine 
+    enough time empty the buffer
+ */
+ if (bptr + len >= 128)
+   mpsse_send();
   /* Grow the buffer, if needed */
   if (bptr + len >= buflen)
     {
@@ -223,25 +173,17 @@ void IOFtdi::mpsse_add_cmd(unsigned char *buf, int len)
   bptr += len;
 }
 
-void IOFtdi::mpsse_send(void)
-{
-  int rc;
- 
-  if (bptr == 0) return;
- 
-  rc = ftdi_write_data(&ftdi, usbuf, bptr);
+void IOFtdi::mpsse_send() {
+  if(bptr == 0)  return;
 
-  if (rc != bptr)
-  {
-    error = true;
-    return;
+  if(bptr != ftdi_write_data(&ftdi, usbuf, bptr)) {
+    throw  io_exception();
   }
   total += bptr;
   bptr = 0;
 }
 
-void IOFtdi::flush(void)
-{
+void IOFtdi::flush() {
   mpsse_send();
 }
 

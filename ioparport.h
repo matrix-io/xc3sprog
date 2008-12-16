@@ -33,20 +33,21 @@ class IOParport : public IOBase
 {
  protected:
   int fd, total, cable, debug;
-  bool error;
   unsigned char def_byte, tdi_value, tms_value, tck_value, tdo_mask, tdo_inv;
+
  public:
-  IOParport();
-  virtual ~IOParport();
-  virtual void dev_open(const char *device);
-  virtual bool txrx(bool tms, bool tdi);
-  virtual void tx(bool tms, bool tdi);
-  virtual void tx_tdi_byte(unsigned char tdi_byte);
-  virtual void tx_tdi_block(unsigned char *tdi_buf, int length);
-  void flush(void) {};
+  IOParport(char const *dev);
+  ~IOParport();
+
+ public:
+  bool txrx(bool tms, bool tdi);
+  void tx(bool tms, bool tdi);
+  void tx_tdi_byte(unsigned char tdi_byte);
+  void tx_tdi_block(unsigned char *tdi_buf, int length);
+
+ private:
   void delay(int del);
   int detectcable(void);
-  virtual inline bool checkError(){return error;}
 };
 
 

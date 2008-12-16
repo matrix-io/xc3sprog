@@ -1,5 +1,3 @@
-#include <string.h>
-
 /* JTAG chain detection
 
 Copyright (C) 2004 Andrew Rogers
@@ -29,23 +27,21 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 
 
+#include <string.h>
 #include <unistd.h>
-#include "iodefs.h"
+#include <memory>
+#include "io_exception.h"
 #include "ioparport.h"
 #include "ioftdi.h"
 #include "iodebug.h"
 #include "jtag.h"
 #include "devicedb.h"
 
-#ifndef DEVICEDB
-#define DEVICEDB "devlist.txt"
-#endif
-
 extern char *optarg;
 
 void usage(void)
 {
-  fprintf(stderr, "Usage: detectchain [-c cable_type] [-d device][-t subtype]\n");
+  fprintf(stderr, "Usage: detectchain [-c cable_type] [-d device]\n");
   fprintf(stderr, "Supported cable types: pp, ftdi\n");
   fprintf(stderr, "\tFTDI Subtypes: IKDA (EN_N on ACBUS2)\n");
   exit(255);
@@ -53,84 +49,75 @@ void usage(void)
 
 int main(int argc, char **args)
 {
-  char *device = NULL;
-  char *devicedb = NULL;
-  int ch, ll_driver = DRIVER_PARPORT, subtype = FTDI_NO_EN;
-  IOBase *io;
-  IOParport io_pp;
-  IOFtdi io_ftdi;
-  
-  // Start from parsing command line arguments
-  while ((ch = getopt(argc, args, "c:d:t:")) != -1)
-    switch ((char)ch)
-    {
-      case 'c':
-        if (strcmp(optarg, "pp") == 0)
-          ll_driver = DRIVER_PARPORT;
-        else if (strcmp(optarg, "ftdi") == 0)
-          ll_driver = DRIVER_FTDI;
-        else
-          usage();
-        break;
-      case 'd':
-        device = strdup(optarg);
-        break;
-      case 't':
-        if (strcasecmp(optarg, "ikda") == 0)
-          subtype = FTDI_IKDA;
-        else
-          usage();
-        break;
-      default:
-        usage();
+    bool        verbose = false;
+    char const *cable   = "pp";
+    char const *dev     = 0;
+    int subtype = FTDI_NO_EN;
+    
+    // Start from parsing command line arguments
+    while(true) {
+	switch(getopt(argc, args, "vc:d:t:")) {
+	    case -1:
+		goto args_done;
+		
+	    case 'v':
+		verbose = true;
+		break;
+      
+	    case 'c':
+		cable = optarg;
+		break;
+		
+	    case 'd':
+		dev = optarg;
+		break;
+		
+	    case 't':
+		if (strcasecmp(optarg, "ikda") == 0)
+		    subtype = FTDI_IKDA;
+		else
+		    usage();
+		break;
+	    default:
+		usage();
+	}
     }
-  
-  if ((device == NULL) && (ll_driver == DRIVER_PARPORT))
-    {
-      if(getenv("XCPORT"))
-	device = strdup(getenv("XCPORT"));
-      else
-	device = strdup(PPDEV);
-    }
+args_done:
+  // Get rid of options
+  //printf("argc: %d\n", argc);
+  argc -= optind;
+  args += optind;
+  //printf("argc: %d\n", argc);
+  if(argc != 0)  usage();
 
-  switch (ll_driver)
-  {
-    case DRIVER_PARPORT:
-      io = &io_pp;
-      break;
-    case DRIVER_FTDI:
-      io = &io_ftdi;
-      io->settype(subtype);
-      break;
-    default:
-      usage();
+  std::auto_ptr<IOBase>  io;
+  try {
+    if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
+    else if(strcmp(cable, "ftdi") == 0)  io.reset(new IOFtdi(dev, subtype));
+    else  usage();
+
+    io->setVerbose(verbose);
   }
-  io->dev_open(device);
-  
-  if(io->checkError()){
-    if (ll_driver == DRIVER_FTDI)
-      fprintf(stderr, "Could not access USB device.\n");
-    else
-    {
-      fprintf(stderr,"Could not access parallel device '%s'.\n", device);
-      fprintf(stderr,"You may need to set permissions of '%s' \n", device);
+  catch(io_exception& e) {
+    if(strcmp(cable, "pp")) {
+      if(!dev)  dev = "*";
+      fprintf(stderr, "Could not access USB device (%s).\n", dev);
+    }
+    else {
+      fprintf(stderr,"Could not access parallel device '%s'.\n", dev);
+      fprintf(stderr,"You may need to set permissions of '%s' \n", dev);
       fprintf(stderr,
               "by issuing the following command as root:\n\n# chmod 666 %s\n\n",
-              device);
+              dev);
     }
     return 1;
   }
 
-  free(device);
   
-  Jtag jtag(io);
+  Jtag jtag(io.get());
   int num=jtag.getChain();
-  if(getenv("XCDB"))
-    devicedb = strdup(getenv("XCDB"));
-  else
-    devicedb = strdup(DEVICEDB);
 
-  DeviceDB db(devicedb);
+  DeviceDB db(0);
   int dblast=0;
   for(int i=0; i<num; i++){
     unsigned long id=jtag.getDeviceID(i);
@@ -143,7 +130,7 @@ int main(int argc, char **args)
       dblast++;
     } 
     else{
-      printf("not found in '%s'.\n",DEVICEDB);
+      printf("not found in '%s'.\n", db.getFile().c_str());
     }
   }
   return 0;

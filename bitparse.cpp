@@ -24,24 +24,31 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 
 #include "bitfile.h"
+#include "io_exception.h"
 
 int main(int argc, char**args)
 {
-  BitFile file;
-  if(argc>1){
-    int length=file.load(args[1]);
+  if(argc < 2) {
+    fprintf(stderr,"Usage: %s infile.bit [outfile.bin]\n",args[0]);
+  }
+  else {
+    try {
+      BitFile  file(args[1]);
     
-    file.getData();
-    if(length>0){
       printf("Created from NCD file: %s\n",file.getNCDFilename());
       printf("Target device: %s\n",file.getPartName());
       printf("Created: %s %s\n",file.getDate(),file.getTime());
-      printf("Bitstream length: %d bits\n",length);
+      printf("Bitstream length: %lu bits\n", file.getLength());
+      
+      if(argc > 2) {
+	file.saveAsBin(args[2]);
+	printf("Bitstream saved in binary format in file: %s\n", args[2]);
+      }
     }
-    else return 1;
+    catch(io_exception& e) {
+      fprintf(stderr, "IOException: %s", e.getMessage().c_str());
+      return  1;
+    }
   }
-  if(argc>2)if(file.saveAsBin(args[2])>0)printf("Bitstream saved in binary format in file: %s\n",args[2]);
-  if(argc<2){
-    fprintf(stderr,"Usage: %s infile.bit [outfile.bin]\n",args[0]);
-  }
+
 }

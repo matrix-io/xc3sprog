@@ -37,3 +37,8 @@ void IODebug::tx(bool tms, bool tdi)
   printf("tx(%d,%d)\n",tms,tdi);
   
 }
+
+void IODebug::tx_tdi_byte(unsigned char tdi_byte) {
+}
+void IODebug::tx_tdi_block(unsigned char *tdi_buf, int length) {
+}

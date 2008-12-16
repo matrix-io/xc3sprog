@@ -42,9 +42,14 @@ class DeviceDB
     std::string text;
   };
   std::vector<device_t> devices;
-  std::string filename;
+  std::string  filename;
+
  public:
   DeviceDB(const char *fname);
+
+ public:
+  std::string const& getFile() const { return  filename; }
+
   int loadDevice(const u_int32_t id);
   int getIRLength(unsigned int i);
   const char *getDeviceDescription(unsigned int i);
