@@ -41,9 +41,18 @@ extern char *optarg;
 
 void usage(void)
 {
-  fprintf(stderr, "Usage: detectchain [-c cable_type] [-d device]\n");
-  fprintf(stderr, "Supported cable types: pp, ftdi\n");
-  fprintf(stderr, "\tFTDI Subtypes: IKDA (EN_N on ACBUS2)\n");
+  fprintf(stderr, 
+	  "\nUsage: detectchain [-c cable_type] [-v]\n"
+	  "   -v\tverbose output\n\n"
+	  "   Supported cable types: pp, ftdi\n"
+	  "   \tOptional pp arguments:\n"
+	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
+	  "   \tOptional ftdi arguments:\n"
+	  "   \t\t[-V vendor]      (idVendor)\n"
+	  "   \t\t[-P product]     (idProduct)\n"
+	  "   \t\t[-D description] (Product string)\n"
+	  "   \t\t[-s serial]      (SerialNumber string)\n"
+	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n");
   exit(255);
 }
 
@@ -52,11 +61,15 @@ int main(int argc, char **args)
     bool        verbose = false;
     char const *cable   = "pp";
     char const *dev     = 0;
+    int vendor    = 0;
+    int product   = 0;
+    char const *desc    = 0;
+    char const *serial  = 0;
     int subtype = FTDI_NO_EN;
     
     // Start from parsing command line arguments
     while(true) {
-	switch(getopt(argc, args, "vc:d:t:")) {
+	switch(getopt(argc, args, "?hvc:d:V:P:D:S:t:")) {
 	    case -1:
 		goto args_done;
 		
@@ -72,14 +85,32 @@ int main(int argc, char **args)
 		dev = optarg;
 		break;
 		
+	    case 'V':
+	      vendor = atoi(optarg);
+	      break;
+		
+	    case 'P':
+	      product = atoi(optarg);
+	      break;
+		
+	    case 'D':
+	      desc = optarg;
+	      break;
+		
+	    case 'S':
+		serial = optarg;
+		break;
+		
 	    case 't':
 		if (strcasecmp(optarg, "ikda") == 0)
 		    subtype = FTDI_IKDA;
 		else
 		    usage();
 		break;
-	    default:
-		usage();
+	case '?':
+	case 'h':
+	default:
+	  usage();
 	}
     }
 args_done:
@@ -89,11 +120,15 @@ args_done:
   args += optind;
   //printf("argc: %d\n", argc);
   if(argc != 0)  usage();
+  if (vendor == 0)
+    vendor = VENDOR;
+  if(product == 0)
+    product = DEVICE;
 
   std::auto_ptr<IOBase>  io;
   try {
     if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
-    else if(strcmp(cable, "ftdi") == 0)  io.reset(new IOFtdi(dev, subtype));
+    else if(strcmp(cable, "ftdi") == 0)  io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
     else  usage();
 
     io->setVerbose(verbose);

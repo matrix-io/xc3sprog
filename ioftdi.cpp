@@ -29,35 +29,35 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 using namespace std;
 
-IOFtdi::IOFtdi(char const * dev, int subtype)
+IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const *serial, int subtype)
     : IOBase(), usbuf(0), buflen(0), bptr(0), total(0) {
     
     // initialize FTDI structure
     ftdi_init(&ftdi);
-    
-    // Open device
-    if (ftdi_usb_open_desc(&ftdi, VENDOR, DEVICE, dev, NULL) < 0)
-	throw  io_exception(std::string("libftdi: ") + 
-					ftdi_get_error_string(&ftdi));
 
+    // Open device
+    if (ftdi_usb_open_desc(&ftdi, vendor, product, desc, serial) < 0)
+      throw  io_exception(std::string("ftdi_usb_open_desc: ") + 
+			  ftdi_get_error_string(&ftdi));
+    
   // Reset
   if(ftdi_usb_reset(&ftdi) < 0) {
-    throw  io_exception(std::string("Failed to reset: ") + dev);
+    throw  io_exception(std::string("ftdi_usb_reset: ") + ftdi_get_error_string(&ftdi));
   }
 
   // Set interface
   if(ftdi_set_interface(&ftdi, INTERFACE_A) < 0) {
-    throw  io_exception(std::string("Failed to set interface: ") + dev);
+    throw  io_exception(std::string("ftdi_set_interface: ") + ftdi_get_error_string(&ftdi));
   }
 	
   // Set mode to MPSSE
   if(ftdi_set_bitmode(&ftdi, 0xfb, BITMODE_MPSSE) < 0) {
-    throw  io_exception(std::string("Failed to set mode: ") + dev);
+    throw  io_exception(std::string("ftdi_set_bitmode: ") + ftdi_get_error_string(&ftdi));
   }
 
   // Purge buffers
   if(ftdi_usb_purge_buffers(&ftdi) < 0) {
-    throw  io_exception(std::string("Failed to purge buffers: ") + dev);
+    throw  io_exception(std::string("ftdi_usb_purge_buffers: ") + ftdi_get_error_string(&ftdi));
   }
   
   // Clear the MPSSE buffers

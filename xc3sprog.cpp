@@ -46,21 +46,26 @@ extern int optind;
 
 void usage() {
   fprintf(stderr,
-    "\nUsage:\txc3sprog [-v] [-c cable_type] [-d device] [-t subtype] [-p chainpos] bitfile [+ (val[*cnt]|binfile) ...]\n"
-    "\txc3sprog [-v] [-c cable_type] [-d device] bitfile [chainpos]\n\n"
-    "   -?\tprint this help\n"
-    "   -v\tverbose output\n\n"
-    "   cable_type: device\n"
-    "\tpp   - Parallel Port: /dev/parport0 (default), /dev/parport1, ...\n"
-    "\tftdi - FTDI USB: optional descriptor string\n\n"
-    "\t\tFTDI Subtypes: IKDA (EN_N on ACBUS2)\n"
-    "   chainpos\n"
-    "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
-    "   val[*cnt]|binfile\n"
-    "\tAdditional data to append to bitfile when programming.\n"
-    "\tOnly sensible for programming platform flashes (PROMs).\n"
-    "\t   val[*cnt]  explicitly given 32-bit padding repeated cnt times\n"
-    "\t   binfile    binary file content to append\n\n");
+	  "\nUsage:\txc3sprog [-v] [-c cable_type] [-p chainpos] bitfile [+ (val[*cnt]|binfile) ...]\n"
+	  "\txc3sprog [-v] [-c cable_type] [-d device] bitfile [chainpos]\n\n"
+	  "   -?\tprint this help\n"
+	  "   -v\tverbose output\n\n"
+	  "    Supported cable types: pp, ftdi\n"
+    	  "   \tOptional pp arguments:\n"
+	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
+	  "   \tOptional ftdi arguments:\n"
+	  "   \t\t[-V vendor]      (idVendor)\n"
+	  "   \t\t[-P product]     (idProduct)\n"
+	  "   \t\t[-D description] (Product string)\n"
+	  "   \t\t[-s serial]      (SerialNumber string)\n"
+	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n"
+	  "   chainpos\n"
+	  "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
+	  "   val[*cnt]|binfile\n"
+	  "\tAdditional data to append to bitfile when programming.\n"
+	  "\tOnly sensible for programming platform flashes (PROMs).\n"
+	  "\t   val[*cnt]  explicitly given 32-bit padding repeated cnt times\n"
+	  "\t   binfile    binary file content to append\n\n");
   exit(255);
 }
 
@@ -70,6 +75,10 @@ int main(int argc, char **args)
   char const *cable     = "pp";
   char const *dev       = 0;
   int         chainpos  = 0;
+  int vendor    = 0;
+  int product   = 0;
+  char const *desc    = 0;
+  char const *serial  = 0;
   int subtype = FTDI_NO_EN;
 
   { // Produce release info from CVS tags
@@ -89,7 +98,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hvc:d:p:t:")) {
+    switch(getopt(argc, args, "?hvc:d:D:p:P:S:t:")) {
     case -1:
       goto args_done;
 
@@ -116,6 +125,18 @@ int main(int argc, char **args)
       chainpos = atoi(optarg);
       break;
 
+    case 'V':
+      vendor = atoi(optarg);
+      break;
+      
+    case 'P':
+      product = atoi(optarg);
+      break;
+		
+    case 'S':
+      serial = optarg;
+      break;
+      
     case '?':
     case 'h':
     default:
@@ -129,11 +150,15 @@ int main(int argc, char **args)
   args += optind;
   //printf("argc: %d\n", argc);
   if(argc < 1)  usage();
+  if (vendor == 0)
+    vendor = VENDOR;
+  if(product == 0)
+    product = DEVICE;
 
   std::auto_ptr<IOBase>  io;
   try {  
     if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
-    else if(strcmp(cable, "ftdi") == 0)  io.reset(new IOFtdi(dev, subtype));
+    else if(strcmp(cable, "ftdi") == 0)  io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
     else  usage();
 
     io->setVerbose(verbose);
