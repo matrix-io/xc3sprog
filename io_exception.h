@@ -1,6 +1,6 @@
-/* Monitor JTAG signals instead of using physical cable
+/*
 
-Copyright (C) 2004 Andrew Rogers
+Copyright (C) 2008 Thomas Preusser
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -14,27 +14,24 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+*/
 
+#ifndef IO_EXCEPTION_H
+#define IO_EXCEPTION_H
 
+#include <string>
 
-#ifndef IODEBUG_H
-#define IODEBUG_H
-
-#include "iobase.h"
-
-class IODebug : public IOBase
-{
+class io_exception {
+  std::string const  msg;
+  
  public:
-  IODebug() : IOBase(){}
-
- protected:
-  bool txrx(bool tms, bool tdi);
-  void tx(bool tms, bool tdi);
-  void tx_tdi_byte(unsigned char tdi_byte);
-  void tx_tdi_block(unsigned char *tdi_buf, int length);
+  io_exception(std::string const& _msg = "") : msg(_msg) {}
+  ~io_exception() {}
+  
+ public:
+  operator std::string const&()   const { return  getMessage(); }
+  std::string const& getMessage() const { return  msg; }
 };
-
-
-#endif // IODEBUG_H
+#endif

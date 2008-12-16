@@ -25,48 +25,51 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Support for byte counting and progress bar.
 */
 
-
+// Default paprport device
+#ifndef PPDEV
+#  define PPDEV "/dev/parport0"
+#endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 
 #ifdef __linux__
-  #include <linux/parport.h>
-  #include <linux/ppdev.h>
+#  include <linux/parport.h>
+#  include <linux/ppdev.h>
 #endif
 
 #ifdef __FreeBSD__
-#include <dev/ppbus/ppi.h>
-#include <dev/ppbus/ppbconf.h>
+#  include <dev/ppbus/ppi.h>
+#  include <dev/ppbus/ppbconf.h>
 
-  #define PPWDATA   	PPISDATA
-  #define PPRDATA   	PPIGDATA
+#  define PPWDATA   	PPISDATA
+#  define PPRDATA   	PPIGDATA
   
-  #define PPWCONTROL	PPISCTRL
-  #define PPRCONTROL	PPIGCTRL
+#  define PPWCONTROL	PPISCTRL
+#  define PPRCONTROL	PPIGCTRL
   
-  #define PPWSTATUS 	PPISSTATUS
-  #define PPRSTATUS 	PPIGSTATUS
+#  define PPWSTATUS 	PPISSTATUS
+#  define PPRSTATUS 	PPIGSTATUS
 
-  #define PARPORT_CONTROL_STROBE    STROBE
-  #define PARPORT_CONTROL_AUTOFD    AUTOFEED
-  #define PARPORT_CONTROL_INIT      INIT
-  #define PARPORT_CONTROL_SELECT    SELECTIN
+#  define PARPORT_CONTROL_STROBE    STROBE
+#  define PARPORT_CONTROL_AUTOFD    AUTOFEED
+#  define PARPORT_CONTROL_INIT      INIT
+#  define PARPORT_CONTROL_SELECT    SELECTIN
   
-  #define PARPORT_STATUS_ERROR      nFAULT
-  #define PARPORT_STATUS_SELECT     SELECT
-  #define PARPORT_STATUS_PAPEROUT   PERROR
-  #define PARPORT_STATUS_ACK        nACK
-  #define PARPORT_STATUS_BUSY       nBUSY
-
-
+#  define PARPORT_STATUS_ERROR      nFAULT
+#  define PARPORT_STATUS_SELECT     SELECT
+#  define PARPORT_STATUS_PAPEROUT   PERROR
+#  define PARPORT_STATUS_ACK        nACK
+#  define PARPORT_STATUS_BUSY       nBUSY
 #endif
 
 #include <sys/time.h>
 #include <unistd.h>
 
 #include "ioparport.h"
+#include "io_exception.h"
 #include "debug.h"
 
 #define NO_CABLE 0
@@ -273,50 +276,40 @@ void IOParport::delay(int del)
   }
 }
 
-IOParport::IOParport(void) : IOBase()
-{
-  fd = -1;
-  total = 0;
-  error=false;
-}
+IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
 
-void IOParport::dev_open(const char *device_name)
-{
-  debug = 0;
-  fd = open (device_name, O_RDWR);
-  
-  if (fd == -1) {
-    //perror ("open");
-    error=true;
-    return;
+  // Try to obtain device from environment or use default if not given
+  if(!dev) {
+    if(!(dev = getenv("XCPORT")))  dev = PPDEV;
   }
-  
+
+  // Try to open parport device
+  if((fd = open(dev, O_RDWR)) == -1) {
+    throw  io_exception(std::string("Failed to open: ") + dev);
+  }
+
+  try {
 #ifdef __linux__
-  if (ioctl (fd, PPCLAIM)) {
-    perror ("PPCLAIM");
-    close (fd);
-    error=true;
-    return;
-  }
-  
-  // Switch to compatibility mode.
-  int mode = IEEE1284_MODE_COMPAT;
-  if (ioctl (fd, PPNEGOT, &mode)) {
-    perror ("PPNEGOT");
-    close (fd);
-    error=true;
-    return;
-  }
+    // Lock port
+    if(ioctl(fd, PPCLAIM)) {
+      throw  io_exception(std::string("Port already in use: ") + dev);
+    }
+
+    // Switch to compatibility mode
+    int const  mode = IEEE1284_MODE_COMPAT;
+    if(ioctl(fd, PPNEGOT, &mode)) {
+      throw  io_exception(std::string("IEEE1284 compatibility not available: ") + dev);
+    }
 #endif
-  
-  cable = detectcable();
-  if (!cable) {
-    fprintf(stderr,"No cable found\n");
-    close (fd);
-    error=true;
-    return;
+
+    if(!(cable = detectcable())) {
+      throw  io_exception(std::string("No cable found on: ") + dev);
+    }
   }
-  error=false;
+  catch(...) {
+    close(fd);
+    throw;
+  }
 }
 
 bool IOParport::txrx(bool tms, bool tdi)

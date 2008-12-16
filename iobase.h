@@ -22,9 +22,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Extensive changes to support FT2232 driver.
 */
 
-
-
-
 #ifndef IOBASE_H
 #define IOBASE_H
 
@@ -53,32 +50,42 @@ class IOBase
     UPDATE_IR=15,
     UNKNOWN=999
   };
+
  protected:
-  bool verbose;
-  tapState_t current_state;
-  virtual bool txrx(bool tms, bool tdi){return false;}
-  virtual void tx(bool tms, bool tdi) {}
-  virtual void tx_tdi_byte(unsigned char tdi_byte) {}
-  virtual void tx_tdi_block(unsigned char *tdi_buf, int length) {}
-  void nextTapState(bool tms);
+  bool	      verbose;
+  tapState_t  current_state;
+
+ protected:
+  IOBase() : verbose(false), current_state(UNKNOWN) {}
  public:
-  IOBase();
-  virtual ~IOBase() {};
+  virtual ~IOBase() {}
+
+ public:
+  virtual void flush() {}
+
+ public:
+  void setVerbose(bool v) { verbose = v; }
+  bool getVerbose(void) { return verbose; }
+
+ public:
+  void shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last=true);
+  void shiftTDI(const unsigned char *tdi, int length, bool last=true);
+  void shiftTDO(unsigned char *tdo, int length, bool last=true);
+  void shift(bool tdi, int length, bool last=true);
+
+ public:
+  void setTapState(tapState_t state);
+  void tapTestLogicReset();
+  void cycleTCK(int n, bool tdi=1);
+
+ protected:
+  virtual bool txrx(bool tms, bool tdi) = 0;
+  virtual void tx(bool tms, bool tdi)   = 0;
+  virtual void tx_tdi_byte(unsigned char tdi_byte) = 0;
+  virtual void tx_tdi_block(unsigned char *tdi_buf, int length) = 0;
   virtual void settype(int subtype) {}
-  virtual void flush(void) {}
-  virtual void dev_open(const char *device) {}
-  virtual bool checkError() { return false;}
-  virtual void setVerbose(bool v) { verbose = v; }
-  virtual bool getVerbose(void) { return verbose; }
-  virtual void shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last=true);
-  virtual void shiftTDI(const unsigned char *tdi, int length, bool last=true);
-  virtual void shiftTDO(unsigned char *tdo, int length, bool last=true);
-  virtual void shift(bool tdi, int length, bool last=true);
-  virtual void setTapState(tapState_t state);
-  virtual void tapTestLogicReset();
-  virtual void cycleTCK(int n, bool tdi=1);
+
+private:
+  void nextTapState(bool tms);
 };
-
-
-
 #endif // IOBASE_H

@@ -34,12 +34,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
  
 using namespace std;
 
-IOBase::IOBase()
-{
-  verbose = false;
-  current_state=UNKNOWN;
-}
-
 void IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
 {
   if(length==0) return;
