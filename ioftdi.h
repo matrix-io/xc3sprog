@@ -40,7 +40,7 @@ class IOFtdi : public IOBase
   int subtype;
 
  public:
-  IOFtdi(char const *dev, int subtype);
+  IOFtdi(int vendor, int product, char const *desc, char const *serial, int subtype);
   ~IOFtdi();
 
  public:
