@@ -121,6 +121,10 @@ int main(int argc, char **args)
       dev = optarg;
       break;
 
+    case 'D':
+      desc = optarg;
+      break;
+
     case 'p':
       chainpos = atoi(optarg);
       break;
