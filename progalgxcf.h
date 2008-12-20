@@ -31,16 +31,20 @@ class ProgAlgXCF
 {
  private:
   static const byte SERASE;
-  static const byte ISPEN;
-  static const byte FPGM;
-  static const byte FADDR;
-  static const byte FERASE;
-  static const byte FDATA0;
-  static const byte FVFY0;
-  static const byte NORMRST;
+  static const byte ISC_ENABLE;
+  static const byte ISC_PROGRAM;
+  static const byte ISC_ADDRESS_SHIFT;
+  static const byte ISC_ERASE;
+  static const byte ISC_DATA_SHIFT;
+  static const byte ISC_READ;
+  static const byte ISC_DISABLE;
   static const byte IDCODE;
   static const byte CONFIG;
   static const byte BYPASS;
+  static const byte FVFY1;
+  static const byte FVFY3;
+  static const byte ISCTESTSTATUS;
+  static const byte USERCODE;
 
   static const byte BIT3;
   static const byte BIT4;
