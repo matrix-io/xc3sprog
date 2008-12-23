@@ -283,6 +283,7 @@ void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs)
   ProgAlgXCF alg(jtag,io,bs);
   alg.erase();
   alg.program(file);
+  alg.disable();
   alg.reconfig();
   return;
 }

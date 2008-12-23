@@ -57,6 +57,7 @@ class ProgAlgXCF
   int erase();
   int program(BitFile &file);
   int verify(BitFile &file);
+  void disable();
   void reconfig();
 };
 

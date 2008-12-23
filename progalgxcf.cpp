@@ -75,7 +75,10 @@ int ProgAlgXCF::erase()
   io->cycleTCK(2);
   
   if(io->getVerbose())
-    printf("Erasing");
+    {
+      printf("Erasing");
+      fflush(stdout);
+    }
   jtag->shiftIR(&ISC_ERASE);
   for(i=0; i<32;i++)
   {
@@ -95,7 +98,7 @@ int ProgAlgXCF::erase()
   if (i < 32)
   {
     if(io->getVerbose())
-      printf("done\nProgramming time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+      printf("done\nErase time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
     return 0;
   }
   else
@@ -158,7 +161,7 @@ int ProgAlgXCF::program(BitFile &file)
       }
     if(j == 28)
       {
-	fprintf(stderr,"\nProgranmming frame %4d failed! Aborting\n", frame);
+	fprintf(stderr,"\nProgramming frame %4d failed! Aborting\n", frame);
 	return 1;
       }
   } 
@@ -166,6 +169,7 @@ int ProgAlgXCF::program(BitFile &file)
   if(io->getVerbose())
     printf("done\nProgramming time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
   jtag->shiftIR(&BYPASS);
+  io->cycleTCK(1);
   io->tapTestLogicReset();
   return 0;
 }
@@ -173,6 +177,15 @@ int ProgAlgXCF::program(BitFile &file)
 int ProgAlgXCF::verify(BitFile &file)
 {
   return 0;
+}
+
+void ProgAlgXCF::disable()
+{
+  jtag->shiftIR(&ISC_DISABLE);
+  usleep(110000);
+  jtag->shiftIR(&BYPASS);
+  io->cycleTCK(1);
+  io->tapTestLogicReset();
 }
 
 void ProgAlgXCF::reconfig(void)
