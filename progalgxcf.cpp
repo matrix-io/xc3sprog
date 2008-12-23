@@ -162,5 +162,8 @@ int ProgAlgXCF::verify(BitFile &file)
 void ProgAlgXCF::reconfig(void)
 {
   jtag->shiftIR(&CONFIG);
+  io->cycleTCK(1);
+  jtag->shiftIR(&BYPASS);
+  io->cycleTCK(1);
   io->tapTestLogicReset();
 }
