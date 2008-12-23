@@ -59,7 +59,7 @@ int ProgAlgXCF::erase()
   byte ircap[1];
   jtag->shiftIR(&BYPASS,ircap);
   if((ircap[0]&BIT3)==BIT3){
-    fprintf(stderr,"Device is write protected.\n");
+    fprintf(stderr,"Device is write protected! Aborting\n");
     return 1;
   }
   jtag->shiftIR(&ISC_ENABLE);
@@ -70,7 +70,8 @@ int ProgAlgXCF::erase()
   jtag->shiftDR(data,0,16);
   io->cycleTCK(2);
   
-  printf("Erasing"); fflush(stdout);
+  if(io->getVerbose())
+    printf("Erasing"); fflush(stdout);
   jtag->shiftIR(&ISC_ERASE);
   for(i=0; i<32;i++)
   {
@@ -78,19 +79,21 @@ int ProgAlgXCF::erase()
       usleep(500000);
       jtag->shiftIR(&ISCTESTSTATUS);
       jtag->shiftDR(0,xcstatus,8);
-      fprintf(stderr,"."); fflush(stdout);
+      if(io->getVerbose())
+	printf("."); fflush(stdout);
       if (xcstatus[0] & 0x04)
           break;
   }
   if (i < 32)
   {
+    if(io->getVerbose())
       printf("done.\n");
-      return 0;
+    return 0;
   }
   else
   {
-      printf("failed.\n");
-      return 1;
+    fprintf(stderr,"\nErased failed! Aborting\n");
+    return 1;
   }
       
 }
@@ -144,11 +147,12 @@ int ProgAlgXCF::program(BitFile &file)
       }
     if(j == 28)
       {
-	printf("\nProgranmming frame %4d failed\n", frame);
+	fprintf(stderr,"\nProgranmming frame %4d failed! Aborting\n", frame);
 	return 1;
       }
   } 
-  printf("\n");
+  if(io->getVerbose())
+    printf("\n");
   jtag->shiftIR(&BYPASS);
   io->tapTestLogicReset();
   return 0;
