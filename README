@@ -65,3 +65,6 @@ ALL  ALL=NOPASSWD: /bin/mknod /dev/parport0 c 99 0, /usr/local/jtag/XC3Sprog/det
 jtagProgram.sh and associated modifications were contributed by Sandro
 (sdroamt@netscape.net)
 
+
+When using a FT2232 programmer, speed is noticebly enhance with a USB-2.0 Hub between
+the adapter and the PC
