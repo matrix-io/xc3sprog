@@ -21,9 +21,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Code cleanup for clean -Wall compile.
 */
 
-
- 
-
+#include <sys/time.h>
 #include "progalgxcf.h"
 
 const byte ProgAlgXCF::SERASE=0x0a;
@@ -42,6 +40,9 @@ const byte ProgAlgXCF::BYPASS=0xff;
 const byte ProgAlgXCF::BIT3=0x08;
 const byte ProgAlgXCF::BIT4=0x10;
 
+#define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
+                              (tvp2)->tv_usec - (tvp1)->tv_usec)
+
 ProgAlgXCF::ProgAlgXCF(Jtag &j, IOBase &i, int bs)
 {
   block_size=bs;
@@ -52,11 +53,14 @@ ProgAlgXCF::ProgAlgXCF(Jtag &j, IOBase &i, int bs)
  * from the XCF..1532.bsd" files */ 
 int ProgAlgXCF::erase()
 {
+  struct timeval tv[2];
   byte data[4];
   int i;
+  byte ircap[1];
+  
+  gettimeofday(tv, NULL);
   jtag->shiftIR(&ISC_DISABLE);
   io->cycleTCK(40000);
-  byte ircap[1];
   jtag->shiftIR(&BYPASS,ircap);
   if((ircap[0]&BIT3)==BIT3){
     fprintf(stderr,"Device is write protected! Aborting\n");
@@ -71,7 +75,7 @@ int ProgAlgXCF::erase()
   io->cycleTCK(2);
   
   if(io->getVerbose())
-    printf("Erasing"); fflush(stdout);
+    printf("Erasing");
   jtag->shiftIR(&ISC_ERASE);
   for(i=0; i<32;i++)
   {
@@ -80,14 +84,18 @@ int ProgAlgXCF::erase()
       jtag->shiftIR(&ISCTESTSTATUS);
       jtag->shiftDR(0,xcstatus,8);
       if(io->getVerbose())
-	printf("."); fflush(stdout);
+	{
+	  printf("."); 
+	  fflush(stdout);
+	}
       if (xcstatus[0] & 0x04)
           break;
   }
+  gettimeofday(tv+1, NULL);
   if (i < 32)
   {
     if(io->getVerbose())
-      printf("done.\n");
+      printf("done\nProgramming time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
     return 0;
   }
   else
@@ -100,6 +108,9 @@ int ProgAlgXCF::erase()
 
 int ProgAlgXCF::program(BitFile &file)
 {
+  struct timeval tv[2];
+  
+  gettimeofday(tv, NULL);
   jtag->shiftIR(&ISC_DISABLE);
   usleep(1000);
   io->setTapState(IOBase::TEST_LOGIC_RESET);
@@ -151,8 +162,9 @@ int ProgAlgXCF::program(BitFile &file)
 	return 1;
       }
   } 
+  gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    printf("\n");
+    printf("done\nProgramming time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
   jtag->shiftIR(&BYPASS);
   io->tapTestLogicReset();
   return 0;
