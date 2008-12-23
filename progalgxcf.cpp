@@ -27,6 +27,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgxcf.h"
 
 const byte ProgAlgXCF::SERASE=0x0a;
+const byte ProgAlgXCF::ISCTESTSTATUS=0xe3;
 const byte ProgAlgXCF::ISC_ENABLE=0xe8;
 const byte ProgAlgXCF::ISC_PROGRAM=0xea;
 const byte ProgAlgXCF::ISC_ADDRESS_SHIFT=0xeb;
@@ -47,10 +48,12 @@ ProgAlgXCF::ProgAlgXCF(Jtag &j, IOBase &i, int bs)
   jtag=&j;
   io=&i;
 }
-
+/* Tries to implement "xflow_erase_optimized" for the serial devices 
+ * from the XCF..1532.bsd" files */ 
 int ProgAlgXCF::erase()
 {
   byte data[4];
+  int i;
   jtag->shiftIR(&ISC_DISABLE);
   io->cycleTCK(40000);
   byte ircap[1];
@@ -60,20 +63,36 @@ int ProgAlgXCF::erase()
     return 1;
   }
   jtag->shiftIR(&ISC_ENABLE);
+  data[0]=0x37;
+  jtag->shiftDR(data,0,6);
   jtag->shiftIR(&ISC_ADDRESS_SHIFT);
   jtag->longToByteArray(1,data);
   jtag->shiftDR(data,0,16);
   io->cycleTCK(2);
   
-  printf("Erasing...."); fflush(stdout);
+  printf("Erasing"); fflush(stdout);
   jtag->shiftIR(&ISC_ERASE);
-  io->cycleTCK(2400000);
-  printf("done.\n");
-
-  jtag->shiftIR(&BYPASS);
-  io->tapTestLogicReset();
- 
-  return 0;
+  for(i=0; i<32;i++)
+  {
+      byte xcstatus[1];
+      usleep(500000);
+      jtag->shiftIR(&ISCTESTSTATUS);
+      jtag->shiftDR(0,xcstatus,8);
+      fprintf(stderr,"."); fflush(stdout);
+      if (xcstatus[0] & 0x04)
+          break;
+  }
+  if (i < 32)
+  {
+      printf("done.\n");
+      return 0;
+  }
+  else
+  {
+      printf("failed.\n");
+      return 1;
+  }
+      
 }
 
 int ProgAlgXCF::program(BitFile &file)
