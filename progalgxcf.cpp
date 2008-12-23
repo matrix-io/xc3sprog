@@ -98,16 +98,19 @@ int ProgAlgXCF::erase()
 int ProgAlgXCF::program(BitFile &file)
 {
   jtag->shiftIR(&ISC_DISABLE);
-  io->cycleTCK(40000);
+  usleep(1000);
   io->setTapState(IOBase::TEST_LOGIC_RESET);
   byte data[4];
   jtag->shiftIR(&ISC_ENABLE);
-  data[0]=0x34;
+  data[0]=0x37;
   jtag->shiftDR(data,0,6);
 
   for(unsigned int i=0; i<file.getLength(); i+=block_size){
     int frame=i/(block_size/32);
-    printf("Programming frames 0x%04x to 0x%04x....",frame,frame+31); fflush(stdout);
+    int j;
+
+    if(io->getVerbose())
+      printf("                            \rProgramming frames 0x%04x to 0x%04x",frame,frame+31); ;
     jtag->shiftIR(&ISC_DATA_SHIFT);
     if((i+block_size)<=file.getLength()){
       jtag->shiftDR(&(file.getData())[i/8],0,block_size);
@@ -121,13 +124,31 @@ int ProgAlgXCF::program(BitFile &file)
     }
     jtag->longToByteArray(frame,data);
     jtag->shiftIR(&ISC_ADDRESS_SHIFT);
+    io->cycleTCK(1);
     jtag->shiftDR(data,0,16);
-    io->cycleTCK(2);
+    io->cycleTCK(1);
     jtag->shiftIR(&ISC_PROGRAM);
-    io->cycleTCK(5000);
-    printf("done.\n");
+    for (j=0; j<28; j++)
+      {
+      byte xcstatus[1];
+      usleep(500);
+      jtag->shiftIR(&ISCTESTSTATUS);
+      jtag->shiftDR(0,xcstatus,8);
+      if (xcstatus[0] & 0x04)
+          break;
+      else if(io->getVerbose())
+	{
+	  printf(".");
+	  fflush(stdout);
+	}
+      }
+    if(j == 28)
+      {
+	printf("\nProgranmming frame %4d failed\n", frame);
+	return 1;
+      }
   } 
-
+  printf("\n");
   jtag->shiftIR(&BYPASS);
   io->tapTestLogicReset();
   return 0;
