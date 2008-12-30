@@ -215,13 +215,11 @@ int  IOParport::detectcable(void)
 	return NO_CABLE;
       }
 
-#if 0    // mmihai: not working for me?!
-
     if ((status & PCIII_TDO_MASK) && (!(data & PCIII_PROG_EN_N))) {
 	fprintf(stderr,"Missing power for Parallel Cable III\n");
 	return NO_CABLE;
     }
-#endif    
+
     data = (data & PCIII_CHECK_OUT) ? (data & ~PCIII_CHECK_OUT) : (data | PCIII_CHECK_OUT);
     ioctl(fd, PPWDATA, &data);
     ioctl(fd, PPRSTATUS, &status);
