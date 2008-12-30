@@ -61,7 +61,11 @@ IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const
     throw  io_exception(std::string("ftdi_usb_purge_buffers: ") + ftdi_get_error_string(&ftdi));
   }
   
-  // Clear the MPSSE buffers
+  //Set the lacentcy time to a low value
+  if(ftdi_set_latency_timer(&ftdi, 1) <0) {
+    throw  io_exception(std::string("ftdi_set_latency_timer: ") + ftdi_get_error_string(&ftdi));
+  }
+   // Clear the MPSSE buffers
   unsigned char const  cmd = SEND_IMMEDIATE;
   for(int n = 0; n < 128; n++)  mpsse_add_cmd(&cmd, 1);
 
@@ -230,7 +234,6 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
       fprintf(stderr,"Error %d str: %s\n", -read, strerror(-read));
       throw  io_exception();
     }
-  unsigned long i;
   return read;
 }
 
@@ -328,7 +331,6 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
 
 void IOFtdi::mpsse_send() {
   if(bptr == 0)  return;
-  int i;
   
   if(bptr != ftdi_write_data(&ftdi, usbuf, bptr)) {
     throw  io_exception();
