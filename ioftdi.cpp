@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include <string.h>
 #include <usb.h>
 #include <ftdi.h>
+#include <errno.h>
 
 #include "ioftdi.h"
 #include "io_exception.h"
@@ -62,7 +63,7 @@ IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const
   
   // Clear the MPSSE buffers
   unsigned char const  cmd = SEND_IMMEDIATE;
-  for(int n = 0; n < 65537; n++)  mpsse_add_cmd(&cmd, 1);
+  for(int n = 0; n < 128; n++)  mpsse_add_cmd(&cmd, 1);
 
   // Prepare for JTAG operation
   static unsigned char const  buf[] = { SET_BITS_LOW, 0x08, 0x0b,
@@ -80,6 +81,158 @@ void IOFtdi::settype(int sub_type)
   subtype = sub_type;
 }
 
+#define RXBUF 128
+void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
+{
+  unsigned char rbuf[RXBUF];
+  unsigned const char *tmpsbuf = tdi;
+  unsigned char *tmprbuf = tdo;
+  /* If we need to shift state, treat the last bit separate*/
+  unsigned int rem = (last)? length - 1: length; 
+  unsigned char buf[RXBUF];
+  unsigned int buflen = RXBUF - 3 ; /* we need the preamble*/
+  unsigned int rembits;
+  
+  mpsse_send();
+  /*out on -ve edge, in on +ve edge */
+  if (rem/8 > buflen)
+    {
+      while (rem/8 > buflen) 
+	{
+	  /* full chunks*/
+	  buf[0] = ((tdo)?MPSSE_DO_READ:0)|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_WRITE_NEG;
+	  buf[1] = (buflen-1) & 0xff;        /* low lenbth byte */
+	  buf[2] = ((buflen-1) >> 8) & 0xff; /* high lenbth byte */
+	  mpsse_add_cmd (buf, 3);
+	  if(tdi) 
+	    {
+	      mpsse_add_cmd (tmpsbuf, buflen);
+	      tmpsbuf+=buflen;
+	    }
+	  mpsse_send();
+	  rem -= buflen * 8;
+	  if (tdo) 
+	    {
+	      if  (readusb(tmprbuf,buflen) != buflen) 
+		{
+		  fprintf(stderr,"IO_JTAG_MPSSE::shiftTDITDO: Failed to read block 0x%x bytes\n", buflen );
+		}
+	      tmprbuf+=buflen;
+	    }
+	}
+    }
+  rembits = rem % 8;
+  rem  = rem - rembits;
+  if (rem %8 != 0 ) 
+    fprintf(stderr,"IO_JTAG_MPSSE::shiftTDITDO: Programmer error\n");
+  buflen = rem/8;
+  if(rem) 
+    {
+      buf[0] = ((tdo)?MPSSE_DO_READ:0)|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_WRITE_NEG;
+      buf[1] =  (buflen - 1)       & 0xff; /* low length byte */
+      buf[2] = ((buflen - 1) >> 8) & 0xff; /* high length byte */
+      mpsse_add_cmd (buf, 3);
+      if(tdi) 
+	    {
+	      mpsse_add_cmd (tmpsbuf, buflen );
+	      tmpsbuf  += buflen;
+	    }
+    }
+  
+  if (buflen >=(RXBUF - 3))
+    {
+      /* No space for the last data. Send and evenually read 
+         As we handle whole bytes, we can use the receiv buffer direct*/
+      mpsse_send();
+      if(tdo)
+	{
+	  readusb(tmprbuf, buflen);
+	  tmprbuf+=buflen;
+	}
+      buflen = 0;
+    }
+  if( rembits) 
+    {
+      /* Clock Data Bits Out on -ve Clock Edge LSB First (no Read)
+	 (use if TCK/SK starts at 0) */
+      buf[0] = ((tdo)?MPSSE_DO_READ:0)|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
+      buf[1] = rembits-1; /* length: only one byte left*/
+      mpsse_add_cmd (buf, 2);
+      if(tdi)
+	mpsse_add_cmd (tmpsbuf,1) ;
+      buflen ++;
+    }
+  if(last) 
+    {
+      bool lastbit = false;
+      if(tdi) 
+	lastbit = (*tmpsbuf & (1<< rembits));
+      /* TMS/CS with LSB first on -ve TCK/SK edge, read on +ve edge 
+	 - use if TCK/SK is set to 0*/
+      buf[0] = MPSSE_WRITE_TMS|((tdo)?MPSSE_DO_READ:0)|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
+      buf[1] = 0;     /* only one bit */
+      buf[2] = (lastbit) ? 0x81 : 1 ;     /* TMS set */
+      mpsse_add_cmd (buf, 3);
+      buflen ++;
+    }
+  if(tdo) 
+    {
+      mpsse_send();
+      if (!last) 
+	readusb(tmprbuf, buflen);
+      else 
+	{
+	  /* we need to handle the last bit. It's much faster to
+		 read into an extra buffer than to issue two USB reads */
+	  readusb(rbuf, buflen); 
+	  if(!rembits) 
+	    rbuf[buflen-1] = (rbuf[buflen - 1]&80)?1:0;
+	  else 
+	    {
+	      /* TDO Bits are shifted downwards, so align them 
+		 We only shift TMS once, so the relevant bit is bit 7 (0x80) */
+	      rbuf[buflen-2] = rbuf[buflen-2]>>(8-rembits) | ((rbuf[buflen - 1]&0x80) >> (7 - rembits));
+	      buflen--;
+	    }
+	  memcpy(tmprbuf,rbuf,buflen);
+	}
+    }
+}
+
+unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
+{
+  int length = (int) len, read = 0;
+  int timeout=0, last_errno, last_read;
+  last_read = ftdi_read_data(&ftdi, rbuf+read, length -read);
+  if (last_read > 0)
+    read += last_read;
+  while ((read <length) && ( timeout <100 )) 
+    {
+      last_errno = 0;
+      last_read = ftdi_read_data(&ftdi, rbuf+read, length -read);
+      if (last_read > 0)
+	read += last_read;
+      else
+	last_errno = errno;
+      timeout++;
+    }
+  if (timeout >= 50)
+    {
+      fprintf(stderr,"readusb waiting too long for %ld bytes, only %d available\n", len, read);
+      if (last_errno)
+	{
+	  fprintf(stderr,"error %s\n", strerror(last_errno));
+          throw  io_exception();
+	}
+    }
+  if (read <0)
+    {
+      fprintf(stderr,"Error %d str: %s\n", -read, strerror(-read));
+      throw  io_exception();
+    }
+  unsigned long i;
+  return read;
+}
 
 bool IOFtdi::txrx(bool tms, bool tdi)
 {
@@ -175,7 +328,8 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
 
 void IOFtdi::mpsse_send() {
   if(bptr == 0)  return;
- 
+  int i;
+  
   if(bptr != ftdi_write_data(&ftdi, usbuf, bptr)) {
     throw  io_exception();
   }

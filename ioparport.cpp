@@ -370,7 +370,29 @@ void IOParport::tx_tdi_block(unsigned char *tdi_buf, int length)
       if (verbose & ((k % TICK_COUNT) == 0)) write(0, ".", 1);
   }
 }
- 
+
+void IOParport::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
+{
+  int i=0;
+  int j=0;
+  unsigned char tdo_byte=0;
+  unsigned char tdi_byte=tdi[j];
+  while(i<length-1){
+    tdo_byte=tdo_byte+(txrx(false, (tdi_byte&1)==1)<<(i%8));
+    tdi_byte=tdi_byte>>1;
+    i++;
+    if((i%8)==0){ // Next byte
+      tdo[j]=tdo_byte; // Save the TDO byte
+      tdo_byte=0;
+      j++;
+      tdi_byte=tdi[j]; // Get the next TDI byte
+    }
+  };
+  tdo_byte=tdo_byte+(txrx(last, (tdi_byte&1)==1)<<(i%8)); // TMS set if last=true
+  tdo[j]=tdo_byte;
+  return;
+}
+
 IOParport::~IOParport()
 {
   if (cable == IS_BBLST)

@@ -49,11 +49,13 @@ class IOFtdi : public IOBase
   void tx(bool tms, bool tdi);
   void tx_tdi_byte(unsigned char tdi_byte);
   void tx_tdi_block(unsigned char *tdi_buf, int length);
+  void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
   void flush(void);
 
  private:
   void mpsse_add_cmd(unsigned char const *buf, int len);
   void mpsse_send(void);
+  unsigned int readusb(unsigned char * rbuf, unsigned long len);
   void cycleTCK(int n, bool tdi);
 };
 
