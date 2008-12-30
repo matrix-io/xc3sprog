@@ -36,7 +36,7 @@ class IOFtdi : public IOBase
  protected:
   struct ftdi_context ftdi;
   unsigned char *usbuf;
-  int buflen, bptr, total;
+  int buflen, bptr, total, calls;
   int subtype;
 
  public:
