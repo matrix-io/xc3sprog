@@ -66,7 +66,7 @@ IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const
 
   // Prepare for JTAG operation
   static unsigned char const  buf[] = { SET_BITS_LOW, 0x08, 0x0b,
-					TCK_DIVISOR,  0x00, 0x00 ,
+					TCK_DIVISOR,  0x01, 0x00 ,
                                         SET_BITS_HIGH, ~0x04, 0x04};
   if (subtype == FTDI_NO_EN)
     mpsse_add_cmd(buf, 6);
