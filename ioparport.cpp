@@ -256,23 +256,6 @@ int  IOParport::detectcable(void)
 	  
     
 }
-void IOParport::delay(int del)
-{
-  struct timeval actualtime, endtime;
-  gettimeofday( &actualtime, NULL );
-
-  endtime.tv_usec=(actualtime.tv_usec+del)% 1000000;
-  endtime.tv_sec=actualtime.tv_sec+(actualtime.tv_usec+del)/1000000;
-
-  while(1){
-    gettimeofday( &actualtime, NULL );
-    if ( actualtime.tv_sec > endtime.tv_sec )
-      return;
-    if ( actualtime.tv_sec == endtime.tv_sec )
-      if ( actualtime.tv_usec > endtime.tv_usec )
-        return;
-  }
-}
 
 IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
 
@@ -318,14 +301,11 @@ bool IOParport::txrx(bool tms, bool tdi)
   if(tdi)data|=tdi_value; // D0 pin2
   if(tms)data|=tms_value; // D2 pin4
   ioctl(fd, PPWDATA, &data);
-  //delay(2);
   data|=tck_value; // clk high D1 pin3
   ioctl(fd, PPWDATA, &data);
   ioctl(fd, PPRSTATUS, &ret);
-  //delay(2);
   //data=data^2; // clk low
   //ioctl(fd, PPWDATA, &data);
-  //delay(2);
   //ioctl(fd, PPRSTATUS, &ret);
   total++;
   retval = (ret&tdo_mask)?!tdo_inv:tdo_inv;
