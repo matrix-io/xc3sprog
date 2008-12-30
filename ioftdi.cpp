@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 using namespace std;
 
 IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const *serial, int subtype)
-    : IOBase(), usbuf(0), buflen(0), bptr(0), total(0) {
+  : IOBase(), usbuf(0), buflen(0), bptr(0), total(0) , calls(0){
     
     // initialize FTDI structure
     ftdi_init(&ftdi);
@@ -152,7 +152,7 @@ IOFtdi::~IOFtdi()
 {
   flush();
   ftdi_usb_close(&ftdi);
-  if(verbose)  printf("Total bytes sent: %d\n", total);
+  if(verbose)  printf("USB transactions: %d, Total bytes sent: %d\n", calls, total);
 }
 
 void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
@@ -175,12 +175,13 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
 
 void IOFtdi::mpsse_send() {
   if(bptr == 0)  return;
-
+ 
   if(bptr != ftdi_write_data(&ftdi, usbuf, bptr)) {
     throw  io_exception();
   }
   total += bptr;
   bptr = 0;
+  calls++;
 }
 
 void IOFtdi::flush() {
