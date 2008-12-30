@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 using namespace std;
 
 IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const *serial, int subtype)
-  : IOBase(), usbuf(0), buflen(0), bptr(0), total(0) , calls(0){
+  : IOBase(), bptr(0), total(0) , calls(0){
     
     // initialize FTDI structure
     ftdi_init(&ftdi);
@@ -66,8 +66,7 @@ IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const
     throw  io_exception(std::string("ftdi_set_latency_timer: ") + ftdi_get_error_string(&ftdi));
   }
    // Clear the MPSSE buffers
-  unsigned char const  cmd = SEND_IMMEDIATE;
-  for(int n = 0; n < 128; n++)  mpsse_add_cmd(&cmd, 1);
+  memset(usbuf,SEND_IMMEDIATE, TX_BUF);
 
   // Prepare for JTAG operation
   static unsigned char const  buf[] = { SET_BITS_LOW, 0x08, 0x0b,
@@ -319,12 +318,6 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
  */
  if (bptr + len >= 128)
    mpsse_send();
-  /* Grow the buffer, if needed */
-  if (bptr + len >= buflen)
-    {
-      usbuf = (unsigned char *)realloc(usbuf, bptr + len);
-      buflen = bptr + len;
-    }
   memcpy(usbuf + bptr, buf, len);
   bptr += len;
 }
