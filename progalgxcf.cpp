@@ -23,6 +23,10 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include <sys/time.h>
 #include "progalgxcf.h"
+#if defined ( __MINGW)||(__MINGW32__)
+#include <windows.h>
+#define usleep(x) Sleep(x/1000)
+#endif
 
 const byte ProgAlgXCF::SERASE=0x0a;
 const byte ProgAlgXCF::ISCTESTSTATUS=0xe3;

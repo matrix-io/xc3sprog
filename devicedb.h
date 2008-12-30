@@ -32,12 +32,13 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 typedef unsigned char byte;
 
+
 class DeviceDB
 {
  private:
   struct device_t
   {
-    u_int32_t idcode; // Store IDCODE
+    uint32_t idcode; // Store IDCODE
     int irlen; // instruction register length.
     std::string text;
   };
@@ -50,7 +51,7 @@ class DeviceDB
  public:
   std::string const& getFile() const { return  filename; }
 
-  int loadDevice(const u_int32_t id);
+  int loadDevice(const uint32_t id);
   int getIRLength(unsigned int i);
   const char *getDeviceDescription(unsigned int i);
 };

@@ -21,8 +21,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #ifndef IOFTDI_H
 #define IOFTDI_H
 
+#if defined ( __MINGW)||(__MINGW32__)
+#else
 #include <usb.h>
 #include <ftdi.h>
+#endif
+
 #include "iobase.h"
 
 #define VENDOR 0x0403
@@ -34,7 +38,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 class IOFtdi : public IOBase
 {
  protected:
+#if defined ( __MINGW)||(__MINGW32__)
+#else
   struct ftdi_context ftdi;
+#endif
   unsigned char *usbuf;
   int buflen, bptr, total, calls;
   int subtype;
