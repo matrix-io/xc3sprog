@@ -45,7 +45,7 @@ DeviceDB::DeviceDB(const char *fname) {
   else fclose(fp);
 }
 
-int DeviceDB::loadDevice(const u_int32_t id)
+int DeviceDB::loadDevice(const uint32_t id)
 {
   FILE *fp=fopen(filename.c_str(),"rt");
   if(fp==0){
@@ -55,7 +55,7 @@ int DeviceDB::loadDevice(const u_int32_t id)
   
   int irlen;
   while(!feof(fp)){
-    u_int32_t idr = 0;
+    uint32_t idr = 0;
     char text[256];
     char buffer[256];
     fgets(buffer,256,fp);  // Get next line from file
