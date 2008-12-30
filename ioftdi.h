@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #define FTDI_NO_EN 0
 #define FTDI_IKDA  1
 
+#define TX_BUF 128
+
 class IOFtdi : public IOBase
 {
  protected:
@@ -42,7 +44,7 @@ class IOFtdi : public IOBase
 #else
   struct ftdi_context ftdi;
 #endif
-  unsigned char *usbuf;
+  unsigned char usbuf[TX_BUF];
   int buflen, bptr, total, calls;
   int subtype;
 
