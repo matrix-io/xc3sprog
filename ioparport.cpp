@@ -370,15 +370,6 @@ void IOParport::tx_tdi_byte(unsigned char tdi_byte)
     tx(false, (tdi_byte>>k)&1);
 }
  
-void IOParport::tx_tdi_block(unsigned char *tdi_buf, int length)
-{
-  for (int k=0; k < length; k++)
-  {
-    tx_tdi_byte(tdi_buf[k]);
-      if (verbose & ((k % TICK_COUNT) == 0)) write(0, ".", 1);
-  }
-}
-
 void IOParport::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
 {
   int i=0;

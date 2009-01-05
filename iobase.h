@@ -81,7 +81,6 @@ class IOBase
  protected:
   virtual void tx(bool tms, bool tdi)   = 0;
   virtual void tx_tdi_byte(unsigned char tdi_byte) = 0;
-  virtual void tx_tdi_block(unsigned char *tdi_buf, int length) = 0;
   virtual void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)=0;
   virtual void settype(int subtype) {}
 
