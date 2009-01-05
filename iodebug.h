@@ -33,7 +33,6 @@ class IODebug : public IOBase
  protected:
   void tx(bool tms, bool tdi);
   void tx_tdi_byte(unsigned char tdi_byte);
-  void tx_tdi_block(unsigned char *tdi_buf, int length);
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
 };
 

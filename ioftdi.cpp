@@ -332,11 +332,6 @@ void IOFtdi::tx_tdi_byte(unsigned char tdi_byte)
   mpsse_add_cmd(buf, 3);
 }
  
-void IOFtdi::tx_tdi_block(unsigned char *tdi_buf, int length)
-{
-    txrx_block((const unsigned char *) tdi_buf, NULL, length, true);
-}
- 
 IOFtdi::~IOFtdi()
 {
   flush();

@@ -40,8 +40,6 @@ void IODebug::tx(bool tms, bool tdi)
 
 void IODebug::tx_tdi_byte(unsigned char tdi_byte) {
 }
-void IODebug::tx_tdi_block(unsigned char *tdi_buf, int length) {
-}
 void IODebug::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
 {
   int i=0;
