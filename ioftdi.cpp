@@ -322,16 +322,6 @@ void IOFtdi::tx(bool tms, bool tdi)
   mpsse_add_cmd (buf, 3);
 }
  
-void IOFtdi::tx_tdi_byte(unsigned char tdi_byte)
-{
-  unsigned char buf[3];
-  
-  buf[0] = MPSSE_DO_WRITE | MPSSE_WRITE_NEG | MPSSE_LSB | MPSSE_BITMODE;
-  buf[1] = 7;
-  buf[2] = tdi_byte;
-  mpsse_add_cmd(buf, 3);
-}
- 
 IOFtdi::~IOFtdi()
 {
   flush();
