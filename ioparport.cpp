@@ -25,21 +25,28 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Support for byte counting and progress bar.
 */
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+
+#ifdef __linux__
 // Default parport device
 #ifndef PPDEV
 #  define PPDEV "/dev/parport0"
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/ioctl.h>
-#include <fcntl.h>
-
-#ifdef __linux__
 #  include <linux/parport.h>
 #  include <linux/ppdev.h>
 
 #elif defined (__FreeBSD__)
+// Default parport device
+#ifndef PPDEV
+#  define PPDEV "/dev/parport0"
+#endif
+
+#include <sys/ioctl.h>
 #  include <dev/ppbus/ppi.h>
 #  include <dev/ppbus/ppbconf.h>
 
@@ -254,23 +261,30 @@ IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
     if(!(dev = getenv("XCPORT")))  dev = PPDEV;
   }
 
-  // Try to open parport device
-  if((fd = open(dev, O_RDWR)) == -1) {
-    throw  io_exception(std::string("Failed to open: ") + dev);
-  }
-
   try {
 #ifdef __linux__
-    // Lock port
-    if(ioctl(fd, PPCLAIM)) {
+      // Try to open parport device
+      if((fd = open(dev, O_RDWR)) == -1) {
+	  throw  io_exception(std::string("Failed to open: ") + dev);
+      }
+      
+      // Lock port
+      if(ioctl(fd, PPCLAIM)) {
       throw  io_exception(std::string("Port already in use: ") + dev);
-    }
-
-    // Switch to compatibility mode
-    int const  mode = IEEE1284_MODE_COMPAT;
-    if(ioctl(fd, PPNEGOT, &mode)) {
-      throw  io_exception(std::string("IEEE1284 compatibility not available: ") + dev);
-    }
+      }
+      
+      // Switch to compatibility mode
+      int const  mode = IEEE1284_MODE_COMPAT;
+      if(ioctl(fd, PPNEGOT, &mode)) {
+	  throw  io_exception(std::string("IEEE1284 compatibility not available: ") + dev);
+      }
+#elif defined(__FreeBSD__)
+      // Try to open parport device
+      if((fd = open(dev, O_RDWR)) == -1) {
+	  throw  io_exception(std::string("Failed to open: ") + dev);
+      }
+#else
+      throw  io_exception(std::string("Paralle port access not implemented for this system")):
 #endif
 
     if(!(cable = detectcable())) {
@@ -372,12 +386,14 @@ IOParport::~IOParport()
       unsigned char control;
       read_control(fd, &control);
       control &=  ~BBLST_ENABLE_N;
-      ioctl(fd, PPWCONTROL, &control);
+      write_control(fd, &control);
     }
 #ifdef __linux__
   ioctl (fd, PPRELEASE);
-#endif
   close (fd);
+#elif defined(__FreeBSD__)
+  close (fd);
+#endif
   if (verbose) printf("Total bytes sent: %d\n", total>>3);
 }
 #define XC3S_OK 0
