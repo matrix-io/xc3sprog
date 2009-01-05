@@ -457,10 +457,10 @@ int IOParport::write_control(int fd, unsigned char control)
 {
     int status;
 #ifdef __linux__
-    status = ioctl(fd, PPWCONTROL, control);
+    status = ioctl(fd, PPWCONTROL, &control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__FreeBSD__)
-    status = ioctl(port->fd, PPISCTRL, control);
+    status = ioctl(port->fd, PPISCTRL, &control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined(__WIN32__)
     DWORD dummyc;
