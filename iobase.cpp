@@ -64,15 +64,14 @@ void IOBase::shiftTDO(unsigned char *tdo, int length, bool last)
 // TDI gets a load of zeros or ones, and we ignore TDO
 void IOBase::shift(bool tdi, int length, bool last)
 {
-  if (length==0) return;
-  int i=0;
-  while(i<length-1){
-    tx(false, tdi);
-    i++;
-  };
-  tx(last, tdi); // TMS set if last=true
-  nextTapState(last); // If TMS is set the the state of the tap changes
-  return;
+    int len = length;
+    unsigned char *block = (tdi)?ones:zeros;
+    while (len > CHUNK_SIZE)
+    {
+	shiftTDITDO(block, NULL, CHUNK_SIZE, false);
+	len -= CHUNK_SIZE;
+    }
+    shiftTDITDO(block, NULL, len, last);
 }
 
 void IOBase::setTapState(tapState_t state)
