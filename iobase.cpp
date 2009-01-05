@@ -44,68 +44,13 @@ void IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int lengt
 
 void IOBase::shiftTDI(const unsigned char *tdi, int length, bool last)
 {
-  unsigned char *buf = (unsigned char *)tdi;
-  int i, j, k, bytes = length / 8;
-  
-  if (length==0) return;
-
-  if (bytes > 1)
-  {
-    for (k = 0; k < bytes/BLOCK_SIZE; k++)
-      tx_tdi_block(buf + k*BLOCK_SIZE, BLOCK_SIZE);
-
-    tx_tdi_block(buf + k*BLOCK_SIZE, bytes - 1 - k*BLOCK_SIZE);
-    j = bytes - 1;
-    i = (bytes - 1) * 8;
-  }
-  else
-  {
-    i = 0;
-    j = 0;
-  }
-/*
-  for (; j < bytes - 1; j++, i += 8)
-  {
-    tx_tdi_byte(tdi[j]);
-    if (verbose && j != 0 && (j % TICK_COUNT == 0))
-      write(0, ".", 1);
-  }
-*/    
-  unsigned char tdi_byte=tdi[j];
-  while(i<length-1){
-    tx(false, (tdi_byte&1)==1);
-    tdi_byte=tdi_byte>>1;
-    i++;
-    if((i%8)==0){ // Next byte
-      j++;
-      tdi_byte=tdi[j]; //Get the next TDI byte
-    }
-  };
-  tx(last, (tdi_byte&1)==1); // TMS set if last=true
-  nextTapState(last); // If TMS is set the the state of the tap changes
-  return;
+  shiftTDITDO(tdi, NULL, length,last);
 }
 
 // TDI gets a load of zeros, we just record TDO.
 void IOBase::shiftTDO(unsigned char *tdo, int length, bool last)
 {
-  if (length==0) return;
-  int i=0;
-  int j=0;
-  unsigned char tdo_byte=0;
-  while(i<length-1){
-    tdo_byte=tdo_byte+(txrx(false, false)<<(i%8));
-    i++;
-    if((i%8)==0){ // Next byte
-      tdo[j]=tdo_byte; // Save the TDO byte
-      tdo_byte=0;
-      j++;
-    }
-  };
-  tdo_byte=tdo_byte+(txrx(last, false)<<(i%8)); // TMS set if last=true
-  tdo[j]=tdo_byte;
-  nextTapState(last); // If TMS is set the the state of the tap changes
-  return;
+    shiftTDITDO(NULL, tdo, length,last);
 }
 
 // TDI gets a load of zeros or ones, and we ignore TDO
