@@ -28,9 +28,9 @@ class IODebug : public IOBase
 {
  public:
   IODebug() : IOBase(){}
+  bool txrx(bool tms, bool tdi);
 
  protected:
-  bool txrx(bool tms, bool tdi);
   void tx(bool tms, bool tdi);
   void tx_tdi_byte(unsigned char tdi_byte);
   void tx_tdi_block(unsigned char *tdi_buf, int length);
