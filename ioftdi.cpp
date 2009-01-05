@@ -309,26 +309,6 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
   return read;
 }
 
-bool IOFtdi::txrx(bool tms, bool tdi)
-{
-  unsigned char tdi_char = (tdi) ? 1 : 0;
-  unsigned char tms_char = (tms) ? 1 : 0;
-  unsigned char buf[4], rdbk;
-
-  buf[0] = MPSSE_WRITE_TMS | MPSSE_WRITE_NEG | MPSSE_DO_READ | 
-           MPSSE_LSB | MPSSE_BITMODE;
-  buf[1] = 0;
-  buf[2] = (tdi_char << 7) | tms_char;
-  buf[3] = SEND_IMMEDIATE;
-
-  mpsse_add_cmd (buf, 4);
-  mpsse_send();
-  // read from ftdi internal buffer
-  readusb(&rdbk, 1);
-//  printf("Readback value 0x%02x (bit %d)\n", rdbk, rdbk & 1);
-  return ((rdbk & 0x80) == 0x80);
-}
-
 void IOFtdi::tx(bool tms, bool tdi)
 {
   unsigned char tdi_char = (tdi) ? 1 : 0;

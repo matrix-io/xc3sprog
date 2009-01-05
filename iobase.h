@@ -79,7 +79,6 @@ class IOBase
   void cycleTCK(int n, bool tdi=1);
 
  protected:
-  virtual bool txrx(bool tms, bool tdi) = 0;
   virtual void tx(bool tms, bool tdi)   = 0;
   virtual void tx_tdi_byte(unsigned char tdi_byte) = 0;
   virtual void tx_tdi_block(unsigned char *tdi_buf, int length) = 0;
