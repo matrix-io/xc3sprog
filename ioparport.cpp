@@ -60,6 +60,27 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #  define PARPORT_STATUS_PAPEROUT   PERROR
 #  define PARPORT_STATUS_ACK        nACK
 #  define PARPORT_STATUS_BUSY       nBUSY
+
+#elif defined (__WIN32__)
+// Default parport device
+#ifndef PPDEV
+#  define PPDEV "\\\\.\\$VDMLPT1"
+#endif
+#include <windows.h>
+#include <ddk/ntddpar.h>
+#include "par_nt.h"
+
+/*FIXME: These defines fit numerically, but not logically*/
+#  define PARPORT_CONTROL_STROBE    PARALLEL_INIT 
+#  define PARPORT_CONTROL_AUTOFD    PARALLEL_AUTOFEED
+#  define PARPORT_CONTROL_INIT      PARALLEL_PAPER_EMPTY
+#  define PARPORT_CONTROL_SELECT    PARALLEL_OFF_LINE
+  
+#  define PARPORT_STATUS_ERROR      PARALLEL_OFF_LINE
+#  define PARPORT_STATUS_SELECT     PARALLEL_POWER_OFF
+#  define PARPORT_STATUS_PAPEROUT   PARALLEL_NOT_CONNECTED
+#  define PARPORT_STATUS_ACK        PARALLEL_BUSY
+#  define PARPORT_STATUS_BUSY       PARALLEL_SELECTED 
 #endif
 
 #include <sys/time.h>
@@ -279,6 +300,13 @@ IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
       if((fd = open(dev, O_RDWR)) == -1) {
 	  throw  io_exception(std::string("Failed to open: ") + dev);
       }
+#elif defined(__WIN32__)
+      fd = (int)CreateFile(dev, GENERIC_READ | GENERIC_WRITE,
+                           0, NULL, OPEN_EXISTING, 0, NULL);
+      if (fd == (int)INVALID_HANDLE_VALUE) {
+          throw  io_exception(std::string("Failed to open: ") + dev);
+        }
+
 #else
       throw  io_exception(std::string("Parallel port access not implemented for this system"));
 #endif
@@ -389,6 +417,8 @@ IOParport::~IOParport()
   close (fd);
 #elif defined(__FreeBSD__)
   close (fd);
+#elif defined(__WIN32__)
+  CloseHandle((HANDLE)(fd));
 #endif
   if (verbose) printf("Total bytes sent: %d\n", total>>3);
 }
@@ -405,6 +435,11 @@ int IOParport::write_data(int fd, unsigned char data)
 #elif defined (__FreeBSD__)
     status = ioctl(port->fd, PPISDATA, &data);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
+#elif defined(__WIN32__)
+    DWORD dummy;
+    status = DeviceIoControl((HANDLE)(fd), NT_IOCTL_DATA, &data, sizeof(data), 
+                             NULL, 0, (LPDWORD)&dummy, NULL);
+    return status != 0 ? XC3S_OK : -XC3S_EIO;
 #else
     return -XC3S_ENIMPL;
 #endif
@@ -420,6 +455,13 @@ int IOParport::write_control(int fd, unsigned char control)
 #elif defined (__FreeBSD__)
     status = ioctl(port->fd, PPISCTRL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
+#elif defined(__WIN32__)
+    DWORD dummyc;
+    DWORD dummy;
+    /*FIXME: hamlib used much more compicated expression*/
+    status = DeviceIoControl((HANDLE)(fd),NT_IOCTL_CONTROL, &control,
+                             sizeof(control), &dummyc, sizeof(dummyc), (LPDWORD)&dummy, NULL);
+    return status != 0 ? XC3S_OK : -XC3S_EIO;
 #else
     return -XC3S_ENIMPL;
 #endif
@@ -434,6 +476,13 @@ int IOParport::read_control(int fd, unsigned char *control)
 #elif defined (__FreeBSD__)
     status = ioctl(port->fd, PPIGCTRL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
+#elif defined (__WIN32__)
+    unsigned char ret;
+    DWORD dummy;
+    status = DeviceIoControl((HANDLE)(fd), NT_IOCTL_CONTROL, NULL, 0, &ret, 
+                             sizeof(ret), (LPDWORD)&dummy, NULL);
+    *control = ret ^ S1284_INVERTED;
+    return status == 0 ? XC3S_OK : -XC3S_EIO;
 #else
     return -XC3S_ENIMPL;
 #endif
@@ -447,6 +496,13 @@ int IOParport::read_status(int fd, unsigned char *status)
     return ret == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__FreeBSD__)
     ret = ioctl(fd, PPIGSTATUS, status);
+    return ret == 0 ? XC3S_OK : -XC3S_EIO;
+#elif defined (__WIN32__)
+    unsigned char res;
+    DWORD dummy;
+    ret = DeviceIoControl((HANDLE)(fd), NT_IOCTL_STATUS, NULL, 0, &res, 
+                             sizeof(res), (LPDWORD)&dummy, NULL);
+    *status = res ^ S1284_INVERTED;
     return ret == 0 ? XC3S_OK : -XC3S_EIO;
 #else
     return -XC3S_ENIMPL;
