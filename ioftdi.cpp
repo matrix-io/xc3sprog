@@ -1,5 +1,6 @@
 /* JTAG GNU/Linux FTDI FT2232 low-level I/O
 
+Copyright (C) 2005-2009 Uwe Bonnes
 Copyright (C) 2006 Dmitry Teytelman
 
 This program is free software; you can redistribute it and/or modify
@@ -21,8 +22,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <usb.h>
-#include <ftdi.h>
 #include <errno.h>
 
 #include "ioftdi.h"
@@ -33,9 +32,47 @@ using namespace std;
 IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const *serial, int subtype)
   : IOBase(), bptr(0), total(0) , calls(0){
     
+#if defined (USE_FTD2XX)
+    FT_STATUS res;
+#if defined (__linux)
+    res = FT_SetVIDPID(vendor, product);
+    if (res != FT_OK)
+	throw  io_exception(std::string("SetVIDPID failed"));
+#endif
+
+    if(serial)
+	res = FT_OpenEx((void*)serial, FT_OPEN_BY_SERIAL_NUMBER, &ftdi);
+    else if(desc)
+	res = FT_OpenEx((void*)desc, FT_OPEN_BY_DESCRIPTION, &ftdi);
+    else
+	res = FT_Open (0, &ftdi);
+    if (res != FT_OK)
+	throw  io_exception(std::string("Open FTDI failed"));
+    
+    res = FT_ResetDevice(ftdi);
+    if (res != FT_OK)
+	throw  io_exception(std::string("Reset FTDI failed"));
+    
+    res = FT_SetBitMode(ftdi, 0x0b, 0x02);
+    if (res != FT_OK)
+	throw  io_exception(std::string("Set Bitmode failed"));
+    
+    res = FT_Purge(ftdi, FT_PURGE_RX | FT_PURGE_TX);
+    if (res != FT_OK)
+	throw  io_exception(std::string("FT_Purge failed"));
+    
+    res = FT_SetLatencyTimer(ftdi, 2);
+    if (res != FT_OK)
+	throw  io_exception(std::string("FT_SetLatencyTimer failed"));
+    
+    res = FT_SetTimeouts(ftdi, 1000, 1000);
+    if (res != FT_OK)
+	throw  io_exception(std::string("FT_SetTimeouts failed"));
+    
+#else
     // initialize FTDI structure
     ftdi_init(&ftdi);
-
+    
     // Open device
     if (ftdi_usb_open_desc(&ftdi, vendor, product, desc, serial) < 0)
       throw  io_exception(std::string("ftdi_usb_open_desc: ") + 
@@ -65,7 +102,8 @@ IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const
   if(ftdi_set_latency_timer(&ftdi, 1) <0) {
     throw  io_exception(std::string("ftdi_set_latency_timer: ") + ftdi_get_error_string(&ftdi));
   }
-   // Clear the MPSSE buffers
+  // Clear the MPSSE buffers
+#endif
   memset(usbuf,SEND_IMMEDIATE, TX_BUF);
 
   // Prepare for JTAG operation
@@ -85,7 +123,7 @@ void IOFtdi::settype(int sub_type)
 }
 
 #define RXBUF 128
-void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
+void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last=true)
 {
   unsigned char rbuf[RXBUF];
   unsigned const char *tmpsbuf = tdi;
@@ -204,6 +242,40 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 
 unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
 {
+#if defined (USE_FTD2XX)
+    DWORD  length = (DWORD) len, read = 0, last_read;
+    int timeout=0;
+    FT_STATUS res;
+ 
+    res = FT_Read(ftdi, rbuf, length, &read);
+    if(res != FT_OK)
+    {
+	fprintf(stderr,"readusb: Initial read failed\n");
+	throw  io_exception();
+    }
+    while ((read <length) && ( timeout <100 )) 
+    {
+	res = FT_Read(ftdi, rbuf+read, length-read, &last_read);
+	if(res != FT_OK)
+	{
+	    fprintf(stderr,"readusb: Read failed\n");
+	    throw  io_exception();
+	}
+	read += last_read;
+      timeout++;
+    }
+    if (timeout == 100)
+    {
+	fprintf(stderr,"readusb: Timeout readusb\n");
+	throw  io_exception();
+    }
+    if (read != len)
+    {
+	fprintf(stderr,"readusb: Short read %ld vs %ld\n", read, len);
+	throw  io_exception();
+    }
+	
+#else
   int length = (int) len, read = 0;
   int timeout=0, last_errno, last_read;
   last_read = ftdi_read_data(&ftdi, rbuf+read, length -read);
@@ -233,6 +305,7 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
       fprintf(stderr,"Error %d str: %s\n", -read, strerror(-read));
       throw  io_exception();
     }
+#endif
   return read;
 }
 
@@ -254,10 +327,7 @@ bool IOFtdi::txrx(bool tms, bool tdi)
   // read from ftdi internal buffer
   for (k=0; k < 20; k++)
   {
-    rc = ftdi_read_data(&ftdi, &rdbk, 1);
-    if (rc == 1)
-      break;
-    usleep(1);
+    rc = readusb(&rdbk, 1);
   }
 //  printf("Readback value 0x%02x (bit %d)\n", rdbk, rdbk & 1);
   return ((rdbk & 0x80) == 0x80);
@@ -294,7 +364,11 @@ void IOFtdi::tx_tdi_block(unsigned char *tdi_buf, int length)
 IOFtdi::~IOFtdi()
 {
   flush();
+#if defined (USE_FTD2XX)
+  FT_Close(ftdi);
+#else
   ftdi_usb_close(&ftdi);
+#endif
   if(verbose)  printf("USB transactions: %d, Total bytes sent: %d\n", calls, total);
 }
 
@@ -312,10 +386,45 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
 
 void IOFtdi::mpsse_send() {
   if(bptr == 0)  return;
-  
+
+#if defined (USE_FTD2XX)
+  DWORD written, last_written;
+  int res, timeout = 0;
+  res = FT_Write(ftdi, usbuf, bptr, &written);
+  if(res != FT_OK)
+  {
+      fprintf(stderr, "mpsse_send: Initial write failed\n");
+      throw  io_exception();
+  }
+  while ((written < bptr) && ( timeout <100 )) 
+  {
+      res = FT_Write(ftdi, usbuf+written, bptr - written, &last_written);
+      if(res != FT_OK)
+      {
+	  fprintf(stderr, "mpsse_send: Write failed\n");
+	  throw  io_exception();
+      }
+      written += last_written;
+      timeout++;
+  }
+  if (timeout == 100)
+  {
+      fprintf(stderr,"mpsse_send: Timeout \n");
+      throw  io_exception();
+  }
+  if(written != bptr)
+  {
+      fprintf(stderr,"mpsse_send: Short write %ld vs %ld\n", written, bptr);
+      throw  io_exception();
+  }
+
+#else
   if(bptr != ftdi_write_data(&ftdi, usbuf, bptr)) {
     throw  io_exception();
   }
+#endif
+
+  int i;
   total += bptr;
   bptr = 0;
   calls++;
