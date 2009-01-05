@@ -123,7 +123,7 @@ void IOFtdi::settype(int sub_type)
 }
 
 #define RXBUF 128
-void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last=true)
+void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
 {
   unsigned char rbuf[RXBUF];
   unsigned const char *tmpsbuf = tdi;
@@ -420,7 +420,6 @@ void IOFtdi::mpsse_send() {
   }
 #endif
 
-  int i;
   total += bptr;
   bptr = 0;
   calls++;
