@@ -288,19 +288,7 @@ void IOFtdi::tx_tdi_byte(unsigned char tdi_byte)
  
 void IOFtdi::tx_tdi_block(unsigned char *tdi_buf, int length)
 {
-  unsigned char buf[65539];
-
-#if 1
-  buf[0] = MPSSE_DO_WRITE | MPSSE_WRITE_NEG | MPSSE_LSB;
-  buf[1] = (unsigned char)(--length & 0xff);
-  buf[2] = (unsigned char)((length >> 8) & 0xff);
-  memcpy(buf + 3, tdi_buf, ++length);
-  mpsse_add_cmd(buf, length + 3);
-  if (verbose) write(0, ".", 1);
-#else
-  for (int k=0; k < length; k++)
-    tx_tdi_byte(tdi_buf[k]);
-#endif
+    txrx_block((const unsigned char *) tdi_buf, NULL, length, true);
 }
  
 IOFtdi::~IOFtdi()
