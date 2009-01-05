@@ -34,6 +34,10 @@ class IOParport : public IOBase
  protected:
   int fd, total, cable, debug;
   unsigned char def_byte, tdi_value, tms_value, tck_value, tdo_mask, tdo_inv;
+  int write_data(int fd, unsigned char *data);
+  int write_control(int fd, unsigned char *control);
+  int read_control(int fd, unsigned char *control);
+  int read_status(int fd, unsigned char *status);
 
  public:
   IOParport(char const *dev);
