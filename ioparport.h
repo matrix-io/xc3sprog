@@ -44,6 +44,7 @@ class IOParport : public IOBase
   ~IOParport();
   bool txrx(bool tms, bool tdi);
   void tx_tdi_byte(unsigned char tdi_byte);
+  void tx_tms(unsigned char *pat, int length);
 
  public:
   void tx(bool tms, bool tdi);
