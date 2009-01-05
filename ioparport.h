@@ -42,12 +42,12 @@ class IOParport : public IOBase
  public:
   IOParport(char const *dev);
   ~IOParport();
+  void tx(bool tms, bool tdi);
   bool txrx(bool tms, bool tdi);
   void tx_tdi_byte(unsigned char tdi_byte);
   void tx_tms(unsigned char *pat, int length);
 
  public:
-  void tx(bool tms, bool tdi);
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
 
  private:

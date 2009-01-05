@@ -103,7 +103,6 @@ class IOFtdi : public IOBase
 
  public:
   void settype(int subtype);
-  void tx(bool tms, bool tdi);
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
   void tx_tms(unsigned char *pat, int length);
   void flush(void);
