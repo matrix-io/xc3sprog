@@ -26,6 +26,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define IOBASE_H
 
 #define BLOCK_SIZE 65536
+#define CHUNK_SIZE 128
 #define TICK_COUNT 2048
 
 class IOBase
@@ -54,9 +55,10 @@ class IOBase
  protected:
   bool	      verbose;
   tapState_t  current_state;
+  unsigned char ones[CHUNK_SIZE], zeros[CHUNK_SIZE];
 
  protected:
-  IOBase() : verbose(false), current_state(UNKNOWN) {}
+  IOBase();
  public:
   virtual ~IOBase() {}
 

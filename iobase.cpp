@@ -31,9 +31,17 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
  
 using namespace std;
-
+IOBase::IOBase(void)
+{
+    verbose = false;
+    current_state = UNKNOWN;
+    memset( ones,0xff,CHUNK_SIZE);
+    memset(zeros,   0,CHUNK_SIZE);
+}    
+    
 void IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
 {
   if(length==0) return;
