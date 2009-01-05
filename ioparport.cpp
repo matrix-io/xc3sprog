@@ -399,6 +399,17 @@ void IOParport::txrx_block(const unsigned char *tdi, unsigned char *tdo, int len
   return;
 }
 
+void IOParport::tx_tms(unsigned char *pat, int length)
+{
+    int i;
+    unsigned char tms = pat[0];
+    for (i = 0; i < length; i++)
+    {
+	tx((tms & 0x01),false);
+	tms = tms >> 1;
+    }
+}
+
 IOParport::~IOParport()
 {
   if (cable == IS_BBLST)

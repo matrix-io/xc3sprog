@@ -30,6 +30,7 @@ class IODebug : public IOBase
   IODebug() : IOBase(){}
   bool txrx(bool tms, bool tdi);
   void tx_tdi_byte(unsigned char tdi_byte);
+  void tx_tms(unsigned char *pat, int length);
 
  protected:
   void tx(bool tms, bool tdi);

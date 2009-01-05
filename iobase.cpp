@@ -77,6 +77,8 @@ void IOBase::shift(bool tdi, int length, bool last)
 void IOBase::setTapState(tapState_t state)
 {
   bool tms;
+  unsigned char tms_pat = 0;
+  int len = 0;
   while(current_state!=state){
     switch(current_state){
 
@@ -290,8 +292,10 @@ void IOBase::setTapState(tapState_t state)
       tapTestLogicReset();
       tms=true;
     };
-    tx(tms,false);
+    tms_pat |= tms<<len;
+    len++;
   };
+  tx_tms(&tms_pat, len);
 }
 
 // After shift data into the DR or IR we goto the next state
@@ -309,8 +313,9 @@ void IOBase::nextTapState(bool tms)
 
 void IOBase::tapTestLogicReset()
 {
-  for(int i=0; i<5; i++)tx(true,false);
-  current_state=TEST_LOGIC_RESET;
+    unsigned char pat = 0x1f;
+    tx_tms(&pat, 5);
+    current_state=TEST_LOGIC_RESET;
 }
 
 void IOBase::cycleTCK(int n, bool tdi)

@@ -240,6 +240,12 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
     }
 }
 
+void IOFtdi::tx_tms(unsigned char *pat, int length)
+{
+    unsigned char buf[3] = {MPSSE_WRITE_TMS|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG, length-1, pat[0]};
+    mpsse_add_cmd (buf, 3);
+}
+
 unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
 {
 #if defined (USE_FTD2XX)
