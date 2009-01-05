@@ -320,7 +320,21 @@ void IOBase::tapTestLogicReset()
 
 void IOBase::cycleTCK(int n, bool tdi)
 {
-  bool tms=false;
-  if(current_state==TEST_LOGIC_RESET)tms=true;
-  for(int i=0; i<n; i++)tx(tms,tdi);
+ if(current_state==TEST_LOGIC_RESET)
+  {
+      printf("cycleTCK in TEST_LOGIC_RESET\n");
+      for(int i=0; i<n; i++)
+         shift(tdi, 1, true);
+  }
+  else
+  {
+      int len = n;
+      unsigned char *block = (tdi)?ones:zeros;
+      while (len > CHUNK_SIZE*8)
+      {
+          txrx_block(block, NULL, CHUNK_SIZE*8, false);
+          len -= (CHUNK_SIZE*8);
+      }
+      txrx_block(block, NULL, len, false);
+  }  
 }
