@@ -122,16 +122,15 @@ void IOFtdi::settype(int sub_type)
   subtype = sub_type;
 }
 
-#define RXBUF 128
 void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
 {
-  unsigned char rbuf[RXBUF];
+  unsigned char rbuf[TX_BUF];
   unsigned const char *tmpsbuf = tdi;
   unsigned char *tmprbuf = tdo;
   /* If we need to shift state, treat the last bit separate*/
   unsigned int rem = (last)? length - 1: length; 
-  unsigned char buf[RXBUF];
-  unsigned int buflen = RXBUF - 3 ; /* we need the preamble*/
+  unsigned char buf[TX_BUF];
+  unsigned int buflen = TX_BUF - 3 ; /* we need the preamble*/
   unsigned int rembits;
   
   mpsse_send();
@@ -180,7 +179,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 	    }
     }
   
-  if (buflen >=(RXBUF - 3))
+  if (buflen >=(TX_BUF - 3))
     {
       /* No space for the last data. Send and evenually read 
          As we handle whole bytes, we can use the receiv buffer direct*/
@@ -345,7 +344,7 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
     that the OS USB scheduler gives the MPSSE machine 
     enough time empty the buffer
  */
- if (bptr + len >= 128)
+ if (bptr + len >= TX_BUF)
    mpsse_send();
   memcpy(usbuf + bptr, buf, len);
   bptr += len;
