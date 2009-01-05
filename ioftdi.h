@@ -78,7 +78,7 @@ enum ftdi_mpsse_mode {
 #define FTDI_NO_EN 0
 #define FTDI_IKDA  1
 
-#define TX_BUF 128
+#define TX_BUF (4096)
 
 class IOFtdi : public IOBase
 {
