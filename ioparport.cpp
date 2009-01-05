@@ -39,7 +39,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #  include <linux/parport.h>
 #  include <linux/ppdev.h>
 
-#elif __FreeBSD__
+#elif defined (__FreeBSD__)
 #  include <dev/ppbus/ppi.h>
 #  include <dev/ppbus/ppbconf.h>
 
@@ -406,7 +406,7 @@ int IOParport::write_control(int fd, unsigned char *control)
     int status;
     status = ioctl(fd, PPWCONTROL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
-#elif __FREEBSD__
+#elif defined (__FreeBSD__)
     int status;
     status = ioctl(port->fd, PPISCTRL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
@@ -421,7 +421,7 @@ int IOParport::read_control(int fd, unsigned char *control)
     int status;
     status = ioctl(fd, PPRCONTROL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
-#elif __FREEBSD__
+#elif defined (__FreeBSD__)
     int status;
     status = ioctl(port->fd, PPIGCTRL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
@@ -436,7 +436,7 @@ int IOParport::read_status(int fd, unsigned char *status)
         int ret;
         ret = ioctl(fd, PPRSTATUS, status);
         return ret == 0 ? XC3S_OK : -XC3S_EIO;
-#elif __FREEBSD__
+#elif defined (__FreeBSD__)
         int ret;
         ret = ioctl(fd, PPIGSTATUS, status);
         return ret == 0 ? XC3S_OK : -XC3S_EIO;
