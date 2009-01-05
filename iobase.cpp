@@ -68,7 +68,7 @@ void IOBase::shift(bool tdi, int length, bool last)
     unsigned char *block = (tdi)?ones:zeros;
     while (len > CHUNK_SIZE*8)
     {
-	shiftTDITDO(block, NULL, CHUNK_SIZE*8, false);
+	txrx_block(block, NULL, CHUNK_SIZE*8, false);
 	len -= (CHUNK_SIZE*8);
     }
     shiftTDITDO(block, NULL, len, last);

@@ -1,0 +1,4 @@
+I didn't find an RPM package for a recent libftd2xx.
+So copy WinTypes.h and ftd2xx.h to /usr/local/include with
+appropriate permissions and copy the library to /usr/local/lib as
+explained in the FTDI README.dat
