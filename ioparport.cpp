@@ -25,7 +25,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Support for byte counting and progress bar.
 */
 
-// Default paprport device
+// Default parport device
 #ifndef PPDEV
 #  define PPDEV "/dev/parport0"
 #endif
@@ -38,20 +38,10 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #ifdef __linux__
 #  include <linux/parport.h>
 #  include <linux/ppdev.h>
-#endif
 
-#ifdef __FreeBSD__
+#elif __FreeBSD__
 #  include <dev/ppbus/ppi.h>
 #  include <dev/ppbus/ppbconf.h>
-
-#  define PPWDATA   	PPISDATA
-#  define PPRDATA   	PPIGDATA
-  
-#  define PPWCONTROL	PPISCTRL
-#  define PPRCONTROL	PPIGCTRL
-  
-#  define PPWSTATUS 	PPISSTATUS
-#  define PPRSTATUS 	PPIGSTATUS
 
 #  define PARPORT_CONTROL_STROBE    STROBE
 #  define PARPORT_CONTROL_AUTOFD    AUTOFEED
@@ -114,8 +104,8 @@ int  IOParport::detectcable(void)
   unsigned char data=0, status, control;
 
   
-  ioctl(fd, PPWDATA, &data);
-  ioctl(fd, PPRSTATUS, &status);
+  write_data(fd, &data);
+  read_status(fd, &status);
   if (debug & HW_FUNCTIONS)
     fprintf(stderr,"IOParport::detectcable\n");
   /* Error_n should is hardwired to ground on a byteblaster cable*/
@@ -149,8 +139,8 @@ int  IOParport::detectcable(void)
       /* now try all 4 permuttation */
       data = (data & BBLST_LB_OUT_VALUE) ? (data & ~BBLST_LB_OUT_VALUE) : 
 	(data | BBLST_LB_OUT_VALUE);
-      ioctl(fd, PPWDATA, &data);
-      ioctl(fd, PPRSTATUS, &status);
+      write_data(fd, &data);
+      read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
 	  (!(data & BBLST_LB_OUT_VALUE)  &&  (status & BBLST_LB_IN_MASK)) ||
 	  ( (data & BBLST_ACK_OUT_VALUE) && !(status & BBLST_ACK_IN_MASK))||
@@ -160,8 +150,8 @@ int  IOParport::detectcable(void)
 	  return NO_CABLE;
 	}
       data = (data & BBLST_ACK_OUT_VALUE) ? (data & ~BBLST_ACK_OUT_VALUE) : (data | BBLST_ACK_OUT_VALUE);
-      ioctl(fd, PPWDATA, &data);
-      ioctl(fd, PPRSTATUS, &status);
+      write_data(fd, &data);
+      read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
 	  (!(data & BBLST_LB_OUT_VALUE)  &&  (status & BBLST_LB_IN_MASK)) ||
 	  ( (data & BBLST_ACK_OUT_VALUE) && !(status & BBLST_ACK_IN_MASK))||
@@ -171,8 +161,8 @@ int  IOParport::detectcable(void)
 	  return NO_CABLE;
 	}
       data = (data & BBLST_LB_OUT_VALUE) ? (data & ~BBLST_LB_OUT_VALUE) : (data | BBLST_LB_OUT_VALUE);
-      ioctl(fd, PPWDATA, &data);
-      ioctl(fd, PPRSTATUS, &status);
+      write_data(fd, &data);
+      read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
 	  (!(data & BBLST_LB_OUT_VALUE)  &&  (status & BBLST_LB_IN_MASK)) ||
 	  ( (data & BBLST_ACK_OUT_VALUE) && !(status & BBLST_ACK_IN_MASK))||
@@ -182,8 +172,8 @@ int  IOParport::detectcable(void)
 	  return NO_CABLE;
 	}
       data = (data & BBLST_ACK_OUT_VALUE) ? (data & ~BBLST_ACK_OUT_VALUE) : (data | BBLST_ACK_OUT_VALUE);
-      ioctl(fd, PPWDATA, &data);
-      ioctl(fd, PPRSTATUS, &status);
+      write_data(fd, &data);
+      read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
 	  (!(data & BBLST_LB_OUT_VALUE)  &&  (status & BBLST_LB_IN_MASK)) ||
 	  ( (data & BBLST_ACK_OUT_VALUE) && !(status & BBLST_ACK_IN_MASK))||
@@ -199,9 +189,9 @@ int  IOParport::detectcable(void)
       tck_value = BBLST_TCK_VALUE;
       tdo_mask = BBLST_TDO_MASK;
       tdo_inv  = 1;
-      ioctl(fd, PPRCONTROL, &control);
+      read_control(fd, &control);
       control |=  BBLST_ENABLE_N;
-      ioctl(fd, PPWCONTROL, &control);
+      write_control(fd, &control);
       return IS_BBLST;
     }
   else { /*Probably  Xilinx cable */
@@ -221,8 +211,8 @@ int  IOParport::detectcable(void)
     }
 
     data = (data & PCIII_CHECK_OUT) ? (data & ~PCIII_CHECK_OUT) : (data | PCIII_CHECK_OUT);
-    ioctl(fd, PPWDATA, &data);
-    ioctl(fd, PPRSTATUS, &status);
+    write_data(fd, &data);
+    read_status(fd, &status);
     if ( ( (data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN1))||
 	 (!(data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN1))||
 	 ( (data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN2)) ||
@@ -232,8 +222,8 @@ int  IOParport::detectcable(void)
 	  return NO_CABLE;
 	}
     data = (data & PCIII_CHECK_OUT) ? (data & ~PCIII_CHECK_OUT) : (data | PCIII_CHECK_OUT);
-    ioctl(fd, PPWDATA, &data);
-    ioctl(fd, PPRSTATUS, &status);
+    write_data(fd, &data);
+    read_status(fd, &status);
     if ( ( (data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN1))||
 	 (!(data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN1))||
 	 ( (data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN2))||
@@ -300,13 +290,13 @@ bool IOParport::txrx(bool tms, bool tdi)
   unsigned char data=def_byte; // D4 pin5 TDI enable
   if(tdi)data|=tdi_value; // D0 pin2
   if(tms)data|=tms_value; // D2 pin4
-  ioctl(fd, PPWDATA, &data);
+  write_data(fd, &data);
   data|=tck_value; // clk high D1 pin3
-  ioctl(fd, PPWDATA, &data);
-  ioctl(fd, PPRSTATUS, &ret);
+  write_data(fd, &data);
+  read_status(fd, &ret);
   //data=data^2; // clk low
-  //ioctl(fd, PPWDATA, &data);
-  //ioctl(fd, PPRSTATUS, &ret);
+  //write_data(fd, &data);
+  //read_status(fd, &ret);
   total++;
   retval = (ret&tdo_mask)?!tdo_inv:tdo_inv;
   if (debug & HW_FUNCTIONS)
@@ -323,13 +313,13 @@ void IOParport::tx(bool tms, bool tdi)
     fprintf(stderr,"tx tms %s tdi %s\n",(tms)?"true ":"false", (tdi)?"true ":"false");
   if(tdi)data|=tdi_value; // D0 pin2
   if(tms)data|=tms_value; // D2 pin4
-  ioctl(fd, PPWDATA, &data);
+  write_data(fd, &data);
   //delay(2);
   data|=tck_value; // clk high 
-  ioctl(fd, PPWDATA, &data);
+  write_data(fd, &data);
   //delay(2);
   //data=data^2; // clk low
-  //ioctl(fd, PPWDATA, &data);
+  //write_data(fd, &data);
   //delay(2);
   total++;
 }
@@ -380,7 +370,7 @@ IOParport::~IOParport()
   if (cable == IS_BBLST)
     {
       unsigned char control;
-      ioctl(fd, PPRCONTROL, &control);
+      read_control(fd, &control);
       control &=  ~BBLST_ENABLE_N;
       ioctl(fd, PPWCONTROL, &control);
     }
@@ -390,3 +380,69 @@ IOParport::~IOParport()
   close (fd);
   if (verbose) printf("Total bytes sent: %d\n", total>>3);
 }
+#define XC3S_OK 0
+#define XC3S_EIO 1
+#define XC3S_ENIMPL 2
+
+int IOParport::write_data(int fd, unsigned char *data)
+{
+#ifdef __linux__
+    int status;
+    status = ioctl(fd, PPWDATA, data);
+    return  status == 0 ? XC3S_OK : -XC3S_EIO;
+#elif defined (__FreeBSD__)
+    int status;
+    status = ioctl(port->fd, PPISDATA, &data);
+    return status == 0 ? XC3S_OK : -XC3S_EIO;
+#else
+    return -XC3S_ENIMPL;
+#endif
+}
+
+
+int IOParport::write_control(int fd, unsigned char *control)
+{
+#ifdef __linux__
+    int status;
+    status = ioctl(fd, PPWCONTROL, control);
+    return status == 0 ? XC3S_OK : -XC3S_EIO;
+#elif __FREEBSD__
+    int status;
+    status = ioctl(port->fd, PPISCTRL, control);
+    return status == 0 ? XC3S_OK : -XC3S_EIO;
+#else
+    return -XC3S_ENIMPL;
+#endif
+}
+
+int IOParport::read_control(int fd, unsigned char *control)
+{
+#ifdef __linux
+    int status;
+    status = ioctl(fd, PPRCONTROL, control);
+    return status == 0 ? XC3S_OK : -XC3S_EIO;
+#elif __FREEBSD__
+    int status;
+    status = ioctl(port->fd, PPIGCTRL, control);
+    return status == 0 ? XC3S_OK : -XC3S_EIO;
+#else
+    return -XC3S_ENIMPL;
+#endif
+}
+
+int IOParport::read_status(int fd, unsigned char *status)
+{
+#ifdef __linux__
+        int ret;
+        ret = ioctl(fd, PPRSTATUS, status);
+        return ret == 0 ? XC3S_OK : -XC3S_EIO;
+#elif __FREEBSD__
+        int ret;
+        ret = ioctl(fd, PPIGSTATUS, status);
+        return ret == 0 ? XC3S_OK : -XC3S_EIO;
+#else
+	return -XC3S_ENIMPL;
+#endif
+}
+
+	
