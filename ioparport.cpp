@@ -111,7 +111,7 @@ int  IOParport::detectcable(void)
   unsigned char data=0, status, control;
 
   
-  write_data(fd, &data);
+  write_data(fd, data);
   read_status(fd, &status);
   if (debug & HW_FUNCTIONS)
     fprintf(stderr,"IOParport::detectcable\n");
@@ -146,7 +146,7 @@ int  IOParport::detectcable(void)
       /* now try all 4 permuttation */
       data = (data & BBLST_LB_OUT_VALUE) ? (data & ~BBLST_LB_OUT_VALUE) : 
 	(data | BBLST_LB_OUT_VALUE);
-      write_data(fd, &data);
+      write_data(fd, data);
       read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
 	  (!(data & BBLST_LB_OUT_VALUE)  &&  (status & BBLST_LB_IN_MASK)) ||
@@ -157,7 +157,7 @@ int  IOParport::detectcable(void)
 	  return NO_CABLE;
 	}
       data = (data & BBLST_ACK_OUT_VALUE) ? (data & ~BBLST_ACK_OUT_VALUE) : (data | BBLST_ACK_OUT_VALUE);
-      write_data(fd, &data);
+      write_data(fd, data);
       read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
 	  (!(data & BBLST_LB_OUT_VALUE)  &&  (status & BBLST_LB_IN_MASK)) ||
@@ -168,7 +168,7 @@ int  IOParport::detectcable(void)
 	  return NO_CABLE;
 	}
       data = (data & BBLST_LB_OUT_VALUE) ? (data & ~BBLST_LB_OUT_VALUE) : (data | BBLST_LB_OUT_VALUE);
-      write_data(fd, &data);
+      write_data(fd, data);
       read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
 	  (!(data & BBLST_LB_OUT_VALUE)  &&  (status & BBLST_LB_IN_MASK)) ||
@@ -179,7 +179,7 @@ int  IOParport::detectcable(void)
 	  return NO_CABLE;
 	}
       data = (data & BBLST_ACK_OUT_VALUE) ? (data & ~BBLST_ACK_OUT_VALUE) : (data | BBLST_ACK_OUT_VALUE);
-      write_data(fd, &data);
+      write_data(fd, data);
       read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
 	  (!(data & BBLST_LB_OUT_VALUE)  &&  (status & BBLST_LB_IN_MASK)) ||
@@ -198,7 +198,7 @@ int  IOParport::detectcable(void)
       tdo_inv  = 1;
       read_control(fd, &control);
       control |=  BBLST_ENABLE_N;
-      write_control(fd, &control);
+      write_control(fd, control);
       return IS_BBLST;
     }
   else { /*Probably  Xilinx cable */
@@ -218,7 +218,7 @@ int  IOParport::detectcable(void)
     }
 
     data = (data & PCIII_CHECK_OUT) ? (data & ~PCIII_CHECK_OUT) : (data | PCIII_CHECK_OUT);
-    write_data(fd, &data);
+    write_data(fd, data);
     read_status(fd, &status);
     if ( ( (data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN1))||
 	 (!(data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN1))||
@@ -229,7 +229,7 @@ int  IOParport::detectcable(void)
 	  return NO_CABLE;
 	}
     data = (data & PCIII_CHECK_OUT) ? (data & ~PCIII_CHECK_OUT) : (data | PCIII_CHECK_OUT);
-    write_data(fd, &data);
+    write_data(fd, data);
     read_status(fd, &status);
     if ( ( (data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN1))||
 	 (!(data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN1))||
@@ -248,10 +248,6 @@ int  IOParport::detectcable(void)
     tdo_inv = 0;
     return IS_PCIII;
   }
-      
-   
-	  
-    
 }
 
 IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
@@ -284,7 +280,7 @@ IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
 	  throw  io_exception(std::string("Failed to open: ") + dev);
       }
 #else
-      throw  io_exception(std::string("Paralle port access not implemented for this system")):
+      throw  io_exception(std::string("Parallel port access not implemented for this system"));
 #endif
 
     if(!(cable = detectcable())) {
@@ -304,12 +300,12 @@ bool IOParport::txrx(bool tms, bool tdi)
   unsigned char data=def_byte; // D4 pin5 TDI enable
   if(tdi)data|=tdi_value; // D0 pin2
   if(tms)data|=tms_value; // D2 pin4
-  write_data(fd, &data);
+  write_data(fd, data);
   data|=tck_value; // clk high D1 pin3
-  write_data(fd, &data);
+  write_data(fd, data);
   read_status(fd, &ret);
   //data=data^2; // clk low
-  //write_data(fd, &data);
+  //write_data(fd, data);
   //read_status(fd, &ret);
   total++;
   retval = (ret&tdo_mask)?!tdo_inv:tdo_inv;
@@ -327,13 +323,13 @@ void IOParport::tx(bool tms, bool tdi)
     fprintf(stderr,"tx tms %s tdi %s\n",(tms)?"true ":"false", (tdi)?"true ":"false");
   if(tdi)data|=tdi_value; // D0 pin2
   if(tms)data|=tms_value; // D2 pin4
-  write_data(fd, &data);
+  write_data(fd, data);
   //delay(2);
   data|=tck_value; // clk high 
-  write_data(fd, &data);
+  write_data(fd, data);
   //delay(2);
   //data=data^2; // clk low
-  //write_data(fd, &data);
+  //write_data(fd, data);
   //delay(2);
   total++;
 }
@@ -386,7 +382,7 @@ IOParport::~IOParport()
       unsigned char control;
       read_control(fd, &control);
       control &=  ~BBLST_ENABLE_N;
-      write_control(fd, &control);
+      write_control(fd, control);
     }
 #ifdef __linux__
   ioctl (fd, PPRELEASE);
@@ -400,14 +396,13 @@ IOParport::~IOParport()
 #define XC3S_EIO 1
 #define XC3S_ENIMPL 2
 
-int IOParport::write_data(int fd, unsigned char *data)
+int IOParport::write_data(int fd, unsigned char data)
 {
-#ifdef __linux__
     int status;
-    status = ioctl(fd, PPWDATA, data);
+#ifdef __linux__
+    status = ioctl(fd, PPWDATA, &data);
     return  status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__FreeBSD__)
-    int status;
     status = ioctl(port->fd, PPISDATA, &data);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #else
@@ -416,14 +411,13 @@ int IOParport::write_data(int fd, unsigned char *data)
 }
 
 
-int IOParport::write_control(int fd, unsigned char *control)
+int IOParport::write_control(int fd, unsigned char control)
 {
-#ifdef __linux__
     int status;
+#ifdef __linux__
     status = ioctl(fd, PPWCONTROL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__FreeBSD__)
-    int status;
     status = ioctl(port->fd, PPISCTRL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #else
@@ -433,12 +427,11 @@ int IOParport::write_control(int fd, unsigned char *control)
 
 int IOParport::read_control(int fd, unsigned char *control)
 {
-#ifdef __linux
     int status;
+#ifdef __linux
     status = ioctl(fd, PPRCONTROL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__FreeBSD__)
-    int status;
     status = ioctl(port->fd, PPIGCTRL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #else
@@ -448,16 +441,15 @@ int IOParport::read_control(int fd, unsigned char *control)
 
 int IOParport::read_status(int fd, unsigned char *status)
 {
+    int ret;
 #ifdef __linux__
-        int ret;
-        ret = ioctl(fd, PPRSTATUS, status);
-        return ret == 0 ? XC3S_OK : -XC3S_EIO;
+    ret = ioctl(fd, PPRSTATUS, status);
+    return ret == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__FreeBSD__)
-        int ret;
-        ret = ioctl(fd, PPIGSTATUS, status);
-        return ret == 0 ? XC3S_OK : -XC3S_EIO;
+    ret = ioctl(fd, PPIGSTATUS, status);
+    return ret == 0 ? XC3S_OK : -XC3S_EIO;
 #else
-	return -XC3S_ENIMPL;
+    return -XC3S_ENIMPL;
 #endif
 }
 
