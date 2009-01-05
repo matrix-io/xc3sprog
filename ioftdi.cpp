@@ -314,19 +314,6 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
   return read;
 }
 
-void IOFtdi::tx(bool tms, bool tdi)
-{
-  unsigned char tdi_char = (tdi) ? 1 : 0;
-  unsigned char tms_char = (tms) ? 1 : 0;
-  unsigned char buf[3];
-
-  buf[0] = MPSSE_WRITE_TMS | MPSSE_WRITE_NEG | MPSSE_LSB | MPSSE_BITMODE;
-  buf[1] = 0;
-  buf[2] = (tdi_char << 7) | tms_char;
-
-  mpsse_add_cmd (buf, 3);
-}
- 
 IOFtdi::~IOFtdi()
 {
   flush();
