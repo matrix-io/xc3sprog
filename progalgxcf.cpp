@@ -21,6 +21,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Code cleanup for clean -Wall compile.
 */
 
+#include <string.h>
 #include <sys/time.h>
 #include "progalgxcf.h"
 #if defined ( __MINGW)||(__MINGW32__)
@@ -180,6 +181,51 @@ int ProgAlgXCF::program(BitFile &file)
 
 int ProgAlgXCF::verify(BitFile &file)
 {
+  struct timeval tv[2];
+  byte data[4096/8];
+  
+  gettimeofday(tv, NULL);
+  io->setTapState(IOBase::TEST_LOGIC_RESET);
+  jtag->shiftIR(&ISC_ENABLE);
+  data[0]=0x34;
+  jtag->shiftDR(data,0,6);
+
+  for(unsigned int i=0; i<file.getLength(); i+=block_size)
+    {
+      int frame=i/(block_size/32);
+      int res;
+
+      if(io->getVerbose())
+	{
+	  printf("\rVerifying frames 0x%04x to 0x%04x",frame,frame+31); 
+	  fflush(stdout);
+	}
+      jtag->longToByteArray(frame,data);
+      jtag->shiftIR(&ISC_ADDRESS_SHIFT);
+      jtag->shiftDR(data,0,16);
+      io->cycleTCK(1);
+      jtag->shiftIR(&ISC_READ);
+      jtag->shiftDR(0,data,block_size);
+      if((i+block_size)<=file.getLength())
+	{
+	  res = memcmp(data, &(file.getData())[i/8], block_size/8);
+	}
+      else
+	{
+	  int rem=(file.getLength()-i)/8; // Bytes remaining
+	  res = memcmp(data, &(file.getData())[i/8], rem);
+	}
+      if (res)
+	{
+	  printf("\nVerify failed at frame 0x%04x to 0x%04x",frame,frame+31);
+	  return res;
+	}
+       
+  } 
+  gettimeofday(tv+1, NULL);
+  if(io->getVerbose())
+    printf("\nVerify Success\nVerify time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+  io->tapTestLogicReset();
   return 0;
 }
 
