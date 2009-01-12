@@ -32,6 +32,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <memory>
 #include "io_exception.h"
 #include "ioparport.h"
+#include "iofx2.h"
 #include "ioftdi.h"
 #include "iodebug.h"
 #include "jtag.h"
@@ -44,14 +45,15 @@ void usage(void)
   fprintf(stderr, 
 	  "\nUsage: detectchain [-c cable_type] [-v]\n"
 	  "   -v\tverbose output\n\n"
-	  "   Supported cable types: pp, ftdi\n"
+	  "   Supported cable types: pp, ftdi, fx2\n"
 	  "   \tOptional pp arguments:\n"
 	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
-	  "   \tOptional ftdi arguments:\n"
+	  "   \tOptional fx2/ftdi arguments:\n"
 	  "   \t\t[-V vendor]      (idVendor)\n"
 	  "   \t\t[-P product]     (idProduct)\n"
 	  "   \t\t[-D description] (Product string)\n"
 	  "   \t\t[-s serial]      (SerialNumber string)\n"
+	  "   \tOptional ftdi arguments:\n"
 	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n");
   exit(255);
 }
@@ -120,15 +122,26 @@ args_done:
   args += optind;
   //printf("argc: %d\n", argc);
   if(argc != 0)  usage();
-  if (vendor == 0)
-    vendor = VENDOR;
-  if(product == 0)
-    product = DEVICE;
 
   std::auto_ptr<IOBase>  io;
   try {
     if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
-    else if(strcmp(cable, "ftdi") == 0)  io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
+    else if(strcmp(cable, "ftdi") == 0)  
+      {
+	if (vendor == 0)
+	  vendor = VENDOR;
+	if(product == 0)
+	  product = DEVICE;
+	io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
+      }
+    else if(strcmp(cable,  "fx2") == 0)  
+      {
+	if (vendor == 0)
+	  vendor = USRP_VENDOR;
+	if(product == 0)
+	  product = USRP_DEVICE;
+	io.reset(new IOFX2(vendor, product, desc, serial));
+      }
     else  usage();
 
     io->setVerbose(verbose);
