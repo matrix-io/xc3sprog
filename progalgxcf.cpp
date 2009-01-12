@@ -64,7 +64,7 @@ int ProgAlgXCF::erase()
   
   gettimeofday(tv, NULL);
   jtag->shiftIR(&ISC_DISABLE);
-  io->cycleTCK(40000);
+  usleep(110000);
   jtag->shiftIR(&BYPASS,ircap);
   if((ircap[0]&BIT3)==BIT3){
     fprintf(stderr,"Device is write protected! Aborting\n");
