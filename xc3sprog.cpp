@@ -38,7 +38,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgxcf.h"
 #include "progalgxc3s.h"
 
-void process(IOBase &io, BitFile &file, int chainpos, bool verbose);
+int process(int argc, char **args, IOBase &io, int chainpos, bool verbose);
 void programXC3S(Jtag &jtag, IOBase &io, BitFile &file);
 void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs);
 
@@ -194,48 +194,10 @@ int main(int argc, char **args)
     }
     return 1;
   }
-
-  try {
-    BitFile  file(args[0]);
-
-    if(verbose) {
-      printf("Created from NCD file: %s\n",file.getNCDFilename());
-      printf("Target device: %s\n",file.getPartName());
-      printf("Created: %s %s\n",file.getDate(),file.getTime());
-      printf("Bitstream length: %lu bits\n", file.getLength());
-    }      
-
-    if(argc > 1) {
-      // Allow chainpos specification here for backwards compatibiity
-      if(*args[1] != '+')  chainpos = atoi(args[1]);
-      else {
-	for(int i = 2; i < argc; i++) {
-	  char *end;
-
-	  unsigned long const  val = strtoul(args[i], &end, 0);
-	  unsigned long        cnt = 1;
-	  switch(*end) {
-	  case '*':
-	  case 'x':
-	  case 'X':
-	    cnt = strtoul(end+1, &end, 0);
-	  }
-	  if(*end == '\0')  file.append(val, cnt);
-	  else  file.append(args[i]);
-	}
-      }
-    }
-    
-    if(verbose)  printf("JTAG chainpos: %d\n", chainpos);
-    process(*io, file, chainpos, verbose);
-  }
-  catch(io_exception& e) {
-    fprintf(stderr, "IOException: %s\n", e.getMessage().c_str());
-    return  1;
-  }
+  return process(argc, args, *io, chainpos, verbose);
 }
 
-void process(IOBase &io, BitFile &file, int chainpos, bool verbose)
+int process(int argc, char **args, IOBase &io, int chainpos, bool verbose)
 {
   char *devicedb = NULL;
   unsigned id;
@@ -250,13 +212,13 @@ void process(IOBase &io, BitFile &file, int chainpos, bool verbose)
     else{
       id=jtag.getDeviceID(i);
       fprintf(stderr,"Cannot find device having IDCODE=%08x\n",id);
-      return;
+      return 2;
     }
   }
   
   if(jtag.selectDevice(chainpos)<0){
     fprintf(stderr,"Invalid chain position %d, position must be less than %d (but not less than 0).\n",chainpos,num);
-    return;
+    return 3;
   }
 
   // Find the programming algorithm required for device
@@ -265,22 +227,63 @@ void process(IOBase &io, BitFile &file, int chainpos, bool verbose)
   if (verbose)
   {
     id = jtag.getDeviceID(chainpos);
-    printf("Device IDCODE = 0x%08x\tDesc: %s\nProgramming: ", id, dd);
+    printf("JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\nProgramming: ", chainpos,id, dd);
     fflush(stdout);
   }
 
-  if(strncmp("XC3S",dd,4)==0) programXC3S(jtag,io,file);
-  else if(strncmp("XC2V",dd,4)==0) programXC3S(jtag,io,file);
-  else if(strncmp("XCF",dd,3)==0) { 
-      int bs=(dd[4]-'0'==1) ? 2048 : 4096;
-      if (verbose)
-	printf("Device block size is %d.\n", bs);
-      programXCF(jtag,io,file, bs);
+  if( (strncmp("XC3S",dd,4)==0) || (strncmp("XC2V",dd,4)==0) ||(strncmp("XCF",dd,3)==0))
+    {
+      try 
+	{
+	  
+	  BitFile  file(args[0]);
+	  
+	  if(verbose) 
+	    {
+	      printf("Created from NCD file: %s\n",file.getNCDFilename());
+	      printf("Target device: %s\n",file.getPartName());
+	      printf("Created: %s %s\n",file.getDate(),file.getTime());
+	      printf("Bitstream length: %lu bits\n", file.getLength());
+	    }      
+	  if ((strncmp("XCF",dd,3)==0))
+	    {
+	      for(int i = 2; i < argc; i++) 
+		{
+		  char *end;
+		  
+		  unsigned long const  val = strtoul(args[i], &end, 0);
+		  unsigned long        cnt = 1;
+		  switch(*end) {
+		  case '*':
+		  case 'x':
+		  case 'X':
+		    cnt = strtoul(end+1, &end, 0);
+		  }
+		  if(*end == '\0')  file.append(val, cnt);
+		  else  file.append(args[i]);
+		}
+	    }
+	  if(strncmp("XC3S",dd,4)==0) programXC3S(jtag,io,file);
+	  else if(strncmp("XC2V",dd,4)==0) programXC3S(jtag,io,file);
+	  else if(strncmp("XCF",dd,3)==0) 
+	    { 
+	      int bs=(dd[4]-'0'==1) ? 2048 : 4096;
+	      if (verbose)
+		printf("Device block size is %d.\n", bs);
+	      programXCF(jtag,io,file, bs);
+	    }
+	  return 0;
+	}
+      catch(io_exception& e) {
+	fprintf(stderr, "IOException: %s\n", e.getMessage().c_str());
+	return  1;
+      }
     }
-  else{
-    fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n",dd);
-    return;
-  }
+  else
+    {
+      fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n",dd);
+    }
+  return 1;
 }
 
 void programXC3S(Jtag &jtag, IOBase &io, BitFile &file)
