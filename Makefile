@@ -43,10 +43,10 @@ debug: debug.o iobase.o ioftdi.o ioparport.o iodebug.o
 bitparse: bitparse.o bitfile.o
 	${GCC} ${LIBS} $^ -o $@
 
-detectchain: detectchain.o jtag.o iobase.o ioftdi.o ioparport.o iodebug.o devicedb.o
+detectchain: detectchain.o jtag.o iobase.o iofx2.o ioftdi.o ioparport.o iodebug.o devicedb.o
 	${GCC} ${LIBS} $^ -o $@
 
-xc3sprog: xc3sprog.o jtag.o iobase.o ioftdi.o ioparport.o iodebug.o bitfile.o devicedb.o progalgxcf.o progalgxc3s.o
+xc3sprog: xc3sprog.o jtag.o iobase.o iofx2.o ioftdi.o ioparport.o iodebug.o bitfile.o devicedb.o progalgxcf.o progalgxc3s.o
 	${GCC} ${LIBS} $^ -o $@
 
 debug.o: debug.cpp iobase.h ioftdi.h iodebug.h
@@ -55,7 +55,7 @@ debug.o: debug.cpp iobase.h ioftdi.h iodebug.h
 bitparse.o: bitparse.cpp bitfile.h
 	${GCC} ${DEFS} -c $< -o $@
 
-detectchain.o: detectchain.cpp iobase.h ioftdi.h jtag.h iodebug.h devicedb.h
+detectchain.o: detectchain.cpp iobase.h iofx2.h ioftdi.h jtag.h iodebug.h devicedb.h
 	${GCC} ${DEFS} -c $< -o $@
 
 xc3sprog.o: xc3sprog.cpp iobase.h ioftdi.h jtag.h iodebug.h bitfile.h devicedb.h progalgxcf.h progalgxc3s.h
