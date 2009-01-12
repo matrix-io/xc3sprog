@@ -89,6 +89,5 @@ progalgxc3s.o: progalgxc3s.cpp progalgxc3s.h iobase.h jtag.h bitfile.h
 	${GCC} ${DEFS} -c $< -o $@
 
 clean:
-	rm -f debug.o iobase.o ioftdi.o ioparport.o iodebug.o bitfile.o jtag.o xc3sprog.o 
-	rm -f devicedb.o bitparse.o detectchain.o progalgxcf.o progalgxc3s.o
-	rm -f debug bitparse detectchain xc3sprog
+	rm -f *.o
+	rm -f ${PROGS}
