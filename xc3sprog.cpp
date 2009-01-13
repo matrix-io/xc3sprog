@@ -300,6 +300,7 @@ void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs)
   alg.erase();
   alg.program(file);
   alg.disable();
+  alg.verify(file);
   alg.reconfig();
   return;
 }
