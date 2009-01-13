@@ -21,7 +21,7 @@ DEVLIST=devlist.txt
 DEVLIST_INSTALL=share/XC3Sprog
 #FTDI_LIB=-DUSE_FTD2XX
 DEFS=-DDEVICEDB=\"${PREFIX}/${DEVLIST_INSTALL}/${DEVLIST}\" ${FTDI_LIB}
-PROGS=detectchain debug bitparse xc3sprog
+PROGS=detectchain debug bitparse jedecparse xc3sprog
 GCC=g++ -g -Wall -I/usr/local/include/ `libftdi-config --cflags`
 #GCC=i386-mingw32msvc-g++ -g -Wall
 ifeq ("$(FTDI_LIB)","")
@@ -43,6 +43,9 @@ debug: debug.o iobase.o ioftdi.o ioparport.o iodebug.o
 bitparse: bitparse.o bitfile.o
 	${GCC} ${LIBS} $^ -o $@
 
+jedecparse: jedecparse.o jedecfile.o
+	${GCC} ${LIBS} $^ -o $@
+
 detectchain: detectchain.o jtag.o iobase.o iofx2.o ioftdi.o ioparport.o iodebug.o devicedb.o
 	${GCC} ${LIBS} $^ -o $@
 
@@ -53,6 +56,9 @@ debug.o: debug.cpp iobase.h ioftdi.h iodebug.h
 	${GCC} ${DEFS} -c $< -o $@
 
 bitparse.o: bitparse.cpp bitfile.h
+	${GCC} ${DEFS} -c $< -o $@
+
+jedecparse.o: jedecparse.cpp jedecfile.h
 	${GCC} ${DEFS} -c $< -o $@
 
 detectchain.o: detectchain.cpp iobase.h iofx2.h ioftdi.h jtag.h iodebug.h devicedb.h
@@ -74,6 +80,9 @@ ioparport.o: ioparport.cpp ioparport.h iobase.h
 	${GCC} ${DEFS} -c $< -o $@ 
 
 bitfile.o: bitfile.cpp bitfile.h
+	${GCC} ${DEFS} -c $< -o $@
+
+jedecfile.o: jedecfile.cpp jedecfile.h
 	${GCC} ${DEFS} -c $< -o $@
 
 jtag.o: jtag.cpp jtag.h
