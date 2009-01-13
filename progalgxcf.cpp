@@ -217,7 +217,7 @@ int ProgAlgXCF::verify(BitFile &file)
 	}
       if (res)
 	{
-	  printf("\nVerify failed at frame 0x%04x to 0x%04x",frame,frame+31);
+	  printf("\nVerify failed at frame 0x%04x to 0x%04x\n",frame,frame+31);
 	  return res;
 	}
        
