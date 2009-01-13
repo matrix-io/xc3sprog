@@ -19,6 +19,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include <errno.h>
+#include <sys/time.h>
 
 #include <xguff/usrp_interfaces.h>
 #include <xguff/usrp_commands.h>
@@ -112,17 +113,15 @@ void IOFX2::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length,
     }
   else
     {
-      i2c_write_addr = USRP_CLOCK_INOUT_BYTES;
+      i2c_write_addr = USRP_CLOCK_IN_BYTES;
       while (rem > USRP_CMD_SIZE*8) 
 	{
-	  usrp_i2c_write(i2c_write_addr, sdummy, USRP_CMD_SIZE);
 	  usrp_i2c_read(i2c_write_addr, tmprbuf, USRP_CMD_SIZE);
 	  tmprbuf+=USRP_CMD_SIZE;
 	  rem = rem - USRP_CMD_SIZE*8;
 	}
       if (rem/8)
 	{
-	  usrp_i2c_write(i2c_write_addr, sdummy, rem/8);
 	  usrp_i2c_read(i2c_write_addr, tmprbuf, rem/8);
 	  tmprbuf+= rem/8;
 	  rem = rem%8;
