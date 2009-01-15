@@ -37,15 +37,12 @@ int main(int argc, char**args)
     {
       try 
 	{
-	  JedecFile  file(args[1]);
-	  unsigned int i;
-	  unsigned short cc=0;
-	  byte *bp = file.getData();
-	  
-	  for(i=0; i<file.getLength()/8; i++)
-	    cc+=*bp++;
-	  printf("%d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n",
-		 file.getLength(), file.getChecksum(),cc);
+	  JedecFile  file;
+	  file.readFile(args[1]);
+
+	  printf("%d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n \n",
+		 file.getLength(), file.calcChecksum(),file.getChecksum());
+	  file.saveAsJed(0);
 	}
       catch(io_exception& e) 
 	{
