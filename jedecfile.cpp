@@ -32,24 +32,11 @@ static unsigned char*allocate_fusemap(unsigned size)
       return ptr;
 }
 
-struct jedec_data {
-      char*design_specification;
-
-      unsigned fuse_count;
-      unsigned pin_count;
-      unsigned vector_count;
-      unsigned checksum;
-      unsigned char fuse_default;
-
-      unsigned char*fuse_list;
-};
-typedef struct jedec_data *jedec_data_t;
-
 int jedec_get_fuse(jedec_data_t jed, unsigned idx)
 {
       unsigned byte, bit;
-      if(idx >= jed->fuse_count);
-      throw  io_exception(std::string("jedec_get_fuse"));
+      if(idx >= jed->fuse_count)
+	throw  io_exception(std::string("jedec_get_fuse"));
 
       byte = idx / 8;
       bit  = idx % 8;
@@ -153,8 +140,7 @@ static void m_C(int ch, struct state_mach*m)
           return;
         }
 
-      printf("Dangling '%c' 0x%02x\n", ch, ch);
-      fflush(stdout);
+      printf("m_C: Dangling '%c' 0x%02x\n", ch, ch);fflush(stdout);
       throw  io_exception(std::string("m_C"));
  }  
 static void m_L(int ch, struct state_mach*m)
@@ -175,6 +161,7 @@ static void m_L(int ch, struct state_mach*m)
             return;
       }
 
+      printf("m_L: Dangling '%c' 0x%02x\n", ch, ch);fflush(stdout);
       m->state = 0;
 }
 
@@ -202,6 +189,7 @@ static void m_Lfuse(int ch, struct state_mach*m)
             break;
 
           default:
+	    printf("m_LFuse: Dangling '%c' 0x%02x\n", ch, ch);fflush(stdout);
             m->state = 0;
             break;
       }
@@ -282,9 +270,20 @@ static void m_skip(int ch, struct state_mach*m)
             break;
       }
 }
+JedecFile::JedecFile(void)
+  : Error(false), logfile(stderr) 
+{
+  jed.fuse_count = 0;
+  jed.pin_count = 0;
+}
 
-JedecFile::JedecFile(char const * fname)
-  : fuse_count(0), fuse_list(0), Error(false), logfile(stderr) 
+JedecFile::~JedecFile(void)
+{
+  if(jed.fuse_list);
+  free(jed.fuse_list);
+}
+
+void JedecFile::readFile(char const * fname)
 {
   int ch;
   struct state_mach m;
@@ -292,19 +291,119 @@ JedecFile::JedecFile(char const * fname)
   FILE *const  fp=fopen(fname,"rb");
   if(!fp)  throw  io_exception(std::string("Cannot open file ") + fname);
   
-  m.jed = (jedec_data_t)calloc(1, sizeof(struct jedec_data));
+  //jed = (jedec_data_t)calloc(1, sizeof(struct jedec_data));
+  m.jed = &jed;
   m.state = m_startup;
   while ((ch = fgetc(fp)) != EOF) {
     m.state(ch, &m);
     if (m.state == 0) {
       /* Some sort of error happened. */
-      throw  io_exception(std::string("Cannot open file ") + fname);
+      throw  io_exception(std::string("Unknown"));
     }
   }
-  fuse_count = m.jed->fuse_count;
-  checksum =  m.jed->checksum;
-  fuse_list = m.jed->fuse_list;
-  //printf("%d Pins\n", m.jed->pin_count);
 }
-  
+
+void JedecFile::saveAsJed(int style)
+{
+  unsigned int i, b=0, l=0 ,w=0;
+  unsigned short chksum=0;
+
+  if(style == JED_XC95X)
+    {
+      /* Xilinx Impact (10.1) needs following additional items 
+	 to recognizes as a valid Jedec File
+       * the 4 Digits as total Checksum
+       * N DEVICE
+       */
  
+      unsigned int DRegLen;
+      printf("\2QF%d*\nQV0*\nF0*\nX0*\nJ0 0*\n",jed.fuse_count);
+      if (jed.fuse_count <= 25000)
+	{
+	  DRegLen = 2;
+	  printf("N DEVICE XC9536XL*\n");
+	}
+      else if (jed.fuse_count <= 50000)
+	{
+	  DRegLen = 4;
+	  printf("N DEVICE XC9572XL*\n");
+	}
+      else if (jed.fuse_count <= 103680)
+	{
+	  DRegLen = 8;
+	  printf("N DEVICE XC95144XL*\n");
+	}
+      else if (jed.fuse_count <= 290304)
+	{
+	  DRegLen = 16;
+	  printf("N DEVICE XC95288XL*\n");
+	}
+
+      for (i=0; i<jed.fuse_count; i++)
+	{
+	  if(!w && !b)
+	    printf("L%07d",i);
+	  if (!b)
+	    printf(" ");
+	  printf("%c",( jed.fuse_list[i/8] & (1 << (i%8)))?'1':'0');
+	  if (l<9)
+	    {
+	      if(b==7)
+		b=0;
+	      else
+		b++;
+	    }
+	  else 
+	    {
+	      if (b == 5)
+		b = 0;
+	      else
+		b++;
+	    }
+	  if(!b)
+	    {
+	      if (w == (DRegLen-1))
+		{
+		  printf("*\n");
+		  w = 0;
+		  l++;
+		}
+	      else
+		w++;
+	    }
+	  if (l==15)
+	    l =0;
+	}
+    }
+
+  for(i=0; i<jed.fuse_count/8; i++)
+    chksum += jed.fuse_list[i];
+  printf("C%04X*\n%c0000\n", chksum, 3);
+  
+}
+
+void JedecFile::setLength(unsigned int f_count)
+{
+  jed.fuse_count = f_count;
+  jed.fuse_list = new byte[f_count+7/8];
+}
+
+void JedecFile::set_fuse(unsigned int idx, int blow)
+{
+  jedec_set_fuse(&jed, idx,blow);
+}
+
+int JedecFile::get_fuse(unsigned int idx)
+{
+  return jedec_get_fuse(&jed, idx);
+}
+
+unsigned short JedecFile::calcChecksum()
+{
+  int i;
+  unsigned short cc=0;
+  
+  for(i=0; i<jed.fuse_count/8; i++)
+    cc += jed.fuse_list[i];
+  return cc;
+}

@@ -28,15 +28,25 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 typedef unsigned char byte;
 
+struct jedec_data {
+      char*design_specification;
+
+      unsigned fuse_count;
+      unsigned pin_count;
+      unsigned vector_count;
+      unsigned checksum;
+      unsigned char fuse_default;
+
+      unsigned char*fuse_list;
+};
+typedef struct jedec_data *jedec_data_t;
+
+#define JED_XC95X 0
+
 class JedecFile
 {
  private:
-  unsigned int fuse_count;
-  unsigned int pin_count;
-  unsigned int vector_count;
-  unsigned short checksum;
-  byte* fuse_default;
-  unsigned char*fuse_list;
+  struct jedec_data jed;
 
   bool Error;
   std::string errorStr;
@@ -45,11 +55,17 @@ class JedecFile
  private:
 
  public:
-  JedecFile(char const *fname);
+  JedecFile(void);
+  ~JedecFile();
 
  public:
-  inline byte *getData(){return fuse_list;}
-  inline unsigned int getLength(){return fuse_count;}
-  inline unsigned short getChecksum(){return checksum;}
+  void readFile(char const *file);
+  inline unsigned int getLength(){return jed.fuse_count;}
+  inline unsigned short getChecksum(){return jed.checksum;}
+  unsigned short calcChecksum();
+  void setLength(unsigned int fuse_count);
+  int get_fuse(unsigned int idx);
+  void set_fuse(unsigned int idx, int blow);
+  void saveAsJed(int style);
 };
 #endif //JEDECFILE_H
