@@ -50,12 +50,14 @@ class ProgAlgXC95X
   void flow_error_exit();
   void flow_array_read(JedecFile &file);
   int flow_array_program(JedecFile &file);
+  int flow_array_verify(JedecFile &file);
   int flow_blank_check();
   void flow_erase();
  public:
   ProgAlgXC95X(Jtag &j, IOBase &i);
   int blank_check(){flow_enable(); return flow_blank_check();}
   void erase(){flow_enable(); flow_erase();}
+  int array_verify(JedecFile &file);
   void array_read();
   void array_program(JedecFile &file);
 };
