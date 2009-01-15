@@ -49,7 +49,7 @@ jedecparse: jedecparse.o jedecfile.o
 detectchain: detectchain.o jtag.o iobase.o iofx2.o ioftdi.o ioparport.o iodebug.o devicedb.o
 	${GCC} ${LIBS} $^ -o $@
 
-xc3sprog: xc3sprog.o jtag.o iobase.o iofx2.o ioftdi.o ioparport.o iodebug.o bitfile.o devicedb.o progalgxcf.o progalgxc3s.o
+xc3sprog: xc3sprog.o jtag.o iobase.o iofx2.o ioftdi.o ioparport.o iodebug.o bitfile.o devicedb.o progalgxcf.o progalgxc3s.o jedecfile.o progalgxc95x.o
 	${GCC} ${LIBS} $^ -o $@
 
 debug.o: debug.cpp iobase.h ioftdi.h iodebug.h
@@ -95,6 +95,9 @@ progalgxcf.o: progalgxcf.cpp progalgxcf.h iobase.h jtag.h bitfile.h
 	${GCC} ${DEFS} -c $< -o $@
 
 progalgxc3s.o: progalgxc3s.cpp progalgxc3s.h iobase.h jtag.h bitfile.h
+	${GCC} ${DEFS} -c $< -o $@
+
+progalgxc95x.o: progalgxc95x.cpp progalgxc95x.h iobase.h jtag.h bitfile.h
 	${GCC} ${DEFS} -c $< -o $@
 
 clean:

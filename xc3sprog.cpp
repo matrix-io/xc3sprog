@@ -37,10 +37,13 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "devicedb.h"
 #include "progalgxcf.h"
 #include "progalgxc3s.h"
+#include "jedecfile.h"
+#include "progalgxc95x.h"
 
 int process(int argc, char **args, IOBase &io, int chainpos, bool verbose);
 void programXC3S(Jtag &jtag, IOBase &io, BitFile &file);
 void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs);
+void programXC95X(Jtag &jtag, IOBase &io, JedecFile &file);
 
 extern char *optarg;
 extern int optind;
@@ -223,10 +226,10 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose)
 
   // Find the programming algorithm required for device
   const char *dd=db.getDeviceDescription(chainpos);
+  id = jtag.getDeviceID(chainpos);
 
   if (verbose)
   {
-    id = jtag.getDeviceID(chainpos);
     printf("JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\nProgramming: ", chainpos,id, dd);
     fflush(stdout);
   }
@@ -279,6 +282,14 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose)
 	return  1;
       }
     }
+  else if( ((id& 0x0ff00fff) == 0x09600093) || ((id& 0x0ff00fff) == 0x09700093))
+    {
+      int size = (id & 0x000ff000)>>12;
+      JedecFile  file;
+      file.readFile(args[0]);
+      printf("size %d\n", size);
+      programXC95X(jtag,io, file);
+    }
   else
     {
       fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n",dd);
@@ -303,4 +314,10 @@ void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs)
   alg.verify(file);
   alg.reconfig();
   return;
+}
+
+void programXC95X(Jtag &jtag, IOBase &io, JedecFile &file)
+{
+  ProgAlgXC95X alg(jtag,io);
+  alg.array_program(file);
 }
