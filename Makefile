@@ -76,6 +76,9 @@ iodebug.o: iodebug.cpp iodebug.h iobase.h
 ioftdi.o: ioftdi.cpp ioftdi.h iobase.h
 	${GCC} ${DEFS} -c $< -o $@ 
 
+iofx2.o: iofx2.cpp iofx2.h iobase.h
+	${GCC} ${DEFS} -c $< -o $@ 
+
 ioparport.o: ioparport.cpp ioparport.h iobase.h
 	${GCC} ${DEFS} -c $< -o $@ 
 
