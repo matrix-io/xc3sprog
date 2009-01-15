@@ -44,13 +44,12 @@ IOFX2::~IOFX2()
 
 void IOFX2::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
 {
-  unsigned char sdummy[USRP_CMD_SIZE];
+  unsigned char sdummy[1]={0};
   unsigned char *tmpsbuf = ( unsigned char *)tdi;
   unsigned char *tmprbuf = tdo;
   unsigned int rem = (last)? length - 1: length;
   int i2c_write_addr;
   //printf("txrx_block tdi %p tdo %p len %3d last %s\n", tdi, tdo, length, (last)?"TRUE":"FALSE");
-  memset(sdummy, 0,USRP_CMD_SIZE); 
   if (tdi && tdo)
     {
       i2c_write_addr = USRP_CLOCK_INOUT_BYTES;
