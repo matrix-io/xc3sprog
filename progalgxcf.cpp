@@ -224,7 +224,7 @@ int ProgAlgXCF::verify(BitFile &file)
   } 
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    printf("\nVerify time %.1f ms\nVerify Success\n", 
+    printf("\nSuccess! Verify time %.1f ms\n", 
 	   (double)deltaT(tv, tv + 1)/1.0e3);
   io->tapTestLogicReset();
   return 0;
