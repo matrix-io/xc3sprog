@@ -40,10 +40,10 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "jedecfile.h"
 #include "progalgxc95x.h"
 
-int process(int argc, char **args, IOBase &io, int chainpos, bool verbose);
-void programXC3S(Jtag &jtag, IOBase &io, BitFile &file);
-void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs);
-void programXC95X(Jtag &jtag, IOBase &io, JedecFile &file);
+int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool verify);
+int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify);
+int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs, bool verify);
+int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify);
 
 extern char *optarg;
 extern int optind;
@@ -51,9 +51,10 @@ extern int optind;
 void usage() {
   fprintf(stderr,
 	  "\nUsage:\txc3sprog [-v] [-c cable_type] [-p chainpos] bitfile [+ (val[*cnt]|binfile) ...]\n"
-	  "\txc3sprog [-v] [-c cable_type] [-d device] bitfile [chainpos]\n\n"
+	  "\txc3sprog [-v] [-C] [-c cable_type] [-d device] bitfile [chainpos]\n\n"
 	  "   -?\tprint this help\n"
-	  "   -v\tverbose output\n\n"
+	  "   -v\tverbose output\n"
+	  "   -C\tVerify device against File(no programming)\n\n"
 	  "    Supported cable types: pp, ftdi, fx2\n"
     	  "   \tOptional pp arguments:\n"
 	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
@@ -77,6 +78,7 @@ void usage() {
 int main(int argc, char **args)
 {
   bool        verbose   = false;
+  bool        verify    = false;
   char const *cable     = "pp";
   char const *dev       = 0;
   int         chainpos  = 0;
@@ -103,12 +105,16 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hvc:d:D:p:P:S:t:")) {
+    switch(getopt(argc, args, "?hvCc:d:D:p:P:S:t:")) {
     case -1:
       goto args_done;
 
     case 'v':
       verbose = true;
+      break;
+
+    case 'C':
+      verify = true;
       break;
 
     case 'c':
@@ -197,10 +203,10 @@ int main(int argc, char **args)
     }
     return 1;
   }
-  return process(argc, args, *io, chainpos, verbose);
+  return process(argc, args, *io, chainpos, verbose, verify);
 }
 
-int process(int argc, char **args, IOBase &io, int chainpos, bool verbose)
+int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool verify)
 {
   char *devicedb = NULL;
   unsigned id;
@@ -266,14 +272,14 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose)
 		  else  file.append(args[i]);
 		}
 	    }
-	  if(strncmp("XC3S",dd,4)==0) programXC3S(jtag,io,file);
-	  else if(strncmp("XC2V",dd,4)==0) programXC3S(jtag,io,file);
+	  if(strncmp("XC3S",dd,4)==0) return programXC3S(jtag,io,file, verify);
+	  else if(strncmp("XC2V",dd,4)==0) return  programXC3S(jtag,io,file, verify);
 	  else if(strncmp("XCF",dd,3)==0) 
 	    { 
 	      int bs=(dd[4]-'0'==1) ? 2048 : 4096;
 	      if (verbose)
 		printf("Device block size is %d.\n", bs);
-	      programXCF(jtag,io,file, bs);
+	      return programXCF(jtag,io,file, bs, verify);
 	    }
 	  return 0;
 	}
@@ -288,7 +294,7 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose)
       JedecFile  file;
       file.readFile(args[0]);
       printf("size %d\n", size);
-      programXC95X(jtag,io, file);
+      return programXC95X(jtag,io, file, verify);
     }
   else
     {
@@ -297,27 +303,46 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose)
   return 1;
 }
 
-void programXC3S(Jtag &jtag, IOBase &io, BitFile &file)
+int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify)
 {
 
+  if(verify)
+    {
+      printf("Sorry, FPGA can't be verified (yet)\n");
+      return 1;
+    }
   ProgAlgXC3S alg(jtag,io);
   alg.program(file);
-  return;
+  return 0;
 }
 
-void programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs)
+int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs, bool verify)
 {
   ProgAlgXCF alg(jtag,io,bs);
-  alg.erase();
-  alg.program(file);
-  alg.disable();
+  if(!verify)
+    {
+      alg.erase();
+      alg.program(file);
+      alg.disable();
+    }
   alg.verify(file);
   alg.reconfig();
-  return;
+  return 0;
 }
 
-void programXC95X(Jtag &jtag, IOBase &io, JedecFile &file)
+int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify)
 {
   ProgAlgXC95X alg(jtag,io);
-  alg.array_program(file);
+  if (!verify)
+    {
+      if (!alg.blank_check())
+	alg.erase();
+      if(alg.blank_check())
+	{
+	  printf("Erase failed\n");
+	  return 1;
+	}
+      alg.array_program(file);
+    }
+  return alg.array_verify(file);
 }

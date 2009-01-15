@@ -181,7 +181,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
   return 0;
 }
 
-  void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
+void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
 {
   byte preamble[1]= {0x03};
   byte i_data[DRegLength+2] = {0,0,0,0,0,0, 0xff,0xff};
@@ -197,6 +197,11 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
   gettimeofday(tv, NULL);
   for(sec=0;sec < MaxSector;sec++)
     {
+      if(io->getVerbose())
+	{
+	  printf("\rReading Sector %3d", sec);
+	  fflush(stdout);
+	}
       for(l=0;l<3;l++){
 	for(m=0;m<5;m++){
 	  Addr = sec*0x20 + l*0x08 + m;
@@ -241,14 +246,94 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
   
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    printf("Readback time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
-}	    
+    printf("\nReadback time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+}
 
+int ProgAlgXC95X::flow_array_verify(JedecFile &file)
+{
+  byte preamble[1]= {0x03};
+  byte i_data[DRegLength+2] = {0,0,0,0,0,0, 0xff,0xff};
+  byte o_data[DRegLength+2];
+  struct timeval tv[2];
+
+  unsigned long Addr=0;
+  int bitlen;
+  int sec,l,m;
+  unsigned char data;
+  unsigned int idx=0;
+
+  gettimeofday(tv, NULL);
+  for(sec=0;sec < MaxSector;sec++)
+    {
+      if(io->getVerbose())
+	{
+	  printf("\rVerify Sector %3d", sec);
+	  fflush(stdout);
+	}
+      for(l=0;l<3;l++){
+	for(m=0;m<5;m++){
+	  Addr = sec*0x20 + l*0x08 + m;
+	  i_data[DRegLength] = (byte) (Addr &0xff);
+	  i_data[DRegLength+1] = (byte) ((Addr>>8) &0xff);
+	  jtag->shiftIR(&ISC_READ);
+	  jtag->shiftDR(preamble,0,2,0,false);
+	  jtag->shiftDR(i_data,o_data,(DRegLength+2)*8);
+	  if(sec | l | m )
+	    {
+	      for(int j=0;j<DRegLength;j++)
+		{
+		  data = o_data[j];
+		  for(int i=0;i<bitlen;i++)
+		    {
+		      if ((data& 0x01) != file.get_fuse(idx++))
+			{
+			  idx--;
+			  printf("\nMismatch at fuse %6d: %d vs %d\n",
+				 idx, data& 0x01, file.get_fuse(idx));
+			  return 1;
+			}
+		      data = data >> 1;
+		    }
+		}
+	    }
+	  if(l*5+m >= 9){
+	    bitlen=6;
+	  }
+	  else{
+	    bitlen=8;
+	  }
+	}
+      }
+    }
+  /* Now read the security fuses*/
+  jtag->shiftIR(&ISC_READ);
+  jtag->shiftDR(preamble,0,2,0,false);
+  jtag->shiftDR(i_data,o_data,(DRegLength+2)*8);
+  for(int j=0;j<DRegLength;j++)
+    {
+      data = o_data[j];
+      for(int i=0;i<bitlen;i++){
+	if ((data& 0x01) != file.get_fuse(idx++))
+	  {
+	    idx--;
+	    printf("\nMismatch at security fuse %6d: %c vs %c\n",
+		   idx, data& 0x01, file.get_fuse(idx));
+	    return 1;
+	  }
+	data = data >> 1;
+      }
+    }
+  
+  gettimeofday(tv+1, NULL);
+  if(io->getVerbose())
+    printf("\nSuccess! Verify time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+  return 0;
+}	    
 
 void ProgAlgXC95X::array_read(void)
 {
   JedecFile rbfile;
-
+  
   flow_enable();
   flow_blank_check();
 
@@ -259,18 +344,14 @@ void ProgAlgXC95X::array_read(void)
 
 void ProgAlgXC95X::array_program(JedecFile &file)
 {
-  JedecFile rbfile;
+  flow_array_program(file);
+}
+
+int ProgAlgXC95X::array_verify(JedecFile &file)
+{
+  int ret;
   flow_enable();
-  if (!flow_blank_check())
-    flow_erase();
-  if(flow_blank_check())
-    {
-      flow_array_program(file);
-      rbfile.setLength(file.getLength());
-      flow_array_read(rbfile);
-      for(unsigned int i=0; i<file.getLength(); i++)
-	if(file.get_fuse(i) != rbfile.get_fuse(i))
-	  printf("Mismatch at %d 0x%02x vs 0x%02x\n", i,file.get_fuse(i), rbfile.get_fuse(i));
-    }
+  ret = flow_array_verify(file);
   flow_disable();
+  return ret;
 }
