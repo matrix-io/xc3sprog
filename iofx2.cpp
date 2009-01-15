@@ -273,7 +273,7 @@ bool IOFX2::usrp_i2c_write(int i2c_addr, const void *buf, int len)
   if (len < 1 || len > MAX_EP0_PKTSIZE)
     return false;
 
-  int i;
+  //int i;
   //  printf("usrp_i2c_write Addr 0x%02x len %d: ", i2c_addr, len);
   //for(i=0; i<len; i++)
   //  printf(" %02x", ((const unsigned char *)buf)[i]);
