@@ -51,10 +51,9 @@ extern int optind;
 void usage() {
   fprintf(stderr,
 	  "\nUsage:\txc3sprog [-v] [-c cable_type] [-p chainpos] bitfile [+ (val[*cnt]|binfile) ...]\n"
-	  "\txc3sprog [-v] [-C] [-c cable_type] [-d device] bitfile [chainpos]\n\n"
 	  "   -?\tprint this help\n"
 	  "   -v\tverbose output\n"
-	  "   -C\tVerify device against File(no programming)\n\n"
+	  "   -C\tVerify device against File (no programming)\n\n"
 	  "    Supported cable types: pp, ftdi, fx2\n"
     	  "   \tOptional pp arguments:\n"
 	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
