@@ -325,6 +325,7 @@ int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs, bool verify)
       alg.disable();
     }
   alg.verify(file);
+  alg.disable();
   alg.reconfig();
   return 0;
 }
