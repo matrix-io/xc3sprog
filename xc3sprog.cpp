@@ -336,11 +336,13 @@ int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify)
   if (!verify)
     {
       if (!alg.blank_check())
-	alg.erase();
-      if(alg.blank_check())
 	{
-	  printf("Erase failed\n");
-	  return 1;
+	  alg.erase();
+	  if(!alg.blank_check())
+	    {
+	      printf("Erase failed\n");
+	      return 1;
+	    }
 	}
       alg.array_program(file);
     }
