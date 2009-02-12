@@ -41,7 +41,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgxc95x.h"
 
 int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool verify);
-int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify);
+int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
 int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs, bool verify);
 int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify);
 
@@ -211,6 +211,7 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool 
   unsigned id;
   Jtag jtag(&io);
   int num=jtag.getChain();
+  int family, manufacturer;
 
   // Synchronise database with chain of devices.
   DeviceDB db(devicedb);
@@ -232,6 +233,8 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool 
   // Find the programming algorithm required for device
   const char *dd=db.getDeviceDescription(chainpos);
   id = jtag.getDeviceID(chainpos);
+  family = (id>>21) & 0x3f;
+  manufacturer = (id>>1) & 0x3ff;
 
   if (verbose)
   {
@@ -239,70 +242,66 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool 
     fflush(stdout);
   }
 
-  if( (strncmp("XC3S",dd,4)==0) || (strncmp("XC2V",dd,4)==0) ||(strncmp("XCF",dd,3)==0))
+  if ( manufacturer == 0x049) /* XILINX*/
     {
-      try 
+      /* Probably XC4V and  XC5V should work too. Be devices to test at IKDA */
+      if( (strncmp("XC3S",dd,4)==0) || (strncmp("XC2V",dd,4)==0) ||(strncmp("XCF",dd,3)==0))
 	{
-	  
-	  BitFile  file(args[0]);
-	  
-	  if(verbose) 
+	  try 
 	    {
-	      printf("Created from NCD file: %s\n",file.getNCDFilename());
-	      printf("Target device: %s\n",file.getPartName());
-	      printf("Created: %s %s\n",file.getDate(),file.getTime());
-	      printf("Bitstream length: %lu bits\n", file.getLength());
-	    }      
-	  if ((strncmp("XCF",dd,3)==0))
-	    {
-	      for(int i = 2; i < argc; i++) 
+	      BitFile  file(args[0]);
+	      
+	      if(verbose) 
 		{
-		  char *end;
-		  
-		  unsigned long const  val = strtoul(args[i], &end, 0);
-		  unsigned long        cnt = 1;
-		  switch(*end) {
-		  case '*':
-		  case 'x':
-		  case 'X':
-		    cnt = strtoul(end+1, &end, 0);
-		  }
-		  if(*end == '\0')  file.append(val, cnt);
-		  else  file.append(args[i]);
+		  printf("Created from NCD file: %s\n",file.getNCDFilename());
+		  printf("Target device: %s\n",file.getPartName());
+		  printf("Created: %s %s\n",file.getDate(),file.getTime());
+		  printf("Bitstream length: %lu bits\n", file.getLength());
+		}      
+	      if ((strncmp("XCF",dd,3)==0))
+		{
+		  int bs=(dd[4]-'0'==1) ? 2048 : 4096;
+		  for(int i = 2; i < argc; i++) 
+		    {
+		      char *end;
+		      
+		      unsigned long const  val = strtoul(args[i], &end, 0);
+		      unsigned long        cnt = 1;
+		      switch(*end) {
+		      case '*':
+		      case 'x':
+		      case 'X':
+			cnt = strtoul(end+1, &end, 0);
+		      }
+		      if(*end == '\0')  file.append(val, cnt);
+		      else  file.append(args[i]);
+		    }
+		  if (verbose)
+		    printf("Device block size is %d.\n", bs);
+		  return programXCF(jtag,io,file, bs, verify);
 		}
+	      else return  programXC3S(jtag,io,file, verify, family);
 	    }
-	  if(strncmp("XC3S",dd,4)==0) return programXC3S(jtag,io,file, verify);
-	  else if(strncmp("XC2V",dd,4)==0) return  programXC3S(jtag,io,file, verify);
-	  else if(strncmp("XCF",dd,3)==0) 
-	    { 
-	      int bs=(dd[4]-'0'==1) ? 2048 : 4096;
-	      if (verbose)
-		printf("Device block size is %d.\n", bs);
-	      return programXCF(jtag,io,file, bs, verify);
-	    }
-	  return 0;
+	  catch(io_exception& e) {
+	    fprintf(stderr, "IOException: %s\n", e.getMessage().c_str());
+	    return  1;
+	  }
 	}
-      catch(io_exception& e) {
-	fprintf(stderr, "IOException: %s\n", e.getMessage().c_str());
-	return  1;
-      }
-    }
-  else if( ((id& 0x0ff00fff) == 0x09600093) || ((id& 0x0ff00fff) == 0x09700093))
-    {
-      int size = (id & 0x000ff000)>>12;
-      JedecFile  file;
-      file.readFile(args[0]);
-      printf("size %d\n", size);
-      return programXC95X(jtag,io, file, verify);
-    }
-  else
-    {
-      fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n",dd);
-    }
+      else if( ((id& 0x0ff00fff) == 0x09600093) || ((id& 0x0ff00fff) == 0x09700093))
+	{
+	  int size = (id & 0x000ff000)>>12;
+	  JedecFile  file;
+	  file.readFile(args[0]);
+	  printf("size %d\n", size);
+	  return programXC95X(jtag,io, file, verify);
+	}
+    } 
+  fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n",dd);
   return 1;
 }
 
-int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify)
+
+int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
 {
 
   if(verify)
@@ -310,8 +309,8 @@ int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify)
       printf("Sorry, FPGA can't be verified (yet)\n");
       return 1;
     }
-  ProgAlgXC3S alg(jtag,io);
-  alg.program(file);
+  ProgAlgXC3S alg(jtag,io, family);
+  alg.array_program(file);
   return 0;
 }
 

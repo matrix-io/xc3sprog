@@ -37,12 +37,23 @@ class ProgAlgXC3S
   static const byte CFG_IN;
   static const byte JSHUTDOWN;
   static const byte JSTART;
+  static const byte ISC_PROGRAM;
+  static const byte ISC_DNA;
+  static const byte ISC_ENABLE;
+  static const byte ISC_DISABLE;
   static const byte BYPASS;
   Jtag *jtag;
   IOBase *io;
+  int family;
+  int tck_len;
+  int array_transfer_len;
+  void flow_enable();
+  void flow_disable();
+  void flow_array_program(BitFile &file);
+  void flow_program_legacy(BitFile &file);
  public:
-  ProgAlgXC3S(Jtag &j, IOBase &i);
-  void program(BitFile &file);
+  ProgAlgXC3S(Jtag &j, IOBase &i, int family);
+  void array_program(BitFile &file);
 };
 
 
