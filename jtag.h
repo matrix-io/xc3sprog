@@ -70,6 +70,10 @@ class Jtag
     b[2]=(byte)((l>>16)&0xff);
     b[3]=(byte)((l>>24)&0xff);
   }
+  inline void shortToByteArray(const unsigned short l, byte *b){
+    b[0]=(byte)(l&0xff);
+    b[1]=(byte)((l>>8)&0xff);
+  }
   inline unsigned long byteArrayToLong(byte *b){
     return ((unsigned long)b[3]<<24)+((unsigned long)b[2]<<16)+
       ((unsigned long)b[1]<<8)+(unsigned long)b[0];
