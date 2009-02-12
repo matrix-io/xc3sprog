@@ -29,52 +29,130 @@ const byte ProgAlgXC3S::JPROGRAM=0x0b;
 const byte ProgAlgXC3S::CFG_IN=0x05;
 const byte ProgAlgXC3S::JSHUTDOWN=0x0d;
 const byte ProgAlgXC3S::JSTART=0x0c;
+const byte ProgAlgXC3S::ISC_PROGRAM=0x11;
+const byte ProgAlgXC3S::ISC_DNA=0x31;
+const byte ProgAlgXC3S::ISC_ENABLE=0x10;
+const byte ProgAlgXC3S::ISC_DISABLE=0x16;
 const byte ProgAlgXC3S::BYPASS=0x3f;
 
 #define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
                               (tvp2)->tv_usec - (tvp1)->tv_usec)
 
-ProgAlgXC3S::ProgAlgXC3S(Jtag &j, IOBase &i)
+ProgAlgXC3S::ProgAlgXC3S(Jtag &j, IOBase &i, int fam)
 {
   jtag=&j;
   io=&i;
+  family = fam;
+  switch(family)
+    {
+    case 0x0e: /* XC3SE*/
+    case 0x11: /* XC3SA*/
+    case 0x13: /* XC3SAN*/
+    case 0x1c: /* SC3SADSP*/
+      tck_len = 16;
+      array_transfer_len = 16;
+      break;
+    default:
+      tck_len = 12;
+      array_transfer_len = 64;
+    }
 }
 
-void ProgAlgXC3S::program(BitFile &file)
+void ProgAlgXC3S::flow_enable()
+{
+  byte data[1];
+
+  jtag->shiftIR(&ISC_ENABLE);
+  data[0]=0x0;
+  jtag->shiftDR(data,0,5);
+  io->cycleTCK(tck_len);
+}
+
+void ProgAlgXC3S::flow_disable()
+{
+  byte data[1];
+
+  jtag->shiftIR(&ISC_DISABLE);
+  io->cycleTCK(tck_len);
+  jtag->shiftIR(&BYPASS);
+  data[0]=0x0;
+  jtag->shiftDR(data,0,1);
+  io->cycleTCK(1);
+
+}
+
+void ProgAlgXC3S::flow_array_program(BitFile &file)
 {
   struct timeval tv[2];
-  
+  unsigned int i;
   gettimeofday(tv, NULL);
-  jtag->shiftIR(&JPROGRAM);
-  jtag->shiftIR(&CFG_IN);
-  
-  byte init[24];
-  jtag->longToByteArray(0xffffffff,&init[0]); // Sync
-  jtag->longToByteArray(0x66aa9955,&init[4]); // Sync
-  jtag->longToByteArray(0x8001000c,&init[8]); // CMD
-  jtag->longToByteArray(0xe0000000,&init[12]); // Clear CRC
-  jtag->longToByteArray(0x00000000,&init[16]); // Flush
-  jtag->longToByteArray(0x00000000,&init[20]); // Flush
-  jtag->shiftDR(init,0,192,32); // Align to 32 bits.
-  jtag->shiftIR(&JSHUTDOWN);
-  io->cycleTCK(12);
-  jtag->shiftIR(&CFG_IN);
-  
-  byte hdr[12];
-  jtag->longToByteArray(0x8001000c,&hdr[0]); // CMD
-  jtag->longToByteArray(0x10000000,&hdr[4]); // Assert GHIGH
-  jtag->longToByteArray(0x00000000,&hdr[8]); // Flush
-  jtag->shiftDR(hdr,0,96,32,false); // Align to 32 bits and do not goto EXIT1-DR
-  jtag->shiftDR(file.getData(),0,file.getLength()); 
-  io->tapTestLogicReset();
-  io->setTapState(IOBase::RUN_TEST_IDLE);
-  jtag->shiftIR(&JSTART);
-  io->cycleTCK(12);
-  jtag->shiftIR(&BYPASS); // Don't know why, but without this the FPGA will not reconfigure from Flash when PROG is asserted.
-  io->flush();
+  for(i=0; i<file.getLength(); i= i+ array_transfer_len)
+    {
+      jtag->shiftIR(&ISC_PROGRAM);
+      jtag->shiftDR(&(file.getData())[i/8],0,array_transfer_len);
+      io->cycleTCK(1);
+    }
   gettimeofday(tv+1, NULL);
   
   // Print the timing summary
   if (io->getVerbose())
-    printf(" done\nProgramming time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+    printf(" done. Programming time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+}
+
+void ProgAlgXC3S::flow_program_legacy(BitFile &file)
+{
+  byte data[2];
+  struct timeval tv[2];
+  gettimeofday(tv, NULL);
+
+  jtag->shiftIR(&JSHUTDOWN);
+  io->cycleTCK(tck_len);
+  jtag->shiftIR(&CFG_IN);
+  jtag->shiftDR((file.getData()),0,file.getLength());
+  io->cycleTCK(1);
+  jtag->shiftIR(&JSTART);
+  io->cycleTCK(2*tck_len);
+  jtag->shiftIR(&BYPASS);
+  data[0]=0x0;
+  jtag->shiftDR(data,0,1);
+  io->cycleTCK(1);
+  
+  // Print the timing summary
+  if (io->getVerbose())
+    {
+      gettimeofday(tv+1, NULL);
+      printf("done. Programming time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+    }
+ 
+}
+void ProgAlgXC3S::array_program(BitFile &file)
+{
+  flow_enable();
+  /* JPROGAM: Trigerr reconfiguration, not explained in ug332, but
+     DS099 Figure 28:  Boundary-Scan Configuration Flow Diagram (p.49) */
+  jtag->shiftIR(&JPROGRAM);
+
+  switch(family)
+    {
+    case 0x11: /* XC3SA*/
+    case 0x13: /* XC3SAN*/
+    case 0x1c: /* SC3SADSP*/
+      {
+	byte data[8];
+	jtag->shiftIR(&ISC_DNA);
+	jtag->shiftDR(0, data, 64);
+	io->cycleTCK(1);
+	if (*(long long*)data != -1LL)
+	  /* ISC_DNA only works on a unconfigured device, see AR #29977*/
+	  printf("DNA is 0x%02x%02x%02x%02x%02x%02x%02x%02x\n", 
+		 data[0], data[1], data[2], data[3], 
+		 data[4], data[5], data[6], data[7]);
+	break;
+      }
+    }
+
+  /* use leagcy, if large transfers are faster then chunks */
+  flow_program_legacy(file);
+  /*flow_array_program(file);*/
+  flow_disable();
 }
