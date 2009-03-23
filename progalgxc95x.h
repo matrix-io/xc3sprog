@@ -45,6 +45,7 @@ class ProgAlgXC95X
 
   Jtag *jtag;
   IOBase *io;
+  int DRegLength;
   void flow_enable();
   void flow_disable();
   void flow_error_exit();
@@ -54,7 +55,7 @@ class ProgAlgXC95X
   int flow_blank_check();
   void flow_erase();
  public:
-  ProgAlgXC95X(Jtag &j, IOBase &i);
+  ProgAlgXC95X(Jtag &j, IOBase &i, int s);
   int blank_check(){flow_enable(); return flow_blank_check();}
   void erase(){flow_enable(); flow_erase();}
   int array_verify(JedecFile &file);

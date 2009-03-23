@@ -42,8 +42,8 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool verify);
 int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
-int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs, bool verify);
-int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify);
+int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int blocksize, bool verify);
+int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify, int size);
 
 extern char *optarg;
 extern int optind;
@@ -289,11 +289,11 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool 
 	}
       else if( ((id& 0x0ff00fff) == 0x09600093) || ((id& 0x0ff00fff) == 0x09700093))
 	{
-	  int size = (id & 0x000ff000)>>12;
+	  int size = (id & 0x000ff000)>>13;
 	  JedecFile  file;
-	  file.readFile(args[0]);
 	  printf("size %d\n", size);
-	  return programXC95X(jtag,io, file, verify);
+	  file.readFile(args[0]);
+	  return programXC95X(jtag,io, file, verify, size);
 	}
     } 
   fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n",dd);
@@ -314,9 +314,9 @@ int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
   return 0;
 }
 
-int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs, bool verify)
+int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int blocksize, bool verify)
 {
-  ProgAlgXCF alg(jtag,io,bs);
+  ProgAlgXCF alg(jtag,io,blocksize);
   if(!verify)
     {
       alg.erase();
@@ -329,9 +329,9 @@ int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int bs, bool verify)
   return 0;
 }
 
-int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify)
+int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify, int size)
 {
-  ProgAlgXC95X alg(jtag,io);
+  ProgAlgXC95X alg(jtag,io, size);
   if (!verify)
     {
       if (!alg.blank_check())

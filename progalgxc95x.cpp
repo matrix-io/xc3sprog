@@ -38,10 +38,23 @@ const byte ProgAlgXC95X::BYPASS=0xff;
 #define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
                               (tvp2)->tv_usec - (tvp1)->tv_usec)
 
-ProgAlgXC95X::ProgAlgXC95X(Jtag &j, IOBase &i)
+ProgAlgXC95X::ProgAlgXC95X(Jtag &j, IOBase &i, int s)
 {
   jtag=&j;
   io=&i;
+
+  switch (s)
+   {
+   case  1: DRegLength = 2;
+     break;
+   case  2: DRegLength = 4;
+     break;
+   case  4: DRegLength = 8;
+     break;
+   case 11: DRegLength = 16;
+     break;
+   default: printf("Unknown device\n");
+   }
 }
 
 void ProgAlgXC95X::flow_enable()
@@ -100,20 +113,21 @@ void ProgAlgXC95X::flow_erase()
     printf("Erase failed %02x\n", data[0]);
 }
   
-#define DRegLength 8
 #define MaxSector 108
+#define MaxDRegLength 16
 
 int ProgAlgXC95X::flow_array_program(JedecFile &file)
 {
   byte preamble[1]= {0x01};
-  byte i_data[DRegLength+2];
-  byte o_data[DRegLength+3];
+  byte i_data[MaxDRegLength+2];
+  byte o_data[MaxDRegLength+3];
   struct timeval tv[2];
   unsigned long Addr=0;
   int bitlen;
   int k, sec,l,m;
   unsigned char data;
   unsigned int idx=0;
+     
 
   gettimeofday(tv, NULL);
   for(sec=0;sec < MaxSector;sec++)
@@ -184,8 +198,8 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
 void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
 {
   byte preamble[1]= {0x03};
-  byte i_data[DRegLength+2] = {0,0,0,0,0,0, 0xff,0xff};
-  byte o_data[DRegLength+2];
+  byte i_data[MaxDRegLength+2];
+  byte o_data[MaxDRegLength+2];
   struct timeval tv[2];
 
   unsigned long Addr=0;
@@ -252,8 +266,8 @@ void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
 int ProgAlgXC95X::flow_array_verify(JedecFile &file)
 {
   byte preamble[1]= {0x03};
-  byte i_data[DRegLength+2] = {0,0,0,0,0,0, 0xff,0xff};
-  byte o_data[DRegLength+2];
+  byte i_data[MaxDRegLength+2];
+  byte o_data[MaxDRegLength+2];
   struct timeval tv[2];
 
   unsigned long Addr=0;
