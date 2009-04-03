@@ -215,6 +215,8 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool 
 
   // Synchronise database with chain of devices.
   DeviceDB db(devicedb);
+  if (verbose)
+    fprintf(stderr, "Using %s\n", db.getFile().c_str());
   for(int i=0; i<num; i++){
     int length=db.loadDevice(jtag.getDeviceID(i));
     if(length>0)jtag.setDeviceIRLength(i,length);

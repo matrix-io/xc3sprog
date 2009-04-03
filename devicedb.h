@@ -42,6 +42,7 @@ class DeviceDB
     int irlen; // instruction register length.
     std::string text;
   };
+  std::vector<device_t> id_db;
   std::vector<device_t> devices;
   std::string  filename;
 
