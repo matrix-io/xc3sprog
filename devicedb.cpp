@@ -31,54 +31,70 @@ Dmitry Teytelman [dimtey@gmail.com] 19 May 2006 [applied 13 Aug 2006]:
 #include <stdlib.h>
 #include "devicedb.h"
 
+#include "devlist.h"
+
 using namespace std;
 
 DeviceDB::DeviceDB(const char *fname) {
+  int i;
+  device_t id;
+  char text[256];
+  int irlen;
+  uint32_t idr;
   // Fall back to environment or default if no file specified
   if(!fname) {
     if(!(fname = getenv("XCDB")))  fname = DEVICEDB;
   }
   
-  filename = fname;
   FILE *fp=fopen(fname,"rt");
-  if(fp==0)fprintf(stderr,"Cannot open device database file '%s'\n",fname);
-  else fclose(fp);
+  if(fp)
+    {
+      filename = fname;
+      while(!feof(fp))
+	{
+	  char buffer[256];
+	  fgets(buffer,256,fp);  // Get next line from file
+	  if (sscanf(buffer,"%08x %d %s", &idr, &irlen, text) == 3)
+	    {
+	      id.text = text;
+	      id.idcode = idr & 0x0fffffff; /* Mask out revisions*/
+	      id.irlen = irlen;
+	      id_db.push_back(id);
+	    }
+	}
+      fclose(fp);
+    }
+  else
+    {
+      filename = "built-in device list";
+      for(i=0; fb_string[i]; i++)
+	if (sscanf(fb_string[i],"%08x %d %s", &idr, &irlen, text) == 3)
+	    {
+	      id.text = text;
+	      id.idcode = idr & 0x0fffffff; /* Mask out revisions*/
+	      id.irlen = irlen;
+	      id_db.push_back(id);
+	    }
+    }
+
 }
 
 int DeviceDB::loadDevice(const uint32_t id)
 {
-  FILE *fp=fopen(filename.c_str(),"rt");
-  if(fp==0){
-    fprintf(stderr,"Cannot open device database file '%s'\n",filename.c_str());
-    return 0;
-  }
-  
-  int irlen;
-  while(!feof(fp)){
-    uint32_t idr = 0;
-    char text[256];
-    char buffer[256];
-    fgets(buffer,256,fp);  // Get next line from file
-    sscanf(buffer,"%08x %d %s", &idr, &irlen, text);
-    
-    /*
-      Modification by Dmitry Teytelman, 2006-05-19
-      Virtex-II and Spartan-3 use most significant 4 bits of
-      the IDCODE for the device revision code. We don't want
-      to have to list all revisions in the devlist.txt
-    */
-    if((id & 0x0fffffff) == (idr & 0x0fffffff)){
-      device_t dev;
-      dev.text=text;
-      dev.idcode=id;
-      dev.irlen=irlen;
-      devices.push_back(dev);
-      fclose(fp);
-      return irlen;
+   uint32_t i;
+  for (i=0; i<id_db.size(); i++)
+    {
+      if((id & 0x0fffffff) == id_db[i].idcode)
+	{
+	  device_t dev;
+	  dev.text=id_db[i].text;
+	  dev.idcode=id_db[i].idcode;
+	  dev.irlen=id_db[i].irlen;
+	  devices.push_back(dev);
+	  return dev.irlen;
+	}
     }
-  }
-  fclose(fp);
-  return 0;      
+  return 0;
 }
 
 int DeviceDB::getIRLength(unsigned int i)

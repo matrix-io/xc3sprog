@@ -92,7 +92,13 @@ jedecfile.o: jedecfile.cpp jedecfile.h
 jtag.o: jtag.cpp jtag.h
 	${GCC} ${DEFS} -c $< -o $@
 
-devicedb.o: devicedb.cpp devicedb.h
+devlist: devlist.o 
+	${GCC} ${DEFS}  $^ -o $@
+
+devlist.h: devlist devicedb.h devlist.txt
+	./devlist
+
+devicedb.o: devicedb.cpp devicedb.h devlist.h
 	${GCC} ${DEFS} -c $< -o $@
 
 progalgxcf.o: progalgxcf.cpp progalgxcf.h iobase.h jtag.h bitfile.h
@@ -105,5 +111,5 @@ progalgxc95x.o: progalgxc95x.cpp progalgxc95x.h iobase.h jtag.h bitfile.h
 	${GCC} ${DEFS} -c $< -o $@
 
 clean:
-	rm -f *.o
+	rm -f *.o devlist devlist.h
 	rm -f ${PROGS}
