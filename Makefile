@@ -20,7 +20,7 @@ ACS_ROOT = /spare/bon/svn/acs
 PREFIX?=/usr/local
 DEVLIST=devlist.txt
 DEVLIST_INSTALL=share/XC3Sprog
-#FTDI_LIB=-DUSE_FTD2XX
+FTDI_LIB=-DUSE_FTD2XX
 DEFS=-DDEVICEDB=\"${PREFIX}/${DEVLIST_INSTALL}/${DEVLIST}\" ${FTDI_LIB}
 PROGS=detectchain debug bitparse jedecparse xc3sprog
 GCC=g++ -g -Wall -I/usr/local/include/ -I${ACS_ROOT}/devices/llbbc08/trunk/xguff/host/lib/include `libftdi-config --cflags`
