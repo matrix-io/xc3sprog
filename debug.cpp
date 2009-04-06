@@ -27,7 +27,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include "iobase.h"
 #include "ioparport.h"
-#include "ioftdi.h"
 #include "iodebug.h"
 
 using namespace std;
