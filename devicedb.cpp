@@ -29,9 +29,10 @@ Dmitry Teytelman [dimtey@gmail.com] 19 May 2006 [applied 13 Aug 2006]:
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 #include "devicedb.h"
 
-#include "devlist.h"
+#include "config.h"
 
 using namespace std;
 
@@ -66,17 +67,30 @@ DeviceDB::DeviceDB(const char *fname) {
     }
   else
     {
+      char buffer[256];
+      const char *p = fb_string;
+      
       filename = "built-in device list";
-      for(i=0; fb_string[i]; i++)
-	if (sscanf(fb_string[i],"%08x %d %s", &idr, &irlen, text) == 3)
+      while(*p)
+	{
+	  int i;
+	  for(i=0; p[i] && (p[i] != ';'); i++)
+	    {
+	      buffer[i] = p[i];
+	    }
+	  p += i;
+	  buffer[i] = 0;
+	  while(*p && *p == ';')
+	    p++;
+	  if (i &&  (sscanf(buffer,"%08x %d %s", &idr, &irlen, text) == 3))
 	    {
 	      id.text = text;
 	      id.idcode = idr & 0x0fffffff; /* Mask out revisions*/
 	      id.irlen = irlen;
 	      id_db.push_back(id);
 	    }
+	}
     }
-
 }
 
 int DeviceDB::loadDevice(const uint32_t id)
