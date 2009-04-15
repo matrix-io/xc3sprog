@@ -32,8 +32,8 @@
 
 
 void JTAG_Init(Jtag *j, IO_JTAG *io);
-void Send_Instruction(int Size, char *Data);
-void Send_Data(int Size, char *Data);
+void Send_Instruction(int Size, const char *Data);
+void Send_Data(int Size, const char *Data);
 void Send_Data_Output(int Size, char *Data, char *Output);
 void Send_bData_Output(int Size, unsigned char *Data, unsigned char *Output);
 

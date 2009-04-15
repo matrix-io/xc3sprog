@@ -99,11 +99,11 @@ const struct MENU_ITEM gMenuItem[]=
                               {0,NULL,NULL}
                             };
 
-
+#define BUFSIZE 256
 void DisplayMenu(void)
 {
   int i,c;
-  char buffer[256];
+  char buffer[BUFSIZE];
 
   gExitMenu=0;
   do
@@ -116,7 +116,7 @@ void DisplayMenu(void)
       printf("\t%c)\t%s\r\n",gMenuItem[i].selection,gMenuItem[i].title);
     }
     printf("\r\n\t");
-    gets(buffer);
+    fgets(buffer, BUFSIZE, stdin);
     c=buffer[0];
 
     for(i=0;;i++)
@@ -135,7 +135,7 @@ void DisplayMenu(void)
 void ReadFuseBits(struct MENU_ITEM *ptr)
 {
   int c;
-  char buffer[256];
+  char buffer[BUFSIZE];
 
   ptr=ptr;
   AVR_Prog_Enable();
@@ -146,14 +146,14 @@ void ReadFuseBits(struct MENU_ITEM *ptr)
   DisplayATMegaFuseData();
 
   printf("\r\nDo you want to write a fuse file ? (Y/N) ");
-  gets(buffer);
+  fgets(buffer, BUFSIZE, stdin);
   c=buffer[0];
   switch(c)
   {
     case 'y':
     case 'Y':
       printf("\r\nFilename ? ");
-      gets(buffer);
+      fgets(buffer, BUFSIZE, stdin);
       WriteATMegaFuseFile(buffer);
       break;
   }
@@ -161,12 +161,12 @@ void ReadFuseBits(struct MENU_ITEM *ptr)
 
 void WriteFuseBits(struct MENU_ITEM *ptr)
 {
-  char buffer[256];
+  char buffer[BUFSIZE];
 
   ptr=ptr;
   SetATMegaFuseDefault();  /* Any bits not defined in the fuse file will be the default value */
   printf("\r\nFilename ? ");
-  gets(buffer);
+  fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
   {
     case 0:    /* Do not try and load with obvious invalid file name */
@@ -184,7 +184,7 @@ void WriteFuseBits(struct MENU_ITEM *ptr)
 
   printf("\r\nAre you sure you want to write the above fuse data ? (YES) ");
 
-  gets(buffer);
+  fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
   {
     case 'y':
@@ -205,13 +205,13 @@ void WriteFuseBits(struct MENU_ITEM *ptr)
 
 void EraseDevice(struct MENU_ITEM *ptr)
 {
-  char buffer[256];
+  char buffer[BUFSIZE];
 
   ptr=ptr;
   printf("If EESAVE == 0 then EEPROM will NOT be erased\r\n");
   printf("\r\nAre you sure you want to erase the device ? (YES) ");
 
-  gets(buffer);
+  fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
   {
     case 'y':
@@ -234,14 +234,14 @@ unsigned long gFlashDisplayStart=0xFFFFFFFFUL-0xFFUL;
 
 void ReadFlashDisplay(struct MENU_ITEM *ptr)
 {
-  char buffer[256],tmp;
+  char buffer[BUFSIZE],tmp;
   int i,j,base,tmp1;
   unsigned long add;
 
   AVR_Prog_Enable();
   ptr=ptr;
   printf("\r\nStart Address ? ");
-  gets(buffer);
+  fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
   {
     case 0:
@@ -286,20 +286,19 @@ void ReadFlashDisplay(struct MENU_ITEM *ptr)
   }
   printf("\r\n");
   AVR_Prog_Disable();
-  gets(buffer);
+  fgets(buffer, BUFSIZE, stdin);
 }
 
 void ReadFlashWriteFile(struct MENU_ITEM *ptr)
 {
-  char buffer[256];
-  int i,p,len,k;
+  char buffer[BUFSIZE];
   unsigned long add;
   FILE *fp;
 
   AVR_Prog_Enable();
   ptr=ptr;
   printf("\r\nFile Name [atmega.bin] ? ");
-  gets(buffer);
+  fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
   {
     case 0:
@@ -334,14 +333,14 @@ unsigned gEepromDisplayStart=(~0)-512;
 
 void ReadEepromDisplay(struct MENU_ITEM *ptr)
 {
-  char buffer[256],tmp;
+  char buffer[BUFSIZE],tmp;
   int i,j,tmp1;
   unsigned add,length;
 
   AVR_Prog_Enable();
   ptr=ptr;
   printf("\r\nStart Address ? ");
-  gets(buffer);
+  fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
   {
     case 0:
@@ -407,6 +406,6 @@ void ReadEepromDisplay(struct MENU_ITEM *ptr)
 
   printf("\r\n");
   AVR_Prog_Disable();
-  gets(buffer);
+  fgets(buffer, BUFSIZE, stdin);
 }
 

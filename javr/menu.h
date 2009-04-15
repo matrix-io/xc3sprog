@@ -34,7 +34,7 @@
 struct MENU_ITEM
 {
   char selection;
-  char *title;
+  const char *title;
   void(*function)(struct MENU_ITEM *ptr);
 };
 

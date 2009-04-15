@@ -8,7 +8,7 @@
 static Jtag *avr_j;
 static IO_JTAG *avr_io;
 
-static void   BitArraytoByteArray(char * Data, unsigned char *bData, int Size)
+static void   BitArraytoByteArray(const char * Data, unsigned char *bData, int Size)
 {
   int i,j;
   unsigned char bvalue;
@@ -83,7 +83,7 @@ void JTAG_Init(Jtag *j, IO_JTAG *io)
   avr_io = io;
 }
 
-void Send_Instruction(int Size, char *Data){
+void Send_Instruction(int Size, const char *Data){
   unsigned char inst[1];
   if (Size !=4){
     fprintf(stderr," Unexpected size %d\n",Size);
@@ -97,7 +97,7 @@ void Send_Instruction(int Size, char *Data){
   avr_j->shiftIR(inst, 0);
 }
 
-void Send_Data(int Size, char *Data)
+void Send_Data(int Size, const char *Data)
 {
   int bSize= Size/8;
   unsigned char * bData;
