@@ -80,7 +80,7 @@ void IOFX2::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length,
 	  sdummy[0] = *tmpsbuf;
 	  usrp_i2c_write(i2c_write_addr, sdummy, rem);
 	  usrp_i2c_read (i2c_write_addr, sdummy, 1);
-	  *tmprbuf = sdummy[0]>>(7-rem);
+	  *tmprbuf = sdummy[0]>>(8-rem);
 	}
     }
   else if (tdi)
@@ -136,7 +136,7 @@ void IOFX2::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length,
 	  sdummy[0] = 0;
 	  usrp_i2c_write(i2c_write_addr, sdummy, rem);
 	  usrp_i2c_read (i2c_write_addr, sdummy, 1);
-	  *tmprbuf = sdummy[0]>>(7-rem);
+	  *tmprbuf = sdummy[0]>>(8-rem);
 	}
     }
 }
