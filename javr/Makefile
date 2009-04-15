@@ -53,7 +53,7 @@ endif
 #compiler flags
 #	CPFLAGS	= -g -O2 -Wall  -Wstrict-prototypes -Wa,-ahlms=$(<:.c=.lst)
 #	CPFLAGS	=  -Os -Wall  -Wstrict-prototypes -Wa,-ahlms=$(<:.c=.lst)
-	CPFLAGS	=  -g -Wall  -Wstrict-prototypes
+	CPFLAGS	=  -g -Wall
 
 
 #assembler flags

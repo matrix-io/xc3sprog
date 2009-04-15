@@ -60,7 +60,7 @@ typedef struct
   unsigned long flash;
   unsigned short ram;
   unsigned char Index;  /* Use To access array of Device Specific routines */
-  char *name;
+  const char *name;
 }AVR_Data;
 
 typedef struct
@@ -91,7 +91,7 @@ typedef struct
 
 #ifdef JAVR_M
 
-char *gVersionStr="2.4";
+char gVersionStr[]="2.4";
 JTAG_ID gJTAG_ID;
 
 

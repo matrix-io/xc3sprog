@@ -43,7 +43,7 @@
 #undef PARSE_M
 
 
-char *gToken[]={
+const char *gToken[]={
                "M103C:",
                "WDTON:",
                "OCDEN:",

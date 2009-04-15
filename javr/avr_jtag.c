@@ -98,7 +98,7 @@ void ResetReleaseAVR(void)
 
 void AVR_Prog_Enable(void)
 {
-  char *inst=SIG_PROG_EN ;  /* Prog Enable Signature (ATMega 128) */
+  const char *inst=SIG_PROG_EN ;  /* Prog Enable Signature (ATMega 128) */
 
   if (debug& UL_FUNCTIONS)
     fprintf(stderr,"AVR_Prog_Enable\n");
@@ -108,7 +108,7 @@ void AVR_Prog_Enable(void)
 
 void AVR_Prog_Disable(void)
 {
-  char *inst="0000000000000000";
+  const char *inst="0000000000000000";
 
   if (debug& UL_FUNCTIONS)
     fprintf(stderr,"AVR_Prog_Disable\n");
@@ -179,7 +179,7 @@ void ChipErase(void)
 
 
 static unsigned char gPageBuffer[(MAX_BLOCK_SIZE+1)*8+1];  /* Each bit in block is converted to 1 char */
-static unsigned char bPageBuffer[(MAX_BLOCK_SIZE+2)];
+//static unsigned char bPageBuffer[(MAX_BLOCK_SIZE+2)];
 
 
 /********************************************************************\
@@ -621,8 +621,7 @@ void WriteFlashBlock(unsigned long startaddress, unsigned long length, unsigned 
   unsigned pagenumber, number_of_pages;
   unsigned index;
   unsigned long len;
-  int i;
-  unsigned char *p_src = src;
+  unsigned int i;
 
   if(length>gDeviceData.flash)
   {
