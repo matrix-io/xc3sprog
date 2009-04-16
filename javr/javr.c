@@ -139,8 +139,10 @@ int main(int argc, char *argv[])
   int dblast=0;
   for(int i=0; i<num; i++){
     unsigned long id=jtag.getDeviceID(i);
+    if (!id || (id == (unsigned long) -1))
+      continue;
     int length=db.loadDevice(id);
-    printf("IDCODE: 0x%08lx\t",id);
+    printf("IDCODE: 0x%08lx",id);
     if(length>0){
       jtag.setDeviceIRLength(i,length);
       printf("Desc: %s\tIR length: %d\n",db.getDeviceDescription(dblast),length);
