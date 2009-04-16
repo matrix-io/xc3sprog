@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../XC3Sprog/debug.h"
+#include "debug.h"
 
 static Jtag *avr_j;
 static IO_JTAG *avr_io;

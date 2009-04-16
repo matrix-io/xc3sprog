@@ -1,5 +1,5 @@
 #include "ioparport.h"
-#include "/spare/bon/jtagprog/XC3Sprog/jtag.h"
+#include "jtag.h"
 
 #undef NEWFUNCTIONS
 //#define NEWFUNCTIONS
