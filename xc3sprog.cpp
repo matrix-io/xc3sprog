@@ -36,9 +36,11 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "jtag.h"
 #include "devicedb.h"
 #include "progalgxcf.h"
+#include "javr.h"
 #include "progalgxc3s.h"
 #include "jedecfile.h"
 #include "progalgxc95x.h"
+#include "progalgavr.h"
 
 int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
 int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int blocksize, bool verify);
@@ -97,6 +99,11 @@ void usage() {
 	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n"
 	  "   chainpos\n"
 	  "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
+          "   AVR specific arguments\n"
+	  "\t[-L ] (Program Lockbitsif defined in fusefile)\n"
+	  "\t[-e eepromfile]\n"
+	  "\t[-f fusefile] (default extension: .fus; leave fuses untouched if no file given)\n"
+	  "\n"
 	  "   val[*cnt]|binfile\n"
 	  "\tAdditional data to append to bitfile when programming.\n"
 	  "\tOnly sensible for programming platform flashes (PROMs).\n"
@@ -109,9 +116,12 @@ int main(int argc, char **args)
 {
   bool        verbose   = false;
   bool        verify    = false;
+  bool        lock      = false;
   unsigned int id;
   char const *cable     = "pp";
   char const *dev       = 0;
+  char const *eepromfile= 0;
+  char const *fusefile  = 0;
   int         chainpos  = 0;
   int vendor    = 0;
   int product   = 0;
@@ -138,7 +148,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hvCc:d:D:p:P:S:t:")) {
+    switch(getopt(argc, args, "?hvCLc:d:e:f:fD:p:P:S:t:")) {
     case -1:
       goto args_done;
 
@@ -150,8 +160,20 @@ int main(int argc, char **args)
       verify = true;
       break;
 
+    case 'L':
+      lock = true;
+      break;
+
     case 'c':
       cable = optarg;
+      break;
+
+    case 'e':
+      eepromfile = optarg;
+      break;
+
+    case 'f':
+      fusefile = optarg;
       break;
 
      case 't':
@@ -307,6 +329,11 @@ int main(int argc, char **args)
 	  return programXC95X(*jtag,io.operator*(), file, verify, size);
 	}
     } 
+  else if  ( manufacturer == 0x01f) /* Atmel */
+    {
+      ProgAlgAVR *alg = new ProgAlgAVR(*jtag,io.operator*(),id);
+      return jAVR (alg, args[0],verify, lock, eepromfile, fusefile);
+    }
   fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n", db.getDeviceDescription(chainpos));
   return 1;
 }
