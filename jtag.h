@@ -26,6 +26,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #ifndef JTAG_H
 #define JTAG_H
 
+#include <stdio.h>
 #include <vector>
 
 #include "iobase.h"
