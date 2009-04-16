@@ -235,7 +235,7 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool 
   // Find the programming algorithm required for device
   const char *dd=db.getDeviceDescription(chainpos);
   id = jtag.getDeviceID(chainpos);
-  family = (id>>21) & 0x3f;
+  family = (id>>21) & 0x7f;
   manufacturer = (id>>1) & 0x3ff;
 
   if (verbose)
