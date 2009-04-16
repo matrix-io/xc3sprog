@@ -40,7 +40,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "jedecfile.h"
 #include "progalgxc95x.h"
 
-int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool verify);
 int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
 int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int blocksize, bool verify);
 int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify, int size);
@@ -48,6 +47,38 @@ int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify, int size)
 extern char *optarg;
 extern int optind;
 
+unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
+{
+  int num=jtag.getChain();
+  int family, manufacturer;
+  unsigned int id;
+
+  // Synchronise database with chain of devices.
+  for(int i=0; i<num; i++){
+    int length=db.loadDevice(jtag.getDeviceID(i));
+    if(length>0)jtag.setDeviceIRLength(i,length);
+    else{
+      id=jtag.getDeviceID(i);
+      fprintf(stderr,"Cannot find device having IDCODE=%08x\n",id);
+      return 0;
+    }
+  }
+  
+  if(jtag.selectDevice(chainpos)<0){
+    fprintf(stderr,"Invalid chain position %d, position must be less than %d (but not less than 0).\n",chainpos,num);
+    return 0;
+  }
+
+  const char *dd=db.getDeviceDescription(chainpos);
+  id = jtag.getDeviceID(chainpos);
+  if (verbose)
+  {
+    printf("JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\nProgramming: ", chainpos,id, dd);
+    fflush(stdout);
+  }
+  return id;
+}
+  
 void usage() {
   fprintf(stderr,
 	  "\nUsage:\txc3sprog [-v] [-c cable_type] [-p chainpos] bitfile [+ (val[*cnt]|binfile) ...]\n"
@@ -78,6 +109,7 @@ int main(int argc, char **args)
 {
   bool        verbose   = false;
   bool        verify    = false;
+  unsigned int id;
   char const *cable     = "pp";
   char const *dev       = 0;
   int         chainpos  = 0;
@@ -86,7 +118,9 @@ int main(int argc, char **args)
   char const *desc    = 0;
   char const *serial  = 0;
   int subtype = FTDI_NO_EN;
-
+  char *devicedb = NULL;
+  DeviceDB db(devicedb);
+  
   { // Produce release info from CVS tags
     char  release[] = "$Name: Release-0-5 $";
     char *loc0=strchr(release,'-');
@@ -202,52 +236,26 @@ int main(int argc, char **args)
     }
     return 1;
   }
-  return process(argc, args, *io, chainpos, verbose, verify);
-}
 
-int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool verify)
-{
-  char *devicedb = NULL;
-  unsigned id;
-  Jtag jtag(&io);
-  int num=jtag.getChain();
-  int family, manufacturer;
-
-  // Synchronise database with chain of devices.
-  DeviceDB db(devicedb);
+  Jtag *jtag = new Jtag(io.operator->());
+  unsigned int family, manufacturer;  
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
-  for(int i=0; i<num; i++){
-    int length=db.loadDevice(jtag.getDeviceID(i));
-    if(length>0)jtag.setDeviceIRLength(i,length);
-    else{
-      id=jtag.getDeviceID(i);
-      fprintf(stderr,"Cannot find device having IDCODE=%08x\n",id);
-      return 2;
-    }
-  }
-  
-  if(jtag.selectDevice(chainpos)<0){
-    fprintf(stderr,"Invalid chain position %d, position must be less than %d (but not less than 0).\n",chainpos,num);
-    return 3;
-  }
-
-  // Find the programming algorithm required for device
-  const char *dd=db.getDeviceDescription(chainpos);
-  id = jtag.getDeviceID(chainpos);
+  id = get_id (*jtag, db, chainpos, verbose);
   family = (id>>21) & 0x7f;
   manufacturer = (id>>1) & 0x3ff;
 
-  if (verbose)
-  {
-    printf("JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\nProgramming: ", chainpos,id, dd);
-    fflush(stdout);
-  }
-
   if ( manufacturer == 0x049) /* XILINX*/
     {
-      /* Probably XC4V and  XC5V should work too. Be devices to test at IKDA */
-      if( (strncmp("XC3S",dd,4)==0) || (strncmp("XC2V",dd,4)==0) ||(strncmp("XCF",dd,3)==0))
+      /* Probably XC4V and  XC5V should work too. No devices to test at IKDA */
+      if( (family == 0x0a) || /*XC3S*/
+	  (family == 0x0e) || /*XC3SE*/
+	  (family == 0x11) || /*XC3SA*/
+	  (family == 0x13) || /*XC3SAN*/
+	  (family == 0x1c) || /*XC3SD*/
+	  (family == 0x25) || /*XCF*/
+	  (family == 0x08)    /*XC2V*/
+	  )
 	{
 	  try 
 	    {
@@ -260,9 +268,10 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool 
 		  printf("Created: %s %s\n",file.getDate(),file.getTime());
 		  printf("Bitstream length: %lu bits\n", file.getLength());
 		}      
-	      if ((strncmp("XCF",dd,3)==0))
+	      if (family == 0x25)
 		{
-		  int bs=(dd[4]-'0'==1) ? 2048 : 4096;
+		  int size = (id & 0x000ff000)>>12;
+		  int bs=(size == 0x44) ? 2048 : 4096;
 		  for(int i = 2; i < argc; i++) 
 		    {
 		      char *end;
@@ -280,25 +289,25 @@ int process(int argc, char **args, IOBase &io, int chainpos, bool verbose, bool 
 		    }
 		  if (verbose)
 		    printf("Device block size is %d.\n", bs);
-		  return programXCF(jtag,io,file, bs, verify);
+		  return programXCF(*jtag,io.operator*(),file, bs, verify);
 		}
-	      else return  programXC3S(jtag,io,file, verify, family);
+	      else return  programXC3S(*jtag,io.operator*(),file, verify, family);
 	    }
 	  catch(io_exception& e) {
 	    fprintf(stderr, "IOException: %s\n", e.getMessage().c_str());
 	    return  1;
 	  }
 	}
-      else if( ((id& 0x0ff00fff) == 0x09600093) || ((id& 0x0ff00fff) == 0x09700093))
+      else if( family == 0x4b) /* XC95XL XC95XV*/
 	{
 	  int size = (id & 0x000ff000)>>13;
 	  JedecFile  file;
 	  printf("size %d\n", size);
 	  file.readFile(args[0]);
-	  return programXC95X(jtag,io, file, verify, size);
+	  return programXC95X(*jtag,io.operator*(), file, verify, size);
 	}
     } 
-  fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n",dd);
+  fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n", db.getDeviceDescription(chainpos));
   return 1;
 }
 
