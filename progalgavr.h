@@ -25,8 +25,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "jtag.h"
 #include "iobase.h"
+#include "srecfile.h"
 
 typedef unsigned char byte;
+#define FUSE_EXT  3
+#define FUSE_HIGH 2
+#define FUSE_LOW  1
+#define FUSE_LOCK 0
 
 class ProgAlgAVR
 {
@@ -41,34 +46,20 @@ class ProgAlgAVR
   static const byte AVR_RESET;
   static const byte BYPASS;
 
-  static const unsigned short DO_ENABLE;
-  static const unsigned short ENT_FLASH_READ;
-  static const byte           LOAD_ADDR_EXT_HIGH;
-  static const byte           LOAD_ADDR_HIGH;
-  static const byte           LOAD_ADDR_LOW;
-  static const unsigned short EN_FLASH_READ;
-  static const unsigned short RD_FLASH_HIGH;
-  static const unsigned short RD_FLASH_LOW;
-
-  static const unsigned short ENT_FUSE_READ;
-  static const unsigned short EN_FUSE_READ;
-  static const unsigned short RD_FUSE_EXT;
-  static const unsigned short RD_FUSE_HIGH;
-  static const unsigned short RD_FUSE_LOW;
-  static const unsigned short RD_FUSE_LOCK;
-
   Jtag *jtag;
-  IOBase *io;
-  unsigned int id;
+  unsigned int fp_size;
   
- private:
   void Prog_enable(bool enable);
+  void pageread_flash(unsigned int address, byte * buffer, unsigned int size);
 
  public:
-  void ResetAVR(bool reset);
-  ProgAlgAVR(Jtag &j, IOBase &i, unsigned int id_val);
-  void read_fuses(void);
-  void pageread_flash();
+  ProgAlgAVR(Jtag &j, unsigned int FlashpageSize);
+  void reset(bool do_reset);
+  void read_fuses(byte * fuses);
+  int write_fuses(byte * fuses);
+  int erase(void);
+  int pagewrite_flash(unsigned int address, byte * buffer, unsigned int size);
+  int verify(SrecFile &file);
 };
 
 #endif //PROGALGAVR_H
