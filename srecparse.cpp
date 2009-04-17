@@ -27,7 +27,7 @@ int main(int argc, char**args)
 {
   if(argc < 2) 
     {
-      fprintf(stderr,"Usage: %s infile.jed\n",args[0]);
+      fprintf(stderr,"Usage: %s infile.rom\n",args[0]);
     }
   else 
     {
