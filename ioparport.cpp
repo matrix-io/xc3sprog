@@ -331,11 +331,11 @@ bool IOParport::txrx(bool tms, bool tdi)
   write_data(fd, data);
   data|=tck_value; // clk high D1 pin3
   write_data(fd, data);
+  total++;
   read_status(fd, &ret);
   //data=data^2; // clk low
   //write_data(fd, data);
   //read_status(fd, &ret);
-  total++;
   retval = (ret&tdo_mask)?!tdo_inv:tdo_inv;
   if (debug & HW_FUNCTIONS)
     fprintf(stderr,"IOParport::txrx tms %s tdi %s tdo %s \n",
