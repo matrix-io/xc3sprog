@@ -86,6 +86,7 @@ void usage() {
 	  "\nUsage:\txc3sprog [-v] [-c cable_type] [-p chainpos] bitfile [+ (val[*cnt]|binfile) ...]\n"
 	  "   -?\tprint this help\n"
 	  "   -v\tverbose output\n"
+	  "   -j\tDetect JTAG chain, nothing else\n"
 	  "   -C\tVerify device against File (no programming)\n\n"
 	  "    Supported cable types: pp, ftdi, fx2\n"
     	  "   \tOptional pp arguments:\n"
@@ -93,7 +94,7 @@ void usage() {
 	  "   \tOptional fx2/ftdi arguments:\n"
 	  "   \t\t[-V vendor]      (idVendor)\n"
 	  "   \t\t[-P product]     (idProduct)\n"
-	  "   \t\t[-D description] (Product string)\n"
+	  "   \t\t[-S description string] (Product string)\n"
 	  "   \t\t[-s serial]      (SerialNumber string)\n"
 	  "   \tOptional fx2/ftdi arguments:\n"
 	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n"
@@ -117,6 +118,7 @@ int main(int argc, char **args)
   bool        verbose   = false;
   bool        verify    = false;
   bool        lock      = false;
+  bool     detectchain  = false;
   unsigned int id;
   char const *cable     = "pp";
   char const *dev       = 0;
@@ -148,7 +150,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hvCLc:d:e:f:fD:p:P:S:t:")) {
+    switch(getopt(argc, args, "?hvCLc:dD:e:f:jp:P:s:S:t:")) {
     case -1:
       goto args_done;
 
@@ -158,6 +160,10 @@ int main(int argc, char **args)
 
     case 'C':
       verify = true;
+      break;
+
+    case 'j':
+      detectchain = true;
       break;
 
     case 'L':
@@ -187,10 +193,6 @@ int main(int argc, char **args)
       dev = optarg;
       break;
 
-    case 'D':
-      desc = optarg;
-      break;
-
     case 'p':
       chainpos = atoi(optarg);
       break;
@@ -203,10 +205,14 @@ int main(int argc, char **args)
       product = atoi(optarg);
       break;
 		
-    case 'S':
+    case 's':
       serial = optarg;
       break;
       
+    case 'S':
+      desc = optarg;
+      break;
+
     case '?':
     case 'h':
     default:
@@ -214,12 +220,13 @@ int main(int argc, char **args)
     }
   }
  args_done:
+  if(argc < 1)  usage();
   // Get rid of options
   //printf("argc: %d\n", argc);
   argc -= optind;
   args += optind;
   //printf("argc: %d\n", argc);
-  if(argc < 1)  usage();
+  if(argc < 0)  usage();
 
   std::auto_ptr<IOBase>  io;
   try {  
@@ -264,6 +271,29 @@ int main(int argc, char **args)
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
   id = get_id (*jtag, db, chainpos, verbose);
+  if (detectchain)
+    {
+      int dblast = 0;
+      for(int i=0; i<jtag->getChain(); i++)
+	{
+	  unsigned long id=jtag->getDeviceID(i);
+	  int length=db.loadDevice(id);
+	  // Sandro in the following print also the location of the devices found in the jtag chain
+	  printf("JTAG loc.: %d\tIDCODE: 0x%08lx\t", i, id);
+	  if(length>0)
+	    {
+	      jtag->setDeviceIRLength(i,length);
+	      printf("Desc: %15s\tIR length: %d\n",db.getDeviceDescription(dblast),length);
+	      dblast++;
+	    } 
+	  else
+	    {
+	      printf("not found in '%s'.\n", db.getFile().c_str());
+	    }
+	}
+      return 0;
+    }
+
   family = (id>>21) & 0x7f;
   manufacturer = (id>>1) & 0x3ff;
 
