@@ -270,7 +270,6 @@ int main(int argc, char **args)
   unsigned int family, manufacturer;  
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
-  id = get_id (*jtag, db, chainpos, verbose);
   if (detectchain)
     {
       int dblast = 0;
@@ -294,6 +293,7 @@ int main(int argc, char **args)
       return 0;
     }
 
+  id = get_id (*jtag, db, chainpos, verbose);
   family = (id>>21) & 0x7f;
   manufacturer = (id>>1) & 0x3ff;
 
