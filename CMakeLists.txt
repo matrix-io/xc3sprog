@@ -26,8 +26,8 @@ target_link_libraries(detectchain ${LIBFTDI_LIBRARIES} ${LIBUSB_LIBRARIES} )
 
 add_executable(xc3sprog xc3sprog.cpp ioparport.cpp ioftdi.cpp iofx2.cpp 
 			devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
-			iobase.cpp javr.cpp progalgxc95x.cpp progalgxcf.cpp 
-			progalgxc3s.cpp progalgavr.cpp)
+			iobase.cpp javr.cpp srecfile.cpp progalgxc95x.cpp 
+			progalgxcf.cpp progalgxc3s.cpp progalgavr.cpp)
 target_link_libraries(xc3sprog ${LIBFTDI_LIBRARIES} ${LIBUSB_LIBRARIES}  )
 
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 

@@ -361,8 +361,7 @@ int main(int argc, char **args)
     } 
   else if  ( manufacturer == 0x01f) /* Atmel */
     {
-      ProgAlgAVR *alg = new ProgAlgAVR(*jtag,io.operator*(),id);
-      return jAVR (alg, args[0],verify, lock, eepromfile, fusefile);
+      return jAVR (*jtag, id, args[0],verify, lock, eepromfile, fusefile);
     }
   fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n", db.getDeviceDescription(chainpos));
   return 1;
