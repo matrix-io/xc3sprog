@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 class IOFX2 : public IOBase
 {
  protected:
-  int bptr, total, calls;
+  int bptr, calls_rd, calls_wr;
   
  public:
   IOFX2(int const vendor, int const product, char const *desc, char const *serial);

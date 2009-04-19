@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include "io_exception.h"
 
 IOFX2::IOFX2(int const vendor, int const product, char const *desc, char const *serial)
- :  IOBase(), bptr(0), total(0) , calls(0)
+ :  IOBase(), bptr(0), calls_rd(0) , calls_wr(0)
 {
    // Open device
     if (fx2_usb_open_desc(vendor, product, desc, serial) < 0)
@@ -264,6 +264,9 @@ struct usb_dev_handle * IOFX2::usrp_open_interface (struct usb_device *dev, int 
 bool IOFX2::usrp_close_interface (struct usb_dev_handle *udh)
 {
   // we're assuming that closing an interface automatically releases it.
+  if(verbose)
+    printf("USB Read Transactions: %d USB Write Transactions %d\n", 
+	   calls_rd, calls_wr);
   return usb_close (udh) == 0;
 }
 
@@ -271,6 +274,7 @@ bool IOFX2::usrp_i2c_write(int i2c_addr, const void *buf, int len)
 {
   if (len < 1 || len > MAX_EP0_PKTSIZE)
     return false;
+  calls_wr++;
 
   //int i;
   //  printf("usrp_i2c_write Addr 0x%02x len %d: ", i2c_addr, len);
@@ -287,6 +291,7 @@ bool IOFX2::usrp_i2c_read (int i2c_addr, void *buf, int len)
   bool ret;
   if (len < 1 || len > MAX_EP0_PKTSIZE)
     return false;
+  calls_rd++;
 
   ret = write_cmd (fx2_dev, VRQ_I2C_READ, i2c_addr, 0,
 		   (unsigned char *) buf, len) == len;
