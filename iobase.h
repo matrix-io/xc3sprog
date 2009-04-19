@@ -56,6 +56,8 @@ class IOBase
   bool	      verbose;
   tapState_t  current_state;
   unsigned char ones[CHUNK_SIZE], zeros[CHUNK_SIZE];
+  unsigned char tms_buf[CHUNK_SIZE];
+  unsigned int tms_len; /* in Bits*/
 
  protected:
   IOBase();
@@ -86,6 +88,7 @@ class IOBase
   virtual void settype(int subtype) {}
 
 private:
+  void do_tx_tms(void);
   void nextTapState(bool tms);
 };
 #endif // IOBASE_H
