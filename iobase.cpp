@@ -40,11 +40,22 @@ IOBase::IOBase(void)
     current_state = UNKNOWN;
     memset( ones,0xff,CHUNK_SIZE);
     memset(zeros,   0,CHUNK_SIZE);
+    memset(tms_buf,   0,CHUNK_SIZE);
+    tms_len = 0;
 }    
+
+void IOBase::do_tx_tms(void)
+{
+  if (tms_len)
+    tx_tms(tms_buf, tms_len);
+  memset(tms_buf,   0,CHUNK_SIZE);
+  tms_len = 0;
+}
     
 void IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
 {
   if(length==0) return;
+  do_tx_tms();
   txrx_block(tdi, tdo, length,last);
   nextTapState(last); // If TMS is set the the state of the tap changes
   return;
@@ -68,17 +79,17 @@ void IOBase::shift(bool tdi, int length, bool last)
     unsigned char *block = (tdi)?ones:zeros;
     while (len > CHUNK_SIZE*8)
     {
+        do_tx_tms();
 	txrx_block(block, NULL, CHUNK_SIZE*8, false);
 	len -= (CHUNK_SIZE*8);
     }
+    do_tx_tms();
     shiftTDITDO(block, NULL, len, last);
 }
 
 void IOBase::setTapState(tapState_t state)
 {
   bool tms;
-  unsigned char tms_pat = 0;
-  int len = 0;
   while(current_state!=state){
     switch(current_state){
 
@@ -292,10 +303,11 @@ void IOBase::setTapState(tapState_t state)
       tapTestLogicReset();
       tms=true;
     };
-    tms_pat |= tms<<len;
-    len++;
+    if( tms_len >= CHUNK_SIZE*8) /* no more room for even one bit */
+      do_tx_tms();
+    tms_buf[tms_len/8] |= tms<<(tms_len & 0x7);
+    tms_len++;
   };
-  tx_tms(&tms_pat, len);
 }
 
 // After shift data into the DR or IR we goto the next state
@@ -323,7 +335,8 @@ void IOBase::cycleTCK(int n, bool tdi)
  if(current_state==TEST_LOGIC_RESET)
   {
       printf("cycleTCK in TEST_LOGIC_RESET\n");
-      for(int i=0; i<n; i++)
+      do_tx_tms();
+     for(int i=0; i<n; i++)
          shift(tdi, 1, true);
   }
   else
@@ -332,9 +345,11 @@ void IOBase::cycleTCK(int n, bool tdi)
       unsigned char *block = (tdi)?ones:zeros;
       while (len > CHUNK_SIZE*8)
       {
+          do_tx_tms();
           txrx_block(block, NULL, CHUNK_SIZE*8, false);
           len -= (CHUNK_SIZE*8);
       }
+      do_tx_tms();
       txrx_block(block, NULL, len, false);
   }  
 }
