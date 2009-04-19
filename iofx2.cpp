@@ -143,10 +143,9 @@ void IOFX2::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length,
 
 void IOFX2::tx_tms(unsigned char *pat, int length)
 {
-  unsigned char buf[8]={0,0,0,0,0,0,0,0};
-  buf[0] = *pat;
-  //printf("tx_tms len %d pat 0x%02x\n", length, pat[0]);
-  usrp_i2c_write( USPR_CLOCK_OUT_TMS, buf, length);
+  if (length > USRP_CMD_SIZE*8)
+    printf("ToDo: Break up long TMS sequences\n");
+  usrp_i2c_write( USPR_CLOCK_OUT_TMS, pat, length);
 }
 
 #define fx2_error_return(code, str) do {  \
