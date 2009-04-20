@@ -133,20 +133,8 @@ int main(int argc, char **args)
   char *devicedb = NULL;
   DeviceDB db(devicedb);
   
-  { // Produce release info from CVS tags
-    char  release[] = "$Name: Release-0-5 $";
-    char *loc0=strchr(release,'-');
-    if(loc0>0){
-      loc0++;
-      char *loc=loc0;
-      do{
-	loc=strchr(loc,'-');
-	if(loc)*loc='.';
-      }while(loc);
-      release[strlen(release)-1]='\0'; // Strip off $
-    }
-    printf("Release %s\n",loc0);
-  }
+  // Produce release info from CVS tags
+  printf("Release $Rev$\n");
 
   // Start from parsing command line arguments
   while(true) {
