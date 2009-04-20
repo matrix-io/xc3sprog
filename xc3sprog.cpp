@@ -305,7 +305,7 @@ int main(int argc, char **args)
 	  (family == 0x11) || /*XC3SA*/
 	  (family == 0x13) || /*XC3SAN*/
 	  (family == 0x1c) || /*XC3SD*/
-	  (family == 0x25) || /*XCF*/
+	  (family == 0x28) || /*XCF*/
 	  (family == 0x08)    /*XC2V*/
 	  )
 	{
@@ -320,7 +320,7 @@ int main(int argc, char **args)
 		  printf("Created: %s %s\n",file.getDate(),file.getTime());
 		  printf("Bitstream length: %lu bits\n", file.getLength());
 		}      
-	      if (family == 0x25)
+	      if (family == 0x28)
 		{
 		  int size = (id & 0x000ff000)>>12;
 		  int bs=(size == 0x44) ? 2048 : 4096;
