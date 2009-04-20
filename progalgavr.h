@@ -50,7 +50,6 @@ class ProgAlgAVR
   unsigned int fp_size;
   
   void Prog_enable(bool enable);
-  void pageread_flash(unsigned int address, byte * buffer, unsigned int size);
 
  public:
   ProgAlgAVR(Jtag &j, unsigned int FlashpageSize);
@@ -59,7 +58,7 @@ class ProgAlgAVR
   int write_fuses(byte * fuses);
   int erase(void);
   int pagewrite_flash(unsigned int address, byte * buffer, unsigned int size);
-  int verify(SrecFile &file);
+  void pageread_flash(unsigned int address, byte * buffer, unsigned int size);
 };
 
 #endif //PROGALGAVR_H

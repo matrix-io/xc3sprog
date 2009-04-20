@@ -55,8 +55,60 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	}
       if (verify)
 	{
-	  int res;
-	  res= alg.verify(file);
+	  byte buffer[gDeviceData.fp_size];
+	  int count = 0;
+	  int i, j, k, match;
+	  for (i = file.getStart(); i < file.getEnd() ; i+= gDeviceData.fp_size)
+	    {
+	      unsigned int to_read;
+	      fprintf(stdout, "\rVerify page %4d/%4d", i/gDeviceData.fp_size, file.getLength()/gDeviceData.fp_size);
+	      fflush(stdout);
+	      if ( i< (file.getEnd() - gDeviceData.fp_size))
+		to_read = gDeviceData.fp_size;
+	      else
+		to_read = (file.getEnd() -i);
+	      alg.pageread_flash(i, buffer, to_read);
+	      match = memcmp(buffer, file.getData()+i, to_read);
+	      if (match !=0)
+		{
+		  printf("\n");
+		  for (j = 0; j< to_read; j +=32)
+		    {
+		      match = memcmp(buffer+j, file.getData()+i+j, 32);
+		      if (match !=0)
+			{
+			  printf("Mismatch at chunk at address: 0x%08x\n", i+j);
+			  printf("Device: ");
+			  for(k =0; k<32; k++)
+			    printf("%02x ", buffer[j+k]);
+			  printf("\nFile  : ");
+			  for(k =0; k<32; k++)
+			    printf("%02x ", file.getData()[i+j +k ]);
+			  printf("\n      : ");
+			  for(k =0; k<32; k++)
+			    {
+			      if(buffer[j+k] != file.getData()[i+j+k])
+				{
+				  printf("^^^");
+				  count++;
+				}
+			      else
+				printf("   ");
+			    }
+			  printf("\n");
+			}
+		    }
+		}
+	      if (count >10) 
+		return 1;
+	    }
+	  if(count)
+	    {
+	      printf("Chip Verify failed\n");
+	      goto bailout;
+	    }
+	  else
+	    printf("\tSuccess \n");
 	}
       else
 	{

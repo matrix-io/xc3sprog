@@ -263,6 +263,13 @@ void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer, unsigned in
 {
   byte cookies[2];
 
+  Prog_enable(true);
+  
+  jtag->shiftIR(&PROG_COMMANDS);
+
+  jtag->shortToByteArray(ENT_FLASH_READ, buffer);
+  jtag->shiftDR(buffer,0, 15);
+
   if(address & (fp_size -1) )
     printf("Unalied read access to address 0x%08x\n", address);
 
@@ -290,6 +297,7 @@ void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer, unsigned in
 
   jtag->shiftIR(&PROG_COMMANDS);
   jtag->shiftIR(&PROG_COMMANDS);
+  Prog_enable(false);
 }
 
 int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer, unsigned int size)
@@ -356,64 +364,6 @@ int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer, unsigned in
   return 0;
 }
 
-int ProgAlgAVR::verify(SrecFile &sfile)
-{
-  byte *buffer = new byte[fp_size];
-  int match;
-  unsigned int i, j, k;
-  int count = 0;
-
-  Prog_enable(true);
-  
-  jtag->shiftIR(&PROG_COMMANDS);
-
-  jtag->shortToByteArray(ENT_FLASH_READ, buffer);
-  jtag->shiftDR(buffer,0, 15);
-
-
-  for (i = sfile.getStart(); i < sfile.getEnd() ; i+= fp_size)
-    {
-      unsigned int to_read;
-      if ( i< (sfile.getEnd() - fp_size))
-	to_read = fp_size;
-      else
-	to_read = (sfile.getEnd() -i);
-      pageread_flash(i, buffer, to_read);
-      match = memcmp(buffer, sfile.getData()+i, to_read);
-      if (match !=0)
-	{
-	  for (j = 0; j< to_read; j +=32)
-	    {
-	      match = memcmp(buffer+j, sfile.getData()+i+j, 32);
-	      if (match !=0)
-		{
-		  printf("Mismatch at chunk at address: 0x%08x\n", i+j);
-		  printf("Device: ");
-		  for(k =0; k<32; k++)
-		    printf("%02x ", buffer[j+k]);
-		  printf("\nFile  : ");
-		  for(k =0; k<32; k++)
-		    printf("%02x ", sfile.getData()[i+j +k ]);
-		  printf("\n      : ");
-		  for(k =0; k<32; k++)
-		    {
-		      if(buffer[j+k] != sfile.getData()[i+j+k])
-			{
-			  printf("^^^");
-			  count++;
-			}
-		      else
-			printf("   ");
-		    }
-		  printf("\n");
-		}
-	    }
-	}
-      if (count >10) 
-	return 1;
-    }
-  return 0;
-}
   
   
   
