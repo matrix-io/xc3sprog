@@ -78,7 +78,7 @@ class IOBase
   void shift(bool tdi, int length, bool last=true);
 
  public:
-  void setTapState(tapState_t state, int pre=0);
+  void setTapState(tapState_t state);
   void tapTestLogicReset();
   void cycleTCK(int n, bool tdi=1);
 
