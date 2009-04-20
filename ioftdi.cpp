@@ -88,6 +88,11 @@ IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const
     throw  io_exception(std::string("ftdi_set_interface: ") + ftdi_get_error_string(&ftdi));
   }
 	
+  //Set the lacentcy time to a low value
+  if(ftdi_set_latency_timer(&ftdi, 1) <0) {
+    throw  io_exception(std::string("ftdi_set_latency_timer: ") + ftdi_get_error_string(&ftdi));
+  }
+
   // Set mode to MPSSE
   if(ftdi_set_bitmode(&ftdi, 0xfb, BITMODE_MPSSE) < 0) {
     throw  io_exception(std::string("ftdi_set_bitmode: ") + ftdi_get_error_string(&ftdi));
@@ -98,10 +103,6 @@ IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const
     throw  io_exception(std::string("ftdi_usb_purge_buffers: ") + ftdi_get_error_string(&ftdi));
   }
   
-  //Set the lacentcy time to a low value
-  if(ftdi_set_latency_timer(&ftdi, 1) <0) {
-    throw  io_exception(std::string("ftdi_set_latency_timer: ") + ftdi_get_error_string(&ftdi));
-  }
   // Clear the MPSSE buffers
 #endif
   memset(usbuf,SEND_IMMEDIATE, TX_BUF);
@@ -338,7 +339,9 @@ IOFtdi::~IOFtdi()
 #if defined (USE_FTD2XX)
   FT_Close(ftdi);
 #else
+  ftdi_usb_reset(&ftdi);
   ftdi_usb_close(&ftdi);
+  ftdi_free(&ftdi);
 #endif
   if(verbose)  printf("USB transactions: Write %d read %d retries %d\n", calls_wr, calls_rd, retries);
 }
