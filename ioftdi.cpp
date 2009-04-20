@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 using namespace std;
 
 IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const *serial, int subtype)
-  : IOBase(), bptr(0), total(0) , calls(0){
+  : IOBase(), bptr(0), calls_rd(0), calls_wr(0), retries(0){
     
 #if defined (USE_FTD2XX)
     FT_STATUS res;
@@ -113,7 +113,7 @@ IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const
   if (subtype == FTDI_NO_EN)
     mpsse_add_cmd(buf, 6);
   else if (subtype == FTDI_IKDA)
-      mpsse_add_cmd(buf, 9);
+    mpsse_add_cmd(buf, 9);
   mpsse_send();
 }
 
@@ -266,6 +266,7 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
     int timeout=0;
     FT_STATUS res;
  
+    calls_rd++;
     res = FT_Read(ftdi, rbuf, length, &read);
     if(res != FT_OK)
     {
@@ -274,6 +275,7 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
     }
     while ((read <length) && ( timeout <100 )) 
     {
+        retries++;
 	res = FT_Read(ftdi, rbuf+read, length-read, &last_read);
 	if(res != FT_OK)
 	{
@@ -297,12 +299,14 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
 #else
   int length = (int) len, read = 0;
   int timeout=0, last_errno, last_read;
+  calls_rd++;
   last_read = ftdi_read_data(&ftdi, rbuf+read, length -read);
   if (last_read > 0)
     read += last_read;
   while ((read <length) && ( timeout <100 )) 
     {
       last_errno = 0;
+      retries++;
       last_read = ftdi_read_data(&ftdi, rbuf+read, length -read);
       if (last_read > 0)
 	read += last_read;
@@ -336,7 +340,7 @@ IOFtdi::~IOFtdi()
 #else
   ftdi_usb_close(&ftdi);
 #endif
-  if(verbose)  printf("USB transactions: %d, Total bytes sent: %d\n", calls, total);
+  if(verbose)  printf("USB transactions: Write %d read %d retries %d\n", calls_wr, calls_rd, retries);
 }
 
 void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
@@ -357,6 +361,7 @@ void IOFtdi::mpsse_send() {
 #if defined (USE_FTD2XX)
   DWORD written, last_written;
   int res, timeout = 0;
+  calls_wr++;
   res = FT_Write(ftdi, usbuf, bptr, &written);
   if(res != FT_OK)
   {
@@ -365,6 +370,7 @@ void IOFtdi::mpsse_send() {
   }
   while ((written < bptr) && ( timeout <100 )) 
   {
+      calls_wr++;
       res = FT_Write(ftdi, usbuf+written, bptr - written, &last_written);
       if(res != FT_OK)
       {
@@ -386,14 +392,13 @@ void IOFtdi::mpsse_send() {
   }
 
 #else
+  calls_wr++;
   if(bptr != ftdi_write_data(&ftdi, usbuf, bptr)) {
     throw  io_exception();
   }
 #endif
 
-  total += bptr;
   bptr = 0;
-  calls++;
 }
 
 void IOFtdi::flush() {

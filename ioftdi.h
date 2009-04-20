@@ -56,7 +56,7 @@ class IOFtdi : public IOBase
 #else
   int bptr;
 #endif
-  int total, calls,subtype;
+  int calls_rd, calls_wr, subtype, retries;
 
  public:
   IOFtdi(int vendor, int product, char const *desc, char const *serial, int subtype);
