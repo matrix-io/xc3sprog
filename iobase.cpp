@@ -77,13 +77,12 @@ void IOBase::shift(bool tdi, int length, bool last)
 {
     int len = length;
     unsigned char *block = (tdi)?ones:zeros;
+    do_tx_tms();
     while (len > CHUNK_SIZE*8)
     {
-        do_tx_tms();
 	txrx_block(block, NULL, CHUNK_SIZE*8, false);
 	len -= (CHUNK_SIZE*8);
     }
-    do_tx_tms();
     shiftTDITDO(block, NULL, len, last);
 }
 
@@ -332,10 +331,10 @@ void IOBase::tapTestLogicReset()
 
 void IOBase::cycleTCK(int n, bool tdi)
 {
+  do_tx_tms();
  if(current_state==TEST_LOGIC_RESET)
   {
       printf("cycleTCK in TEST_LOGIC_RESET\n");
-      do_tx_tms();
      for(int i=0; i<n; i++)
          shift(tdi, 1, true);
   }
@@ -345,11 +344,9 @@ void IOBase::cycleTCK(int n, bool tdi)
       unsigned char *block = (tdi)?ones:zeros;
       while (len > CHUNK_SIZE*8)
       {
-          do_tx_tms();
           txrx_block(block, NULL, CHUNK_SIZE*8, false);
           len -= (CHUNK_SIZE*8);
       }
-      do_tx_tms();
       txrx_block(block, NULL, len, false);
   }  
 }
