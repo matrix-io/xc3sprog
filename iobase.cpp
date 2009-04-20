@@ -324,9 +324,13 @@ void IOBase::nextTapState(bool tms)
 
 void IOBase::tapTestLogicReset()
 {
-    unsigned char pat = 0x1f;
-    tx_tms(&pat, 5);
-    current_state=TEST_LOGIC_RESET;
+  int i;
+  for(i=0; i<5; i++)
+    {
+      tms_buf[tms_len/8] |= 1<<(tms_len & 0x7);
+      tms_len++;
+    }
+  current_state=TEST_LOGIC_RESET;
 }
 
 void IOBase::cycleTCK(int n, bool tdi)
