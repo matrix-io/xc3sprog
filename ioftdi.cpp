@@ -134,7 +134,6 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
   unsigned int buflen = TX_BUF - 3 ; /* we need the preamble*/
   unsigned int rembits;
   
-  mpsse_send();
   /*out on -ve edge, in on +ve edge */
   if (rem/8 > buflen)
     {
@@ -150,7 +149,6 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 	      mpsse_add_cmd (tmpsbuf, buflen);
 	      tmpsbuf+=buflen;
 	    }
-	  mpsse_send();
 	  rem -= buflen * 8;
 	  if (tdo) 
 	    {
@@ -184,7 +182,6 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
     {
       /* No space for the last data. Send and evenually read 
          As we handle whole bytes, we can use the receiv buffer direct*/
-      mpsse_send();
       if(tdo)
 	{
 	  readusb(tmprbuf, buflen);
@@ -218,7 +215,6 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
     }
   if(tdo) 
     {
-      mpsse_send();
       if (!last) 
 	readusb(tmprbuf, buflen);
       else 
@@ -262,6 +258,7 @@ void IOFtdi::tx_tms(unsigned char *pat, int length)
 
 unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
 {
+    mpsse_send();
 #if defined (USE_FTD2XX)
     DWORD  length = (DWORD) len, read = 0, last_read;
     int timeout=0;
