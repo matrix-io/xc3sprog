@@ -298,7 +298,7 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
   int length = (int) len, read = 0;
   int timeout=0, last_errno, last_read;
   calls_rd++;
-  last_read = ftdi_read_data(&ftdi, rbuf+read, length -read);
+  last_read = ftdi_read_data(&ftdi, rbuf, length );
   if (last_read > 0)
     read += last_read;
   while ((read <length) && ( timeout <100 )) 
