@@ -242,9 +242,21 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 void IOFtdi::tx_tms(unsigned char *pat, int length)
 {
     unsigned char buf[3] = {MPSSE_WRITE_TMS|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG, length-1, pat[0]};
-    if(length > 7)
-      printf("ToDo: Handle long tx_tms sequences for the FTDI Driver\n");
-    mpsse_add_cmd (buf, 3);
+    int len = length, i, j=0;
+    if (!len)
+      return;
+    while (len>0)
+      {
+	buf[1] = (len >7)? 6: (len-1);
+	buf[2] = 0x80;
+	for (i=0; i <( (len >7)?7:len); i++)
+	  {
+	    buf[2] |= ((pat[j>>3] & (1<< (j &0x7)))?1:0)<<i;
+	    j++;
+	  }
+	len -=7;
+	mpsse_add_cmd (buf, 3);
+      }
 }
 
 unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
