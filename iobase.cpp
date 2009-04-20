@@ -77,28 +77,13 @@ void IOBase::shift(bool tdi, int length, bool last)
 {
   if (!length)
     return;
-  if (!tdi)
-    {
-      if( tms_len >= CHUNK_SIZE*8) /* no more room for even one bit */
-	do_tx_tms();
-      if (length > 1)
-	tms_len += length -1;
-      tms_buf[tms_len/8] |= last<<(tms_len & 0x7);
-      tms_len++;
-      nextTapState(last); // If TMS is set the the state of the tap changes
-    }
-  else
-    {
-      int len = length;
-      unsigned char *block = (tdi)?ones:zeros;
-      do_tx_tms();
-      while (len > CHUNK_SIZE*8)
-	{
-	  txrx_block(block, NULL, CHUNK_SIZE*8, false);
-	  len -= (CHUNK_SIZE*8);
-	}
-      shiftTDITDO(block, NULL, len, last);
-    }
+  if( tms_len >= CHUNK_SIZE*8) /* no more room for even one bit */
+    do_tx_tms();
+  if (length > 1)
+    tms_len += length -1;
+  tms_buf[tms_len/8] |= last<<(tms_len & 0x7);
+  tms_len++;
+  nextTapState(last); // If TMS is set the the state of the tap changes
 }
 
 void IOBase::setTapState(tapState_t state)
