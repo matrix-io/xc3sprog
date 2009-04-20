@@ -180,7 +180,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 	    }
     }
   
-  if (buflen >=(TX_BUF - 3))
+  if (buflen >=(TX_BUF - 4))
     {
       /* No space for the last data. Send and evenually read 
          As we handle whole bytes, we can use the receiv buffer direct*/
@@ -352,7 +352,7 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
     that the OS USB scheduler gives the MPSSE machine 
     enough time empty the buffer
  */
- if (bptr + len >= TX_BUF)
+ if (bptr + len +1 >= TX_BUF)
    mpsse_send();
   memcpy(usbuf + bptr, buf, len);
   bptr += len;
@@ -361,6 +361,7 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
 void IOFtdi::mpsse_send() {
   if(bptr == 0)  return;
 
+  usbuf[bptr++] = SEND_IMMEDIATE;
 #if defined (USE_FTD2XX)
   DWORD written, last_written;
   int res, timeout = 0;
