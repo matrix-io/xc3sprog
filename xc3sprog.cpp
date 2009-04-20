@@ -261,7 +261,8 @@ int main(int argc, char **args)
   if (detectchain)
     {
       int dblast = 0;
-      for(int i=0; i<jtag->getChain(); i++)
+      int num_devices = jtag->getChain();
+      for(int i=0; i< num_devices; i++)
 	{
 	  unsigned long id=jtag->getDeviceID(i);
 	  int length=db.loadDevice(id);
