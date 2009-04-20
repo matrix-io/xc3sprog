@@ -405,7 +405,7 @@ void IOParport::tx_tms(unsigned char *pat, int length)
     unsigned char tms = pat[0];
     for (i = 0; i < length; i++)
     {
-	tx((tms & 0x01),false);
+	tx((tms & 0x01), true);
 	tms = tms >> 1;
     }
 }
