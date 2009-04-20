@@ -76,14 +76,13 @@ void Jtag::shiftDR(const byte *tdi, byte *tdo, int length, int align, bool exit)
   if(deviceIndex<0)return;
   int post=deviceIndex;
   if(!shiftDRincomplete){
+    io->setTapState(IOBase::SHIFT_DR);
     int pre=numDevices-deviceIndex-1;
     if(align){
       pre=-post;
       while(pre<=0)pre+=align;
     }
-    /* We can combine the pre bits to reach the target device with
-     the TMS bits to reach the SHIFT-DR state, as the pre bit can be '0'*/
-    io->setTapState(IOBase::SHIFT_DR,pre);
+    io->shift(false,pre,false);
   }
   if(tdi!=0&&tdo!=0)io->shiftTDITDO(tdi,tdo,length,post==0&&exit);
   else if(tdi!=0&&tdo==0)io->shiftTDI(tdi,length,post==0&&exit);
