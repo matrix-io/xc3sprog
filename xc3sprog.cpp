@@ -345,6 +345,11 @@ int main(int argc, char **args)
 	  JedecFile  file;
 	  printf("size %d\n", size);
 	  file.readFile(args[0]);
+	  if (file.getLength() == 0)
+	    {
+	      printf("Probably no JEDEC File, aborting\n");
+	      return 2;
+	    }
 	  return programXC95X(*jtag,io.operator*(), file, verify, size);
 	}
     } 
