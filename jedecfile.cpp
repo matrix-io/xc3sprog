@@ -275,12 +275,13 @@ JedecFile::JedecFile(void)
 {
   jed.fuse_count = 0;
   jed.pin_count = 0;
+  jed.fuse_list = 0;
 }
 
 JedecFile::~JedecFile(void)
 {
-  if(jed.fuse_list);
-  free(jed.fuse_list);
+  if(jed.fuse_list)
+    free(jed.fuse_list);
 }
 
 void JedecFile::readFile(char const * fname)
