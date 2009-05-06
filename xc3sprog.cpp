@@ -343,13 +343,20 @@ int main(int argc, char **args)
 	{
 	  int size = (id & 0x000ff000)>>13;
 	  JedecFile  file;
-	  printf("size %d\n", size);
 	  file.readFile(args[0]);
 	  if (file.getLength() == 0)
 	    {
 	      printf("Probably no JEDEC File, aborting\n");
 	      return 2;
 	    }
+	  if(strncmp(db.getDeviceDescription(chainpos), file.getDevice(), sizeof(db.getDeviceDescription(chainpos))) !=0)
+	    {
+	      printf("Incompatible Jedec File for Device %s\n"
+		     "Actual device in Chain is %s\n", 
+		     file.getDevice(), db.getDeviceDescription(chainpos));
+	      return 3;
+	    }
+	  
 	  return programXC95X(*jtag,io.operator*(), file, verify, size);
 	}
     } 

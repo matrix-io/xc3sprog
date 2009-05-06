@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 typedef unsigned char byte;
 
 struct jedec_data {
-      char*design_specification;
+      char device[256];
 
       unsigned fuse_count;
       unsigned pin_count;
@@ -62,6 +62,7 @@ class JedecFile
   void readFile(char const *file);
   inline unsigned int getLength(){return jed.fuse_count;}
   inline unsigned short getChecksum(){return jed.checksum;}
+  char *getDevice(){return jed.device;}
   unsigned short calcChecksum();
   void setLength(unsigned int fuse_count);
   int get_fuse(unsigned int idx);

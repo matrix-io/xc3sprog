@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
  */ 
 
 #include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 
 #include "jedecfile.h"
 #include "io_exception.h"
@@ -80,6 +82,11 @@ static void m_Q(int ch, struct state_mach*m);
 static void m_QF(int ch, struct state_mach*m);
 static void m_QP(int ch, struct state_mach*m);
 static void m_skip(int ch, struct state_mach*m);
+static void m_N(int ch, struct state_mach*m);
+
+int m_N_item;
+int m_N_pos;
+char m_N_strings[8][256];
 
 static void m_startup(int ch, struct state_mach*m)
 {
@@ -109,6 +116,10 @@ static void m_base(int ch, struct state_mach*m)
           case 'C':
             m->state = m_C;
             m->jed->checksum = 0;
+            break;
+          case 'N':
+            m->state = m_N;
+	    m_N_item = -1;
             break;
           default:
             m->state = m_skip;
@@ -195,6 +206,40 @@ static void m_Lfuse(int ch, struct state_mach*m)
       }
 }
 
+#ifdef __unix__
+#define stricmp strcasecmp
+#endif
+
+static void m_N(int ch, struct state_mach*m)
+{
+      switch (ch) {
+
+      case '*':
+	if ((stricmp(m_N_strings[0], "DEVICE")) == 0)
+	  {
+	    m_N_strings[m_N_item][m_N_pos] = 0;
+	    strcpy(m->jed->device, m_N_strings[1]);
+	  }
+	m->state = m_base;
+	m_N_item= -1;
+	break;
+      case ' ':
+	if(m_N_item >=0)
+	  m_N_strings[m_N_item][m_N_pos] = 0;
+	m_N_item++;
+	m_N_pos = 0;
+      case '\n':
+      case '\r':
+	  break;
+	  
+      default:
+	if((m_N_item >=0) && (m_N_item <8) && (m_N_pos <255))
+	  m_N_strings[m_N_item][m_N_pos] = ch;
+	m_N_pos++;
+	break;
+      }
+}
+
 static void m_Q(int ch, struct state_mach*m)
 {
       switch (ch) {
@@ -276,6 +321,7 @@ JedecFile::JedecFile(void)
   jed.fuse_count = 0;
   jed.pin_count = 0;
   jed.fuse_list = 0;
+  jed.device[0] = 0;
 }
 
 JedecFile::~JedecFile(void)
