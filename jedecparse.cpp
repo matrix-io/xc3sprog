@@ -40,8 +40,8 @@ int main(int argc, char**args)
 	  JedecFile  file;
 	  file.readFile(args[1]);
 
-	  printf("%d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n \n",
-		 file.getLength(), file.calcChecksum(),file.getChecksum());
+	  printf("Device %s: %d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n \n",
+		 file.getDevice(), file.getLength(), file.calcChecksum(),file.getChecksum());
 	  file.saveAsJed(0);
 	}
       catch(io_exception& e) 
