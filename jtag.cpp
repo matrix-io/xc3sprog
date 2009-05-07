@@ -71,6 +71,8 @@ int Jtag::selectDevice(int dev)
 
 void Jtag::Usleep(unsigned int usec)
 {
+  io->flush_tms();
+  io->flush();
   usleep(usec);
 }
 
