@@ -49,6 +49,80 @@ int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify, int size)
 extern char *optarg;
 extern int optind;
 
+/* Excercise the IR Chain for at least 10000 Times
+   If we read a different pattern, print the pattern for for optical comparision
+   and read for at least 100000 times more
+
+   This may result in an endless loop to facilitate debugging with a scope etc 
+*/
+void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
+{
+  int num=jtag.getChain();
+  int len = 0;
+  int i, j, k;
+  unsigned char din[256];
+  unsigned char dout[256];
+  unsigned char dcmp[256];
+  memset(din, 0xff, 256);
+  
+  if(test_count == 0)
+    test_count = INT_MAX;
+  printf("Running %d  times\n", test_count);
+  /* exercise the chain */
+  for(i=0; i<num; i++)
+    {
+      len += db.loadDevice(jtag.getDeviceID(i));
+    }
+  printf("IR len = %d\n", len);
+  io.setTapState(IOBase::TEST_LOGIC_RESET);
+  io.setTapState(IOBase::SHIFT_IR);
+  io.shiftTDITDO(din,dout,len,true);
+  for(i=0; i <len>>3;  i++)
+    printf("%02x", dout[i]);
+  printf(" ");
+  k=len-1;
+  for(i = 0; i<num; i++)
+    {
+      for(j=0; j<db.getIRLength(i); j++)
+	{
+	  printf("%c", (((dout[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
+	  k--;
+	}
+      printf(" ");
+    }
+  fflush(stdout);
+  for(i=0; i<test_count; i++)
+    {
+      io.setTapState(IOBase::TEST_LOGIC_RESET);
+      io.setTapState(IOBase::SHIFT_IR);
+      io.shiftTDITDO(din,dcmp,len,true);
+      if (memcmp(dout, dcmp, (len+1)>>3) !=0)
+	{
+	  printf("mismatch run %d\n", i);
+	  for(j=0; j <len>>3;  j++)
+	    printf("%02x", dcmp[j]);
+	  printf(" ");
+	  k=len-1;
+	  for(i = 0; i<num; i++)
+	    {
+	      for(j=0; j<db.getIRLength(i); j++)
+		{
+		  printf("%c", (((dcmp[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
+		  k--;
+		}
+	      printf(" ");
+	    }
+	}
+      fflush(stdout);
+      if(i%1000 == 999)
+	{
+	  printf(".");
+	  fflush(stdout);
+	}
+    }
+  printf("\n");
+}
+
 unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
 {
   int num=jtag.getChain();
@@ -87,6 +161,7 @@ void usage() {
 	  "   -?\tprint this help\n"
 	  "   -v\tverbose output\n"
 	  "   -j\tDetect JTAG chain, nothing else\n"
+	  "   -T[val]\tTest chain integrity val times (0 = forever) or 10000 times default\n"
 	  "   -C\tVerify device against File (no programming)\n\n"
 	  "    Supported cable types: pp, ftdi, fx2\n"
     	  "   \tOptional pp arguments:\n"
@@ -119,6 +194,7 @@ int main(int argc, char **args)
   bool        verify    = false;
   bool        lock      = false;
   bool     detectchain  = false;
+  bool     chaintest    = false;
   unsigned int id;
   char const *cable     = "pp";
   char const *dev       = 0;
@@ -127,6 +203,7 @@ int main(int argc, char **args)
   int         chainpos  = 0;
   int vendor    = 0;
   int product   = 0;
+  int test_count = 10000;
   char const *desc    = 0;
   char const *serial  = 0;
   int subtype = FTDI_NO_EN;
@@ -138,7 +215,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hvCLc:dD:e:f:jp:P:s:S:t:")) {
+    switch(getopt(argc, args, "?hvCLc:dD:e:f:jp:P:s:S:t:T::")) {
     case -1:
       goto args_done;
 
@@ -152,6 +229,15 @@ int main(int argc, char **args)
 
     case 'j':
       detectchain = true;
+      break;
+
+    case 'T':
+      chaintest = true;
+      if(optarg == 0)
+	test_count = 10000;
+      else
+	test_count = atoi(optarg);
+      if (test_count == 0)
       break;
 
     case 'L':
@@ -258,6 +344,10 @@ int main(int argc, char **args)
   unsigned int family, manufacturer;  
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
+
+  if(chaintest)
+    test_IRChain(*jtag, io.operator*(), db, test_count);
+
   if (detectchain)
     {
       int dblast = 0;
