@@ -61,8 +61,8 @@ class ProgAlgXC95X
   void flow_erase();
  public:
   ProgAlgXC95X(Jtag &j, IOBase &i, int s);
-  int blank_check(){flow_enable(); return flow_blank_check();}
-  void erase(){flow_enable(); flow_erase();}
+  int blank_check(){flow_enable(); int ret= flow_blank_check(); flow_disable(); return ret;};
+  int erase(){flow_enable(); flow_erase();int ret= flow_blank_check();};
   int array_verify(JedecFile &file);
   void array_read();
   void array_program(JedecFile &file);

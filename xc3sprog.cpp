@@ -402,14 +402,10 @@ int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify, int size)
   ProgAlgXC95X alg(jtag,io, size);
   if (!verify)
     {
-      if (!alg.blank_check())
+      if (!alg.erase())
 	{
-	  alg.erase();
-	  if(!alg.blank_check())
-	    {
-	      printf("Erase failed\n");
-	      return 1;
-	    }
+	  printf("Erase failed\n");
+	  return 1;
 	}
       alg.array_program(file);
     }
