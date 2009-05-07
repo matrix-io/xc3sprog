@@ -70,7 +70,7 @@ void ProgAlgXC95X::flow_enable()
 void ProgAlgXC95X::flow_disable()
 {
   jtag->shiftIR(&ISC_DISABLE);
-  usleep(100);
+  jtag->Usleep(100);
   jtag->shiftIR(&BYPASS);
   io->cycleTCK(1);
 }
@@ -87,7 +87,7 @@ int ProgAlgXC95X::flow_blank_check()
   byte i_data[3]={0x3,0,0};
   byte o_data[3];
   jtag->shiftIR(&XSC_BLANK_CHECK);
-  jtag->shiftDR(i_data,o_data,18);
+  jtag->shiftDR(i_data, 0,18);
   io->cycleTCK(500);
   jtag->shiftDR(0,o_data,18);
   if(io->getVerbose())
@@ -104,13 +104,12 @@ int ProgAlgXC95X::flow_blank_check()
 void ProgAlgXC95X::flow_erase()
 {
   byte data[3] = {0x03, 0, 0};
-  io->setTapState(IOBase::TEST_LOGIC_RESET);
   jtag->shiftIR(&ISC_ERASE);
   jtag->shiftDR(data,0,18);
-  usleep(400000);
+  jtag->Usleep(500000);
   jtag->shiftDR(0,data,18);
-  if((data[0]& 0x03) != 0x01)
-    printf("Erase failed %02x\n", data[0]);
+  if((data[0]& 0x01) != 0x01)
+    printf("Erase still running %02x\n", data[0]);
 }
   
 #define MaxSector 108
@@ -168,7 +167,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
 		  jtag->shiftIR(&ISC_PROGRAM);
 		  jtag->shiftDR(preamble, 0,2,0,false);
 		  jtag->shiftDR(i_data, 0,(DRegLength+2)*8);
-		  usleep(50000);
+		  jtag->Usleep(50000);
 		  jtag->shiftDR(0,o_data, ((DRegLength+2)*8)+2);
 		  if(io->getVerbose())
 		    {

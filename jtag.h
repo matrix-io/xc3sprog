@@ -57,6 +57,7 @@ class Jtag
   int getChain(); // Shift IDCODEs from devices
   inline void setPostDRState(IOBase::tapState_t s){postDRState=s;}
   inline void setPostIRState(IOBase::tapState_t s){postIRState=s;}
+  void Usleep(unsigned int usec);
   int setDeviceIRLength(int dev, int len);
   unsigned long getDeviceID(unsigned int dev){
     if(dev>=devices.size())return 0;

@@ -17,6 +17,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include "jtag.h"
+#include <unistd.h>
+#ifdef __WIN32__
+#include <windows.h>
+#define usleep(x) Sleep((x+999)/1000)
+#endif
 
 Jtag::Jtag(IOBase *iob)
 {
@@ -62,6 +67,11 @@ int Jtag::selectDevice(int dev)
   if(dev>=numDevices)deviceIndex=-1;
   else deviceIndex=dev;
   return deviceIndex;
+}
+
+void Jtag::Usleep(unsigned int usec)
+{
+  usleep(usec);
 }
 
 int Jtag::setDeviceIRLength(int dev, int len)

@@ -24,10 +24,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <string.h>
 #include <sys/time.h>
 #include "progalgxcf.h"
-#if defined ( __MINGW)||(__MINGW32__)
-#include <windows.h>
-#define usleep(x) Sleep(x/1000)
-#endif
 
 const byte ProgAlgXCF::SERASE=0x0a;
 const byte ProgAlgXCF::ISCTESTSTATUS=0xe3;
@@ -65,7 +61,7 @@ int ProgAlgXCF::erase()
   
   gettimeofday(tv, NULL);
   jtag->shiftIR(&ISC_DISABLE);
-  usleep(110000);
+  jtag->Usleep(110000);
   jtag->shiftIR(&BYPASS,ircap);
   if((ircap[0]&BIT3)==BIT3){
     fprintf(stderr,"Device is write protected! Aborting\n");
@@ -88,7 +84,7 @@ int ProgAlgXCF::erase()
   for(i=0; i<32;i++)
   {
       byte xcstatus[1];
-      usleep(500000);
+      jtag->Usleep(500000);
       jtag->shiftIR(&ISCTESTSTATUS);
       jtag->shiftDR(0,xcstatus,8);
       if(io->getVerbose())
@@ -120,7 +116,7 @@ int ProgAlgXCF::program(BitFile &file)
   
   gettimeofday(tv, NULL);
   jtag->shiftIR(&ISC_DISABLE);
-  usleep(1000);
+  jtag->Usleep(1000);
   io->setTapState(IOBase::TEST_LOGIC_RESET);
   byte data[4];
   jtag->shiftIR(&ISC_ENABLE);
@@ -153,7 +149,7 @@ int ProgAlgXCF::program(BitFile &file)
     for (j=0; j<28; j++)
       {
       byte xcstatus[1];
-      usleep(500);
+      jtag->Usleep(500);
       jtag->shiftIR(&ISCTESTSTATUS);
       jtag->shiftDR(0,xcstatus,8);
       if (xcstatus[0] & 0x04)
@@ -233,7 +229,7 @@ int ProgAlgXCF::verify(BitFile &file)
 void ProgAlgXCF::disable()
 {
   jtag->shiftIR(&ISC_DISABLE);
-  usleep(110000);
+  jtag->Usleep(110000);
   jtag->shiftIR(&BYPASS);
   io->cycleTCK(1);
   io->tapTestLogicReset();
