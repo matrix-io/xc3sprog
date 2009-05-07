@@ -225,6 +225,7 @@ void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
 	  jtag->shiftIR(&ISC_READ);
 	  jtag->shiftDR(preamble,0,2,0,false);
 	  jtag->shiftDR(i_data,o_data,(DRegLength+2)*8);
+	  io->cycleTCK(1);
 	  if(sec | l | m )
 	    {
 	      for(int j=0;j<DRegLength;j++)
@@ -293,6 +294,7 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
 	  jtag->shiftIR(&ISC_READ);
 	  jtag->shiftDR(preamble,0,2,0,false);
 	  jtag->shiftDR(i_data,o_data,(DRegLength+2)*8);
+	  io->cycleTCK(1);
 	  if(sec | l | m )
 	    {
 	      for(int j=0;j<DRegLength;j++)
