@@ -156,6 +156,8 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
 	    }
 	  if ((l == 2) && (m == 4))
 	    preamble[0] = 0x03;
+	  jtag->Usleep(1000); /*FIXME: IOFTDI Buffer causes abort with high
+			        rate on some board otherwise*/
 	  jtag->shiftIR(&ISC_PROGRAM);
 	  jtag->shiftDR(preamble,0,2,0,false);
 	  jtag->shiftDR(i_data,0,(DRegLength+2)*8);
