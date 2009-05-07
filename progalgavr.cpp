@@ -117,7 +117,7 @@ int ProgAlgAVR::erase(void)
   
   for (i=0; i<10; i++)
     {
-      usleep(1000);
+      jtag->Usleep(1000);
       jtag->shiftDR(cookies,o_data, 15);
       if(o_data[1] & 0x02)
 	break;
@@ -189,7 +189,7 @@ int ProgAlgAVR::write_fuses(byte * fuses)
 
       for (i=0; i<10; i++)
 	{
-	  usleep(1000);
+	  jtag->Usleep(1000);
 	  jtag->shiftDR(cookies,o_data, 15);
 	  if(o_data[1] & 0x02)
 	    break;
@@ -216,7 +216,7 @@ int ProgAlgAVR::write_fuses(byte * fuses)
 
       for (i=0; i<10; i++)
 	{
-	  usleep(1000);
+	  jtag->Usleep(1000);
 	  jtag->shiftDR(cookies,o_data, 15);
 	  if(o_data[1] & 0x02)
 	    break;
@@ -243,7 +243,7 @@ int ProgAlgAVR::write_fuses(byte * fuses)
 
       for (i=0; i<10; i++)
 	{
-	  usleep(1000);
+	  jtag->Usleep(1000);
 	  jtag->shiftDR(cookies,o_data, 15);
 	  if(o_data[1] & 0x02)
 	    break;
@@ -352,7 +352,7 @@ int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer, unsigned in
 	break;
       fprintf(stdout,".");
       fflush(stdout);
-      usleep(1000);
+      jtag->Usleep(1000);
     }
   if (1 == 10)
     {
