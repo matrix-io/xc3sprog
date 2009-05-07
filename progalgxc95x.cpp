@@ -159,6 +159,10 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
 	  jtag->shiftIR(&ISC_PROGRAM);
 	  jtag->shiftDR(preamble,0,2,0,false);
 	  jtag->shiftDR(i_data,0,(DRegLength+2)*8);
+	  if((l == 2) && (m == 4))
+	    jtag->Usleep(50000);
+	  else
+	    io->cycleTCK(1);
 	  if ((l == 2) && (m == 4))
 	    {
 	      preamble[0]= 0x00;
@@ -183,8 +187,6 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
 		  return 1;
 		}
 	    }
-	  else
-	    io->cycleTCK(1);
 	}
       }
     }
