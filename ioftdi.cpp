@@ -140,7 +140,8 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
       while (rem/8 > buflen) 
 	{
 	  /* full chunks*/
-	  buf[0] = ((tdo)?MPSSE_DO_READ:0)|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_WRITE_NEG;
+	  buf[0] = ((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)
+	    |((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_WRITE_NEG;
 	  buf[1] = (buflen-1) & 0xff;        /* low lenbth byte */
 	  buf[2] = ((buflen-1) >> 8) & 0xff; /* high lenbth byte */
 	  mpsse_add_cmd (buf, 3);
@@ -167,7 +168,8 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
   buflen = rem/8;
   if(rem) 
     {
-      buf[0] = ((tdo)?MPSSE_DO_READ:0)|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_WRITE_NEG;
+      buf[0] = ((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)
+	|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_WRITE_NEG;
       buf[1] =  (buflen - 1)       & 0xff; /* low length byte */
       buf[2] = ((buflen - 1) >> 8) & 0xff; /* high length byte */
       mpsse_add_cmd (buf, 3);
@@ -193,7 +195,8 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
     {
       /* Clock Data Bits Out on -ve Clock Edge LSB First (no Read)
 	 (use if TCK/SK starts at 0) */
-      buf[0] = ((tdo)?MPSSE_DO_READ:0)|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
+      buf[0] = ((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)
+	|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
       buf[1] = rembits-1; /* length: only one byte left*/
       mpsse_add_cmd (buf, 2);
       if(tdi)
@@ -207,7 +210,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 	lastbit = (*tmpsbuf & (1<< rembits));
       /* TMS/CS with LSB first on -ve TCK/SK edge, read on +ve edge 
 	 - use if TCK/SK is set to 0*/
-      buf[0] = MPSSE_WRITE_TMS|((tdo)?MPSSE_DO_READ:0)|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
+      buf[0] = MPSSE_WRITE_TMS|((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
       buf[1] = 0;     /* only one bit */
       buf[2] = (lastbit) ? 0x81 : 1 ;     /* TMS set */
       mpsse_add_cmd (buf, 3);

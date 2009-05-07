@@ -1,0 +1,9 @@
+For JTAG Timing example, look e.g. at
+
+http://pdfserv.maxim-ic.com/en/ds/DS4550.pdf
+or
+http://www.xilinx.com/support/documentation/application_notes/xapp070.pdf
+
+This concludes to:
+- Change TDI withe the negative edge
+- Sample TDO at the negative edge
