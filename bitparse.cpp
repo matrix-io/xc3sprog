@@ -33,15 +33,15 @@ int main(int argc, char**args)
   }
   else {
     try {
-      BitFile  file(args[1]);
-    
+      BitFile  file;
+      file.readFile(args[1]);
       printf("Created from NCD file: %s\n",file.getNCDFilename());
       printf("Target device: %s\n",file.getPartName());
       printf("Created: %s %s\n",file.getDate(),file.getTime());
       printf("Bitstream length: %lu bits\n", file.getLength());
       
       if(argc > 2) {
-	file.saveAsBin(args[2]);
+	file.saveAs(0,file.getPartName(), args[2]);
 	printf("Bitstream saved in binary format in file: %s\n", args[2]);
       }
     }
