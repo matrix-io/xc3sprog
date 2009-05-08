@@ -155,17 +155,20 @@ void BitFile::append(char const *fname) {
   }
 }
 
+void BitFile::setLength(unsigned int size)
+{
+  length = (size+7)>>3;
+  if(buffer) delete [] buffer;
+  buffer=new byte[length];
+}
+
 unsigned long BitFile::saveAs(int style, const char  *device, const char *fname)
 {
   if(length<=0)return length;
-  FILE *fp=fopen(fname,"rb");
-  if(fp)
-    {
-      printf("File %s already exists. Aborting\n", fname);
-      fclose(fp);
-      return 0;
-    }
-  fp=fopen(fname,"wb");
+  int clip;
+  /* Don't store 0xff bytes from the end of the flash */
+  for(clip=length-1; (buffer[clip] == 0xff) && clip>0; clip--){};
+  FILE *fp=fopen(fname,"wb");
   if(fp == 0)
     {
       printf("Unable to open %s: %s\n", fname, strerror(errno));
@@ -177,12 +180,12 @@ unsigned long BitFile::saveAs(int style, const char  *device, const char *fname)
       printf("Bitfile Style not jet implemented\n");
       return 0;
     }
-  for(unsigned int i=0; i<length; i++){
+  for(unsigned int i=0; i<clip; i++){
     byte b=bitRevTable[buffer[i]]; // Reverse bit order
     fwrite(&b,1,1,fp);
   }
   fclose(fp);
-  return length;
+  return clip;
 }
 
 void BitFile::error(const string &str)
