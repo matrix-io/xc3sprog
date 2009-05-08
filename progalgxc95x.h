@@ -64,7 +64,7 @@ class ProgAlgXC95X
   int blank_check(){flow_enable(); int ret= flow_blank_check(); flow_disable(); return ret;};
   int erase(){flow_enable(); flow_erase();int ret= flow_blank_check();};
   int array_verify(JedecFile &file);
-  void array_read();
+  void array_read(JedecFile &file);
   void array_program(JedecFile &file);
 };
 
