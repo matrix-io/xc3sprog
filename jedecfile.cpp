@@ -355,17 +355,10 @@ void JedecFile::saveAsJed(const char  *device, const char  *fname)
 {
   unsigned int i, b=0, l=0 ,w=0;
   unsigned short chksum=0;
-  FILE *fp=fopen(fname,"rb");
+  FILE *fp=fopen(fname,"wb");
   int DRegLength;
   int type=-1;
 
-  if(fp)
-    {
-      printf("File %s already exists. Aborting\n", fname);
-      fclose(fp);
-      return;
-    }
-  fp=fopen(fname,"wb");
   if(!fp)
     {
       printf("Unable to open %s: %s\n", fname, strerror(errno));
