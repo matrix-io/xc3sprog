@@ -349,15 +349,11 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
   return 0;
 }	    
 
-void ProgAlgXC95X::array_read(void)
+void ProgAlgXC95X::array_read(JedecFile &file)
 {
-  JedecFile rbfile;
-  
+  file.setLength(108*108* DRegLength);
   flow_enable();
-  flow_blank_check();
-
-  rbfile.setLength(108*108*8);
-  flow_array_read(rbfile);
+  flow_array_read(file);
   flow_disable();
 }
 
