@@ -29,16 +29,21 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
+#include <string.h>
 
 using namespace std;
 
-BitFile::BitFile(char const * fname)
+BitFile::BitFile()
   : length(0), buffer(0), Error(false), logfile(stderr) {
 
   // Initialize bit flip table
   initFlip();
+}
 
-  // Read in file
+// Read in file
+void BitFile::readFile(char const * fname)
+{
   FILE *const  fp=fopen(fname,"rb");
   if(!fp)  throw  io_exception(std::string("Cannot open file ") + fname);
   filename = fname;
@@ -150,22 +155,33 @@ void BitFile::append(char const *fname) {
   }
 }
 
-unsigned long BitFile::saveAsBin(const char *fname)
+unsigned long BitFile::saveAs(int style, const char  *device, const char *fname)
 {
   if(length<=0)return length;
-  FILE *fptr=fopen(fname,"wb");
-  if(fptr==0){
-    string err="Cannot open file'";
-    err+=fname;
-    err+="'";
-    error(err);
-    return 0;
-  }
+  FILE *fp=fopen(fname,"rb");
+  if(fp)
+    {
+      printf("File %s already exists. Aborting\n", fname);
+      fclose(fp);
+      return 0;
+    }
+  fp=fopen(fname,"wb");
+  if(fp == 0)
+    {
+      printf("Unable to open %s: %s\n", fname, strerror(errno));
+      fclose(fp);
+      return 0;
+    }
+  if(style != 0)
+    {
+      printf("Bitfile Style not jet implemented\n");
+      return 0;
+    }
   for(unsigned int i=0; i<length; i++){
     byte b=bitRevTable[buffer[i]]; // Reverse bit order
-    fwrite(&b,1,1,fptr);
+    fwrite(&b,1,1,fp);
   }
-  fclose(fptr);
+  fclose(fp);
   return length;
 }
 

@@ -93,12 +93,13 @@ class BitFile
   void processData(FILE *fp);
  
  public:
-  BitFile(char const *fname);
+  BitFile();
   ~BitFile();
 
  public:
   void append(unsigned long  val, unsigned cnt);
   void append(char const *file);
+  void readFile(char const *fname);
   
  public:
   inline byte *getData(){return buffer;}
@@ -112,7 +113,7 @@ class BitFile
   inline const char *getPartName(){return partName.c_str();}
   inline const char *getDate(){return date.c_str();}
   inline const char *getTime(){return time.c_str();}
-  unsigned long saveAsBin(const char *fname);
+  unsigned long saveAs(int style, const char  *device, const char *fname);
 };
 
 #endif //BITFILE_H
