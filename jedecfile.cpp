@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
-
 /*
  * Using a slightly corrected version from IPAL libjedec
  * Copyright (c) 2000 Stephen Williams (steve@icarus.com)
@@ -24,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <errno.h>
 
 #include "jedecfile.h"
 #include "io_exception.h"
@@ -208,6 +208,7 @@ static void m_Lfuse(int ch, struct state_mach*m)
 
 #ifdef __unix__
 #define stricmp strcasecmp
+#define strnicmp strncasecmp
 #endif
 
 static void m_N(int ch, struct state_mach*m)
@@ -350,12 +351,49 @@ void JedecFile::readFile(char const * fname)
   }
 }
 
-void JedecFile::saveAsJed(int style)
+void JedecFile::saveAsJed(const char  *device, const char  *fname)
 {
   unsigned int i, b=0, l=0 ,w=0;
   unsigned short chksum=0;
+  FILE *fp=fopen(fname,"rb");
+  int DRegLength;
+  int type=-1;
 
-  if(style == JED_XC95X)
+  if(fp)
+    {
+      printf("File %s already exists. Aborting\n", fname);
+      fclose(fp);
+      return;
+    }
+  fp=fopen(fname,"wb");
+  if(!fp)
+    {
+      printf("Unable to open %s: %s\n", fname, strerror(errno));
+      fclose(fp);
+      return;
+    }
+  if (strnicmp("XC9536X",device, sizeof("XC9536X")-1) == 0)
+    {
+      type = JED_XC95X;
+      DRegLength=2;
+    }
+  if (strnicmp("XC9572X",device, sizeof("XC9572X")-1) == 0)
+    {
+      type = JED_XC95X;
+      DRegLength=4;
+    }
+  if (strnicmp("XC95144X",device, sizeof("XC95144X")-1) == 0)
+    {
+      type = JED_XC95X;
+    DRegLength=8;
+    }
+  if (strnicmp("XC95288X",device, sizeof("XC95288X")-1) == 0)
+    {
+      type = JED_XC95X;
+      DRegLength=16;
+    } 
+
+  if(type == JED_XC95X)
     {
       /* Xilinx Impact (10.1) needs following additional items 
 	 to recognizes as a valid Jedec File
@@ -363,36 +401,16 @@ void JedecFile::saveAsJed(int style)
        * N DEVICE
        */
  
-      unsigned int DRegLen;
-      printf("\2QF%d*\nQV0*\nF0*\nX0*\nJ0 0*\n",jed.fuse_count);
-      if (jed.fuse_count <= 25000)
-	{
-	  DRegLen = 2;
-	  printf("N DEVICE XC9536XL*\n");
-	}
-      else if (jed.fuse_count <= 50000)
-	{
-	  DRegLen = 4;
-	  printf("N DEVICE XC9572XL*\n");
-	}
-      else if (jed.fuse_count <= 103680)
-	{
-	  DRegLen = 8;
-	  printf("N DEVICE XC95144XL*\n");
-	}
-      else if (jed.fuse_count <= 290304)
-	{
-	  DRegLen = 16;
-	  printf("N DEVICE XC95288XL*\n");
-	}
+      fprintf(fp, "\2QF%d*\nQV0*\nF0*\nX0*\nJ0 0*\n",jed.fuse_count);
+      fprintf(fp, "N DEVICE %s*\n", device);
 
       for (i=0; i<jed.fuse_count; i++)
 	{
 	  if(!w && !b)
-	    printf("L%07d",i);
+	    fprintf(fp, "L%07d",i);
 	  if (!b)
-	    printf(" ");
-	  printf("%c",( jed.fuse_list[i/8] & (1 << (i%8)))?'1':'0');
+	    fprintf(fp, " ");
+	  fprintf(fp, "%c",( jed.fuse_list[i/8] & (1 << (i%8)))?'1':'0');
 	  if (l<9)
 	    {
 	      if(b==7)
@@ -409,9 +427,9 @@ void JedecFile::saveAsJed(int style)
 	    }
 	  if(!b)
 	    {
-	      if (w == (DRegLen-1))
+	      if (w == (DRegLength-1))
 		{
-		  printf("*\n");
+		  fprintf(fp, "*\n");
 		  w = 0;
 		  l++;
 		}
@@ -425,7 +443,8 @@ void JedecFile::saveAsJed(int style)
 
   for(i=0; i<jed.fuse_count/8; i++)
     chksum += jed.fuse_list[i];
-  printf("C%04X*\n%c0000\n", chksum, 3);
+  fprintf(fp, "C%04X*\n%c0000\n", chksum, 3);
+  fclose(fp);
   
 }
 

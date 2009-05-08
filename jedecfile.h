@@ -67,6 +67,6 @@ class JedecFile
   void setLength(unsigned int fuse_count);
   int get_fuse(unsigned int idx);
   void set_fuse(unsigned int idx, int blow);
-  void saveAsJed(int style);
+  void saveAsJed(const char  * device, const char  * fname);
 };
 #endif //JEDECFILE_H
