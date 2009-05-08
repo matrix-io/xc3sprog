@@ -51,12 +51,14 @@ class ProgAlgXCF
 
   Jtag *jtag;
   IOBase *io;
-  int block_size;
+  int block_size;  
+  int size;
  public:
-  ProgAlgXCF(Jtag &j, IOBase &i, int);
+  ProgAlgXCF(Jtag &j, IOBase &i, int si);
   int erase();
   int program(BitFile &file);
   int verify(BitFile &file);
+  int read(BitFile &file);
   void disable();
   void reconfig();
 };

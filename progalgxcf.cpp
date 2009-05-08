@@ -44,9 +44,22 @@ const byte ProgAlgXCF::BIT4=0x10;
 #define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
                               (tvp2)->tv_usec - (tvp1)->tv_usec)
 
-ProgAlgXCF::ProgAlgXCF(Jtag &j, IOBase &i, int bs)
+ProgAlgXCF::ProgAlgXCF(Jtag &j, IOBase &i, int size_ind)
 {
-  block_size=bs;
+  block_size=(size_ind == 0x44) ? 2048 : 4096;
+  switch (size_ind)
+    {
+    case 0x44:
+      size = 1<<20;
+      break;
+    case 0x45:
+      size = 2<<20;
+      break;
+    case 0x46:
+      size = 4<<20;
+      break;
+    }
+	
   jtag=&j;
   io=&i;
 }
@@ -217,6 +230,52 @@ int ProgAlgXCF::verify(BitFile &file)
 	  return res;
 	}
        
+  } 
+  gettimeofday(tv+1, NULL);
+  if(io->getVerbose())
+    printf("\nSuccess! Verify time %.1f ms\n", 
+	   (double)deltaT(tv, tv + 1)/1.0e3);
+  io->tapTestLogicReset();
+  return 0;
+}
+
+int ProgAlgXCF::read(BitFile &file)
+{
+  struct timeval tv[2];
+  byte data[4096/8];
+  
+  file.setLength(size);
+  gettimeofday(tv, NULL);
+  io->setTapState(IOBase::TEST_LOGIC_RESET);
+  jtag->shiftIR(&ISC_ENABLE);
+  data[0]=0x34;
+  jtag->shiftDR(data,0,6);
+
+  for(unsigned int i=0; i<file.getLength(); i+=block_size)
+    {
+      int frame=i/(block_size/32);
+      int res;
+
+      if(io->getVerbose())
+	{
+	  printf("\rReading frames 0x%04x to 0x%04x",frame,frame+31); 
+	  fflush(stdout);
+	}
+      jtag->longToByteArray(frame,data);
+      jtag->shiftIR(&ISC_ADDRESS_SHIFT);
+      jtag->shiftDR(data,0,16);
+      io->cycleTCK(1);
+      jtag->shiftIR(&ISC_READ);
+      jtag->shiftDR(0,data,block_size);
+      if((i+block_size)<=file.getLength())
+	{
+	  memcpy(&(file.getData())[i/8], data, block_size/8);
+	}
+      else
+	{
+	  int rem=(file.getLength()-i)/8; // Bytes remaining
+	  memcpy(&(file.getData())[i/8], data, rem);
+	}
   } 
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
