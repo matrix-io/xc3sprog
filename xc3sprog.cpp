@@ -1,6 +1,7 @@
 /* Spartan3 JTAG programmer
 
 Copyright (C) 2004 Andrew Rogers
+              2005-2009 Uwe Bonnes
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,8 +44,8 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgavr.h"
 
 int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
-int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int blocksize, bool verify);
-int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify, int size);
+int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, const char *fname, const char* device);
+int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, const char *fname, const char *device);
 
 extern char *optarg;
 extern int optind;
@@ -158,11 +159,12 @@ unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
 void usage() {
   fprintf(stderr,
 	  "\nUsage:\txc3sprog [-v] [-c cable_type] [-p chainpos] bitfile [+ (val[*cnt]|binfile) ...]\n"
-	  "   -?\tprint this help\n"
-	  "   -v\tverbose output\n"
-	  "   -j\tDetect JTAG chain, nothing else\n"
+	  "   -?\t\tprint this help\n"
+	  "   -v\t\tverbose output\n"
+	  "   -j\t\tDetect JTAG chain, nothing else\n"
 	  "   -T[val]\tTest chain integrity val times (0 = forever) or 10000 times default\n"
-	  "   -C\tVerify device against File (no programming)\n\n"
+	  "   -C\t\tVerify device against File (no programming)\n"
+	  "   -r\t\tRead from device anbd write to file\n\n"
 	  "    Supported cable types: pp, ftdi, fx2\n"
     	  "   \tOptional pp arguments:\n"
 	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
@@ -195,6 +197,7 @@ int main(int argc, char **args)
   bool        lock      = false;
   bool     detectchain  = false;
   bool     chaintest    = false;
+  bool     readback     = false;
   unsigned int id;
   char const *cable     = "pp";
   char const *dev       = 0;
@@ -215,7 +218,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hvCLc:dD:e:f:jp:P:s:S:t:T::")) {
+    switch(getopt(argc, args, "?hvCLc:dD:e:f:jp:P:rs:S:t:T::")) {
     case -1:
       goto args_done;
 
@@ -254,6 +257,10 @@ int main(int argc, char **args)
 
     case 'f':
       fusefile = optarg;
+      break;
+
+    case 'r':
+      readback = true;
       break;
 
      case 't':
@@ -390,37 +397,46 @@ int main(int argc, char **args)
 	{
 	  try 
 	    {
-	      BitFile  file(args[0]);
+	      BitFile  file;
+	      char *fname = 0;
 	      
-	      if(verbose) 
+	      if (!readback)
 		{
-		  printf("Created from NCD file: %s\n",file.getNCDFilename());
-		  printf("Target device: %s\n",file.getPartName());
-		  printf("Created: %s %s\n",file.getDate(),file.getTime());
-		  printf("Bitstream length: %lu bits\n", file.getLength());
-		}      
+		  file.readFile(args[0]);
+		  if(verbose) 
+		    {
+		      printf("Created from NCD file: %s\n",file.getNCDFilename());
+		      printf("Target device: %s\n",file.getPartName());
+		      printf("Created: %s %s\n",file.getDate(),file.getTime());
+		      printf("Bitstream length: %lu bits\n", file.getLength());
+		    }      
+		  if (family == 0x28)
+		    {
+		      for(int i = 2; i < argc; i++) 
+			{
+			  char *end;
+			  
+			  unsigned long const  val = strtoul(args[i], &end, 0);
+			  unsigned long        cnt = 1;
+			  switch(*end) {
+			  case '*':
+			  case 'x':
+			  case 'X':
+			    cnt = strtoul(end+1, &end, 0);
+			  }
+			  if(*end == '\0')  file.append(val, cnt);
+			  else  file.append(args[i]);
+			}
+		    }
+		}
+	      else
+		fname = args[0];
 	      if (family == 0x28)
 		{
-		  int size = (id & 0x000ff000)>>12;
-		  int bs=(size == 0x44) ? 2048 : 4096;
-		  for(int i = 2; i < argc; i++) 
-		    {
-		      char *end;
-		      
-		      unsigned long const  val = strtoul(args[i], &end, 0);
-		      unsigned long        cnt = 1;
-		      switch(*end) {
-		      case '*':
-		      case 'x':
-		      case 'X':
-			cnt = strtoul(end+1, &end, 0);
-		      }
-		      if(*end == '\0')  file.append(val, cnt);
-		      else  file.append(args[i]);
-		    }
-		  if (verbose)
-		    printf("Device block size is %d.\n", bs);
-		  return programXCF(*jtag,io.operator*(),file, bs, verify);
+		  int size_ind = (id & 0x000ff000)>>12;
+		  ProgAlgXCF alg(*jtag,io.operator*(),size_ind);
+
+		  return programXCF(alg, file, verify, fname, db.getDeviceDescription(chainpos));
 		}
 	      else return  programXC3S(*jtag,io.operator*(),file, verify, family);
 	    }
@@ -433,21 +449,28 @@ int main(int argc, char **args)
 	{
 	  int size = (id & 0x000ff000)>>13;
 	  JedecFile  file;
-	  file.readFile(args[0]);
-	  if (file.getLength() == 0)
+	  ProgAlgXC95X alg(*jtag, io.operator*(), size);
+	  char *fname = 0;
+	  if (!readback)
 	    {
-	      printf("Probably no JEDEC File, aborting\n");
-	      return 2;
+	      file.readFile(args[0]);
+	      if (file.getLength() == 0)
+		{
+		  printf("Probably no JEDEC File, aborting\n");
+		  return 2;
+		}
+	      if(strncmp(db.getDeviceDescription(chainpos), file.getDevice(), sizeof(db.getDeviceDescription(chainpos))) !=0)
+		{
+		  printf("Incompatible Jedec File for Device %s\n"
+			 "Actual device in Chain is %s\n", 
+			 file.getDevice(), db.getDeviceDescription(chainpos));
+		  return 3;
+		}
 	    }
-	  if(strncmp(db.getDeviceDescription(chainpos), file.getDevice(), sizeof(db.getDeviceDescription(chainpos))) !=0)
-	    {
-	      printf("Incompatible Jedec File for Device %s\n"
-		     "Actual device in Chain is %s\n", 
-		     file.getDevice(), db.getDeviceDescription(chainpos));
-	      return 3;
-	    }
+	  else
+	    fname = args[0];
 	  
-	  return programXC95X(*jtag,io.operator*(), file, verify, size);
+	  return programXC95X(alg, file, verify, fname, db.getDeviceDescription(chainpos));
 	}
     } 
   else if  ( manufacturer == 0x01f) /* Atmel */
@@ -472,9 +495,22 @@ int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
   return 0;
 }
 
-int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int blocksize, bool verify)
+int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, const char *fname, const char *device)
 {
-  ProgAlgXCF alg(jtag,io,blocksize);
+  if(fname)
+    {
+      int len;
+      FILE *fp=fopen(fname,"rb");
+      if(fp)
+	{
+	  printf("File %s already exists. Aborting\n", fname);
+	  fclose(fp);
+	  return 1;
+	}
+      alg.read(file);
+      len = file.saveAs(0, device, fname);
+      return 0;
+    }
   if(!verify)
     {
       alg.erase();
@@ -487,9 +523,21 @@ int programXCF(Jtag &jtag, IOBase &io, BitFile &file, int blocksize, bool verify
   return 0;
 }
 
-int programXC95X(Jtag &jtag, IOBase &io, JedecFile &file, bool verify, int size)
+int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, const char *fname, const char *device)
 {
-  ProgAlgXC95X alg(jtag,io, size);
+  if(fname) /* Readback requested*/
+    {
+      FILE *fp=fopen(fname,"rb");
+      if(fp)
+	{
+	  printf("File %s already exists. Aborting\n", fname);
+	  fclose(fp);
+	  return 1;
+	}
+      alg.array_read(file);
+      file.saveAsJed(device, fname);
+      return 0;
+    }
   if (!verify)
     {
       if (!alg.erase())
