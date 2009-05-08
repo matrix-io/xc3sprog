@@ -113,6 +113,7 @@ class BitFile
   inline const char *getPartName(){return partName.c_str();}
   inline const char *getDate(){return date.c_str();}
   inline const char *getTime(){return time.c_str();}
+  void setLength(unsigned int bit_count);
   unsigned long saveAs(int style, const char  *device, const char *fname);
 };
 
