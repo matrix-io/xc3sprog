@@ -2,9 +2,16 @@
 project(xc3sprog)
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 cmake_minimum_required(VERSION 2.6)
+set(USE_STATIC_FTDI ON)
 
-find_package(USB REQUIRED)
-include_directories(${LIBUSB_INCLUDE_DIR})
+# CONDITIONAL_LIBS is added to other unconditional libs below
+set(CONDITIONAL_LIBS )
+include(CheckLibraryExists)
+check_library_exists(dl dlopen "" HAVE_LIBDL)
+if(HAVE_LIBDL)
+    set(CONDITIONAL_LIBS ${CONDITIONAL_LIBS} dl)
+endif(HAVE_LIBDL)
+
 find_package(libftdi)
 include_directories(${LIBFTDI_INCLUDE_DIR})
 
@@ -21,13 +28,14 @@ configure_file(config.in.h ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(detectchain detectchain.cpp ioparport.cpp ioftdi.cpp 
-			   iofx2.cpp devicedb.cpp jtag.cpp iobase.cpp)
-target_link_libraries(detectchain ${LIBFTDI_LIBRARIES} ${LIBUSB_LIBRARIES} )
+			   iofx2.cpp devicedb.cpp jtag.cpp iobase.cpp 
+			   libusb_dyn.c)
+target_link_libraries(detectchain ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS})
 
 add_executable(xc3sprog xc3sprog.cpp ioparport.cpp ioftdi.cpp iofx2.cpp 
 			devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp javr.cpp srecfile.cpp progalgxc95x.cpp 
-			progalgxcf.cpp progalgxc3s.cpp progalgavr.cpp)
-target_link_libraries(xc3sprog ${LIBFTDI_LIBRARIES} ${LIBUSB_LIBRARIES}  )
+			progalgxcf.cpp progalgxc3s.cpp progalgavr.cpp libusb_dyn.c)
+target_link_libraries(xc3sprog ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS}  )
 
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 
