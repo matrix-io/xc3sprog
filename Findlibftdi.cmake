@@ -1,68 +1,68 @@
+# Copyright 2009  SoftPLC Corporation  http://softplc.com
+# Dick Hollenbeck <d...@softplc.com>
+# License: GPL v2
+#
 # - Try to find libftdi
+#
+# Before calling, USE_STATIC_FTDI may be set to mandate a STATIC library
+#
 # Once done this will define
 #
 # LIBFTDI_FOUND - system has libftdi
-# LIBFTDI_INCLUDE_DIRS - the libftdi include directory
+# LIBFTDI_INCLUDE_DIR - the libftdi include directory
 # LIBFTDI_LIBRARIES - Link these to use libftdi
-# LIBFTDI_DEFINITIONS - Compiler switches required for using libftdi
-#
-# Adapted from cmake-modules Google Code project
-#
-# Copyright (c) 2006 Andreas Schneider <mail@cynapses.org>
-#
-# (Changes for libftdi) Copyright (c) 2008 Kyle Machulis <kyle@nonpolynomial.com>
-#
-# Redistribution and use is allowed according to the terms of the New BSD license.
-# For details see the accompanying COPYING-CMAKE-SCRIPTS file.
-#
- 
- 
-if (LIBFTDI_LIBRARIES AND LIBFTDI_INCLUDE_DIRS)
-  # in cache already
-  set(LIBFTDI_FOUND TRUE)
-else (LIBFTDI_LIBRARIES AND LIBFTDI_INCLUDE_DIRS)
-  find_path(LIBFTDI_INCLUDE_DIR
-    NAMES
-      ftdi.h
-    PATHS
-      /usr/include
-      /usr/local/include
-      /opt/local/include
-      /sw/include
-  )
- 
-  find_library(LIBFTDI_LIBRARY
-    NAMES
-      ftdi
-    PATHS
-      /usr/lib
-      /usr/local/lib
-      /opt/local/lib
-      /sw/lib
-  )
- 
-  set(LIBFTDI_INCLUDE_DIRS
-    ${LIBFTDI_INCLUDE_DIR}
-  )
-  set(LIBFTDI_LIBRARIES
-    ${LIBFTDI_LIBRARY}
-)
- 
-  if (LIBFTDI_INCLUDE_DIRS AND LIBFTDI_LIBRARIES)
-     set(LIBFTDI_FOUND TRUE)
-  endif (LIBFTDI_INCLUDE_DIRS AND LIBFTDI_LIBRARIES)
- 
-  if (LIBFTDI_FOUND)
-    if (NOT libftdi_FIND_QUIETLY)
-      message(STATUS "Found libftdi: ${LIBFTDI_LIBRARIES}")
-    endif (NOT libftdi_FIND_QUIETLY)
-  else (LIBFTDI_FOUND)
-    if (libftdi_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find libftdi")
-    endif (libftdi_FIND_REQUIRED)
-  endif (LIBFTDI_FOUND)
- 
-  # show the LIBFTDI_INCLUDE_DIRS and LIBFTDI_LIBRARIES variables only in the advanced view
-  mark_as_advanced(LIBFTDI_INCLUDE_DIRS LIBFTDI_LIBRARIES)
- 
-endif (LIBFTDI_LIBRARIES AND LIBFTDI_INCLUDE_DIRS)
+
+
+if (NOT LIBFTDI_FOUND)
+
+    if(NOT WIN32)
+        include(FindPkgConfig)
+        pkg_check_modules(LIBFTDI_PKG libftdi)
+    endif(NOT WIN32)
+
+    find_path(LIBFTDI_INCLUDE_DIR
+        NAMES
+            ftdi.h
+        HINTS
+            ${LIBFTDI_PKG_INCLUDE_DIRS}
+        PATHS
+            /usr/include
+            /usr/local/include
+    )
+
+    if(USE_STATIC_FTDI)
+        set(_save ${CMAKE_FIND_LIBRARY_SUFFIXES})
+        set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+    endif(USE_STATIC_FTDI)
+
+    find_library(LIBFTDI_LIBRARIES
+        NAMES
+            ftdi
+        HINTS
+            ${LIBFTDI_PKG_LIBRARY_DIRS}
+        PATHS
+            /usr/lib
+            /usr/local/lib
+    )
+
+    if(USE_STATIC_FTDI)
+        set(CMAKE_FIND_LIBRARY_SUFFIXES ${_save} )
+    endif(USE_STATIC_FTDI)
+    include(FindPackageHandleStandardArgs)
+
+    # handle the QUIETLY AND REQUIRED arguments AND set LIBFTDI_FOUND to TRUE if
+    # all listed variables are TRUE
+    find_package_handle_standard_args(LIBFTDI DEFAULT_MSG LIBFTDI_LIBRARIES LIBFTDI_INCLUDE_DIR)
+
+    if(USE_STATIC_FTDI)
+        add_library(libftdi STATIC IMPORTED)
+    else(USE_STATIC_FTDI)
+        add_library(libftdi SHARED IMPORTED)
+    endif(USE_STATIC_FTDI)
+
+    set_target_properties(libftdi PROPERTIES IMPORTED_LOCATION ${LIBFTDI_LIBRARIES})
+    set(${LIBFTDI_LIBRARIES} libftdi)
+
+    #mark_as_advanced(LIBFTDI_INCLUDE_DIR LIBFTDI_LIBRARIES)
+
+endif(NOT LIBFTDI_FOUND)
