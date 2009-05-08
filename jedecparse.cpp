@@ -42,7 +42,7 @@ int main(int argc, char**args)
 
 	  printf("Device %s: %d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n \n",
 		 file.getDevice(), file.getLength(), file.calcChecksum(),file.getChecksum());
-	  file.saveAsJed(0);
+	  file.saveAsJed(file.getDevice(), args[2]);
 	}
       catch(io_exception& e) 
 	{
