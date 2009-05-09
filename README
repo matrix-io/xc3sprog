@@ -47,6 +47,9 @@ Get a chain description:
 
 $ ./xcs3prog -j
 
+Device descrption is searched in the file pointed to by the XCDB environment 
+variable, or when not found the built-in list is used
+
 Test the chain integrity
 
 $ ./xc3sprog -T -j
@@ -58,10 +61,10 @@ Stop with ^C.
 The Platform Flash PROM of the Xilinx Spartan3 Starter Kit can be programmed
 by specifying it's location in the JTAG chain. Example command line below.
 
-$ ./xc3sprog -c pp -p 1 echo_out.bit
+$ ./xc3sprog -c pp -p 1 <bitfile.bit>
 
-Program the flash of an XC3S50AN by loading the SPI_ACCESS first. assume the XC3S50AN
-as single part in the jtag chain
+Program the flash of an XC3S50AN by loading the bscan_spi bitfile first. Aassume 
+the XC3S50AN as single part in the jtag chain
 
 $ ./xc3sprog  ../bscan_spi/xc3s50an.bit
 
@@ -73,11 +76,11 @@ Verify the flash content against a file
 
 $ ./xc3sprog -I -C <your_bitfile.bit>
 
-You can readout XCF and ISF flash and CPLD
+You can readout XCF/ISF flash and CPLD
 
 $ ./xc3sprog -r (-I) <file to store>
 
-xc3sprog handles XC3, XCF0x and XC95xxxXx
+xc3sprog handles XC3, XCF0x and XC95xxxXx. XC4 should work but is untested.
 
 There is also a utility program included that parses and prints the header
 of a Xilinx .bit file.

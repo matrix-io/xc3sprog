@@ -180,7 +180,7 @@ void usage() {
 	  "   chainpos\n"
 	  "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
           "   AVR specific arguments\n"
-	  "\t[-L ] (Program Lockbitsif defined in fusefile)\n"
+	  "\t[-L ] (Program Lockbits if defined in fusefile)\n"
 	  "\t[-e eepromfile]\n"
 	  "\t[-f fusefile] (default extension: .fus; leave fuses untouched if no file given)\n"
 	  "\n"

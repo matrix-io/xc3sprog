@@ -1,0 +1,7 @@
+- Make the AVR programmer usable
+- Compress the XC3AN bit files and include into the binary
+- More cables
+- Cleanup C++ code
+- More devices (XC2C, XC95xx (without X))
+- Other devices with published 1532 algorithm
+- ... 
