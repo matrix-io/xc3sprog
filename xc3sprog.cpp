@@ -42,10 +42,12 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "jedecfile.h"
 #include "progalgxc95x.h"
 #include "progalgavr.h"
+#include "progalgspiflash.h"
 
 int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
 int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, const char *fname, const char* device);
 int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, const char *fname, const char *device);
+int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, const char *fname, const char *device);
 
 extern char *optarg;
 extern int optind;
@@ -198,6 +200,7 @@ int main(int argc, char **args)
   bool     detectchain  = false;
   bool     chaintest    = false;
   bool     readback     = false;
+  bool     spiflash     = false;
   unsigned int id;
   char const *cable     = "pp";
   char const *dev       = 0;
@@ -218,7 +221,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hvCLc:dD:e:f:jp:P:rs:S:t:T::")) {
+    switch(getopt(argc, args, "?hvCLc:dD:e:f:Ijp:P:rs:S:t:T::")) {
     case -1:
       goto args_done;
 
@@ -228,6 +231,10 @@ int main(int argc, char **args)
 
     case 'C':
       verify = true;
+      break;
+
+    case 'I':
+      spiflash = true;
       break;
 
     case 'j':
@@ -438,7 +445,16 @@ int main(int argc, char **args)
 
 		  return programXCF(alg, file, verify, fname, db.getDeviceDescription(chainpos));
 		}
-	      else return  programXC3S(*jtag,io.operator*(),file, verify, family);
+	      else 
+		{
+		  if(spiflash)
+		    {
+		      ProgAlgSPIFlash alg(*jtag, io.operator*());
+		      return programSPI(alg, file, verify, fname, db.getDeviceDescription(chainpos));
+		    }
+		    else
+		      return  programXC3S(*jtag,io.operator*(),file, verify, family);
+		}
 	    }
 	  catch(io_exception& e) {
 	    fprintf(stderr, "IOException: %s\n", e.getMessage().c_str());
@@ -496,6 +512,34 @@ int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
 }
 
 int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, const char *fname, const char *device)
+{
+  if(fname)
+    {
+      int len;
+      FILE *fp=fopen(fname,"rb");
+      if(fp)
+	{
+	  printf("File %s already exists. Aborting\n", fname);
+	  fclose(fp);
+	  return 1;
+	}
+      alg.read(file);
+      len = file.saveAs(0, device, fname);
+      return 0;
+    }
+  if(!verify)
+    {
+      alg.erase();
+      alg.program(file);
+      alg.disable();
+    }
+  alg.verify(file);
+  alg.disable();
+  alg.reconfig();
+  return 0;
+}
+
+int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, const char *fname, const char *device)
 {
   if(fname)
     {
