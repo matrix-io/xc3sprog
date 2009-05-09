@@ -45,7 +45,7 @@ BitFile::BitFile()
 void BitFile::readFile(char const * fname)
 {
   FILE *const  fp=fopen(fname,"rb");
-  if(!fp)  throw  io_exception(std::string("Cannot open file ") + fname);
+  if(!fp)  throw  io_exception(std::string("Cannot open file ") );
   filename = fname;
 
   try {  
