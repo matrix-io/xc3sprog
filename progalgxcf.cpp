@@ -279,7 +279,7 @@ int ProgAlgXCF::read(BitFile &file)
   } 
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    printf("\nSuccess! Verify time %.1f ms\n", 
+    printf("\nSuccess! Read time %.1f ms\n", 
 	   (double)deltaT(tv, tv + 1)/1.0e3);
   io->tapTestLogicReset();
   return 0;
