@@ -5,5 +5,5 @@ or
 http://www.xilinx.com/support/documentation/application_notes/xapp070.pdf
 
 This concludes to:
-- Change TDI withe the negative edge
+- Change TDI with the negative edge
 - Sample TDO at the negative edge
