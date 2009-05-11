@@ -482,7 +482,7 @@ int IOParport::read_control(int fd, unsigned char *control)
     status = ioctl(port->fd, PPIGCTRL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__WIN32__)
-    unsigned char ret;
+    char ret;
     DWORD dummy;
     status = DeviceIoControl((HANDLE)(fd), NT_IOCTL_CONTROL, NULL, 0, &ret, 
                              sizeof(ret), (LPDWORD)&dummy, NULL);
@@ -507,7 +507,7 @@ int IOParport::read_status(int fd, unsigned char *status)
     DWORD dummy;
     ret = DeviceIoControl((HANDLE)(fd), NT_IOCTL_STATUS, NULL, 0, &res, 
                              sizeof(res), (LPDWORD)&dummy, NULL);
-    *status = res ^ S1284_INVERTED;
+    *status = res ;
     return ret == 0 ? XC3S_OK : -XC3S_EIO;
 #else
     return -XC3S_ENIMPL;
