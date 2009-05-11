@@ -62,7 +62,7 @@ int main(int argc, char **args)
 {
     bool        verbose = false;
     char const *cable   = "pp";
-    char  *dev     = 0;
+    char const *dev     = 0;
     int vendor    = 0;
     int product   = 0;
     char const *desc    = 0;

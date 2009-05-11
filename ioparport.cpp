@@ -271,7 +271,7 @@ int  IOParport::detectcable(void)
   }
 }
 
-IOParport::IOParport(char *dev) : IOBase(), total(0), debug(0) {
+IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
 
   // Try to obtain device from environment or use default if not given
   if(!dev) {
@@ -302,7 +302,7 @@ IOParport::IOParport(char *dev) : IOBase(), total(0), debug(0) {
       }
 #elif defined(__WIN32__)
       fd = (int)CreateFile(dev, GENERIC_READ | GENERIC_WRITE,
-                           FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+                           0, NULL, OPEN_EXISTING, 0, NULL);
       if (fd == (int)INVALID_HANDLE_VALUE) {
           throw  io_exception(std::string("Failed to open: ") + dev);
         }

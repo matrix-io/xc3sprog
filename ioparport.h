@@ -40,7 +40,7 @@ class IOParport : public IOBase
   int read_status(int fd, unsigned char *status);
 
  public:
-  IOParport(char *dev);
+  IOParport(char const *dev);
   ~IOParport();
   void tx(bool tms, bool tdi);
   bool txrx(bool tms, bool tdi);

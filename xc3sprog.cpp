@@ -203,7 +203,7 @@ int main(int argc, char **args)
   bool     spiflash     = false;
   unsigned int id;
   char const *cable     = "pp";
-  char *dev       = 0;
+  char const *dev       = 0;
   char const *eepromfile= 0;
   char const *fusefile  = 0;
   int         chainpos  = 0;
