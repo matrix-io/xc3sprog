@@ -160,7 +160,7 @@ int  IOParport::detectcable(void)
 	    return NO_CABLE;
 	  }
 	  else 	    {
-	    fprintf(stderr,"No cable found\n");
+	    fprintf(stderr,"No dongle found\n");
 	    return NO_CABLE;
 	  }
 	}
@@ -229,7 +229,7 @@ int  IOParport::detectcable(void)
 	 ( (data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN2))||
 	 (!(data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN2)))
       {
-	fprintf(stderr,"No cable found\n");
+	fprintf(stderr,"No dongle found\n");
 	return NO_CABLE;
       }
 
@@ -311,9 +311,7 @@ IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
       throw  io_exception(std::string("Parallel port access not implemented for this system"));
 #endif
 
-    if(!(cable = detectcable())) {
-      throw  io_exception(std::string("No cable found on: ") + dev);
-    }
+    cable = detectcable();
   }
   catch(...) {
     close(fd);
