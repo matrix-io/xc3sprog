@@ -2,19 +2,25 @@
 project(xc3sprog)
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 cmake_minimum_required(VERSION 2.6)
+
 set(USE_STATIC_FTDI ON)
-
-# CONDITIONAL_LIBS is added to other unconditional libs below
-set(CONDITIONAL_LIBS )
-include(CheckLibraryExists)
-check_library_exists(dl dlopen "" HAVE_LIBDL)
-if(HAVE_LIBDL)
-    set(CONDITIONAL_LIBS ${CONDITIONAL_LIBS} dl)
-endif(HAVE_LIBDL)
-
 find_package(libftdi)
 include_directories(${LIBFTDI_INCLUDE_DIR})
 
+#link libusb dynamic at runtime on windows at at compile time else
+#this circumvents a problem with Debian
+set (CONDITIONAL_FILES)
+set (CONDITIONAL_LIBS)
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+   set (CONDITIONAL_FILES ${CONDITIONAL_FILES} "libusb_dyn.c")
+else("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+   find_package(libusb)
+   include_directories(${LIBUSB_INCLUDE_DIR})
+   set(CONDITIONAL_LIBS ${CONDITIONAL_LIBS} ${LIBUSB_LIBRARIES})
+endif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+
+set (LIBUSRP_INCLUDE_DIR "fallback/")
+include_directories(${LIBUSRP_INCLUDE_DIR})
 
 add_executable(debug debug.cpp iobase.cpp ioparport.cpp iodebug.cpp)
 
@@ -29,14 +35,14 @@ INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(detectchain detectchain.cpp ioparport.cpp ioftdi.cpp 
 			   iofx2.cpp devicedb.cpp jtag.cpp iobase.cpp 
-			   libusb_dyn.c)
+			   ${CONDITIONAL_FILES})
 target_link_libraries(detectchain ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS})
 
 add_executable(xc3sprog xc3sprog.cpp ioparport.cpp ioftdi.cpp iofx2.cpp 
 			devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp javr.cpp srecfile.cpp progalgxc95x.cpp 
 			progalgxcf.cpp progalgxc3s.cpp progalgavr.cpp 
-			libusb_dyn.c progalgspiflash.cpp)
+			progalgspiflash.cpp  ${CONDITIONAL_FILES})
 target_link_libraries(xc3sprog ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS}  )
 
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 
