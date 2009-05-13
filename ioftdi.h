@@ -69,6 +69,7 @@ class IOFtdi : public IOBase
   void flush(void);
 
  private:
+  void deinit(void);
   void mpsse_add_cmd(unsigned char const *buf, int len);
   void mpsse_send(void);
   unsigned int readusb(unsigned char * rbuf, unsigned long len);
