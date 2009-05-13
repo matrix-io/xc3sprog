@@ -261,6 +261,8 @@ void IOFtdi::tx_tms(unsigned char *pat, int length)
 
 unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
 {
+    unsigned char buf[1] = { SEND_IMMEDIATE};
+    mpsse_add_cmd(buf,1);
     mpsse_send();
 #if defined (USE_FTD2XX)
     DWORD  length = (DWORD) len, read = 0, last_read;
@@ -321,21 +323,22 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
       if (last_errno)
 	{
 	  fprintf(stderr,"error %s\n", strerror(last_errno));
+	  deinit();
           throw  io_exception();
 	}
     }
   if (read <0)
     {
       fprintf(stderr,"Error %d str: %s\n", -read, strerror(-read));
+      deinit();
       throw  io_exception();
     }
 #endif
   return read;
 }
 
-IOFtdi::~IOFtdi()
+void IOFtdi::deinit(void)
 {
-  flush();
 #if defined (USE_FTD2XX)
   FT_Close(ftdi);
 #else
@@ -344,6 +347,12 @@ IOFtdi::~IOFtdi()
   ftdi_deinit(&ftdi);
 #endif
   if(verbose)  printf("USB transactions: Write %d read %d retries %d\n", calls_wr, calls_rd, retries);
+}
+  
+IOFtdi::~IOFtdi()
+{
+  flush();
+  deinit();
 }
 
 void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
@@ -361,7 +370,6 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
 void IOFtdi::mpsse_send() {
   if(bptr == 0)  return;
 
-  usbuf[bptr++] = SEND_IMMEDIATE;
 #if defined (USE_FTD2XX)
   DWORD written, last_written;
   int res, timeout = 0;
@@ -397,8 +405,13 @@ void IOFtdi::mpsse_send() {
 
 #else
   calls_wr++;
-  if(bptr != ftdi_write_data(&ftdi, usbuf, bptr)) {
-    throw  io_exception();
+  int written = ftdi_write_data(&ftdi, usbuf, bptr);
+  if(written != bptr) 
+    {
+      fprintf(stderr,"mpsse_send: Short write %ld vs %ld at run %d, Err: %s\n", 
+	      written, bptr, calls_wr, ftdi_get_error_string(&ftdi));
+      deinit();
+      throw  io_exception();
   }
 #endif
 
