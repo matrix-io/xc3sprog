@@ -91,6 +91,11 @@ void ProgAlgXC3S::flow_array_program(BitFile &file)
       jtag->shiftIR(&ISC_PROGRAM);
       jtag->shiftDR(&(file.getData())[i/8],0,array_transfer_len);
       io->cycleTCK(1);
+      if((i % (10000*array_transfer_len)) == 0)
+	{
+	  fprintf(stdout,".");
+	  fflush(stdout);
+	}
     }
   gettimeofday(tv+1, NULL);
   
