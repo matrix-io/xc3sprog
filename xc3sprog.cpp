@@ -357,27 +357,27 @@ int main(int argc, char **args)
     return 1;
     }
 
-  Jtag *jtag = new Jtag(io.operator->());
+  Jtag jtag = Jtag(io.operator->());
   unsigned int family, manufacturer;  
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
 
   if(chaintest)
-    test_IRChain(*jtag, io.operator*(), db, test_count);
+    test_IRChain(jtag, io.operator*(), db, test_count);
 
   if (detectchain)
     {
       int dblast = 0;
-      int num_devices = jtag->getChain();
+      int num_devices = jtag.getChain();
       for(int i=0; i< num_devices; i++)
 	{
-	  unsigned long id=jtag->getDeviceID(i);
+	  unsigned long id=jtag.getDeviceID(i);
 	  int length=db.loadDevice(id);
 	  // Sandro in the following print also the location of the devices found in the jtag chain
 	  printf("JTAG loc.: %d\tIDCODE: 0x%08lx\t", i, id);
 	  if(length>0)
 	    {
-	      jtag->setDeviceIRLength(i,length);
+	      jtag.setDeviceIRLength(i,length);
 	      printf("Desc: %15s\tIR length: %d\n",db.getDeviceDescription(dblast),length);
 	      dblast++;
 	    } 
@@ -389,7 +389,7 @@ int main(int argc, char **args)
       return 0;
     }
 
-  id = get_id (*jtag, db, chainpos, verbose);
+  id = get_id (jtag, db, chainpos, verbose);
   family = (id>>21) & 0x7f;
   manufacturer = (id>>1) & 0x3ff;
 
@@ -444,7 +444,7 @@ int main(int argc, char **args)
 	      if (family == 0x28)
 		{
 		  int size_ind = (id & 0x000ff000)>>12;
-		  ProgAlgXCF alg(*jtag,io.operator*(),size_ind);
+		  ProgAlgXCF alg(jtag,io.operator*(),size_ind);
 
 		  return programXCF(alg, file, verify, fname, db.getDeviceDescription(chainpos));
 		}
@@ -452,11 +452,11 @@ int main(int argc, char **args)
 		{
 		  if(spiflash)
 		    {
-		      ProgAlgSPIFlash alg(*jtag, io.operator*());
+		      ProgAlgSPIFlash alg(jtag, io.operator*());
 		      return programSPI(alg, file, verify, fname, db.getDeviceDescription(chainpos));
 		    }
 		    else
-		      return  programXC3S(*jtag,io.operator*(),file, verify, family);
+		      return  programXC3S(jtag,io.operator*(),file, verify, family);
 		}
 	    }
 	  catch(io_exception& e) {
@@ -468,7 +468,7 @@ int main(int argc, char **args)
 	{
 	  int size = (id & 0x000ff000)>>13;
 	  JedecFile  file;
-	  ProgAlgXC95X alg(*jtag, io.operator*(), size);
+	  ProgAlgXC95X alg(jtag, io.operator*(), size);
 	  char *fname = 0;
 	  if (!readback)
 	    {
@@ -494,7 +494,7 @@ int main(int argc, char **args)
     } 
   else if  ( manufacturer == 0x01f) /* Atmel */
     {
-      return jAVR (*jtag, id, args[0],verify, lock, eepromfile, fusefile);
+      return jAVR (jtag, id, args[0],verify, lock, eepromfile, fusefile);
     }
   fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n", db.getDeviceDescription(chainpos));
   return 1;
