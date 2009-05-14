@@ -18,6 +18,7 @@ class ProgAlgSPIFlash
   static const byte BYPASS;
 
   Jtag *jtag;
+  BitFile *file;
   IOBase *io;
   int pgsize;
   int pages;
@@ -30,7 +31,7 @@ class ProgAlgSPIFlash
 		     uint8_t *mosi, int mosi_len, int preamble);
   int spi_flashinfo(int *size, int *pages);
  public:
-  ProgAlgSPIFlash(Jtag &j, IOBase &i);
+  ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i);
   int erase(){};
   int program(BitFile &file);
   int verify(BitFile &file);

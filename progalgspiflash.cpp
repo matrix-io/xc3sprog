@@ -3,8 +3,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include "bitfile.h"
-
 const byte ProgAlgSPIFlash::USER1=0x02;
 const byte ProgAlgSPIFlash::USER2=0x03;
 const byte ProgAlgSPIFlash::CONFIG=0xee;
@@ -50,9 +48,10 @@ byte reverse8(byte d)
     return reverse_bits_table[d];
 }
 
-ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, IOBase &i)
+ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i)
 {
   jtag=&j;
+  file = &f;
   io=&i;
   miso_buf = new byte[5010];
   mosi_buf = new byte[5010];
