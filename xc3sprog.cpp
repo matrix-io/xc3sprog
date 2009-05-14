@@ -452,7 +452,7 @@ int main(int argc, char **args)
 		{
 		  if(spiflash)
 		    {
-		      ProgAlgSPIFlash alg(jtag, io.operator*());
+		      ProgAlgSPIFlash alg(jtag, file, io.operator*());
 		      return programSPI(alg, file, verify, fname, db.getDeviceDescription(chainpos));
 		    }
 		    else
