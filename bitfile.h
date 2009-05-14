@@ -115,6 +115,7 @@ class BitFile
   inline const char *getTime(){return time.c_str();}
   void setLength(unsigned int bit_count);
   unsigned long saveAs(int style, const char  *device, const char *fname);
+  unsigned char reverse8(unsigned char b){return bitRevTable[b];};
 };
 
 #endif //BITFILE_H
