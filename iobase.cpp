@@ -86,7 +86,7 @@ void IOBase::shift(bool tdi, int length, bool last)
   nextTapState(last); // If TMS is set the the state of the tap changes
 }
 
-void IOBase::setTapState(tapState_t state)
+void IOBase::setTapState(tapState_t state, int pre)
 {
   bool tms;
   while(current_state!=state){
@@ -307,6 +307,12 @@ void IOBase::setTapState(tapState_t state)
     tms_buf[tms_len/8] |= tms<<(tms_len & 0x7);
     tms_len++;
   };
+  if(pre)
+    {
+      if( tms_len + pre >= CHUNK_SIZE*8) /* no more room for even one bit */
+	flush_tms();
+      tms_len +=pre;
+    }
 }
 
 // After shift data into the DR or IR we goto the next state
