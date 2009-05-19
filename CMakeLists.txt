@@ -28,21 +28,23 @@ add_executable(bitparse bitfile.cpp bitparse.cpp)
 add_executable(jedecparse  jedecparse.cpp jedecfile.cpp)
 add_executable(srecparse  srecparse.cpp srecfile.cpp)
 
-#Bring devlist.txt in a form that we can compile as fallback
-file(STRINGS devlist.txt fb_string)
-configure_file(config.in.h ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+ADD_CUSTOM_COMMAND(OUTPUT config.h
+    COMMAND ${CMAKE_COMMAND} -DDEVLIST_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/devlist.cmk
+    DEPENDS devlist.txt
+)
+
 INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(detectchain detectchain.cpp ioparport.cpp ioftdi.cpp 
 			   iofx2.cpp devicedb.cpp jtag.cpp iobase.cpp 
-			   ${CONDITIONAL_FILES})
+			   ${CONDITIONAL_FILES} config.h)
 target_link_libraries(detectchain ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS})
 
 add_executable(xc3sprog xc3sprog.cpp ioparport.cpp ioftdi.cpp iofx2.cpp 
 			devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp javr.cpp srecfile.cpp progalgxc95x.cpp 
 			progalgxcf.cpp progalgxc3s.cpp progalgavr.cpp 
-			progalgspiflash.cpp  ${CONDITIONAL_FILES})
+			progalgspiflash.cpp  ${CONDITIONAL_FILES} config.h)
 target_link_libraries(xc3sprog ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS}  )
 
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 
