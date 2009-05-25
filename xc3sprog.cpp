@@ -221,7 +221,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hvCLc:d:D:e:f:Ijp:P:rs:S:t:T::")) {
+    switch(getopt(argc, args, "?hCLc:d:D:e:f:Ijp:P:rs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
