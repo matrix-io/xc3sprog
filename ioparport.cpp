@@ -400,11 +400,13 @@ void IOParport::txrx_block(const unsigned char *tdi, unsigned char *tdo, int len
 void IOParport::tx_tms(unsigned char *pat, int length)
 {
     int i;
-    unsigned char tms = pat[0];
+    unsigned char tms;
     for (i = 0; i < length; i++)
     {
-	tx((tms & 0x01), true);
-	tms = tms >> 1;
+      if ((i & 0x7) == 0)
+	tms = pat[i>>3];
+      tx((tms & 0x01), true);
+      tms = tms >> 1;
     }
 }
 
