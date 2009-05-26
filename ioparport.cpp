@@ -374,6 +374,7 @@ void IOParport::txrx_block(const unsigned char *tdi, unsigned char *tdo, int len
   int j=0;
   unsigned char tdo_byte=0;
   unsigned char tdi_byte;
+  unsigned char data=def_byte;
   if (tdi)
       tdi_byte = tdi[j];
       
@@ -394,6 +395,7 @@ void IOParport::txrx_block(const unsigned char *tdi, unsigned char *tdo, int len
   tdo_byte=tdo_byte+(txrx(last, (tdi_byte&1)==1)<<(i%8)); // TMS set if last=true
   if(tdo)
       tdo[j]=tdo_byte;
+  write_data(fd, data); /* Make sure, TCK is low */
   return;
 }
 
@@ -401,6 +403,7 @@ void IOParport::tx_tms(unsigned char *pat, int length)
 {
     int i;
     unsigned char tms;
+    unsigned char data=def_byte;
     for (i = 0; i < length; i++)
     {
       if ((i & 0x7) == 0)
@@ -408,6 +411,7 @@ void IOParport::tx_tms(unsigned char *pat, int length)
       tx((tms & 0x01), true);
       tms = tms >> 1;
     }
+    write_data(fd, data); /* Make sure, TCK is low */
 }
 
 IOParport::~IOParport()
