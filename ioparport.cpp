@@ -352,12 +352,12 @@ void IOParport::tx(bool tms, bool tdi)
   write_data(fd, data);
   //delay(2);
   data|=tck_value; // clk high 
+  total++;
   write_data(fd, data);
   //delay(2);
   //data=data^2; // clk low
   //write_data(fd, data);
   //delay(2);
-  total++;
 }
  
 void IOParport::tx_tdi_byte(unsigned char tdi_byte)
