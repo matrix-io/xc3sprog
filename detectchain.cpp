@@ -155,8 +155,8 @@ args_done:
               dev);
     }
     else {
-      if(!dev)  dev = "*";
-      fprintf(stderr, "Could not access USB device (%s).\n", dev);
+      fprintf(stderr, "Could not access USB device %04x:%04x.\n", 
+	      vendor, product);
     }
     return 1;
   }
