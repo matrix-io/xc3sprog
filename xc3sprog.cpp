@@ -33,6 +33,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "ioparport.h"
 #include "iofx2.h"
 #include "ioftdi.h"
+#include "ioxpc.h"
 #include "bitfile.h"
 #include "jtag.h"
 #include "devicedb.h"
@@ -166,8 +167,9 @@ void usage() {
 	  "   -j\t\tDetect JTAG chain, nothing else\n"
 	  "   -T[val]\tTest chain integrity val times (0 = forever) or 10000 times default\n"
 	  "   -C\t\tVerify device against File (no programming)\n"
-	  "   -r\t\tRead from device anbd write to file\n\n"
-	  "    Supported cable types: pp, ftdi, fx2\n"
+	  "   -I\t\tWork on connected SPI Flash(after bscan_spi Bitfile for device has been loaded)\n"
+	  "   -r\t\tRead from device and write to file\n\n"
+	  "    Supported cable types: pp, ftdi, fx2, xpc\n"
     	  "   \tOptional pp arguments:\n"
 	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
 	  "   \tOptional fx2/ftdi arguments:\n"
@@ -175,8 +177,10 @@ void usage() {
 	  "   \t\t[-P product]     (idProduct)\n"
 	  "   \t\t[-S description string] (Product string)\n"
 	  "   \t\t[-s serial]      (SerialNumber string)\n"
-	  "   \tOptional fx2/ftdi arguments:\n"
+	  "   \tOptional ftdi arguments:\n"
 	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n"
+	  "   \tOptional xpc arguments:\n"
+	  "   \t\t[-t subtype] (NONE or INT  (Internal Chain on XPC, doesn't work for now on DLC10))\n"
 	  "   chainpos\n"
 	  "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
           "   AVR specific arguments\n"
@@ -273,6 +277,8 @@ int main(int argc, char **args)
      case 't':
        if (strcmp(optarg, "ikda") == 0)
          subtype = FTDI_IKDA;
+       if (strcmp(optarg, "ikda") == 0)
+         subtype = XPC_INTERNAL;
        else
          usage();
        break;
@@ -334,6 +340,14 @@ int main(int argc, char **args)
 	if(product == 0)
 	  product = USRP_DEVICE;
 	io.reset(new IOFX2(vendor, product, desc, serial));
+      }
+    else if(strcmp(cable,  "xpc") == 0)  
+      {
+	if (vendor == 0)
+	  vendor = XPC_VENDOR;
+	if(product == 0)
+	  product = XPC_DEVICE;
+	io.reset(new IOXPC(vendor, product, desc, serial, subtype));
       }
     else  usage();
 
