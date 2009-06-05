@@ -42,6 +42,7 @@ struct jedec_data {
 typedef struct jedec_data *jedec_data_t;
 
 #define JED_XC95X 0
+#define JED_XC2C  1
 
 class JedecFile
 {

@@ -370,23 +370,30 @@ void JedecFile::saveAsJed(const char  *device, const char  *fname)
       type = JED_XC95X;
       DRegLength=2;
     }
-  if (strnicmp("XC9572X",device, sizeof("XC9572X")-1) == 0)
+  else if (strnicmp("XC9572X",device, sizeof("XC9572X")-1) == 0)
     {
       type = JED_XC95X;
       DRegLength=4;
     }
-  if (strnicmp("XC95144X",device, sizeof("XC95144X")-1) == 0)
+  else if (strnicmp("XC95144X",device, sizeof("XC95144X")-1) == 0)
     {
       type = JED_XC95X;
     DRegLength=8;
     }
-  if (strnicmp("XC95288X",device, sizeof("XC95288X")-1) == 0)
+  else if (strnicmp("XC95288X",device, sizeof("XC95288X")-1) == 0)
     {
       type = JED_XC95X;
       DRegLength=16;
     } 
+  else if (strnicmp("XC2C",device, sizeof("XC2C")-1) == 0)
+    {
+      type = JED_XC2C;
+    } 
 
-  if(type == JED_XC95X)
+  fprintf(fp, "\2QF%d*\nQV0*\nF0*\nX0*\nJ0 0*\n",jed.fuse_count);
+  fprintf(fp, "N DEVICE %s*\n", device);
+
+   if(type == JED_XC95X)
     {
       /* Xilinx Impact (10.1) needs following additional items 
 	 to recognizes as a valid Jedec File
@@ -394,10 +401,7 @@ void JedecFile::saveAsJed(const char  *device, const char  *fname)
        * N DEVICE
        */
  
-      fprintf(fp, "\2QF%d*\nQV0*\nF0*\nX0*\nJ0 0*\n",jed.fuse_count);
-      fprintf(fp, "N DEVICE %s*\n", device);
-
-      for (i=0; i<jed.fuse_count; i++)
+     for (i=0; i<jed.fuse_count; i++)
 	{
 	  if(!w && !b)
 	    fprintf(fp, "L%07d",i);
@@ -432,6 +436,18 @@ void JedecFile::saveAsJed(const char  *device, const char  *fname)
 	  if (l==15)
 	    l =0;
 	}
+    }
+   else if (type == JED_XC2C)
+     {
+      for (i=0; i<jed.fuse_count; i++)
+	{
+	  if ((i %64) == 0)
+	    fprintf(fp, "L%07d ",i);
+	  fprintf(fp, "%c",( jed.fuse_list[i/8] & (1 << (i%8)))?'1':'0');
+	  if ((i %64) == 63)
+	    fprintf(fp, "*\n",i);
+	}
+       fprintf(fp, "*\n",i);
     }
 
   for(i=0; i<jed.fuse_count/8; i++)
