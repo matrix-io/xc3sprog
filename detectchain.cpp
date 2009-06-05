@@ -33,6 +33,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "io_exception.h"
 #include "ioparport.h"
 #include "iofx2.h"
+#include "ioxpc.h"
 #include "ioftdi.h"
 #include "iodebug.h"
 #include "jtag.h"
@@ -45,16 +46,18 @@ void usage(void)
   fprintf(stderr, 
 	  "\nUsage: detectchain [-c cable_type] [-v]\n"
 	  "   -v\tverbose output\n\n"
-	  "   Supported cable types: pp, ftdi, fx2\n"
+	  "   Supported cable types: pp, ftdi, fx2, xpc\n"
 	  "   \tOptional pp arguments:\n"
 	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
-	  "   \tOptional fx2/ftdi arguments:\n"
+	  "   \tOptional fx2/ftdi/xpc arguments:\n"
 	  "   \t\t[-V vendor]      (idVendor)\n"
 	  "   \t\t[-P product]     (idProduct)\n"
 	  "   \t\t[-D description] (Product string)\n"
 	  "   \t\t[-s serial]      (SerialNumber string)\n"
 	  "   \tOptional ftdi arguments:\n"
-	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n");
+	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n"
+	  "   \tOptional xpc arguments:\n"
+	  "   \t\t[-t subtype] (NONE or INT  (Internal Chain on XPC, doesn't work for now on DLC10))\n");
   exit(255);
 }
 
@@ -106,6 +109,8 @@ int main(int argc, char **args)
 	    case 't':
 		if (strcasecmp(optarg, "ikda") == 0)
 		    subtype = FTDI_IKDA;
+		if (strcasecmp(optarg, "int") == 0)
+		    subtype = XPC_INTERNAL;
 		else
 		    usage();
 		break;
@@ -141,6 +146,14 @@ args_done:
 	if(product == 0)
 	  product = USRP_DEVICE;
 	io.reset(new IOFX2(vendor, product, desc, serial));
+      }
+    else if(strcmp(cable,  "xpc") == 0)  
+      {
+	if (vendor == 0)
+	  vendor = XPC_VENDOR;
+	if(product == 0)
+	  product = XPC_DEVICE;
+	io.reset(new IOXPC(vendor, product, desc, serial, subtype));
       }
     else  usage();
 

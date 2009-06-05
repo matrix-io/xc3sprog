@@ -1,0 +1,13 @@
+090605: 
+Tested with a DLC10 cable.
+
+The buffer size could be increased substantial against Koljas observations
+on the DLC9, resulting in great speed increase. 
+
+Time to programm the 1 MByte "bscan_spi/sp3adsp-fg676.bit" file to a
+XC3SD1800A is about 6 seconds, versus 3 seconds in Impact. Probably impact
+selects a higher TCK speed. Didn't look for the appropriate message in
+deepth.
+
+Internal chain didn't work for the DLC9, neither in SVN-urjtag, nor in
+xc3sprog.
