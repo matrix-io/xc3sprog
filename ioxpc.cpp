@@ -39,22 +39,17 @@ IOXPC::IOXPC(int const vendor, int const product, char const *desc, char const *
   subtype = stype;
   // Open device
   if (xpc_usb_open_desc(vendor, product, desc, serial) < 0)
-    throw  io_exception(std::string("ftdi_usb_open_desc: ") + 
-			error_str);
+    throw  io_exception(std::string("ftdi_usb_open_desc: ") );
   if (xpcu_request_28(xpcu, 0x11) < 0)
-    throw  io_exception(std::string("xpcu_request_28: ") + 
-			error_str);
+    throw  io_exception(std::string("xpcu_request_28: ") );
   if (xpcu_write_gpio(xpcu, XPC_PROG) < 0)
-    throw  io_exception(std::string("xpcu_write_gpio: ") + 
-			error_str);
+    throw  io_exception(std::string("xpcu_write_gpio: ") );
   if (xpcu_read_firmware_version(xpcu, buf) < 0)
-    throw  io_exception(std::string("xpcu_read_firmware_version: ") + 
-			error_str);
+    throw  io_exception(std::string("xpcu_read_firmware_version: ") );
   printf("firmware version = 0x%02x%02x (%u)\n", buf[1], buf[0], buf[1]<<8| buf[0]);
   
   if (xpcu_read_cpld_version(xpcu, buf) < 0)
-    throw  io_exception(std::string("xpcu_read_cpld_version: ") + 
-			error_str);
+    throw  io_exception(std::string("xpcu_read_cpld_version: ") );
   printf("CPLD version = 0x%02x%02x (%u)\n", buf[1], buf[0], buf[1]<<8| buf[0]);
   if(!buf[1] && !buf[0])
     throw  io_exception(std::string("Warning: version '0' can't be correct. Please try resetting the cable\n"));
@@ -64,8 +59,7 @@ IOXPC::IOXPC(int const vendor, int const product, char const *desc, char const *
       if (xpcu_select_gpio(xpcu, 0)<0)
 	{
 	  usb_close(xpcu);
-	  throw  io_exception(std::string("Setting internal mode: ") + 
-			      error_str);
+	  throw  io_exception(std::string("Setting internal mode: ") );
 	}
     }
   else
@@ -80,8 +74,7 @@ IOXPC::IOXPC(int const vendor, int const product, char const *desc, char const *
       if (r<0)
         {
 	  usb_close(xpcu);
-	  throw  io_exception(std::string("Setting external mode: ") + 
-			      error_str);
+	  throw  io_exception(std::string("Setting external mode: ") );
 	}
     } 
 }
@@ -96,7 +89,7 @@ int IOXPC::xpcu_output_enable(struct usb_dev_handle *xpcu, int enable)
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, enable ? 0x18 : 0x10, 0, NULL, 0, 1000)<0)
     {
-      perror("usb_control_msg(0x10/0x18)");
+      printf("usb_control_msg(%x) %s\n", enable, usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -109,7 +102,7 @@ int IOXPC::xpcu_request_28(struct usb_dev_handle *xpcu, int value)
   
   if(usb_control_msg(xpcu, 0x40, 0xB0, 0x0028, value, NULL, 0, 1000)<0)
     {
-      perror("usb_control_msg(0x28.x)");
+      printf("usb_control_msg(0x28 %x) %s\n", value, usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -121,7 +114,7 @@ int IOXPC::xpcu_write_gpio(struct usb_dev_handle *xpcu, unsigned char bits)
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, 0x0030, bits, NULL, 0, 1000)<0)
     {
-      perror("usb_control_msg(0x30.0x00) (write port E)");
+      printf("usb_control_msg(0x30.0x%02x) (write port E) %s\n", bits, usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -138,7 +131,7 @@ int IOXPC::xpcu_read_gpio(struct usb_dev_handle *xpcu, unsigned char *bits)
 {
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0038, 0, (char*)bits, 1, 1000)<0)
     {
-      perror("usb_control_msg(0x38.0x00) (read port E)");
+      printf("usb_control_msg(0x38.0x02x) (read port E)\n", bits, usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -156,7 +149,7 @@ int IOXPC::xpcu_read_cpld_version(struct usb_dev_handle *xpcu, unsigned char *bu
 {
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0050, 0x0001, (char*)buf, 2, 1000)<0)
     {
-      perror("usb_control_msg(0x50.1) (read_cpld_version)");
+      printf("usb_control_msg(0x50.1) (read_cpld_version) %s\n", usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -169,7 +162,7 @@ int IOXPC::xpcu_read_firmware_version(struct usb_dev_handle *xpcu, unsigned char
 {
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0050, 0x0000, (char*)buf, 2, 1000)<0)
     {
-      perror("usb_control_msg(0x50.0) (read_firmware_version)");
+      printf("usb_control_msg(0x50.0) (read_firmware_version) %s\n", usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -180,7 +173,7 @@ int IOXPC::xpcu_select_gpio(struct usb_dev_handle *xpcu, int int_or_ext )
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, 0x0052, int_or_ext, NULL, 0, 1000)<0)
     {
-      perror("usb_control_msg(0x52.x) (select gpio)");
+      printf("usb_control_msg(0x52.x) (select gpio) %s\n", usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -232,7 +225,7 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, 
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, reqno, bits, NULL, 0, 1000)<0)
     {
-      perror("usb_control_msg(x.x) (shift)");
+      printf("usb_control_msg(0x40.0x%02x 0x%02x) (shift) %s\n", reqno, bits, usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -253,7 +246,7 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, 
   
   if(usb_bulk_write(xpcu, 0x02, (char*)in, in_len, 1000)<0)
     {
-      printf("\nusb_bulk_write error(shift): %s\n", strerror(errno));
+      printf("\nusb_bulk_write error(shift): %s\n", usb_strerror());
       return -1;
     }
   calls_wr++;
@@ -261,7 +254,7 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, 
     {
       if(usb_bulk_read(xpcu, 0x86, (char*)out, out_len, 1000)<0)
 	{
-	  printf("\nusb_bulk_read error(shift): %s\n", strerror(errno));
+	  printf("\nusb_bulk_read error(shift): %s\n", usb_strerror());
 	  return -1;
 	}
       calls_rd++;
