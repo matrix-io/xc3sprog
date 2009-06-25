@@ -219,14 +219,16 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
   res=spi_xfer_user1(data,pgsize,4,NULL,0, 0);
   res=memcmp(data, &(vfile.getData())[(page-1)*pgsize], pgsize);
   
-  printf("\n");
+  printf("\rVerify: Success!                               \n");
   
   return rc;
 }
 
 int ProgAlgSPIFlash::program(BitFile &pfile) 
 {
-  int rc,i,len = pfile.getLength()/8;
+  byte fbuf[3];
+  fbuf[0]=0xd7;
+  int rc,i, j, len = pfile.getLength()/8;
   int page = 0;
         
   if(len>(pgsize*pages))
@@ -245,7 +247,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
       
       if(io->getVerbose())
 	{
-	  printf("\rWriting page %4d",page-1); 
+	  printf("                                              \rWriting page %4d",page-1); 
 	  fflush(stdout);
 	}
     
@@ -260,7 +262,26 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
         
       res=spi_xfer_user1(NULL,0,0,buf,((len-i)>pgsize) ? pgsize : (len-i), 4);
       
-      jtag->Usleep(6000); //t_p <= 6ms (UG333 page 44)      
+      for (j = 0; j< 9; j++)
+	{
+	  if(io->getVerbose())
+	    {
+	      printf("."); 
+	      fflush(stdout);
+	    }
+	  jtag->Usleep(5000); //t_p <= 35ms (UG333 page 44)      
+
+	  spi_xfer_user1(NULL, 0, 0, fbuf, 2, 1);
+	  spi_xfer_user1(fbuf+1, 2, 1, NULL, 0, 0);
+	  fbuf[1] = file->reverse8(fbuf[1]);
+	  fbuf[2] = file->reverse8(fbuf[2]);
+	  if (fbuf[2] & 1)
+	    break;
+	}
+      if(i==9)
+	{
+	  printf("                               \rFailed to programm page %d\n", page); 
+	}
       page++;
     } 
   
