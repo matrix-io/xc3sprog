@@ -5,6 +5,9 @@
 
 const byte ProgAlgSPIFlash::USER1=0x02;
 const byte ProgAlgSPIFlash::USER2=0x03;
+const byte ProgAlgSPIFlash::JSTART=0x0c;
+const byte ProgAlgSPIFlash::JSHUTDOWN=0x0d;
+const byte ProgAlgSPIFlash::CFG_IN=0x05;
 const byte ProgAlgSPIFlash::CONFIG=0xee;
 const byte ProgAlgSPIFlash::BYPASS=0xff;
 
@@ -263,4 +266,25 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
   
   rc = 0;
   return rc;
+}
+
+void ProgAlgSPIFlash::reconfig(void)
+{
+  /* Sequence is from AR #31913*/
+  byte buf[12]= {0xff, 0xff, 0x55, 0x99, 0x0c, 0x85, 0x00, 0x70, 0x04, 0x00, 0x04, 0x00};
+  byte buf1[12];
+  int i;
+  for (i=0; i<12; i++)
+    buf1[i]= file->reverse8(buf[i]);
+  jtag->shiftIR(&JSHUTDOWN);
+  io->cycleTCK(16);
+  jtag->shiftIR(&CFG_IN);
+  if(io->getVerbose())
+    printf("Trying reconfigure\n"); 
+  jtag->shiftDR(buf, NULL, 92 );
+  jtag->shiftIR(&JSTART);
+  io->cycleTCK(32);
+  jtag->shiftIR(&BYPASS);
+  io->cycleTCK(1);
+  io->setTapState(IOBase::TEST_LOGIC_RESET);
 }
