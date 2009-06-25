@@ -14,6 +14,9 @@ class ProgAlgSPIFlash
  private:
   static const byte USER1;
   static const byte USER2;
+  static const byte CFG_IN;
+  static const byte JSHUTDOWN;
+  static const byte JSTART;
   static const byte CONFIG;
   static const byte BYPASS;
 
@@ -37,6 +40,6 @@ class ProgAlgSPIFlash
   int verify(BitFile &file);
   int read(BitFile &file);
   void disable(){};
-  void reconfig(){};
+  void reconfig();
 };
 #endif /*PROGALGSPIFLASH_H */
