@@ -109,7 +109,7 @@ int main(int argc, char **args)
 	    case 't':
 		if (strcasecmp(optarg, "ikda") == 0)
 		    subtype = FTDI_IKDA;
-		if (strcasecmp(optarg, "int") == 0)
+		else if (strcasecmp(optarg, "int") == 0)
 		    subtype = XPC_INTERNAL;
 		else
 		    usage();
