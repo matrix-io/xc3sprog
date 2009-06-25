@@ -262,6 +262,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
         
       res=spi_xfer_user1(NULL,0,0,buf,((len-i)>pgsize) ? pgsize : (len-i), 4);
       
+      /* Page Erase/Program takes up to 35 ms (t_pep, UG333.pdf page 43)*/
       for (j = 0; j< 9; j++)
 	{
 	  if(io->getVerbose())
@@ -269,7 +270,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
 	      printf("."); 
 	      fflush(stdout);
 	    }
-	  jtag->Usleep(5000); //t_p <= 35ms (UG333 page 44)      
+	  jtag->Usleep(5000);       
 
 	  spi_xfer_user1(NULL, 0, 0, fbuf, 2, 1);
 	  spi_xfer_user1(fbuf+1, 2, 1, NULL, 0, 0);
