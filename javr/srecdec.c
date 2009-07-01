@@ -57,7 +57,7 @@ S_Record DecodeSRecordLine(char *source, unsigned char *dest)
 
   if(*source!='S')
   {
-     printf("\r\n%s\r\n",source);
+     printf("\n%s\n",source);
      assert(*source=='S');
   }
   source++;
