@@ -88,7 +88,7 @@ endif
 
 #define all project specific object files
 	OBJ	= $(ASRC:.s=.o) $(SRC:.c=.o)
-	JOBJ	= ../build64/CMakeFiles/xc3sprog.dir/ioparport.cpp.o ../build64/CMakeFiles/xc3sprog.dir/ioftdi.cpp.o ../build64/CMakeFiles/xc3sprog.dir/jtag.cpp.o  ../build64/CMakeFiles/xc3sprog.dir/iobase.cpp.o ../build64/CMakeFiles/xc3sprog.dir/devicedb.cpp.o ../build64/CMakeFiles/xc3sprog.dir/iofx2.cpp.o
+	JOBJ	= ../build64/CMakeFiles/xc3sprog.dir/ioparport.cpp.o ../build64/CMakeFiles/xc3sprog.dir/ioftdi.cpp.o ../build64/CMakeFiles/xc3sprog.dir/jtag.cpp.o  ../build64/CMakeFiles/xc3sprog.dir/iobase.cpp.o ../build64/CMakeFiles/xc3sprog.dir/devicedb.cpp.o ../build64/CMakeFiles/xc3sprog.dir/iofx2.cpp.o ../build64/CMakeFiles/xc3sprog.dir/ioxpc.cpp.o
 
 #this defines the aims of the make process
 all:	link

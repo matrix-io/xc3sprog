@@ -38,9 +38,11 @@
 #include "command.h"
 
 #include "debug.h"
+#include "io_exception.h"
 #include "ioparport.h"
 #include "ioftdi.h"
 #include "iofx2.h"
+#include "ioxpc.h"
 #include "jtag_javr.h"
 #include "devicedb.h"
 
@@ -54,63 +56,262 @@
 #include "javr.h"
 #undef JAVR_M
 
+void usage() {
+  fprintf(stderr,
+	  "\nUsage: javr [-v] [-c cable_type] [-p chainpos] [-L ] [-e eepromfile] [-f fusefile] [romfile]\n"
+	  "   -?\t\tprint this help\n"
+	  "   -v\t\tverbose output\n"
+	  "   -j\t\tDetect JTAG chain, nothing else\n"
+	  "   -T[val]\tTest chain integrity val times (0 = forever) or 10000 times default\n"
+	  "   -C\t\tVerify device against File (no programming)\n"
+	  "    Supported cable types: pp, ftdi, fx2, xpc\n"
+    	  "   \tOptional pp arguments:\n"
+	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
+	  "   \tOptional fx2/ftdi arguments:\n"
+	  "   \t\t[-V vendor]      (idVendor)\n"
+	  "   \t\t[-P product]     (idProduct)\n"
+	  "   \t\t[-S description string] (Product string)\n"
+	  "   \t\t[-s serial]      (SerialNumber string)\n"
+	  "   \tOptional ftdi arguments:\n"
+	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n"
+	  "   \tOptional xpc arguments:\n"
+	  "   \t\t[-t subtype] (NONE or INT  (Internal Chain on XPC, doesn't work for now on DLC10))\n"
+	  "   chainpos\n"
+	  "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
+          "   AVR specific arguments\n"
+	  "\t[-L ] (Program Lockbits if defined in fusefile)\n"
+	  "\t[-e eepromfile]\n"
+	  "\t[-f fusefile] (default extension: .fus; leave fuses untouched if no file found)\n"
+	  "Enter menu if no rimfile given\n"
+	  "\n"
+	  "\n");
+  exit(255);
+}
 
 
 
-int main(int argc, char *argv[])
+int main(int argc, char **args)
 {
   unsigned long tmp;
-  int debug = 0;
-  int chainpos=0;
-  if(argc==1)
-  {
-    printf("\r\njavr [<filename>] [-p<port>] [-f<fusefilename>] [-e<eepromfilename>] [-L] [-V]\r\n");
+  bool        verbose   = false;
+  bool     readback     = false;
+  bool     spiflash     = false;
+  unsigned int id;
+  char const *cable     = "pp";
+  char const *dev       = 0;
+  char const *eepromfile= 0;
+  static char DefName[256];
+  int         chainpos  = 0;
+  int vendor    = 0;
+  int product   = 0;
+  int test_count = 10000;
+  char const *desc    = 0;
+  char const *serial  = 0;
+  int subtype = FTDI_NO_EN;
+  char *devicedb = NULL;
+  DeviceDB db(devicedb);
+  // Start from parsing command line arguments
+  while(true) {
+    switch(getopt(argc, args, "?hLc:d:D:e:f:jp:P:s:S:t:vV:")) {
+    case -1:
+      goto args_done;
+
+    case 'v':
+      verbose = true;
+      break;
+
+    case 'I':
+      spiflash = true;
+      break;
+
+    case 'L':
+      gLockOption = true;
+      break;
+
+    case 'c':
+      cable = optarg;
+      break;
+
+    case 'e':
+      eepromfile = optarg;
+      break;
+
+    case 'f':
+      gFuseName = optarg;
+      break;
+
+     case 't':
+       if (strcmp(optarg, "ikda") == 0)
+         subtype = FTDI_IKDA;
+       else if (strcmp(optarg, "int") == 0)
+         subtype = XPC_INTERNAL;
+       else
+         usage();
+       break;
+
+    case 'd':
+      dev = optarg;
+      break;
+
+    case 'p':
+      chainpos = atoi(optarg);
+      break;
+
+    case 'V':
+      vendor = atoi(optarg);
+      break;
+      
+    case 'P':
+      product = atoi(optarg);
+      break;
+		
+    case 's':
+      serial = optarg;
+      break;
+      
+    case 'S':
+      desc = optarg;
+      break;
+
+    case '?':
+    case 'h':
+    default:
+      usage();
+    }
+  }
+ args_done:
+  if(argc < 1)  usage();
+  // Get rid of options
+  //printf("argc: %d\n", argc);
+  argc -= optind;
+  args += optind;
+  //printf("argc: %d\n", argc);
+  if(argc < 0)  usage();
+  if(argc == 0) 
     gDisplayMenu=1;
-  }
+  else
+    {
+      FILE *fp;
+      char fname[256];
+      strncpy(fname,args[0],250);
+      fp=fopen(fname,"rb");
+      if(!fp)
+	{
+	  strcat(fname,".rom");
+	  fp=fopen(fname,"rb");
+	  if (!fp)
+	    {
+	      printf("Error opening file %s or %s\n",args[0], fname);
+	      return 1;
+	    }
+	}
+      printf("Reading Flash Data from %s\n", fname);
+      AllocateFlashBuffer();
+      memset(gFlashBuffer,FILL_BYTE,gFlashBufferSize);
+      gSourceInfo=ReadData(fp,gFlashBuffer,gFlashBufferSize);
+      fclose(fp);
+      gProgramFlash=1;
+      printf("Flash Data from 0x%lX to 0x%lX, Length: %ld\n"
+	     ,gSourceInfo.StartAddr,gSourceInfo.EndAddr,gSourceInfo.Bytes_Read);
 
-  if(DecodeHelpRequest(argc,argv))
-  {
-    printf("javr Ver %s, (C) AJ Erasmus 2001 - Compiled " __DATE__ " " __TIME__"\r\n",gVersionStr);
-    printf("Programs Atmel AVR MCUs using the PC Parallel port and\r\n" \
-           "the JTAG interface of the AVR.\r\n" \
-           "email:%s@%s.%s\r\n\r\n" \
-           "This program is free software; you can redistribute it and/or modify\r\n" \
-           "it under the terms of the GNU General Public License as published by\r\n" \
-           "the Free Software Foundation; either version 2 of the License, or\r\n" \
-           "(at your option) any later version.\r\n\r\n" \
-           "This program is distributed in the hope that it will be useful,\r\n" \
-           "but WITHOUT ANY WARRANTY; without even the implied warranty of\r\n" \
-           "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\r\n" \
-           "GNU General Public License for more details.\r\n","antera","intekom","co.za");
-    printf("\r\njavr [<filename>] [-p<port>] [-f<fusefilename>] [-e<eepromfilename>] [-L] [-V]\r\n" \
-           "port: 1-3 (0x378 (default), 0x278, 0x3BC)\r\n" \
-           "         > 3 -> Port Address to Use in Hex\r\n" \
-           "e.g. javr -p378 will use port 0x378\r\n" \
-           "filename: S-Record File to program (Default Extention is .rom)\r\n" \
-           "fusefilename: Text File describing fuses to program (Default Extention is .fus)\r\n" \
-           "eepromfilename: S-Record File to program (Default Extention is .eep)\r\n" \
-           "-L: Program Lockbits if defined in fusefile\r\n" \
-           "-V: Verify <filename> against flash\r\n\n" \
-           );
-    exit(0);
-  }
+      {
+	int i;
+	char * ptr = args[0];
+	for (i=0; i<256 && *ptr != '.'; i++)
+	  {
+	    DefName[i] = *ptr;
+	    ptr++;
+	  }
+	  DefName[i] = 0;
+      }
 
-
-  AllocateFlashBuffer();
-
-  DecodeCommandLine(argc,argv);
+      if (!gFuseName)
+	gFuseName=DefName;
+      
+     if(!eepromfile)
+	eepromfile= DefName;
+      
+      strncpy(fname, eepromfile, 250);
+      fp = fopen(fname,"rb");
+      if(fp==NULL)
+	{
+	  strcat(fname,".eep");
+	  fp=fopen(fname,"rb");
+	  if (!fp)
+	    printf("Error Opening Eeprom File: %s or %s\n",eepromfile, fname);
+	}
+      if(fp)
+	{
+	  printf("Reading Eeprom Data from %s\n",fname);
+	  gEepromInfo=ReadData(fp,gEEPROMBuffer,MAX_EEPROM_SIZE);
+	  fclose(fp);
+	  if(gEepromInfo.Bytes_Read)
+	    {
+	      gProgramEeprom=1;
+	      printf("Eeprom Data from 0x%lX to 0x%lX, Length: %ld\r\n"
+		     ,gEepromInfo.StartAddr,gEepromInfo.EndAddr,gEepromInfo.Bytes_Read);
+	    }
+	  else
+	    printf("0 Bytes Eeprom Data\r\n");
+	}
+    }
+  
+  // Produce release info from CVS tags
+  printf("Release $Rev$\n");
 
   std::auto_ptr<IOBase>  io;
-  io.reset(new IOFtdi(VENDOR, DEVICE, NULL, NULL, FTDI_IKDA));
-  /* io.reset(new IOFX2(USRP_VENDOR, USRP_DEVICE, NULL, NULL)); */
-  /* io.reset(new IOParport(NULL)); */
-  IOBase *io_jtag = NULL;
-  Jtag jtag(io.get());
-  //Reset_JTAG(); /* Done by getChain */
-  //Restore_Idle();/* Done by getChain */
-  
+  try {  
+    if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
+    else if(strcmp(cable, "ftdi") == 0)  
+      {
+	if (vendor == 0)
+	  vendor = VENDOR;
+	if(product == 0)
+	  product = DEVICE;
+	io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
+      }
+    else if(strcmp(cable,  "fx2") == 0)  
+      {
+	if (vendor == 0)
+	  vendor = USRP_VENDOR;
+	if(product == 0)
+	  product = USRP_DEVICE;
+	io.reset(new IOFX2(vendor, product, desc, serial));
+      }
+    else if(strcmp(cable,  "xpc") == 0)  
+      {
+	if (vendor == 0)
+	  vendor = XPC_VENDOR;
+	if(product == 0)
+	  product = XPC_DEVICE;
+	io.reset(new IOXPC(vendor, product, desc, serial, subtype));
+      }
+    else  usage();
+
+    io->setVerbose(verbose);
+  }
+  catch(io_exception& e) 
+    {
+    if(strcmp(cable, "pp") == 0) 
+      {
+	fprintf(stderr,"Could not access parallel device '%s'.\n", dev);
+	fprintf(stderr,"You may need to set permissions of '%s' \n", dev);
+	fprintf(stderr,
+		"by issuing the following command as root:\n\n# chmod 666 %s\n\n",
+		dev);
+      }
+    else 
+      {
+	fprintf(stderr, "Could not access USB device %04x:%04x.\n", 
+		vendor, product);
+      }
+    return 1;
+    }
+
+  Jtag jtag = Jtag(io.operator->());
+  if (verbose)
+    fprintf(stderr, "Using %s\n", db.getFile().c_str());
   int num=jtag.getChain();
-  DeviceDB db(DEVICEDB);
   int dblast=0;
   for(int i=0; i<num; i++){
     unsigned long id=jtag.getDeviceID(i);
@@ -124,7 +325,7 @@ int main(int argc, char *argv[])
       dblast++;
     } 
     else{
-      printf("not found in '%s'.\n",DEVICEDB);
+      printf("not found in '%s'.\n", db.getFile().c_str());
     }
   }
   tmp = jtag.getDeviceID(chainpos);
@@ -160,7 +361,8 @@ int main(int argc, char *argv[])
       exit(-1);
       break;
   }
-  JTAG_Init(&jtag, io_jtag);
+
+  JTAG_Init(&jtag, io.operator->());
   if(jtag.selectDevice(chainpos)<0){
     fprintf(stderr,"Invalid chain position %d, position must be less than %d (but not less than 0).\n",chainpos,num);
     exit(-1);
@@ -172,11 +374,16 @@ int main(int argc, char *argv[])
   AVR_Prog_Enable();
 
   /* printf(">>>%4.4X<<<\r\n",ReadFlashWord(0x00)); */
-  if(gProgramFuseBits)
-  {
-    printf("\r\nProgramming Fuse Bits\r\n");
-    WriteATMegaFuse();
-  }
+  if(gFuseName)
+    {
+      if(GetParamInfo())
+	{
+	  EncodeATMegaFuseBits();
+	  printf("\r\nProgramming Fuse Bits\r\n");
+	  DisplayATMegaFuseData();
+	  WriteATMegaFuse();
+	}
+    }
   else
   {
     ReadATMegaFuse();
@@ -242,8 +449,6 @@ int main(int argc, char *argv[])
   AVR_Prog_Disable();
   ResetReleaseAVR();
   //OUT(gPort,0xFF);
-  if(io_jtag)
-    delete io_jtag;
   return(0);
 }
 
