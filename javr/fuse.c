@@ -216,15 +216,7 @@ void DisplayATMegaFuseData(void)
   printf("BOOTRST : %d  (%s)\n",gFuseBitsAll.BOOTRST ,gTF[gFuseBitsAll.BOOTRST]);
   printf("BODLEVEL: 0x%X  ",gFuseBitsAll.BODLEVEL);
 
-  if((gDeviceData.Index!=ATMEGA162) && (gDeviceData.Index!=AT90CAN128))
-  {
-    if(gFuseBitsAll.BODLEVEL)
-      printf("(2.7V)\n");
-    else
-      printf("(4V)\n");
-    printf("BODEN   : %d  (%s)\n",gFuseBitsAll.BODEN   ,gTF[gFuseBitsAll.BODEN]);
-  }
-  else
+  if(gDeviceData.Index == ATMEGA162) 
   {
     switch(gFuseBitsAll.BODLEVEL)
     {
@@ -248,6 +240,46 @@ void DisplayATMegaFuseData(void)
         break;
     }
     printf("\n");
+  }
+  else
+  if(gDeviceData.Index == AT90CAN128) 
+  {
+    switch(gFuseBitsAll.BODLEVEL)
+    {
+      case 0x07:
+        printf("(BOD Disabled)");
+        break;
+      case 0x06:
+        printf("(4.1V)");
+        break;
+      case 0x05:
+        printf("(4.0V)");
+        break;
+      case 0x04:
+        printf("(3.9V)");
+        break;
+      case 0x03:
+        printf("(3.8V)");
+        break;
+       case 0x02:
+        printf("(2.7V)");
+        break;
+       case 0x01:
+        printf("(2.6V)");
+        break;
+      default:
+        printf("(2.5V)");
+        break;
+    }
+    printf("\n");
+  }
+  else
+  {
+    if(gFuseBitsAll.BODLEVEL)
+      printf("(2.7V)\n");
+    else
+      printf("(4V)\n");
+    printf("BODEN   : %d  (%s)\n",gFuseBitsAll.BODEN   ,gTF[gFuseBitsAll.BODEN]);
   }
   printf("Lock Byte: 0x%2.2X \n",gLockByte);
   printf("BLB0     : %d\n",gLockBitsAll.BLB0);
