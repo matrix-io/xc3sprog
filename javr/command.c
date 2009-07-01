@@ -274,7 +274,7 @@ void DecodeCommandLine(int argc, char* argv[])
   if(gSourceName)
   {
     printf("Reading Flash Data from %s\r\n",gSourceName);
-    BlockFill(gFlashBuffer,FILL_BYTE,gFlashBufferSize);
+    memset(gFlashBuffer,FILL_BYTE,gFlashBufferSize);
     fp=fopen(gSourceName,"rb");
     if(!fp)
     {
@@ -361,12 +361,5 @@ void DecodeCommandLine(int argc, char* argv[])
 }
 
 
-void BlockFill(unsigned char *start, unsigned char fbyte, unsigned long length)
-{
-  while(length--)
-  {
-    *start++=fbyte;
-  }
-}
 
 
