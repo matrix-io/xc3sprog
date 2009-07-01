@@ -63,14 +63,14 @@ void dummy(struct MENU_ITEM *ptr)
       AVR_Prog_Enable();
       //WriteEepromBlock(0x24, 35, (unsigned char*)"This is a Test of EEPROM Writing. 01234567890QWERTYUIOP");
       WriteEepromBlock(0xffc, 1, &val);
-      printf("%s Selected\r\n",ptr->title);
+      printf("%s Selected\n",ptr->title);
       AVR_Prog_Disable();
 
      {
        int i;
       AVR_Prog_Enable();
-      //printf("Read %d\r\n",ReadEepromBlock(0x23,40,gFlashBuffer));
-      printf("Flash: %d\r\n",ReadFlashBlock(2, 40,gFlashBuffer));
+      //printf("Read %d\n",ReadEepromBlock(0x23,40,gFlashBuffer));
+      printf("Flash: %d\n",ReadFlashBlock(2, 40,gFlashBuffer));
       AVR_Prog_Disable();
 
       for(i=0;i<41;i++)
@@ -113,9 +113,9 @@ void DisplayMenu(void)
     {
       if(!gMenuItem[i].title)
         break;
-      printf("\t%c)\t%s\r\n",gMenuItem[i].selection,gMenuItem[i].title);
+      printf("\t%c)\t%s\n",gMenuItem[i].selection,gMenuItem[i].title);
     }
-    printf("\r\n\t");
+    printf("\n\t");
     fgets(buffer, BUFSIZE, stdin);
     c=buffer[0];
 
@@ -145,14 +145,14 @@ void ReadFuseBits(struct MENU_ITEM *ptr)
   DecodeATMegaFuseBits();
   DisplayATMegaFuseData();
 
-  printf("\r\nDo you want to write a fuse file ? (Y/N) ");
+  printf("\nDo you want to write a fuse file ? (Y/N) ");
   fgets(buffer, BUFSIZE, stdin);
   c=buffer[0];
   switch(c)
   {
     case 'y':
     case 'Y':
-      printf("\r\nFilename ? ");
+      printf("\nFilename ? ");
       fgets(buffer, BUFSIZE, stdin);
       WriteATMegaFuseFile(buffer);
       break;
@@ -165,7 +165,7 @@ void WriteFuseBits(struct MENU_ITEM *ptr)
 
   ptr=ptr;
   SetATMegaFuseDefault();  /* Any bits not defined in the fuse file will be the default value */
-  printf("\r\nFilename ? ");
+  printf("\nFilename ? ");
   fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
   {
@@ -182,7 +182,7 @@ void WriteFuseBits(struct MENU_ITEM *ptr)
   }
   DisplayATMegaFuseData();
 
-  printf("\r\nAre you sure you want to write the above fuse data ? (YES) ");
+  printf("\nAre you sure you want to write the above fuse data ? (YES) ");
 
   fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
@@ -208,8 +208,8 @@ void EraseDevice(struct MENU_ITEM *ptr)
   char buffer[BUFSIZE];
 
   ptr=ptr;
-  printf("If EESAVE == 0 then EEPROM will NOT be erased\r\n");
-  printf("\r\nAre you sure you want to erase the device ? (YES) ");
+  printf("If EESAVE == 0 then EEPROM will NOT be erased\n");
+  printf("\nAre you sure you want to erase the device ? (YES) ");
 
   fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
@@ -240,7 +240,7 @@ void ReadFlashDisplay(struct MENU_ITEM *ptr)
 
   AVR_Prog_Enable();
   ptr=ptr;
-  printf("\r\nStart Address ? ");
+  printf("\nStart Address ? ");
   fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
   {
@@ -282,9 +282,9 @@ void ReadFlashDisplay(struct MENU_ITEM *ptr)
       else
         putchar('.');
     }
-    printf("\r\n");
+    printf("\n");
   }
-  printf("\r\n");
+  printf("\n");
   AVR_Prog_Disable();
   fgets(buffer, BUFSIZE, stdin);
 }
@@ -297,7 +297,7 @@ void ReadFlashWriteFile(struct MENU_ITEM *ptr)
 
   AVR_Prog_Enable();
   ptr=ptr;
-  printf("\r\nFile Name [atmega.bin] ? ");
+  printf("\nFile Name [atmega.bin] ? ");
   fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
   {
@@ -314,18 +314,18 @@ void ReadFlashWriteFile(struct MENU_ITEM *ptr)
   fp=fopen(buffer,"wb");
   if(!fp)
   {
-    printf("\r\nError opening file %s !!!\r\n",buffer);
+    printf("\nError opening file %s !!!\n",buffer);
     return;
   }
 
   add=gDeviceData.flash;
-  printf("Reading %ld bytes from device %s\r\n",add,gDeviceData.name);
+  printf("Reading %ld bytes from device %s\n",add,gDeviceData.name);
   ReadFlashBlock(0,add,gFlashBuffer);  /* Read whole device */
-  printf("Writing binary file %s\r\n",buffer);
+  printf("Writing binary file %s\n",buffer);
   fwrite(gFlashBuffer,add,1,fp);
   fclose(fp);
   AVR_Prog_Disable();
-  printf("\nWritten file\r\n");
+  printf("\nWritten file\n");
 
 }
 
@@ -339,7 +339,7 @@ void ReadEepromDisplay(struct MENU_ITEM *ptr)
 
   AVR_Prog_Enable();
   ptr=ptr;
-  printf("\r\nStart Address ? ");
+  printf("\nStart Address ? ");
   fgets(buffer, BUFSIZE, stdin);
   switch(buffer[0])
   {
@@ -401,10 +401,10 @@ void ReadEepromDisplay(struct MENU_ITEM *ptr)
       else
         putchar('.');
     }
-    printf("\r\n");
+    printf("\n");
   }
 
-  printf("\r\n");
+  printf("\n");
   AVR_Prog_Disable();
   fgets(buffer, BUFSIZE, stdin);
 }

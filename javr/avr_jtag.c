@@ -171,11 +171,11 @@ void ChipErase(void)
     gettimeofday( &actualtime, NULL );
     if (( actualtime.tv_sec > endtime.tv_sec ) ||
 	(( actualtime.tv_sec == endtime.tv_sec ) && ( actualtime.tv_usec > endtime.tv_usec ))) {
-      printf("\r\nProblem Erasing device!!!\r\n");
+      printf("\nProblem Erasing device!!!\n");
       return;
     }
   }while(!tmp);
-  printf("\r\nDevice Erased\r\n");
+  printf("\nDevice Erased\n");
 }
 
 
@@ -344,12 +344,12 @@ int WriteFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *src)
     gettimeofday( &actualtime, NULL );
     if (( actualtime.tv_sec > endtime.tv_sec ) ||
 	(( actualtime.tv_sec == endtime.tv_sec ) && ( actualtime.tv_usec > endtime.tv_usec ))) {
-      printf("\r\nProblem Erasing device!!!\r\n");
+      printf("\nProblem Erasing device!!!\n");
       usleep(50000);
       tmp=Send_AVR_Prog_Command(0x3700);
       if (!tmp)
 	{
-	  printf("\r\nProblem Erasing device. Abort!!!\r\n");
+	  printf("\nProblem Erasing device. Abort!!!\n");
 	  return(0);
 	}
     }
@@ -518,7 +518,7 @@ int WriteEepromPage(unsigned short pagenumber, unsigned char pagesize, unsigned 
     gettimeofday( &actualtime, NULL );
     if (( actualtime.tv_sec > endtime.tv_sec ) ||
 	(( actualtime.tv_sec == endtime.tv_sec ) && ( actualtime.tv_usec > endtime.tv_usec ))) {
-      printf("\r\nProblem Writing EEPROM Page: %d !!!\r\n",pagenumber);
+      printf("\nProblem Writing EEPROM Page: %d !!!\n",pagenumber);
       return(0);
     }
   }while(!tmp);
@@ -611,7 +611,7 @@ void WriteEepromBlock(unsigned startaddress, unsigned length, unsigned char *src
     pagenumber++;
     fflush(stdout);
   }
-  printf("Written EEPROM from 0x%3.3X to 0x%3.3X\r\n",startaddress,startaddress+len);
+  printf("Written EEPROM from 0x%3.3X to 0x%3.3X\n",startaddress,startaddress+len);
 }
 
 
@@ -639,7 +639,7 @@ void WriteFlashBlock(unsigned long startaddress, unsigned long length, unsigned 
       blocksize=128;
       break;
   }
-  printf("Flash Page Size: %d\r\n",blocksize);
+  printf("Flash Page Size: %d\n",blocksize);
   assert(blocksize<=sizeof(buffer));
   pagenumber=startaddress/blocksize;
   index=startaddress%blocksize;
@@ -669,7 +669,7 @@ void WriteFlashBlock(unsigned long startaddress, unsigned long length, unsigned 
     fflush(stdout);
     pagenumber++;
   }
-  printf("Written Flash from 0x%lX to 0x%lX\r\n",startaddress,startaddress+len);
+  printf("Written Flash from 0x%lX to 0x%lX\n",startaddress,startaddress+len);
 }
 
 
@@ -756,7 +756,7 @@ int VerifyFlashBlock(unsigned startaddress, unsigned length, unsigned char *src)
   int k,error=0;
   int bsize,bstart;
 
-  printf("Reading from 0x%5.5X (%u), 0x%5.5X (%u) bytes\r\n",startaddress,startaddress,length,length);
+  printf("Reading from 0x%5.5X (%u), 0x%5.5X (%u) bytes\n",startaddress,startaddress,length,length);
   bsize=GetNearestBlockSize(length/78);
   if(bsize>2048)
   {
@@ -780,7 +780,7 @@ int VerifyFlashBlock(unsigned startaddress, unsigned length, unsigned char *src)
       {
         error++;
         if(error<=MAX_ERROR)
-          printf("\rVerify failed at 0x%5.5X: Read 0x%2.2X Expected 0x%2.2X\r\n",startaddress+i,buffer[k],*src);
+          printf("\rVerify failed at 0x%5.5X: Read 0x%2.2X Expected 0x%2.2X\n",startaddress+i,buffer[k],*src);
       }
       src++;
       i++;

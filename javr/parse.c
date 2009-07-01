@@ -217,7 +217,7 @@ int GetParamInfo(void)
               case TokenCKOUT:
                 break;
               case TokenNone:
-                /* printf("%s >>%s<<\r\n",gToken[TokenOld],Buffer); */
+                /* printf("%s >>%s<<\n",gToken[TokenOld],Buffer); */
                 switch(TokenOld)
                 {
                   case TokenM103C:

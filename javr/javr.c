@@ -78,11 +78,10 @@ void usage() {
 	  "   \t\t[-t subtype] (NONE or INT  (Internal Chain on XPC, doesn't work for now on DLC10))\n"
 	  "   chainpos\n"
 	  "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
-          "   AVR specific arguments\n"
 	  "\t[-L ] (Program Lockbits if defined in fusefile)\n"
 	  "\t[-e eepromfile]\n"
 	  "\t[-f fusefile] (default extension: .fus; leave fuses untouched if no file found)\n"
-	  "Enter menu if no rimfile given\n"
+	  "Enter menu if no ROM file given\n"
 	  "\n"
 	  "\n");
   exit(255);
@@ -240,11 +239,11 @@ int main(int argc, char **args)
 	  if(gEepromInfo.Bytes_Read)
 	    {
 	      gProgramEeprom=1;
-	      printf("Eeprom Data from 0x%lX to 0x%lX, Length: %ld\r\n"
+	      printf("Eeprom Data from 0x%lX to 0x%lX, Length: %ld\n"
 		     ,gEepromInfo.StartAddr,gEepromInfo.EndAddr,gEepromInfo.Bytes_Read);
 	    }
 	  else
-	    printf("0 Bytes Eeprom Data\r\n");
+	    printf("0 Bytes Eeprom Data\n");
 	}
     }
   
@@ -349,7 +348,7 @@ int main(int argc, char **args)
       fprintf(stderr," ,ATMega162");
       fprintf(stderr," ,ATMega169");
       fprintf(stderr," ,AT90CAN128");
-      fprintf(stderr,"\r\n");
+      fprintf(stderr,"\n");
       exit(-1);
       break;
   }
@@ -365,13 +364,13 @@ int main(int argc, char **args)
 
   AVR_Prog_Enable();
 
-  /* printf(">>>%4.4X<<<\r\n",ReadFlashWord(0x00)); */
+  /* printf(">>>%4.4X<<<\n",ReadFlashWord(0x00)); */
   if(gFuseName)
     {
       if(GetParamInfo())
 	{
 	  EncodeATMegaFuseBits();
-	  printf("\r\nProgramming Fuse Bits\r\n");
+	  printf("\nProgramming Fuse Bits\n");
 	  DisplayATMegaFuseData();
 	  WriteATMegaFuse();
 	}
@@ -384,14 +383,14 @@ int main(int argc, char **args)
 
   if(gProgramFlash && !gVerifyOption)
   {
-    printf("\r\nErasing Flash");
+    printf("\nErasing Flash");
     if(gFuseBitsAll.EESAVE)
     {
       printf(" and EEPROM");
     }
     AVR_Prog_Enable();
     ChipErase();
-    printf("\r\nProgramming Flash\r\n");
+    printf("\nProgramming Flash\n");
     WriteFlashBlock(gSourceInfo.StartAddr,gSourceInfo.EndAddr-gSourceInfo.StartAddr+1 , gFlashBuffer);
     AVR_Prog_Disable();
   }
@@ -400,9 +399,9 @@ int main(int argc, char **args)
   {
     int i;
 
-    printf("\r\nVerifying Flash\r\n");
+    printf("\nVerifying Flash\n");
     i=VerifyFlashBlock(gSourceInfo.StartAddr,gSourceInfo.EndAddr-gSourceInfo.StartAddr+1 , gFlashBuffer);
-    printf("\r\nFlash Verified with %d errors\r\n",i);
+    printf("\nFlash Verified with %d errors\n",i);
   }
 
   if(gProgramEeprom)
@@ -410,11 +409,11 @@ int main(int argc, char **args)
 
     if(!gProgramFlash || !gFuseBitsAll.EESAVE)
     {
-      printf("EEPROM was not erased before programming - EEPROM NOT reprogrammed\r\n");
+      printf("EEPROM was not erased before programming - EEPROM NOT reprogrammed\n");
     }
     else
     {
-      printf("\r\nProgramming EEPROM\r\n");
+      printf("\nProgramming EEPROM\n");
       AVR_Prog_Enable();
       WriteEepromBlock(gEepromInfo.StartAddr,gEepromInfo.EndAddr-gEepromInfo.StartAddr+1 , gEEPROMBuffer+gEepromInfo.StartAddr);
       AVR_Prog_Disable();
@@ -425,7 +424,7 @@ int main(int argc, char **args)
   {
     if(gLockOption)  /* Command line option -L must be present */
     {
-      printf("\r\nProgramming Lock bits\r\n");
+      printf("\nProgramming Lock bits\n");
       AVR_Prog_Enable();
       WriteATMegaLock();  /* Will only program if bits defined in fuse file */
       AVR_Prog_Disable();
@@ -464,12 +463,12 @@ void AllocateFlashBuffer(void)
   tmp=(unsigned short)(gFlashBufferSize/1024UL);
   if(gFlashBuffer)
   {
-    printf("Allocated flash buffer of %dK\r\n",tmp);
+    printf("Allocated flash buffer of %dK\n",tmp);
 
   }
   else
   {
-    printf("\r\nCould not allocate flash buffer of %dK\r\n",tmp);
+    printf("\nCould not allocate flash buffer of %dK\n",tmp);
     exit(-1);
   }
 }
@@ -504,10 +503,10 @@ void DisplayJTAG_ID(void)
          }
        }
        printf("%s, Rev %c with",gDeviceData.name,gJTAG_ID.version+'A'); /*Bon 041213*/
-       printf(" %ldK Flash, %u Bytes EEPROM and %u Bytes RAM\r\n",gDeviceData.flash/1024,gDeviceData.eeprom, gDeviceData.ram);
+       printf(" %ldK Flash, %u Bytes EEPROM and %u Bytes RAM\n",gDeviceData.flash/1024,gDeviceData.eeprom, gDeviceData.ram);
        break;
      default:
-       printf("Unknown Manufacturer 0x%02x\r\n", gJTAG_ID.manuf_id);
+       printf("Unknown Manufacturer 0x%02x\n", gJTAG_ID.manuf_id);
        break;
    }
 }

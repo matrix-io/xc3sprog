@@ -172,57 +172,57 @@ void DisplayATMegaFuseData(void)
   unsigned char tmp;
   unsigned long tmp1;
 
-  printf("Fuse Bits: 0=\"Programmed\" => True\r\n");
+  printf("Fuse Bits: 0=\"Programmed\" => True\n");
   if((gDeviceData.Index==ATMEGA128) || (gDeviceData.Index==ATMEGA64) || (gDeviceData.Index==ATMEGA162) ||(gDeviceData.Index==AT90CAN128))
   {
     printf("Extended Fuse Byte: 0x%2.2X ",gFuseByte[2]);
   }
   printf("High Fuse Byte: 0x%2.2X ",gFuseByte[1]);
-  printf("Low Fuse Byte: 0x%2.2X\r\n",gFuseByte[0]);
+  printf("Low Fuse Byte: 0x%2.2X\n",gFuseByte[0]);
   if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128))
     {
       tmp=gFuseBitsAll.CKSEL;
-      printf("CKSEL: %X %s%s\r\n",gFuseBitsAll.CKSEL,gCKSEL_Data1[tmp],
+      printf("CKSEL: %X %s%s\n",gFuseBitsAll.CKSEL,gCKSEL_Data1[tmp],
 	     (gFuseBitsAll.CKDIV8)?"":" divided by 8");
     }
   else
     {
       tmp=gFuseBitsAll.CKSEL;
       tmp|=(gFuseBitsAll.CKOPT<<4);
-      printf("CKSEL: %X CKOPT: %d  %s\r\n",gFuseBitsAll.CKSEL,gFuseBitsAll.CKOPT,gCKSEL_Data[tmp]);
+      printf("CKSEL: %X CKOPT: %d  %s\n",gFuseBitsAll.CKSEL,gFuseBitsAll.CKOPT,gCKSEL_Data[tmp]);
     }
   printf("SUT: %X   ",gFuseBitsAll.SUT);
-  DisplayATMegaStartUpTime(); printf("\r\n");
+  DisplayATMegaStartUpTime(); printf("\n");
   tmp1=gDeviceData.flash;
   tmp1-=gDeviceBOOTSize.size[gFuseBitsAll.BOOTSIZE];
-  printf("BOOTSIZE: %X  Size: %d Bytes  Start:0x%5.5lX\r\n",gFuseBitsAll.BOOTSIZE,gDeviceBOOTSize.size[gFuseBitsAll.BOOTSIZE],tmp1);
+  printf("BOOTSIZE: %X  Size: %d Bytes  Start:0x%5.5lX\n",gFuseBitsAll.BOOTSIZE,gDeviceBOOTSize.size[gFuseBitsAll.BOOTSIZE],tmp1);
   if((gDeviceData.Index==ATMEGA128) || (gDeviceData.Index==ATMEGA64))
   {
-    printf("M103C   : %d  (%s)\r\n",gFuseBitsAll.M103C   ,gTF[gFuseBitsAll.M103C]);
-    printf("WDTON   : %d  (%s)\r\n",gFuseBitsAll.WDTON   ,gTF[gFuseBitsAll.WDTON]);
+    printf("M103C   : %d  (%s)\n",gFuseBitsAll.M103C   ,gTF[gFuseBitsAll.M103C]);
+    printf("WDTON   : %d  (%s)\n",gFuseBitsAll.WDTON   ,gTF[gFuseBitsAll.WDTON]);
   }
   if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128))
   {
     if (gDeviceData.Index==ATMEGA162)
-      printf("M161C   : %d  (%s)\r\n",gFuseBitsAll.M161C   ,gTF[gFuseBitsAll.M161C]);
-    printf("WDTON   : %d  (%s)\r\n",gFuseBitsAll.WDTON   ,gTF[gFuseBitsAll.WDTON]);
-    printf("CKOUT   : %d  (%s)\r\n",gFuseBitsAll.CKOUT   ,gTF[gFuseBitsAll.CKOUT]);
-    printf("CKDIV8  : %d  (%s)\r\n",gFuseBitsAll.CKDIV8  ,gTF[gFuseBitsAll.CKDIV8]);
+      printf("M161C   : %d  (%s)\n",gFuseBitsAll.M161C   ,gTF[gFuseBitsAll.M161C]);
+    printf("WDTON   : %d  (%s)\n",gFuseBitsAll.WDTON   ,gTF[gFuseBitsAll.WDTON]);
+    printf("CKOUT   : %d  (%s)\n",gFuseBitsAll.CKOUT   ,gTF[gFuseBitsAll.CKOUT]);
+    printf("CKDIV8  : %d  (%s)\n",gFuseBitsAll.CKDIV8  ,gTF[gFuseBitsAll.CKDIV8]);
   }
-  printf("OCDEN   : %d  (%s)\r\n",gFuseBitsAll.OCDEN   ,gTF[gFuseBitsAll.OCDEN]);
-  printf("JTAGEN  : %d  (%s)\r\n",gFuseBitsAll.JTAGEN  ,gTF[gFuseBitsAll.JTAGEN]);
-  printf("SPIEN   : %d  (%s)\r\n",gFuseBitsAll.SPIEN   ,gTF[gFuseBitsAll.SPIEN]);
-  printf("EESAVE  : %d  (%s)\r\n",gFuseBitsAll.EESAVE  ,gTF[gFuseBitsAll.EESAVE]);
-  printf("BOOTRST : %d  (%s)\r\n",gFuseBitsAll.BOOTRST ,gTF[gFuseBitsAll.BOOTRST]);
+  printf("OCDEN   : %d  (%s)\n",gFuseBitsAll.OCDEN   ,gTF[gFuseBitsAll.OCDEN]);
+  printf("JTAGEN  : %d  (%s)\n",gFuseBitsAll.JTAGEN  ,gTF[gFuseBitsAll.JTAGEN]);
+  printf("SPIEN   : %d  (%s)\n",gFuseBitsAll.SPIEN   ,gTF[gFuseBitsAll.SPIEN]);
+  printf("EESAVE  : %d  (%s)\n",gFuseBitsAll.EESAVE  ,gTF[gFuseBitsAll.EESAVE]);
+  printf("BOOTRST : %d  (%s)\n",gFuseBitsAll.BOOTRST ,gTF[gFuseBitsAll.BOOTRST]);
   printf("BODLEVEL: 0x%X  ",gFuseBitsAll.BODLEVEL);
 
   if((gDeviceData.Index!=ATMEGA162) && (gDeviceData.Index!=AT90CAN128))
   {
     if(gFuseBitsAll.BODLEVEL)
-      printf("(2.7V)\r\n");
+      printf("(2.7V)\n");
     else
-      printf("(4V)\r\n");
-    printf("BODEN   : %d  (%s)\r\n",gFuseBitsAll.BODEN   ,gTF[gFuseBitsAll.BODEN]);
+      printf("(4V)\n");
+    printf("BODEN   : %d  (%s)\n",gFuseBitsAll.BODEN   ,gTF[gFuseBitsAll.BODEN]);
   }
   else
   {
@@ -247,12 +247,12 @@ void DisplayATMegaFuseData(void)
         printf("(Reserved)");
         break;
     }
-    printf("\r\n");
+    printf("\n");
   }
-  printf("Lock Byte: 0x%2.2X \r\n",gLockByte);
-  printf("BLB0     : %d\r\n",gLockBitsAll.BLB0);
-  printf("BLB1     : %d\r\n",gLockBitsAll.BLB1);
-  printf("LB       : %d\r\n",gLockBitsAll.LB);
+  printf("Lock Byte: 0x%2.2X \n",gLockByte);
+  printf("BLB0     : %d\n",gLockBitsAll.BLB0);
+  printf("BLB1     : %d\n",gLockBitsAll.BLB1);
+  printf("LB       : %d\n",gLockBitsAll.LB);
 }
 
 
@@ -348,11 +348,11 @@ void WriteATMegaFuse(void)
       timeout--;
       if(!timeout)
       {
-        printf("\r\nProblem Writing Fuse Extended Byte!!!\r\n");
+        printf("\nProblem Writing Fuse Extended Byte!!!\n");
         return;
       }
     }while(!tmp);
-    printf("\r\nFuse Extended Byte Written");
+    printf("\nFuse Extended Byte Written");
   }
 
   tmp=0x1300;
@@ -373,11 +373,11 @@ void WriteATMegaFuse(void)
     timeout--;
     if(!timeout)
     {
-      printf("\r\nProblem Writing Fuse High Byte!!!\r\n");
+      printf("\nProblem Writing Fuse High Byte!!!\n");
       return;
     }
   }while(!tmp);
-  printf("\r\nFuse High Byte Written");
+  printf("\nFuse High Byte Written");
 
   tmp=0x1300;
   tmp|=gFuseByte[0];
@@ -397,16 +397,16 @@ void WriteATMegaFuse(void)
     timeout--;
     if(!timeout)
     {
-      printf("\r\nProblem Writing Fuse Low Byte!!!\r\n");
+      printf("\nProblem Writing Fuse Low Byte!!!\n");
       return;
     }
   }while(!tmp);
-  printf("\r\nFuse Low Byte Written\r\n");
+  printf("\nFuse Low Byte Written\n");
 
 }
 
 #if 1
-#define EOLINE  "\r\n"
+#define EOLINE  "\n"
 #else
 #define EOLINE  "\n"
 #endif
@@ -418,7 +418,7 @@ void WriteATMegaFuseFile(char *name)
    fp=fopen(name,"wb");
    if(!fp)
    {
-     fprintf(stderr,"\r\nCould not write file %s\r\n",name);
+     fprintf(stderr,"\nCould not write file %s\n",name);
      return;
    }
 
@@ -495,7 +495,7 @@ void WriteATMegaLock(void)
 
     tmp=0x13C0;
     tmp|=gLockByte;
-    printf("Lockbits: %2.2X\r\n",gLockByte);
+    printf("Lockbits: %2.2X\n",gLockByte);
     Send_AVR_Prog_Command(tmp);
 
 
@@ -512,11 +512,11 @@ void WriteATMegaLock(void)
       timeout--;
       if(!timeout)
       {
-        printf("\r\nProblem Writing Lock Bits!!!\r\n");
+        printf("\nProblem Writing Lock Bits!!!\n");
         return;
       }
     }while(!tmp);
-    printf("\r\nLock Bits Written");
+    printf("\nLock Bits Written");
   }
 }
 

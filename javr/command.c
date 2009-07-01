@@ -273,19 +273,19 @@ void DecodeCommandLine(int argc, char* argv[])
   gLockOption=0;
   if(gSourceName)
   {
-    printf("Reading Flash Data from %s\r\n",gSourceName);
+    printf("Reading Flash Data from %s\n",gSourceName);
     memset(gFlashBuffer,FILL_BYTE,gFlashBufferSize);
     fp=fopen(gSourceName,"rb");
     if(!fp)
     {
-      printf("\r\nError opening file %s\r\n",gSourceName);
+      printf("\nError opening file %s\n",gSourceName);
     }
     else
     {
        gSourceInfo=ReadData(fp,gFlashBuffer,gFlashBufferSize);
        fclose(fp);
        gProgramFlash=1;
-       printf("Flash Data from 0x%lX to 0x%lX, Length: %ld\r\n"
+       printf("Flash Data from 0x%lX to 0x%lX, Length: %ld\n"
                ,gSourceInfo.StartAddr,gSourceInfo.EndAddr,gSourceInfo.Bytes_Read);
     }
     if(!gFuseName)  /* Use Derived Name if Name not on command Line */
@@ -322,7 +322,7 @@ void DecodeCommandLine(int argc, char* argv[])
   {
 
     gLockOption=DecodeLockOption(argc,argv);
-    printf("Reading Fuse Data from %s\r\n",gFuseName);
+    printf("Reading Fuse Data from %s\n",gFuseName);
     SetATMegaFuseDefault();  /* Any bits not defined in the fuse file will be the default value */
     if(GetParamInfo())
     {
@@ -333,12 +333,12 @@ void DecodeCommandLine(int argc, char* argv[])
   }
   if(gEepromName)
   {
-    printf("Reading EEPROM Data from %s\r\n",gEepromName);
+    printf("Reading EEPROM Data from %s\n",gEepromName);
     memset(gEEPROMBuffer,FILL_BYTE,MAX_EEPROM_SIZE);
     fp=fopen(gEepromName,"rb");
     if(!fp)
     {
-      printf("\r\nError opening file %s\r\n",gEepromName);
+      printf("\nError opening file %s\n",gEepromName);
     }
     else
     {
@@ -347,11 +347,11 @@ void DecodeCommandLine(int argc, char* argv[])
       if(gEepromInfo.Bytes_Read)
       {
         gProgramEeprom=1;
-        printf("Eeprom Data from 0x%lX to 0x%lX, Length: %ld\r\n"
+        printf("Eeprom Data from 0x%lX to 0x%lX, Length: %ld\n"
                ,gEepromInfo.StartAddr,gEepromInfo.EndAddr,gEepromInfo.Bytes_Read);
       }
       else
-        printf("0 Bytes Eeprom Data\r\n");
+        printf("0 Bytes Eeprom Data\n");
     }
   }
   if(gOnlyPortParm && (argc==2))
