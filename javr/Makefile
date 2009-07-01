@@ -47,7 +47,8 @@ endif
 	BIN	= $(TOOLPATH)objcopy
 	ELFCOF  = $(TOOLPATH)elfcoff
 	SIZE	= $(TOOLPATH)size
-	INCDIR	= /spare/bon/jtagprog/XC3Sprog
+#	INCDIR	= /spare/bon/jtagprog/XC3Sprog
+	INCDIR	= ..
 	LIBDIR	= $(GCC)/lib/gcc-lib
 
 #compiler flags
@@ -87,7 +88,7 @@ endif
 
 #define all project specific object files
 	OBJ	= $(ASRC:.s=.o) $(SRC:.c=.o)
-	JOBJ	= /spare/bon/jtagprog/XC3Sprog/ioparport.o /spare/bon/jtagprog/XC3Sprog/io_ft2232.o /spare/bon/jtagprog/XC3Sprog/io_jtag_bitbang.o /spare/bon/jtagprog/XC3Sprog/io_jtag_mpsse.o /spare/bon/jtagprog/XC3Sprog/jtag.o /spare/bon/jtagprog/XC3Sprog/devicedb.o
+	JOBJ	= ../build64/CMakeFiles/xc3sprog.dir/ioparport.cpp.o ../build64/CMakeFiles/xc3sprog.dir/ioftdi.cpp.o ../build64/CMakeFiles/xc3sprog.dir/jtag.cpp.o  ../build64/CMakeFiles/xc3sprog.dir/iobase.cpp.o ../build64/CMakeFiles/xc3sprog.dir/devicedb.cpp.o ../build64/CMakeFiles/xc3sprog.dir/iofx2.cpp.o
 
 #this defines the aims of the make process
 all:	link

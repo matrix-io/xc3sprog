@@ -31,6 +31,7 @@
 #include <sys/time.h>
 
 #include "javr.h"
+#include "iobase.h"
 #include "jtag_javr.h"
 #include "debug.h"
 

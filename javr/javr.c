@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <memory>
 
 #include "srecdec.h"
 #include "fuse.h"
@@ -37,11 +38,10 @@
 #include "command.h"
 
 #include "debug.h"
-#include "io_ft2232.h"
 #include "ioparport.h"
+#include "ioftdi.h"
+#include "iofx2.h"
 #include "jtag_javr.h"
-#include "io_jtag_mpsse.h"
-#include "io_jtag_bitbang.h"
 #include "devicedb.h"
 
 #include "jtag.h"
@@ -100,37 +100,12 @@ int main(int argc, char *argv[])
 
   DecodeCommandLine(argc,argv);
 
-  IO_JTAG *io_jtag = NULL;
-#if 1
-  IO_FT2232 *usbhardware = new IO_FT2232(0, 0, INTERFACE_A, debug);
-  if(usbhardware->checkError()) {
-    /*    fprintf(stderr,"Could not find a FT2232C Device with description\"%s\".\n",USBDESCRIPTION);
-      fprintf(stderr,"Check that the ftdi_sio Kernel Module doesn't claim the device\n");
-      fprintf(stderr,"Check also access to the approprite device\n");
-      delete usbhardware;*/
-  }
-  else {
-    io_jtag = new IO_JTAG_MPSSE(usbhardware,debug);
-    int act_rate = io_jtag->jtag_rate(1000000);
-    fprintf(stderr,"JTAG: Using %d Hz\n",act_rate);
-    usbhardware->writeport(1, EXT_ON|JTAG_EN_N|IO_HIGH2|IO_HIGH1, EXT_ON);
-  }
-#endif
-  if (!io_jtag) {
-    IOParport *pphardware = new IOParport(PPDEV,debug);
-    if(pphardware->checkError()){
-      fprintf(stderr,"Could not access parallel device '%s'.\n",PPDEV);
-      fprintf(stderr,"You may need to set permissions of '%s' ",PPDEV);
-      fprintf(stderr,"by issuing the following command as root:\n\n# chmod 666 %s\n\n",PPDEV);
-      delete pphardware;
-      return 1;
-    }
-    else io_jtag = new IO_JTAG_Bitbang(pphardware, debug);
-    if (!io_jtag) {
-      fprintf(stderr,"Can't get JTAG protocoll\n");
-    }
-  }
-  Jtag jtag(io_jtag,debug);
+  std::auto_ptr<IOBase>  io;
+  io.reset(new IOFtdi(VENDOR, DEVICE, NULL, NULL, FTDI_IKDA));
+  /* io.reset(new IOFX2(USRP_VENDOR, USRP_DEVICE, NULL, NULL)); */
+  /* io.reset(new IOParport(NULL)); */
+  IOBase *io_jtag = NULL;
+  Jtag jtag(io.get());
   //Reset_JTAG(); /* Done by getChain */
   //Restore_Idle();/* Done by getChain */
   
@@ -145,7 +120,7 @@ int main(int argc, char *argv[])
     printf("IDCODE: 0x%08lx",id);
     if(length>0){
       jtag.setDeviceIRLength(i,length);
-      printf("Desc: %s\tIR length: %d\n",db.getDeviceDescription(dblast),length);
+      printf(" Desc: %15s IR length: %d\n",db.getDeviceDescription(dblast),length);
       dblast++;
     } 
     else{
