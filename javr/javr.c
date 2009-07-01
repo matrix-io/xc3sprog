@@ -94,9 +94,6 @@ int main(int argc, char **args)
 {
   unsigned long tmp;
   bool        verbose   = false;
-  bool     readback     = false;
-  bool     spiflash     = false;
-  unsigned int id;
   char const *cable     = "pp";
   char const *dev       = 0;
   char const *eepromfile= 0;
@@ -104,7 +101,6 @@ int main(int argc, char **args)
   int         chainpos  = 0;
   int vendor    = 0;
   int product   = 0;
-  int test_count = 10000;
   char const *desc    = 0;
   char const *serial  = 0;
   int subtype = FTDI_NO_EN;
@@ -118,10 +114,6 @@ int main(int argc, char **args)
 
     case 'v':
       verbose = true;
-      break;
-
-    case 'I':
-      spiflash = true;
       break;
 
     case 'L':
