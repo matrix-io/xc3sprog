@@ -106,13 +106,21 @@ int GetParamInfo(void)
    int Token,TokenOld;
    unsigned long DataCount;
    int tmp;
+   char fname[256];
 
-   gFuseFile=fopen(gFuseName,"rb");
+   strncpy(fname,gFuseName,250);
+   gFuseFile=fopen(fname,"rb");
    if(gFuseFile==NULL)
-   {
-      printf("\r\nError Opening Fuse File: %s \r\n",gFuseName);
-      return(0); /* Failure */
-   }
+     {
+       strcat(fname,".fus");
+       gFuseFile=fopen(fname,"rb");
+       if (!gFuseFile)
+	 {
+	   printf("Error Opening Fuse File: %s or %s\n",gFuseName, fname);
+	 return(0); /* Failure */
+	 }
+     }
+   printf("Reading Fuse Data from %s\n",fname);
 
    gLockByteUpdated=0;
 
