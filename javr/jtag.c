@@ -1,4 +1,5 @@
 #include "jtag.h"
+#include "iobase.h"
 #include "javr.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +7,7 @@
 #include "debug.h"
 
 static Jtag *avr_j;
-static IO_JTAG *avr_io;
+static IOBase *avr_io;
 
 static void   BitArraytoByteArray(const char * Data, unsigned char *bData, int Size)
 {
@@ -77,7 +78,7 @@ static void   ByteArraytoBitArray(char * Output, unsigned char *bOutput, int Siz
     fprintf(stderr, "\n");
 }
 
-void JTAG_Init(Jtag *j, IO_JTAG *io)
+void JTAG_Init(Jtag *j, IOBase *io)
 {
   avr_j = j;
   avr_io = io;
