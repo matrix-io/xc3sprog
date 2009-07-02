@@ -258,7 +258,7 @@ int main(int argc, char **args)
     }
   
   // Produce release info from CVS tags
-  printf("Release $Rev$\nPlease provide feedback on success/failure/enhanment requests!\n");
+  printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests! Check Sourceforge SVN!\n");
 
   std::auto_ptr<IOBase>  io;
   try {  

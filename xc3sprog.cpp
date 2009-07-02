@@ -221,7 +221,7 @@ int main(int argc, char **args)
   DeviceDB db(devicedb);
   
   // Produce release info from CVS tags
-  printf("Release $Rev$\nPlease provide feedback on success/failure/enhanment requests!\n");
+  printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests! Check Sourceforge SVN!\n");
 
   // Start from parsing command line arguments
   while(true) {

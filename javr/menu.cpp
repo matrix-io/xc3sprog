@@ -93,7 +93,7 @@ const struct MENU_ITEM gMenuItem[]=
                               {'6',"Write EEPROM",dummy},
                               {'7',"Erase Flash + Eeprom (EESAVE == 1)",EraseDevice},
                               {'8',"Read Flash - To File",ReadFlashWriteFile},
-                              {'9',"Read EEPROM - To File",dummy},
+                              {'9',"Read EEPROM - To File",ReadEEPROMWriteFile},
                               {'q',"Quit",dummy},
                               {0,NULL,NULL}
                             };
@@ -325,7 +325,45 @@ void ReadFlashWriteFile(struct MENU_ITEM *ptr)
   fclose(fp);
   AVR_Prog_Disable();
   printf(" done\n");
+}
 
+void ReadEEPROMWriteFile(struct MENU_ITEM *ptr)
+{
+  char buffer[BUFSIZE];
+  unsigned long add;
+  FILE *fp;
+
+  AVR_Prog_Enable();
+  ptr=ptr;
+  printf("\nFile Name [atmega_ee.bin] ? ");
+  fgets(buffer, BUFSIZE, stdin);
+  switch(buffer[0])
+  {
+    case 0:
+    case ' ':
+    case '\r':
+    case '\n':
+      strcpy(buffer,"atmega_ee.bin");
+      break;
+    default:
+      break;
+  }
+
+  fp=fopen(buffer,"wb");
+  if(!fp)
+  {
+    printf("\nError opening file %s !!!\n",buffer);
+    return;
+  }
+
+  add=gDeviceData.eeprom;
+  printf("Reading %ld bytes from device %s EEPROM\n",add,gDeviceData.name);
+  ReadEepromBlock(0,add,gEEPROMBuffer);  /* Read whole device */
+  printf("\nWriting binary file %s",buffer);
+  fwrite(gEEPROMBuffer,add,1,fp);
+  fclose(fp);
+  AVR_Prog_Disable();
+  printf(" done\n");
 }
 
 unsigned gEepromDisplayStart=(~0)-512;

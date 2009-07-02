@@ -52,5 +52,6 @@ void WriteFuseBits(struct MENU_ITEM *ptr);
 void EraseDevice(struct MENU_ITEM *ptr);
 void ReadFlashDisplay(struct MENU_ITEM *ptr);
 void ReadFlashWriteFile(struct MENU_ITEM *ptr);
+void ReadEEPROMWriteFile(struct MENU_ITEM *ptr);
 void ReadEepromDisplay(struct MENU_ITEM *ptr);
 
