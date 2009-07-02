@@ -320,11 +320,11 @@ void ReadFlashWriteFile(struct MENU_ITEM *ptr)
   add=gDeviceData.flash;
   printf("Reading %ld bytes from device %s\n",add,gDeviceData.name);
   ReadFlashBlock(0,add,gFlashBuffer);  /* Read whole device */
-  printf("Writing binary file %s\n",buffer);
+  printf("\nWriting binary file %s",buffer);
   fwrite(gFlashBuffer,add,1,fp);
   fclose(fp);
   AVR_Prog_Disable();
-  printf("\nWritten file\n");
+  printf(" done\n");
 
 }
 

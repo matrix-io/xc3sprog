@@ -150,8 +150,8 @@ unsigned short ArrayToUS(unsigned char Size, char *ptr)
 
 void ChipErase(void)
 {
-  struct timeval actualtime, endtime;
   unsigned short tmp;
+  int i;
 
   Send_Instruction(4,PROG_COMMANDS);
 
@@ -160,21 +160,20 @@ void ChipErase(void)
   Send_AVR_Prog_Command(0x3380);
   Send_AVR_Prog_Command(0x3380);
 
-  gettimeofday( &actualtime, NULL );
-  endtime.tv_usec=(actualtime.tv_usec+T_WLRH_CE)% 1000000;
-  endtime.tv_sec=actualtime.tv_sec+(actualtime.tv_usec+T_WLRH_CE)/1000000;
-
-  do
-  {
-    tmp=Send_AVR_Prog_Command(0x3380);
-    tmp&=0x0200;
-    gettimeofday( &actualtime, NULL );
-    if (( actualtime.tv_sec > endtime.tv_sec ) ||
-	(( actualtime.tv_sec == endtime.tv_sec ) && ( actualtime.tv_usec > endtime.tv_usec ))) {
-      printf("\nProblem Erasing device!!!\n");
-      return;
+  for (i=0; i<(T_WLRH_CE+999); i = i + 1000)
+    {
+      usleep(1000);
+      tmp=Send_AVR_Prog_Command(0x3380);
+      tmp&=0x0200;
+      if (tmp&=0x0200)
+	break;
+      printf(".");
     }
-  }while(!tmp);
+  if(i >=  T_WLRH_CE+999)
+    {
+      fprintf(stderr,"\Erase failed! Aborting\n");
+      //      return 1;
+    }
   printf("\nDevice Erased\n");
 }
 
@@ -334,26 +333,21 @@ int WriteFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *src)
   Send_AVR_Prog_Command(0x3700);
   Send_AVR_Prog_Command(0x3700);
 
-  gettimeofday( &actualtime, NULL );
-  endtime.tv_usec=(actualtime.tv_usec+T_WLRH_CE)% 1000000;
-  endtime.tv_sec=actualtime.tv_sec+(actualtime.tv_usec+T_WLRH_CE)/1000000;
-  do
-  {
-    tmp=Send_AVR_Prog_Command(0x3700);
-    tmp&=0x0200;
-    gettimeofday( &actualtime, NULL );
-    if (( actualtime.tv_sec > endtime.tv_sec ) ||
-	(( actualtime.tv_sec == endtime.tv_sec ) && ( actualtime.tv_usec > endtime.tv_usec ))) {
-      printf("\nProblem Erasing device!!!\n");
-      usleep(50000);
+  for (i=0; i<(T_WLRH_CE+999); i = i + 1000)
+    {
+      usleep(1000);
       tmp=Send_AVR_Prog_Command(0x3700);
-      if (!tmp)
-	{
-	  printf("\nProblem Erasing device. Abort!!!\n");
-	  return(0);
-	}
+      tmp&=0x0200;
+      if (tmp&=0x0200)
+	break;
+      printf(".");
+      fflush(stdout);
     }
-  }while(!tmp);
+  if(i >=  T_WLRH_CE+999)
+    {
+      fprintf(stderr,"\nWriting page %4d failed! Aborting\n, ");
+      return 0;
+    }
   return(1);  /* Page succesfully written */
 }
 
@@ -665,11 +659,11 @@ void WriteFlashBlock(unsigned long startaddress, unsigned long length, unsigned 
       } 
     if(!WriteFlashPage(pagenumber, blocksize,buffer))
       return; /* Error Writing Flash */
-    printf("Written Flash page %u\r",pagenumber);
-    fflush(stdout);
+    printf("                                        ");
+    printf("\rWritten Flash page %4d",pagenumber);
     pagenumber++;
   }
-  printf("Written Flash from 0x%lX to 0x%lX\n",startaddress,startaddress+len);
+  printf("\nWritten Flash from 0x%lX to 0x%lX\n",startaddress,startaddress+len);
 }
 
 
@@ -710,6 +704,8 @@ int ReadFlashBlock(unsigned startaddress, unsigned length, unsigned char *dest)
   {
 
     ReadFlashPage(pagenumber,blocksize,buffer);
+    printf("\rReading page %4d", pagenumber);
+    fflush(stdout);
     for(;i<blocksize;i++)
     {
       *dest++=buffer[i];
@@ -721,7 +717,7 @@ int ReadFlashBlock(unsigned startaddress, unsigned length, unsigned char *dest)
     i=0;
     pagenumber++;
   }
-
+  printf("\n\n");
 }
 
 
