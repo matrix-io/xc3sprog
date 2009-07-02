@@ -22,6 +22,9 @@ endif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
 set (LIBUSRP_INCLUDE_DIR "fallback/")
 include_directories(${LIBUSRP_INCLUDE_DIR})
 
+
+include_directories(${CMAKE_SOURCE_DIR})
+
 add_executable(debug debug.cpp iobase.cpp ioparport.cpp iodebug.cpp)
 
 add_executable(bitparse bitfile.cpp bitparse.cpp)
@@ -46,6 +49,15 @@ add_executable(xc3sprog xc3sprog.cpp ioparport.cpp ioftdi.cpp iofx2.cpp
 			progalgxcf.cpp progalgxc3s.cpp progalgavr.cpp 
 			ioxpc.cpp 
 			progalgspiflash.cpp  ${CONDITIONAL_FILES} config.h)
+
 target_link_libraries(xc3sprog ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS}  )
+
+add_library(xc3sproglib  STATIC ioparport.cpp ioftdi.cpp iofx2.cpp 
+                      devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
+			iobase.cpp  progalgxc95x.cpp 
+			progalgxcf.cpp progalgxc3s.cpp progalgavr.cpp 
+			ioxpc.cpp progalgspiflash.cpp )
+
+add_subdirectory(javr)
 
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 

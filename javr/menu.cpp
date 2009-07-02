@@ -39,7 +39,6 @@
 #include "fuse.h"
 #include "parse.h"
 #include "srecdec.h"
-#include "command.h"
 #include "javr.h"
 
 #define MENU_M
