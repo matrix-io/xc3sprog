@@ -117,7 +117,7 @@ int main(int argc, char **args)
   DeviceDB db(devicedb);
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hLc:d:D:e:f:jp:P:s:S:t:vV:")) {
+    switch(getopt(argc, args, "?hLc:Cd:D:e:f:jp:P:s:S:t:vV:")) {
     case -1:
       goto args_done;
 
@@ -127,6 +127,10 @@ int main(int argc, char **args)
 
     case 'L':
       gLockOption = true;
+      break;
+
+    case 'C':
+      gVerifyOption = true;
       break;
 
     case 'c':
