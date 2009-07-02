@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+ #include <unistd.h>
 #include <memory>
 
 #include "srecdec.h"
@@ -85,6 +86,9 @@ void usage() {
 	  "\n");
   exit(255);
 }
+
+extern char *optarg;
+extern int optind;
 
 SrecRd gEepromInfo;
 SrecRd gSourceInfo;

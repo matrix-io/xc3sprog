@@ -34,6 +34,11 @@
 *
 \********************************************************************/
 
+#ifdef __WIN32__
+#include <windows.h>
+#define usleep(x) Sleep((x+999)/1000)
+#endif
+
 unsigned short Send_AVR_Prog_Command(unsigned short command);
 void ResetAVR(void);
 void ResetReleaseAVR(void);

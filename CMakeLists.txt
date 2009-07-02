@@ -56,7 +56,7 @@ add_library(xc3sproglib  STATIC ioparport.cpp ioftdi.cpp iofx2.cpp
                       devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp  progalgxc95x.cpp 
 			progalgxcf.cpp progalgxc3s.cpp progalgavr.cpp 
-			ioxpc.cpp progalgspiflash.cpp )
+			ioxpc.cpp progalgspiflash.cpp ${CONDITIONAL_FILES})
 
 add_subdirectory(javr)
 
