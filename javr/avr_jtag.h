@@ -34,19 +34,6 @@
 *
 \********************************************************************/
 
-#ifdef AVR_JTAG_M
-
-
-
-
-
-#else
-
-
-
-
-#endif
-
 unsigned short Send_AVR_Prog_Command(unsigned short command);
 void ResetAVR(void);
 void ResetReleaseAVR(void);

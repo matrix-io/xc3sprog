@@ -184,6 +184,7 @@ int main(int argc, char **args)
   args += optind;
   //printf("argc: %d\n", argc);
   if(argc < 0)  usage();
+  AllocateFlashBuffer();
   if(argc == 0) 
     gDisplayMenu=1;
   else
@@ -203,7 +204,6 @@ int main(int argc, char **args)
 	    }
 	}
       printf("Reading Flash Data from %s\n", fname);
-      AllocateFlashBuffer();
       memset(gFlashBuffer,FILL_BYTE,gFlashBufferSize);
       gSourceInfo=ReadData(fp,gFlashBuffer,gFlashBufferSize);
       fclose(fp);
@@ -254,7 +254,7 @@ int main(int argc, char **args)
     }
   
   // Produce release info from CVS tags
-  printf("Release $Rev$\nPlease provide feedback aon success/failure/enhanment requests!\n");
+  printf("Release $Rev$\nPlease provide feedback on success/failure/enhanment requests!\n");
 
   std::auto_ptr<IOBase>  io;
   try {  
