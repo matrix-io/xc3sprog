@@ -35,7 +35,6 @@
 #include "avr_jtag.h"
 #include "parse.h"
 #include "menu.h"
-#include "command.h"
 
 #include "debug.h"
 #include "io_exception.h"
@@ -87,12 +86,19 @@ void usage() {
   exit(255);
 }
 
-
+SrecRd gEepromInfo;
+SrecRd gSourceInfo;
 
 int main(int argc, char **args)
 {
   unsigned long tmp;
   bool        verbose   = false;
+  bool    gLockOption = false;
+  bool    gDisplayMenu = false;
+  bool    gVerifyOption = false;
+  bool    gProgramFlash = false;
+  bool    gProgramEeprom = false;
+  bool    gProgramFuseBits = false;
   char const *cable     = "pp";
   char const *dev       = 0;
   char const *eepromfile= 0;
