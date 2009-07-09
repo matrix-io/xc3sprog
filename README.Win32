@@ -1,0 +1,11 @@
+Parallelport Access via the $VDMLPT device and the PARVDM service
+================================================================
+
+The get the desired access, check that
+- the BIOS is set to EPP(ECP/EPP) mode for the LPT device
+- the parvdm service is running "sc query parvdm"
+
+On different machines here, "sc start parvdm" refused to start the service
+with  Error 1058. You can get information about the parvdm in the Device
+Manager with the display of hidden devices enables under the NON-PNP
+section.

@@ -167,7 +167,8 @@ void usage() {
 	  "   -j\t\tDetect JTAG chain, nothing else\n"
 	  "   -T[val]\tTest chain integrity val times (0 = forever) or 10000 times default\n"
 	  "   -C\t\tVerify device against File (no programming)\n"
-	  "   -I\t\tWork on connected SPI Flash(after bscan_spi Bitfile for device has been loaded)\n"
+	  "   -I\t\tWork on connected SPI Flash\n"
+          "     \t\t(after bscan_spi Bitfile for device has been loaded)\n"
 	  "   -r\t\tRead from device and write to file\n\n"
 	  "    Supported cable types: pp, ftdi, fx2, xpc\n"
     	  "   \tOptional pp arguments:\n"
@@ -221,7 +222,7 @@ int main(int argc, char **args)
   DeviceDB db(devicedb);
   
   // Produce release info from CVS tags
-  printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests! Check Sourceforge SVN!\n");
+  printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests!\nCheck Sourceforge SVN!\n");
 
   // Start from parsing command line arguments
   while(true) {
@@ -314,7 +315,7 @@ int main(int argc, char **args)
     }
   }
  args_done:
-  if(argc < 1)  usage();
+  if(argc <= 1)  usage();
   // Get rid of options
   //printf("argc: %d\n", argc);
   argc -= optind;
