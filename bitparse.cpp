@@ -41,8 +41,8 @@ int main(int argc, char**args)
       printf("Bitstream length: %lu bits\n", file.getLength());
       
       if(argc > 2) {
-	file.saveAs(0,file.getPartName(), args[2]);
-	printf("Bitstream saved in binary format in file: %s\n", args[2]);
+	file.saveAs(1,file.getPartName(), args[2]);
+	printf("Bitstream saved in bit format in file: %s\n", args[2]);
       }
     }
     catch(io_exception& e) {
