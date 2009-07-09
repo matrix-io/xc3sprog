@@ -315,7 +315,8 @@ int main(int argc, char **args)
     }
   }
  args_done:
-  if(argc <= 1)  usage();
+  if(argc <= 1)
+    detectchain = true;
   // Get rid of options
   //printf("argc: %d\n", argc);
   argc -= optind;
@@ -356,15 +357,7 @@ int main(int argc, char **args)
   }
   catch(io_exception& e) 
     {
-    if(strcmp(cable, "pp") == 0) 
-      {
-	fprintf(stderr,"Could not access parallel device '%s'.\n", dev);
-	fprintf(stderr,"You may need to set permissions of '%s' \n", dev);
-	fprintf(stderr,
-		"by issuing the following command as root:\n\n# chmod 666 %s\n\n",
-		dev);
-      }
-    else 
+    if(strcmp(cable, "pp") != 0) 
       {
 	fprintf(stderr, "Could not access USB device %04x:%04x.\n", 
 		vendor, product);
