@@ -29,6 +29,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <string.h>
 
 #ifdef __linux__
 // Default parport device
@@ -39,6 +40,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <sys/ioctl.h>
 #  include <linux/parport.h>
 #  include <linux/ppdev.h>
+#include <errno.h>
 
 #elif defined (__FreeBSD__)
 // Default parport device
@@ -278,45 +280,32 @@ IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
     if(!(dev = getenv("XCPORT")))  dev = PPDEV;
   }
 
-  try {
-#ifdef __linux__
-      // Try to open parport device
-      if((fd = open(dev, O_RDWR)) == -1) {
-	  throw  io_exception(std::string("Failed to open: ") + dev);
-      }
-      
-      // Lock port
-      if(ioctl(fd, PPCLAIM)) {
-      throw  io_exception(std::string("Port already in use: ") + dev);
-      }
-      
-      // Switch to compatibility mode
-      int const  mode = IEEE1284_MODE_COMPAT;
-      if(ioctl(fd, PPNEGOT, &mode)) {
-	  throw  io_exception(std::string("IEEE1284 compatibility not available: ") + dev);
-      }
-#elif defined(__FreeBSD__)
-      // Try to open parport device
-      if((fd = open(dev, O_RDWR)) == -1) {
-	  throw  io_exception(std::string("Failed to open: ") + dev);
-      }
+#if defined (__linux__) || defined(__FreeBSD__)
+  // Try to open parport device
+  if((fd = open(dev, O_RDWR)) == -1) 
 #elif defined(__WIN32__)
-      fd = (int)CreateFile(dev, GENERIC_READ | GENERIC_WRITE,
-                           0, NULL, OPEN_EXISTING, 0, NULL);
-      if (fd == (int)INVALID_HANDLE_VALUE) {
-          throw  io_exception(std::string("Failed to open: ") + dev);
-        }
-
-#else
-      throw  io_exception(std::string("Parallel port access not implemented for this system"));
+    if (fd = (int)CreateFile(dev, GENERIC_READ | GENERIC_WRITE,
+			     0, NULL, OPEN_EXISTING, 0, NULL) 
+	== (int)INVALID_HANDLE_VALUE)
 #endif
-
-    cable = detectcable();
+      {
+	fprintf(stderr,"Could not access parallel device '%s': %s\n", dev, strerror(errno));
+	throw  io_exception(std::string("Failed to open: ") + dev);
+      }
+  
+#if defined (__linux__)
+  // Lock port
+  if(ioctl(fd, PPCLAIM)) {
+    throw  io_exception(std::string("Port already in use: ") + dev);
   }
-  catch(...) {
-    close(fd);
-    throw;
+  
+  // Switch to compatibility mode
+  int const  mode = IEEE1284_MODE_COMPAT;
+  if(ioctl(fd, PPNEGOT, &mode)) {
+    throw  io_exception(std::string("IEEE1284 compatibility not available: ") + dev);
   }
+#endif
+  cable = detectcable();
 }
 
 bool IOParport::txrx(bool tms, bool tdi)
