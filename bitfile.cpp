@@ -168,6 +168,7 @@ unsigned long BitFile::saveAs(int style, const char  *device, const char *fname)
   int clip;
   /* Don't store 0xff bytes from the end of the flash */
   for(clip=length-1; (buffer[clip] == 0xff) && clip>0; clip--){};
+  clip++; /* clip is corrected length, not index */
   FILE *fp=fopen(fname,"wb");
   if(fp == 0)
     {
@@ -177,8 +178,46 @@ unsigned long BitFile::saveAs(int style, const char  *device, const char *fname)
     }
   if(style != 0)
     {
-      printf("Bitfile Style not jet implemented\n");
-      return 0;
+      char buffer[256] = {0x00, 0x09, 0x0f, 0xf0, 0x0f, 0xf0, 0x0f, 0xf0,
+			  0x0f, 0xf0, 0x00, 0x00, 0x01};
+      int len;
+
+      fwrite(buffer, 1, 13, fp);
+
+      buffer[0] = 'a';
+      len = ncdFilename.size();
+      buffer[1] = len >>8;
+      buffer[2] = len & 0xff;
+      fwrite(buffer, 3, 1, fp);
+      fwrite(ncdFilename.c_str(), len, 1, fp);
+
+      buffer[0] = 'b';
+      len = partName.size();
+      buffer[1] = len >>8;
+      buffer[2] = len & 0xff;
+      fwrite(buffer, 3, 1, fp);
+      fwrite(partName.c_str(), len, 1, fp);
+
+      buffer[0] = 'c';
+      len = date.size();
+      buffer[1] = len >>8;
+      buffer[2] = len & 0xff;
+      fwrite(buffer, 3, 1, fp);
+      fwrite(date.c_str(), len, 1, fp);
+
+      buffer[0] = 'd';
+      len = time.size();
+      buffer[1] = len >>8;
+      buffer[2] = len & 0xff;
+      fwrite(buffer, 3, 1, fp);
+      fwrite(time.c_str(), len, 1, fp);
+
+      buffer[0] = 'e';
+      buffer[1] = clip >>24 & 0xff;
+      buffer[2] = clip >>16 & 0xff;
+      buffer[3] = clip >> 8 & 0xff;
+      buffer[4] = clip & 0xff;
+      fwrite(buffer, 5, 1, fp);
     }
   for(unsigned int i=0; i<clip; i++){
     byte b=bitRevTable[buffer[i]]; // Reverse bit order
