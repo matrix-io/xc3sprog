@@ -133,6 +133,11 @@ unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
   int family, manufacturer;
   unsigned int id;
 
+  if (num == 0)
+    {
+      fprintf(stderr,"No JTAG Chain found\n");
+      return 0;
+    }
   // Synchronise database with chain of devices.
   for(int i=0; i<num; i++){
     int length=db.loadDevice(jtag.getDeviceID(i));
@@ -398,6 +403,8 @@ int main(int argc, char **args)
     }
 
   id = get_id (jtag, db, chainpos, verbose);
+  if (id == 0)
+    return 2;
   family = (id>>21) & 0x7f;
   manufacturer = (id>>1) & 0x3ff;
 
