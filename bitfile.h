@@ -77,7 +77,7 @@ class BitFile
   std::string ncdFilename; // key 'a'
   std::string partName; // key 'b'
   std::string date; // key 'c'
-  std::string time; // key 'd'
+  std::string dtime; // key 'd'
   unsigned long length; // The length of the byte data that follows, multiply by 8 to get bitstream length.
   byte *buffer; // Each byte is reversed, Xilinx does things MSB first and JTAG does things LSB first!
   std::string filename;
@@ -112,7 +112,7 @@ class BitFile
   inline const char *getNCDFilename(){return ncdFilename.c_str();}
   inline const char *getPartName(){return partName.c_str();}
   inline const char *getDate(){return date.c_str();}
-  inline const char *getTime(){return time.c_str();}
+  inline const char *getTime(){return dtime.c_str();}
   void setLength(unsigned int bit_count);
   unsigned long saveAs(int style, const char  *device, const char *fname);
   unsigned char reverse8(unsigned char b){return bitRevTable[b];};

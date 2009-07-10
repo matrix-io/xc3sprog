@@ -31,6 +31,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <time.h>
 
 using namespace std;
 
@@ -64,7 +65,7 @@ void BitFile::readFile(char const * fname)
       case 'a': field = &ncdFilename; break;
       case 'b': field = &partName;    break;
       case 'c': field = &date;        break;
-      case 'd': field = &time;        break;
+      case 'd': field = &dtime;        break;
       case 'e':
 	processData(fp);
 	fclose(fp);
@@ -185,6 +186,11 @@ unsigned long BitFile::saveAs(int style, const char  *device, const char *fname)
       fwrite(buffer, 1, 13, fp);
 
       buffer[0] = 'a';
+      if (!ncdFilename.size())
+	{
+	  ncdFilename.assign("XC3SPROG");
+	  ncdFilename.push_back(0);
+	}
       len = ncdFilename.size();
       buffer[1] = len >>8;
       buffer[2] = len & 0xff;
@@ -199,6 +205,22 @@ unsigned long BitFile::saveAs(int style, const char  *device, const char *fname)
       fwrite(partName.c_str(), len, 1, fp);
 
       buffer[0] = 'c';
+      if (!date.size())
+	{
+           char outstr[200];
+           time_t t;
+           struct tm *tmp;
+           t = time(NULL);
+           tmp = localtime(&t);
+           if (tmp != NULL) 
+	     {
+	       if (strftime(outstr, sizeof(outstr), "%Y/%m/%d", tmp))
+		 {
+		   date.assign(outstr);
+		   date.push_back(0);
+		 }
+	     }
+	}
       len = date.size();
       buffer[1] = len >>8;
       buffer[2] = len & 0xff;
@@ -206,11 +228,27 @@ unsigned long BitFile::saveAs(int style, const char  *device, const char *fname)
       fwrite(date.c_str(), len, 1, fp);
 
       buffer[0] = 'd';
-      len = time.size();
+      if (!dtime.size())
+	{
+           char outstr[200];
+           time_t t;
+           struct tm *tmp;
+           t = time(NULL);
+           tmp = localtime(&t);
+           if (tmp != NULL) 
+	     {
+	       if (strftime(outstr, sizeof(outstr), "%T", tmp))
+		 {
+		   dtime.assign(outstr);
+		   dtime.push_back(0);
+		 }
+	     }
+	}
+      len = dtime.size();
       buffer[1] = len >>8;
       buffer[2] = len & 0xff;
       fwrite(buffer, 3, 1, fp);
-      fwrite(time.c_str(), len, 1, fp);
+      fwrite(dtime.c_str(), len, 1, fp);
 
       buffer[0] = 'e';
       buffer[1] = clip >>24 & 0xff;
