@@ -184,7 +184,9 @@ void usage() {
 	  "   \t\t[-S description string] (Product string)\n"
 	  "   \t\t[-s serial]      (SerialNumber string)\n"
 	  "   \tOptional ftdi arguments:\n"
-	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n"
+	  "   \t\t[-t subtype]\n"
+	  "   \t\t\t(NONE or IKDA (EN_N on ACBUS2) or\n"
+	  "   \t\t\t OLIMEX (JTAG_EN_N on ADBUS4, LED on ACBUS3))\n"
 	  "   \tOptional xpc arguments:\n"
 	  "   \t\t[-t subtype] (NONE or INT  (Internal Chain on XPC, doesn't work for now on DLC10))\n"
 	  "   chainpos\n"
@@ -281,9 +283,11 @@ int main(int argc, char **args)
       break;
 
      case 't':
-       if (strcmp(optarg, "ikda") == 0)
+       if (strcasecmp(optarg, "ikda") == 0)
          subtype = FTDI_IKDA;
-       else if (strcmp(optarg, "int") == 0)
+       else if (strcasecmp(optarg, "olimex") == 0)
+         subtype = FTDI_OLIMEX;
+       else if (strcasecmp(optarg, "int") == 0)
          subtype = XPC_INTERNAL;
        else
          usage();
@@ -542,7 +546,7 @@ int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, const char *fname, c
 	  return 1;
 	}
       alg.read(file);
-      len = file.saveAs(0, device, fname);
+      len = file.saveAs(1, device, fname);
       return 0;
     }
   if(!verify)
