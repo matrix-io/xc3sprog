@@ -109,6 +109,8 @@ int main(int argc, char **args)
 	    case 't':
 		if (strcasecmp(optarg, "ikda") == 0)
 		    subtype = FTDI_IKDA;
+		else if (strcasecmp(optarg, "olimex") == 0)
+		    subtype = FTDI_OLIMEX;
 		else if (strcasecmp(optarg, "int") == 0)
 		    subtype = XPC_INTERNAL;
 		else
