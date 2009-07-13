@@ -136,8 +136,12 @@ int  IOParport::detectcable(void)
   
   write_data(fd, data);
   read_status(fd, &status);
-  if (debug & HW_FUNCTIONS)
-    fprintf(stderr,"IOParport::detectcable status 0x%02x\n", status);
+  if ((status == 0) || (status == 0xff))
+    {
+      fprintf(stderr,"IOParport::detectcable status 0x%02x: Check driver setup\n",
+	      status);
+      throw  io_exception(std::string("Driver Problem"));
+    }
   /* Error_n should is hardwired to ground on a byteblaster cable*/
   if (!(status & PARPORT_STATUS_ERROR))
     {
