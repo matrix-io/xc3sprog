@@ -18,11 +18,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include "jtag.h"
 #include <unistd.h>
-#ifdef __WIN32__
-#include <windows.h>
-#define usleep(x) Sleep((x+999)/1000)
-#endif
-
 Jtag::Jtag(IOBase *iob)
 {
   io=iob;
@@ -30,6 +25,19 @@ Jtag::Jtag(IOBase *iob)
   postIRState=IOBase::RUN_TEST_IDLE;
   deviceIndex=-1;
   shiftDRincomplete=false;
+#ifdef __WIN32__
+  hinstLib = LoadLibrary(TEXT("ntdll"));
+  if(hinstLib)
+  // Get the pointer to the function
+    ZwDelayExecution = (pfZwDelayExecution) GetProcAddress(hinstLib, "ZwDelayExecution");
+#endif
+}
+
+Jtag::~Jtag(void)
+{
+#ifdef __WIN32__
+  FreeLibrary(hinstLib);
+#endif
 }
 
 int Jtag::getChain()
@@ -73,7 +81,17 @@ void Jtag::Usleep(unsigned int usec)
 {
   io->flush_tms();
   io->flush();
+#ifdef __WIN32__
+  if (ZwDelayExecution)
+    {
+      __int64 delay = usec * -10; /* FIXME: Check Type usege __int64 versus LARGE_INTEGER */
+      ZwDelayExecution(FALSE, &delay);
+    }
+  else
+    Sleep((usec+999)/1000);
+#else
   usleep(usec);
+#endif
 }
 
 int Jtag::setDeviceIRLength(int dev, int len)
