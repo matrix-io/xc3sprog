@@ -73,7 +73,12 @@ void usage() {
 	  "   \t\t[-S description string] (Product string)\n"
 	  "   \t\t[-s serial]      (SerialNumber string)\n"
 	  "   \tOptional ftdi arguments:\n"
-	  "   \t\t[-t subtype] (NONE or IKDA (EN_N on ACBUS2))\n"
+	  "   \t\t[-t subtype]\n"
+	  "   \t\t[-t subtype]\n"
+	  "   \t\t\t(NONE\t\t(0x0403:0x0610) or\n"
+	  "   \t\t\t IKDA\t\t(0x0403:0x0610, EN_N on ACBUS2) or\n"
+	  "   \t\t\t OLIMEX\t\t(0x15b1:0x0003, JTAG_EN_N on ADBUS4, LED on ACBUS3))\n"
+	  "   \t\t\t AMONTEC\t(0x0403:0xcff8, JTAG_EN_N on ADBUS4)\n"
 	  "   \tOptional xpc arguments:\n"
 	  "   \t\t[-t subtype] (NONE or INT  (Internal Chain on XPC, doesn't work for now on DLC10))\n"
 	  "   chainpos\n"
@@ -146,9 +151,13 @@ int main(int argc, char **args)
       break;
 
      case 't':
-       if (strcmp(optarg, "ikda") == 0)
+       if (strcasecmp(optarg, "ikda") == 0)
          subtype = FTDI_IKDA;
-       else if (strcmp(optarg, "int") == 0)
+       else if (strcasecmp(optarg, "olimex") == 0)
+         subtype = FTDI_OLIMEX;
+       else if (strcasecmp(optarg, "amontex") == 0)
+         subtype = FTDI_AMONTEC;
+       else if (strcasecmp(optarg, "int") == 0)
          subtype = XPC_INTERNAL;
        else
          usage();
@@ -269,10 +278,6 @@ int main(int argc, char **args)
     if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
     else if(strcmp(cable, "ftdi") == 0)  
       {
-	if (vendor == 0)
-	  vendor = VENDOR;
-	if(product == 0)
-	  product = DEVICE;
 	io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
       }
     else if(strcmp(cable,  "fx2") == 0)  

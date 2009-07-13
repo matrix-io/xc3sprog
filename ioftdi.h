@@ -33,12 +33,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include "iobase.h"
 
-#define VENDOR 0x0403
-#define DEVICE 0x6010
+#define VENDOR_FTDI 0x0403
+#define DEVICE_DEF  0x6010
+#define VENDOR_OLIMEX 0x15ba
+#define DEVICE_OLIMEX_ARM_USB_OCD 0x0003
+#define DEVICE_AMONTEC_KEY 0xcff8
 
 #define FTDI_NO_EN 0
 #define FTDI_IKDA  1
 #define FTDI_OLIMEX  2
+#define FTDI_AMONTEC  3
 
 #define TX_BUF (4096)
 

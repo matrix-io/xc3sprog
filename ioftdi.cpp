@@ -29,9 +29,31 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 using namespace std;
 
-IOFtdi::IOFtdi(int const vendor, int const product, char const *desc, char const *serial, int subtype)
+IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial, int subtype)
   : IOBase(), bptr(0), calls_rd(0), calls_wr(0), retries(0){
     
+  if (subtype == FTDI_NO_EN)
+    {
+      if (vendor == 0)
+	vendor = VENDOR_FTDI;
+      if(product == 0)
+	product = DEVICE_DEF;
+    }
+  else if (subtype ==  FTDI_OLIMEX)
+    {
+      if (vendor == 0)
+	vendor = VENDOR_OLIMEX;
+      if(product == 0)
+	product = DEVICE_OLIMEX_ARM_USB_OCD;
+    }
+  else if (subtype ==  FTDI_AMONTEC)
+    {
+      if (vendor == 0)
+	vendor = VENDOR_FTDI;
+      if(product == 0)
+	product = DEVICE_AMONTEC_KEY;
+    }
+  
 #if defined (USE_FTD2XX)
     FT_STATUS res;
 #if defined (__linux)

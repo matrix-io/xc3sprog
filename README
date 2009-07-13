@@ -37,7 +37,8 @@ $ mkdir build; cd build; cmake ..; make
 
 To crosscompile for Win32 with mingw:
 
-$ mkdir build-win32; cd build-win32; cmake -DCMAKE_TOOLCHAIN_FILE=../Toolchain-mingw32.cmake ..
+$ mkdir build-win32; cd build-win32; 
+$ cmake -DCMAKE_TOOLCHAIN_FILE=../Toolchain-mingw32.cmake ..
 
 Get a description with 
 
@@ -54,8 +55,9 @@ Test the chain integrity
 
 $ ./xc3sprog -T -j
 
-Here "-j" stops xc3sprog from entering the program/verify/read the part. If things
-go wrong, an endless loop is entered to facilitate hardware degugging with the scope.
+Here "-j" stops xc3sprog from entering the program/verify/read the part. If
+things go wrong, an endless loop is entered to facilitate hardware degugging
+with the scope.
 Stop with ^C.
 
 The Platform Flash PROM of the Xilinx Spartan3 Starter Kit can be programmed
@@ -63,8 +65,8 @@ by specifying it's location in the JTAG chain. Example command line below.
 
 $ ./xc3sprog -c pp -p 1 <bitfile.bit>
 
-Program the flash of an XC3S50AN by loading the bscan_spi bitfile first. Aassume 
-the XC3S50AN as single part in the jtag chain
+Program the flash of an XC3S50AN by loading the bscan_spi bitfile
+first. Aassume the XC3S50AN as single part in the jtag chain
 
 $ ./xc3sprog  ../bscan_spi/xc3s50an.bit
 
@@ -91,6 +93,6 @@ Jedecfiles for CPLD programming can be parsed with
 
 $ ./jedecparse <jedecfile.jed>
 
-When using a FT2232 programmer, speed is noticebly enhance with a USB-2.0 Hub between
-the adapter and the PC. Some effort has been made to concatenate as many JTAG actions 
-as possible.
+When using a FT2232 programmer, speed is noticebly enhance with a USB-2.0 
+Hub between the adapter and the PC. Some effort has been made to concatenate 
+as many JTAG actions as possible.
