@@ -31,12 +31,27 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include "iobase.h"
 
+#ifdef __WIN32__
+#include <windows.h>
+#endif
+
 typedef unsigned char byte;
 
 class Jtag
 {
  private:
-  static const int MAXNUMDEVICES=1000; 
+  static const int MAXNUMDEVICES=1000;
+#ifdef __WIN32__
+  typedef DWORD (__stdcall *pfZwDelayExecution)(BOOLEAN, __int64*);
+  /*
+    http://www.codeguru.com/forum/archive/index.php/t-352498.html
+    The Interval, a pointer to a 64 bit integer, is somewhat 2 sided. 
+    If it is negative it specifies the relative time to sleep (in units of 100ns), 
+    if not is specifies the absolute time to wake up.
+  */
+  HINSTANCE hinstLib;
+  pfZwDelayExecution ZwDelayExecution;
+#endif
  protected:
   struct chainParam_t
   {
@@ -54,6 +69,7 @@ class Jtag
   bool shiftDRincomplete;
  public:
   Jtag(IOBase *iob);
+  ~Jtag();
   int getChain(); // Shift IDCODEs from devices
   inline void setPostDRState(IOBase::tapState_t s){postDRState=s;}
   inline void setPostIRState(IOBase::tapState_t s){postIRState=s;}

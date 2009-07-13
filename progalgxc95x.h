@@ -29,11 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "iobase.h"
 #include "jedecfile.h"
 
-#ifdef __WIN32__
-#include <windows.h>
-#define usleep(x) Sleep((x+999)/1000)
-#endif
-
 class ProgAlgXC95X
 {
  private:
