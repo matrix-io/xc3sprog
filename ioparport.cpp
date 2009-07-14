@@ -136,10 +136,11 @@ int  IOParport::detectcable(void)
   
   write_data(fd, data);
   read_status(fd, &status);
+  read_control(fd, &control);
   if ((status == 0) || (status == 0xff))
     {
-      fprintf(stderr,"IOParport::detectcable status 0x%02x: Check driver setup\n",
-	      status);
+      fprintf(stderr,"IOParport::detectcable status 0x%02x control %02x: Check system driver setup\n",
+	      status, control);
       throw  io_exception(std::string("Driver Problem"));
     }
   /* Error_n should is hardwired to ground on a byteblaster cable*/
@@ -311,7 +312,7 @@ IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
 #endif
   cable = detectcable();
   if(cable == NO_CABLE)
-    throw io_exception(std::string("No cable found\n"));
+    throw io_exception(std::string("No adapter found\n"));
 }
 
 bool IOParport::txrx(bool tms, bool tdi)
