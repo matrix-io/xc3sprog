@@ -229,6 +229,7 @@ int main(int argc, char **args)
   int subtype = FTDI_NO_EN;
   char *devicedb = NULL;
   DeviceDB db(devicedb);
+  long value;
   
   // Produce release info from CVS tags
   printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests!\nCheck Sourceforge SVN!\n");
@@ -306,11 +307,13 @@ int main(int argc, char **args)
       break;
 
     case 'V':
-      vendor = atoi(optarg);
+      value = strtol(optarg, NULL, 0);
+      vendor = value;
       break;
       
     case 'P':
-      product = atoi(optarg);
+      value = strtol(optarg, NULL, 0);
+      product = value;
       break;
 		
     case 's':
