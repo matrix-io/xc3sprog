@@ -120,6 +120,8 @@ int main(int argc, char **args)
   int subtype = FTDI_NO_EN;
   char *devicedb = NULL;
   DeviceDB db(devicedb);
+  long value;
+
   // Start from parsing command line arguments
   while(true) {
     switch(getopt(argc, args, "?hLc:Cd:D:e:f:jp:P:s:S:t:vV:")) {
@@ -172,11 +174,13 @@ int main(int argc, char **args)
       break;
 
     case 'V':
-      vendor = atoi(optarg);
+      value = strtol(optarg, NULL, 0);
+      vendor = value;
       break;
       
     case 'P':
-      product = atoi(optarg);
+      value = strtol(optarg, NULL, 0);
+      product = value;
       break;
 		
     case 's':

@@ -75,6 +75,7 @@ int main(int argc, char **args)
     char const *desc    = 0;
     char const *serial  = 0;
     int subtype = FTDI_NO_EN;
+    long value;
     
     // Start from parsing command line arguments
     while(true) {
@@ -95,11 +96,13 @@ int main(int argc, char **args)
 		break;
 		
 	    case 'V':
-	      vendor = atoi(optarg);
+	      value = strtol(optarg, NULL, 0);
+	      vendor = value;
 	      break;
 		
 	    case 'P':
-	      product = atoi(optarg);
+	      value = strtol(optarg, NULL, 0);
+	      product = value;
 	      break;
 		
 	    case 'D':
