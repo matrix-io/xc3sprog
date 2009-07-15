@@ -577,7 +577,7 @@ int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, const char *fna
 	  return 1;
 	}
       alg.read(file);
-      len = file.saveAs(0, device, fname);
+      len = file.saveAs(1, device, fname);
       return 0;
     }
   if(!verify)
