@@ -163,10 +163,53 @@ void BitFile::setLength(unsigned int size)
   buffer=new byte[length];
 }
 
+void BitFile::setNCDFields(const char * partname)
+{
+  char outstr[200];
+  time_t t;
+  struct tm *tmp;
+
+  if (!ncdFilename.size())
+    {
+      ncdFilename.assign("XC3SPROG");
+      ncdFilename.push_back(0);
+    }
+
+  if (!partName.size())
+    {
+      partName.assign(partname);
+      partName.push_back(0);
+    }
+
+  t = time(NULL);
+  tmp = localtime(&t);
+  if (tmp != NULL) 
+    {
+      if (!dtime.size())
+	{
+	  if (strftime(outstr, sizeof(outstr), "%Y/%m/%d", tmp))
+	    {
+	      date.assign(outstr);
+	      date.push_back(0);
+	    }
+	}
+      if (!dtime.size())
+	{
+	  if (strftime(outstr, sizeof(outstr), "%T", tmp))
+	    {
+	      dtime.assign(outstr);
+	      dtime.push_back(0);
+	    }
+	}
+    }
+}
+
 unsigned long BitFile::saveAs(int style, const char  *device, FILE *fp)
 {
   if(length<=0)return length;
   int clip;
+
+  setNCDFields(device);
   /* Don't store 0xff bytes from the end of the flash */
   for(clip=length-1; (buffer[clip] == 0xff) && clip>0; clip--){};
   clip++; /* clip is corrected length, not index */
@@ -179,11 +222,6 @@ unsigned long BitFile::saveAs(int style, const char  *device, FILE *fp)
       fwrite(buffer, 1, 13, fp);
 
       buffer[0] = 'a';
-      if (!ncdFilename.size())
-	{
-	  ncdFilename.assign("XC3SPROG");
-	  ncdFilename.push_back(0);
-	}
       len = ncdFilename.size();
       buffer[1] = len >>8;
       buffer[2] = len & 0xff;
@@ -198,22 +236,6 @@ unsigned long BitFile::saveAs(int style, const char  *device, FILE *fp)
       fwrite(partName.c_str(), len, 1, fp);
 
       buffer[0] = 'c';
-      if (!date.size())
-	{
-           char outstr[200];
-           time_t t;
-           struct tm *tmp;
-           t = time(NULL);
-           tmp = localtime(&t);
-           if (tmp != NULL) 
-	     {
-	       if (strftime(outstr, sizeof(outstr), "%Y/%m/%d", tmp))
-		 {
-		   date.assign(outstr);
-		   date.push_back(0);
-		 }
-	     }
-	}
       len = date.size();
       buffer[1] = len >>8;
       buffer[2] = len & 0xff;
@@ -221,22 +243,6 @@ unsigned long BitFile::saveAs(int style, const char  *device, FILE *fp)
       fwrite(date.c_str(), len, 1, fp);
 
       buffer[0] = 'd';
-      if (!dtime.size())
-	{
-           char outstr[200];
-           time_t t;
-           struct tm *tmp;
-           t = time(NULL);
-           tmp = localtime(&t);
-           if (tmp != NULL) 
-	     {
-	       if (strftime(outstr, sizeof(outstr), "%T", tmp))
-		 {
-		   dtime.assign(outstr);
-		   dtime.push_back(0);
-		 }
-	     }
-	}
       len = dtime.size();
       buffer[1] = len >>8;
       buffer[2] = len & 0xff;

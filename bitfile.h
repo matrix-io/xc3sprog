@@ -113,6 +113,7 @@ class BitFile
   inline const char *getPartName(){return partName.c_str();}
   inline const char *getDate(){return date.c_str();}
   inline const char *getTime(){return dtime.c_str();}
+  void setNCDFields(const char * partname);
   void setLength(unsigned int bit_count);
   unsigned long saveAs(int style, const char  *device, FILE *fp);
   unsigned char reverse8(unsigned char b){return bitRevTable[b];};
