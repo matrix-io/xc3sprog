@@ -132,6 +132,8 @@ void ProgAlgXC3S::flow_program_legacy(BitFile &file)
 }
 void ProgAlgXC3S::array_program(BitFile &file)
 {
+  unsigned char buf[1] = {0};
+  int i = 0;
   flow_enable();
   /* JPROGAM: Trigerr reconfiguration, not explained in ug332, but
      DS099 Figure 28:  Boundary-Scan Configuration Flow Diagram (p.49) */
@@ -160,4 +162,13 @@ void ProgAlgXC3S::array_program(BitFile &file)
   flow_program_legacy(file);
   /*flow_array_program(file);*/
   flow_disable();
+  /* Wait until device comes up */  /* Wait until device comes up */
+  while ((( buf[0] & 0x23) != 0x21) && (i <50))
+    {
+      jtag->shiftIR(&BYPASS, buf);
+      jtag->Usleep(1000);
+      i++;
+    }
+  if (i == 50)
+    fprintf(stderr, "Device faild to configure, INSTRUCTION_CAPTURE is 0x%02x\n", buf[0]);
 }
