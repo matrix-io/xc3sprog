@@ -131,7 +131,7 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial, in
 
   // Prepare for JTAG operation
   static unsigned char   buf[9] = { SET_BITS_LOW, 0x08, 0x0b,
-				    TCK_DIVISOR,  0x00, 0x00 ,
+				    TCK_DIVISOR,  0x02, 0x00 ,
 				    SET_BITS_HIGH, ~0x04, 0x04};
   if (subtype == FTDI_NO_EN)
     mpsse_add_cmd(buf, 6);
@@ -170,7 +170,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 	{
 	  /* full chunks*/
 	  buf[0] = ((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)
-	    |((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_WRITE_NEG;
+	    |((tdi)?(MPSSE_DO_WRITE|MPSSE_WRITE_NEG):0)|MPSSE_LSB;
 	  buf[1] = (buflen-1) & 0xff;        /* low lenbth byte */
 	  buf[2] = ((buflen-1) >> 8) & 0xff; /* high lenbth byte */
 	  mpsse_add_cmd (buf, 3);
@@ -198,7 +198,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
   if(rem) 
     {
       buf[0] = ((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)
-	|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_WRITE_NEG;
+	|((tdi)?(MPSSE_DO_WRITE|MPSSE_WRITE_NEG):0)|MPSSE_LSB;
       buf[1] =  (buflen - 1)       & 0xff; /* low length byte */
       buf[2] = ((buflen - 1) >> 8) & 0xff; /* high length byte */
       mpsse_add_cmd (buf, 3);
@@ -225,7 +225,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
       /* Clock Data Bits Out on -ve Clock Edge LSB First (no Read)
 	 (use if TCK/SK starts at 0) */
       buf[0] = ((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)
-	|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
+	|((tdi)?(MPSSE_DO_WRITE|MPSSE_WRITE_NEG):0)|MPSSE_LSB|MPSSE_BITMODE;
       buf[1] = rembits-1; /* length: only one byte left*/
       mpsse_add_cmd (buf, 2);
       if(tdi)
