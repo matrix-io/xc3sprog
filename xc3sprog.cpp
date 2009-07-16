@@ -42,12 +42,14 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgxc3s.h"
 #include "jedecfile.h"
 #include "progalgxc95x.h"
+#include "progalgxc2c.h"
 #include "progalgavr.h"
 #include "progalgspiflash.h"
 
 int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
 int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, const char *fname, const char* device);
 int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, const char *fname, const char *device);
+int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, const char *fname, const char *device);
 int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, const char *fname, const char *device);
 
 extern char *optarg;
@@ -513,7 +515,34 @@ int main(int argc, char **args)
 	  
 	  return programXC95X(alg, file, verify, fname, db.getDeviceDescription(chainpos));
 	}
-    } 
+      else if ((family & 0x7e) == 0x36) /* XC2C */
+	{
+	  int size_ind = (id & 0x001f0000)>>16;
+	  BitFile  file;
+	  char *fname = 0;
+	  if (!readback)
+	    {
+              file.readFile(args[0]);
+              if (file.getLength() == 0)
+                {
+                  printf("Probably no JEDEC File, aborting\n");
+                  return 2;
+                }
+              if(strncmp(db.getDeviceDescription(chainpos), file.getPartName(), sizeof(db.getDeviceDescription(chainpos))) !=0)
+                {
+                  printf("Incompatible Bin File for Device %s\n"
+                         "Actual device in Chain is %s\n", 
+                         file.getPartName(), db.getDeviceDescription(chainpos));
+                  return 3;
+                }
+	    }
+	  else
+	    fname = args[0];
+	  
+	  ProgAlgXC2C alg(jtag, io.operator*(), size_ind);
+	  return programXC2C(alg, file, verify, fname, db.getDeviceDescription(chainpos));
+	}
+    }
   else if  ( manufacturer == 0x01f) /* Atmel */
     {
       return jAVR (jtag, id, args[0],verify, lock, eepromfile, fusefile);
@@ -615,6 +644,33 @@ int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, const char *fn
 	  printf("Erase failed\n");
 	  return 1;
 	}
+      alg.array_program(file);
+    }
+  return alg.array_verify(file);
+}
+
+int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, const char *fname, const char *device)
+{
+  if(fname) /* Readback requested*/
+    {
+      FILE *fp=fopen(fname,"rb");
+      if(fp)
+        {
+          printf("File %s already exists. Aborting\n", fname);
+          fclose(fp);
+          return 1;
+        }
+      alg.array_read(file);
+      file.saveAs(1, device, fname);
+      return 0;
+    }
+  if (!verify)
+    {
+      if (!alg.erase())
+        {
+          printf("Erase failed\n");
+          return 1;
+        }
       alg.array_program(file);
     }
   return alg.array_verify(file);
