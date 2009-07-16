@@ -129,6 +129,21 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial, in
 #endif
   memset(usbuf,SEND_IMMEDIATE, TX_BUF);
 
+/*FIXME: Without this write/read sequence, xc3sprog hangs on som non-firts runs on the XC3SPROG */
+  int read; 
+  static unsigned char   tbuf[10] = { LOOPBACK_START,
+				      MPSSE_DO_READ|MPSSE_READ_NEG|MPSSE_DO_WRITE|MPSSE_WRITE_NEG|MPSSE_LSB, 
+				      0x04, 0x00,
+				      0xaa, 0x55, 0x00, 0xff, 0xaa, 
+				      LOOPBACK_END};
+  mpsse_add_cmd(tbuf, 10);
+  mpsse_send();
+  read = ftdi_read_data(&ftdi, tbuf,5);
+  if  (read != 5) 
+    {
+      fprintf(stderr,"Loopback: Failed to read 5 bytes, read %d\n", read);
+    }
+
   // Prepare for JTAG operation
   static unsigned char   buf[9] = { SET_BITS_LOW, 0x08, 0x0b,
 				    TCK_DIVISOR,  0x02, 0x00 ,
@@ -290,8 +305,8 @@ void IOFtdi::tx_tms(unsigned char *pat, int length)
 
 unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
 {
-    unsigned char buf[1] = { SEND_IMMEDIATE};
-    mpsse_add_cmd(buf,1);
+  //unsigned char buf[1] = { SEND_IMMEDIATE};
+  //mpsse_add_cmd(buf,1);
     mpsse_send();
 #if defined (USE_FTD2XX)
     DWORD  length = (DWORD) len, read = 0, last_read;
@@ -380,7 +395,21 @@ void IOFtdi::deinit(void)
   
 IOFtdi::~IOFtdi()
 {
-  flush();
+  int read;
+  /* Before shutdown, we must wait until everything is shifted out
+     Do this by temporary enabling loopback mode, write something and wait until we can read it back */
+  static unsigned char   tbuf[10] = { LOOPBACK_START,
+				      MPSSE_DO_READ|MPSSE_READ_NEG|MPSSE_DO_WRITE|MPSSE_WRITE_NEG|MPSSE_LSB, 
+				      0x04, 0x00,
+				      0xaa, 0x55, 0x00, 0xff, 0xaa, 
+				      LOOPBACK_END};
+  mpsse_add_cmd(tbuf, 10);
+  mpsse_send();
+  read = readusb( tbuf,5);
+  if  (read != 5) 
+    {
+      fprintf(stderr,"Loopback: Failed to read 5 bytes, read %d\n");
+    };
   deinit();
 }
 
