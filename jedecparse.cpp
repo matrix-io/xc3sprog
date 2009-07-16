@@ -39,10 +39,11 @@ int main(int argc, char**args)
 	{
 	  JedecFile  file;
 	  file.readFile(args[1]);
+	  FILE *fp = fopen(args[2], "rw");
 
 	  printf("Device %s: %d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n \n",
 		 file.getDevice(), file.getLength(), file.calcChecksum(),file.getChecksum());
-	  file.saveAsJed(file.getDevice(), args[2]);
+	  file.saveAsJed(file.getDevice(), fp);
 	}
       catch(io_exception& e) 
 	{
