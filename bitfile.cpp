@@ -163,20 +163,13 @@ void BitFile::setLength(unsigned int size)
   buffer=new byte[length];
 }
 
-unsigned long BitFile::saveAs(int style, const char  *device, const char *fname)
+unsigned long BitFile::saveAs(int style, const char  *device, FILE *fp)
 {
   if(length<=0)return length;
   int clip;
   /* Don't store 0xff bytes from the end of the flash */
   for(clip=length-1; (buffer[clip] == 0xff) && clip>0; clip--){};
   clip++; /* clip is corrected length, not index */
-  FILE *fp=fopen(fname,"wb");
-  if(fp == 0)
-    {
-      printf("Unable to open %s: %s\n", fname, strerror(errno));
-      fclose(fp);
-      return 0;
-    }
   if(style != 0)
     {
       char buffer[256] = {0x00, 0x09, 0x0f, 0xf0, 0x0f, 0xf0, 0x0f, 0xf0,

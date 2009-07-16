@@ -47,10 +47,10 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgspiflash.h"
 
 int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
-int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, const char *fname, const char* device);
-int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, const char *fname, const char *device);
-int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, const char *fname, const char *device);
-int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, const char *fname, const char *device);
+int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, const char* device);
+int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp, const char *device);
+int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, const char *device);
+int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp, const char *device);
 
 extern char *optarg;
 extern int optind;
@@ -232,6 +232,7 @@ int main(int argc, char **args)
   char *devicedb = NULL;
   DeviceDB db(devicedb);
   long value;
+  FILE *fp =0;
   
   // Produce release info from CVS tags
   printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests!\nCheck Sourceforge SVN!\n");
@@ -417,6 +418,24 @@ int main(int argc, char **args)
   family = (id>>21) & 0x7f;
   manufacturer = (id>>1) & 0x3ff;
 
+  if (readback)
+    {
+      fp=fopen(args[0],"rb");
+      if(fp)
+	{
+	  printf("File %s already exists. Aborting\n", args[0]);
+	  fclose(fp);
+	  return 1;
+	}
+      fp=fopen(args[0],"wb");
+      if(!fp)
+	{
+	  printf("Unable to open File %s. Aborting\n", args[0]);
+	  return 1;
+	}
+      
+    }
+
   if ( manufacturer == 0x049) /* XILINX*/
     {
       /* Probably XC4V and  XC5V should work too. No devices to test at IKDA */
@@ -432,8 +451,6 @@ int main(int argc, char **args)
 	  try 
 	    {
 	      BitFile  file;
-	      char *fname = 0;
-	      
 	      if (!readback)
 		{
 		  file.readFile(args[0]);
@@ -463,21 +480,19 @@ int main(int argc, char **args)
 			}
 		    }
 		}
-	      else
-		fname = args[0];
 	      if (family == 0x28)
 		{
 		  int size_ind = (id & 0x000ff000)>>12;
 		  ProgAlgXCF alg(jtag,io.operator*(),size_ind);
 
-		  return programXCF(alg, file, verify, fname, db.getDeviceDescription(chainpos));
+		  return programXCF(alg, file, verify, fp, db.getDeviceDescription(chainpos));
 		}
 	      else 
 		{
 		  if(spiflash)
 		    {
 		      ProgAlgSPIFlash alg(jtag, file, io.operator*());
-		      return programSPI(alg, file, verify, fname, db.getDeviceDescription(chainpos));
+		      return programSPI(alg, file, verify, fp, db.getDeviceDescription(chainpos));
 		    }
 		    else
 		      return  programXC3S(jtag,io.operator*(),file, verify, family);
@@ -493,7 +508,6 @@ int main(int argc, char **args)
 	  int size = (id & 0x000ff000)>>13;
 	  JedecFile  file;
 	  ProgAlgXC95X alg(jtag, io.operator*(), size);
-	  char *fname = 0;
 	  if (!readback)
 	    {
 	      file.readFile(args[0]);
@@ -510,16 +524,13 @@ int main(int argc, char **args)
 		  return 3;
 		}
 	    }
-	  else
-	    fname = args[0];
 	  
-	  return programXC95X(alg, file, verify, fname, db.getDeviceDescription(chainpos));
+	  return programXC95X(alg, file, verify, fp, db.getDeviceDescription(chainpos));
 	}
       else if ((family & 0x7e) == 0x36) /* XC2C */
 	{
 	  int size_ind = (id & 0x001f0000)>>16;
 	  BitFile  file;
-	  char *fname = 0;
 	  if (!readback)
 	    {
               file.readFile(args[0]);
@@ -536,11 +547,9 @@ int main(int argc, char **args)
                   return 3;
                 }
 	    }
-	  else
-	    fname = args[0];
 	  
 	  ProgAlgXC2C alg(jtag, io.operator*(), size_ind);
-	  return programXC2C(alg, file, verify, fname, db.getDeviceDescription(chainpos));
+	  return programXC2C(alg, file, verify, fp, db.getDeviceDescription(chainpos));
 	}
     }
   else if  ( manufacturer == 0x01f) /* Atmel */
@@ -565,20 +574,13 @@ int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
   return 0;
 }
 
-int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, const char *fname, const char *device)
+int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, const char *device)
 {
-  if(fname)
+  if(fp)
     {
       int len;
-      FILE *fp=fopen(fname,"rb");
-      if(fp)
-	{
-	  printf("File %s already exists. Aborting\n", fname);
-	  fclose(fp);
-	  return 1;
-	}
       alg.read(file);
-      len = file.saveAs(1, device, fname);
+      len = file.saveAs(1, device, fp);
       return 0;
     }
   if(!verify)
@@ -593,20 +595,13 @@ int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, const char *fname, c
   return 0;
 }
 
-int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, const char *fname, const char *device)
+int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp, const char *device)
 {
-  if(fname)
+  if(fp)
     {
       int len;
-      FILE *fp=fopen(fname,"rb");
-      if(fp)
-	{
-	  printf("File %s already exists. Aborting\n", fname);
-	  fclose(fp);
-	  return 1;
-	}
       alg.read(file);
-      len = file.saveAs(1, device, fname);
+      len = file.saveAs(1, device, fp);
       return 0;
     }
   if(!verify)
@@ -617,24 +612,17 @@ int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, const char *fna
     }
   alg.verify(file);
   alg.disable();
-  if(!verify && !fname)
+  if(!verify && !fp)
     alg.reconfig();
   return 0;
 }
 
-int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, const char *fname, const char *device)
+int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp, const char *device)
 {
-  if(fname) /* Readback requested*/
+  if(fp) /* Readback requested*/
     {
-      FILE *fp=fopen(fname,"rb");
-      if(fp)
-	{
-	  printf("File %s already exists. Aborting\n", fname);
-	  fclose(fp);
-	  return 1;
-	}
       alg.array_read(file);
-      file.saveAsJed(device, fname);
+      file.saveAsJed(device, fp);
       return 0;
     }
   if (!verify)
@@ -649,19 +637,12 @@ int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, const char *fn
   return alg.array_verify(file);
 }
 
-int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, const char *fname, const char *device)
+int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, const char *device)
 {
-  if(fname) /* Readback requested*/
+  if(fp) /* Readback requested*/
     {
-      FILE *fp=fopen(fname,"rb");
-      if(fp)
-        {
-          printf("File %s already exists. Aborting\n", fname);
-          fclose(fp);
-          return 1;
-        }
       alg.array_read(file);
-      file.saveAs(1, device, fname);
+      file.saveAs(1, device, fp);
       return 0;
     }
   if (!verify)

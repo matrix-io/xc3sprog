@@ -351,20 +351,15 @@ void JedecFile::readFile(char const * fname)
   }
 }
 
-void JedecFile::saveAsJed(const char  *device, const char  *fname)
+void JedecFile::saveAsJed(const char  *device, FILE *fp)
 {
   unsigned int i, b=0, l=0 ,w=0;
   unsigned short chksum=0;
-  FILE *fp=fopen(fname,"wb");
   int DRegLength;
   int type=-1;
 
-  if(!fp)
-    {
-      printf("Unable to open %s: %s\n", fname, strerror(errno));
-      fclose(fp);
-      return;
-    }
+  if (!fp)
+    return;
   if (strnicmp("XC9536X",device, sizeof("XC9536X")-1) == 0)
     {
       type = JED_XC95X;
