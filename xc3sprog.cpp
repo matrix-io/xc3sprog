@@ -588,7 +588,8 @@ int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, const char *fna
     }
   alg.verify(file);
   alg.disable();
-  alg.reconfig();
+  if(!verify && !fname)
+    alg.reconfig();
   return 0;
 }
 
