@@ -43,7 +43,7 @@ int main(int argc, char**args)
 
 	  printf("Device %s: %d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n",
 		 file.getDevice(), file.getLength(), file.calcChecksum(),file.getChecksum());
-	  printf("Version : %s\n",  file.getVersion());
+	  printf("Version : %s Date %s\n",  file.getVersion(), file.getDate());
 	  file.saveAsJed(file.getDevice(), fp);
 	}
       catch(io_exception& e) 
