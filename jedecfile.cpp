@@ -74,6 +74,7 @@ struct state_mach {
 };
 
 static void m_startup(int ch, struct state_mach*m);
+static void m_header(int ch, struct state_mach*m);
 static void m_base(int ch, struct state_mach*m);
 static void m_C(int ch, struct state_mach*m);
 static void m_L(int ch, struct state_mach*m);
@@ -86,18 +87,45 @@ static void m_N(int ch, struct state_mach*m);
 
 int m_N_item;
 int m_N_pos;
+int m_H_pos = 0;
+char m_H_string[256];
 char m_N_strings[8][256];
 
 static void m_startup(int ch, struct state_mach*m)
 {
-      switch (ch) {
-          case '\002':
-            m->state = m_base;
-            break;
+  switch (ch) 
+    {
+    case '\002':
+      m->state = m_base;
+      break;
+      
+    case 'D':
+      m->state = m_header;
+      break;
+      
+    default:
+      break;
+    }
+}
 
-          default:
-            break;
-      }
+static void m_header(int ch, struct state_mach*m)
+{
+     switch (ch) 
+       {
+       case '\n':
+       case '\r':
+	 if (m_H_pos)
+	   {
+	     char * ptr = strchr( m_H_string, ':');
+	     if (ptr)
+	       strcpy(m->jed->date, ptr);
+	   }
+	 m->state = m_startup;
+	 break;
+       default:
+	 m_H_string[m_H_pos] = ch;
+	 m_H_pos++;
+       }
 }
 
 static void m_base(int ch, struct state_mach*m)
@@ -342,7 +370,8 @@ int JedecFile::readFile(char const * fname)
   struct state_mach m;
 
   FILE *const  fp=fopen(fname,"rb");
-  if(!fp)  throw  io_exception(std::string("Cannot open file ") + fname);
+  if(!fp) 
+    return 1;
   
   //jed = (jedec_data_t)calloc(1, sizeof(struct jedec_data));
   m.jed = &jed;
@@ -351,7 +380,7 @@ int JedecFile::readFile(char const * fname)
     m.state(ch, &m);
     if (m.state == 0) {
       /* Some sort of error happened. */
-      return 1;
+      return 2;
     }
   }
   return 0;
