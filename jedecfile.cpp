@@ -221,6 +221,11 @@ static void m_N(int ch, struct state_mach*m)
 	    m_N_strings[m_N_item][m_N_pos] = 0;
 	    strcpy(m->jed->device, m_N_strings[1]);
 	  }
+	if ((stricmp(m_N_strings[0], "VERSION")) == 0)
+	  {
+	    m_N_strings[m_N_item][m_N_pos] = 0;
+	    strcpy(m->jed->version, m_N_strings[1]);
+	  }
 	m->state = m_base;
 	m_N_item= -1;
 	break;

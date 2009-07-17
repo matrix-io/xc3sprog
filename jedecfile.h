@@ -30,6 +30,7 @@ typedef unsigned char byte;
 
 struct jedec_data {
       char device[256];
+      char version[256];
 
       unsigned fuse_count;
       unsigned pin_count;
@@ -64,6 +65,7 @@ class JedecFile
   inline unsigned int getLength(){return jed.fuse_count;}
   inline unsigned short getChecksum(){return jed.checksum;}
   char *getDevice(){return jed.device;}
+  char *getVersion(){return jed.version;}
   unsigned short calcChecksum();
   void setLength(unsigned int fuse_count);
   int get_fuse(unsigned int idx);
