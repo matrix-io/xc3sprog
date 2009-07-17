@@ -420,6 +420,21 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
       type = JED_XC2C;
     } 
 
+  if (strlen(jed.date) == 0)
+    {
+      time_t t;
+      struct tm *tmp;
+      char outstr[200];
+      t = time(NULL);
+      tmp = localtime(&t);
+      if (tmp != NULL)
+	{
+	  if (strftime(outstr, sizeof(outstr), "%a %b %d %T %Y", tmp))
+	    fprintf(fp, "Date Extracted: %s\n\n", outstr);
+	}
+    }
+  else
+    fprintf(fp, "Date Extracted: %s\n\n",jed.date);
   fprintf(fp, "\2QF%d*\nQV0*\nF0*\nX0*\nJ0 0*\n",jed.fuse_count);
   fprintf(fp, "N DEVICE %s*\n", device);
 
