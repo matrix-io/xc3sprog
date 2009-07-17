@@ -356,6 +356,8 @@ JedecFile::JedecFile(void)
   jed.pin_count = 0;
   jed.fuse_list = 0;
   jed.device[0] = 0;
+  jed.version[0] = 0;
+  jed.date[0] = 0;
 }
 
 JedecFile::~JedecFile(void)
@@ -436,6 +438,10 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
   else
     fprintf(fp, "Date Extracted: %s\n\n",jed.date);
   fprintf(fp, "\2QF%d*\nQV0*\nF0*\nX0*\nJ0 0*\n",jed.fuse_count);
+  if (strlen(jed.version) == 0)
+    fprintf(fp, "N VERSION XC3SPROG*\n");
+  else
+    fprintf(fp, "N VERSION %s*\n",jed.version);
   fprintf(fp, "N DEVICE %s*\n", device);
 
    if(type == JED_XC95X)
