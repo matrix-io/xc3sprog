@@ -117,6 +117,8 @@ class BitFile
   void setLength(unsigned int bit_count);
   unsigned long saveAs(int style, const char  *device, FILE *fp);
   unsigned char reverse8(unsigned char b){return bitRevTable[b];};
+  int get_bit(unsigned int idx);
+  void set_bit(unsigned int idx, int blow);
 };
 
 #endif //BITFILE_H
