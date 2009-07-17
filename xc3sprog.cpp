@@ -510,18 +510,23 @@ int main(int argc, char **args)
 	  ProgAlgXC95X alg(jtag, io.operator*(), size);
 	  if (!readback)
 	    {
-	      file.readFile(args[0]);
-	      if (file.getLength() == 0)
+	      if (file.readFile(args[0]))
 		{
 		  printf("Probably no JEDEC File, aborting\n");
 		  return 2;
+		}
+		  
+	      if (file.getLength() == 0)
+		{
+		  printf("Short JEDEC File, aborting\n");
+		  return 3;
 		}
 	      if(strncmp(db.getDeviceDescription(chainpos), file.getDevice(), sizeof(db.getDeviceDescription(chainpos))) !=0)
 		{
 		  printf("Incompatible Jedec File for Device %s\n"
 			 "Actual device in Chain is %s\n", 
 			 file.getDevice(), db.getDeviceDescription(chainpos));
-		  return 3;
+		  return 4;
 		}
 	    }
 	  

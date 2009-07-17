@@ -99,7 +99,7 @@ class BitFile
  public:
   void append(unsigned long  val, unsigned cnt);
   void append(char const *file);
-  void readFile(char const *fname);
+  int readFile(char const *fname);
   
  public:
   inline byte *getData(){return buffer;}
