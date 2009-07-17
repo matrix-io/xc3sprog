@@ -336,7 +336,7 @@ JedecFile::~JedecFile(void)
     free(jed.fuse_list);
 }
 
-void JedecFile::readFile(char const * fname)
+int JedecFile::readFile(char const * fname)
 {
   int ch;
   struct state_mach m;
@@ -351,9 +351,10 @@ void JedecFile::readFile(char const * fname)
     m.state(ch, &m);
     if (m.state == 0) {
       /* Some sort of error happened. */
-      throw  io_exception(std::string("Unknown"));
+      return 1;
     }
   }
+  return 0;
 }
 
 void JedecFile::saveAsJed(const char  *device, FILE *fp)

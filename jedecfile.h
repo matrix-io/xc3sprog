@@ -61,7 +61,7 @@ class JedecFile
   ~JedecFile();
 
  public:
-  void readFile(char const *file);
+  int readFile(char const *file);
   inline unsigned int getLength(){return jed.fuse_count;}
   inline unsigned short getChecksum(){return jed.checksum;}
   char *getDevice(){return jed.device;}

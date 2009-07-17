@@ -43,7 +43,7 @@ BitFile::BitFile()
 }
 
 // Read in file
-void BitFile::readFile(char const * fname)
+int BitFile::readFile(char const * fname)
 {
   FILE *const  fp=fopen(fname,"rb");
   if(!fp)  throw  io_exception(std::string("Cannot open file ") );
@@ -69,7 +69,7 @@ void BitFile::readFile(char const * fname)
       case 'e':
 	processData(fp);
 	fclose(fp);
-	return;
+	return 0;
       default:
 	fprintf(stderr, "Ignoring unknown field '%c'\n", key);
 	field = &dummy;
@@ -80,8 +80,9 @@ void BitFile::readFile(char const * fname)
   }
   catch(...) {
     fclose(fp);
-    throw;
+    return 1;
   }
+  return 0;
 }
 
 void BitFile::processData(FILE *fp)
