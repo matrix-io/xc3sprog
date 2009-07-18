@@ -300,28 +300,29 @@ void BitFile::initFlip()
 
 void BitFile::set_bit(unsigned int idx, int blow)
 {
-  unsigned byte, bit;
-  if(idx >= length)
-    throw  io_exception(std::string("bit_set_fuse"));
-
-  byte = idx / 8;
+  unsigned int bval, bit;
+  bval = idx / 8;
+  if(bval > length)
+    {
+      fprintf(stderr,"set_bit invalid index %d lenght %d\n", idx, length*8);
+      throw  io_exception(std::string("bit_set_fuse"));
+    }
   bit  = idx % 8;
   
   if (blow)
-    buffer[byte] |=  (1 << bit);
+    buffer[bval] |=  (1 << bit);
   else
-    buffer[byte] &= ~(1 << bit);
+    buffer[bval] &= ~(1 << bit);
 }
 
 int BitFile::get_bit(unsigned int idx)
 {
-     unsigned byte, bit;
-      if(idx >= length)
+     unsigned int bval, bit;
+      bval = idx / 8;
+      if(bval >= length)
 	throw  io_exception(std::string("bit_get_fuse"));
-
-      byte = idx / 8;
       bit  = idx % 8;
-      return (buffer[byte] & (1 << bit))? 1 : 0;
+      return (buffer[bval] & (1 << bit))? 1 : 0;
 }
 
 

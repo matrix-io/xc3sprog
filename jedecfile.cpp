@@ -36,28 +36,28 @@ static unsigned char*allocate_fusemap(unsigned size)
 
 int jedec_get_fuse(jedec_data_t jed, unsigned idx)
 {
-      unsigned byte, bit;
+      unsigned int bval, bit;
       if(idx >= jed->fuse_count)
 	throw  io_exception(std::string("jedec_get_fuse"));
 
-      byte = idx / 8;
+      bval = idx / 8;
       bit  = idx % 8;
-      return (jed->fuse_list[byte] & (1 << bit))? 1 : 0;
+      return (jed->fuse_list[bval] & (1 << bit))? 1 : 0;
 }
 
 void jedec_set_fuse(jedec_data_t jed, unsigned idx, int blow)
 {
-      unsigned byte, bit;
+      unsigned bval, bit;
       if(idx >= jed->fuse_count)
 	throw  io_exception(std::string("jedec_set_fuse"));
 
-      byte = idx / 8;
+      bval = idx / 8;
       bit  = idx % 8;
 
       if (blow)
-            jed->fuse_list[byte] |=  (1 << bit);
+            jed->fuse_list[bval] |=  (1 << bit);
       else
-            jed->fuse_list[byte] &= ~(1 << bit);
+            jed->fuse_list[bval] &= ~(1 << bit);
 }
 
 struct state_mach {
@@ -436,7 +436,7 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
 	}
     }
   else
-    fprintf(fp, "Date Extracted: %s\n\n",jed.date);
+    fprintf(fp, "Date Extracted%s\n\n",jed.date);
   fprintf(fp, "\2QF%d*\nQV0*\nF0*\nX0*\nJ0 0*\n",jed.fuse_count);
   if (strlen(jed.version) == 0)
     fprintf(fp, "N VERSION XC3SPROG*\n");
