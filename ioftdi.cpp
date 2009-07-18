@@ -263,7 +263,11 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
   if(tdo) 
     {
       if (!last) 
-	readusb(tmprbuf, buflen);
+	{
+	  readusb(tmprbuf, buflen);
+	  if (rembits) /* last bits for incomplete byte must get shifted down*/
+	    tmprbuf[buflen-1] = tmprbuf[buflen-1]>>(8-rembits);
+	}
       else 
 	{
 	  /* we need to handle the last bit. It's much faster to
