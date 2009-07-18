@@ -205,7 +205,7 @@ void BitFile::setNCDFields(const char * partname)
     }
 }
 
-unsigned long BitFile::saveAs(int style, const char  *device, FILE *fp)
+unsigned long BitFile::saveAs(OUTFILE_STYLE style, const char  *device, FILE *fp)
 {
   if(length<=0)return length;
   int clip;
@@ -214,7 +214,10 @@ unsigned long BitFile::saveAs(int style, const char  *device, FILE *fp)
   /* Don't store 0xff bytes from the end of the flash */
   for(clip=length-1; (buffer[clip] == 0xff) && clip>0; clip--){};
   clip++; /* clip is corrected length, not index */
-  if(style != 0)
+  if ( style == STYLE_HEX)
+    {
+    }
+  else if(style == STYLE_BIT)
     {
       char buffer[256] = {0x00, 0x09, 0x0f, 0xf0, 0x0f, 0xf0, 0x0f, 0xf0,
 			  0x0f, 0xf0, 0x00, 0x00, 0x01};
@@ -257,9 +260,23 @@ unsigned long BitFile::saveAs(int style, const char  *device, FILE *fp)
       buffer[4] = clip & 0xff;
       fwrite(buffer, 5, 1, fp);
     }
-  for(unsigned int i=0; i<clip; i++){
-    byte b=bitRevTable[buffer[i]]; // Reverse bit order
-    fwrite(&b,1,1,fp);
+  for(unsigned int i=0; i<clip; i++)
+    {
+      byte b=bitRevTable[buffer[i]]; // Reverse bit order
+     if ((style == STYLE_BIT) || (style == STYLE_BIN))
+       {
+	  fwrite(&b,1,1,fp);
+	}
+      else if (style == STYLE_HEX)
+	{
+	  if ( i%16 ==  0)
+	    fprintf(fp,"%7d:  ", i);
+	  fprintf(fp,"%02x ", b);
+	  if ( i%16 ==  7)
+	    fprintf(fp," ");
+	  if ( i%16 == 15)
+	    fprintf(fp,"\n");
+	}
   }
   fclose(fp);
   return clip;
