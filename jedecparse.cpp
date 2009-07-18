@@ -22,6 +22,8 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Code cleanup for clean -Wall compile.
 */
 
+#include <string.h>
+#include <errno.h>
 
 
 #include "jedecfile.h"
@@ -39,8 +41,13 @@ int main(int argc, char**args)
 	{
 	  JedecFile  file;
 	  file.readFile(args[1]);
-	  FILE *fp = fopen(args[2], "rw");
-
+	  FILE *fp = NULL;
+	  if(args[2])
+	    {
+	      fp = fopen(args[2], "wb");
+	      if (!fp)
+		fprintf(stderr," Can't open %s: %s  \n", args[2], strerror(errno));
+	    }
 	  printf("Device %s: %d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n",
 		 file.getDevice(), file.getLength(), file.calcChecksum(),file.getChecksum());
 	  printf("Version : %s Date %s\n",  file.getVersion(), file.getDate());

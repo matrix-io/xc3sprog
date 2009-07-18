@@ -21,7 +21,8 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Code cleanup for clean -Wall compile.
 */
 
-
+#include <string.h>
+#include <errno.h>
 
 #include "bitfile.h"
 #include "io_exception.h"
@@ -40,11 +41,15 @@ int main(int argc, char**args)
       printf("Created: %s %s\n",file.getDate(),file.getTime());
       printf("Bitstream length: %lu bits\n", file.getLength());
       
-      if(argc > 2) {
-	FILE * fp = fopen(args[2],"rw");
+      if(args[2]) {
+	FILE * fp = fopen(args[2],"wb");
 	if (fp)
-	  file.saveAs(1,file.getPartName(), fp);
-	printf("Bitstream saved in bit format in file: %s\n", args[2]);
+	  {
+	    file.saveAs(0,file.getPartName(), fp);
+	    printf("Bitstream saved in bit format in file: %s\n", args[2]);
+	  }
+	else
+	  fprintf(stderr," Can't open %s: %s  \n", args[2], strerror(errno));
       }
     }
     catch(io_exception& e) {
