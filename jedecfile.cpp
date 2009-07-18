@@ -510,8 +510,14 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
 
 void JedecFile::setLength(unsigned int f_count)
 {
+  if(f_count > jed.fuse_count)
+    {
+      if (jed.fuse_list)
+	free(jed.fuse_list);
+      jed.fuse_list = new byte[f_count+7/8];
+      memset(jed.fuse_list, 0, f_count+7/8);
+    }
   jed.fuse_count = f_count;
-  jed.fuse_list = new byte[f_count+7/8];
 }
 
 void JedecFile::set_fuse(unsigned int idx, int blow)
