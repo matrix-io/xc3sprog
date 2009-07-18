@@ -167,7 +167,7 @@ void ProgAlgXC2C::array_read(BitFile &rbfile)
   byte ircap[1];
 
   memset(i_data, 0, MAXSIZE);
-  rbfile.setLength(block_num *(block_size+ post));
+  rbfile.setLength(block_num *block_size);
   
   gettimeofday(tv, NULL);
 
@@ -177,31 +177,26 @@ void ProgAlgXC2C::array_read(BitFile &rbfile)
 
   jtag->shiftIR(&ISC_ENABLE_OTF, ircap);
 
-  jtag->Usleep(800);
-
-  jtag->shiftIR(&BYPASS, ircap);
+  jtag->shiftIR(&ISC_READ, ircap);
   fprintf(stderr,"IRCAP 0x%02x\n", ircap[0]);
 
-  jtag->shiftIR(&ISC_READ, ircap);
-
-  jtag->shiftDR(preamble,NULL, post);
-  //  jtag->Usleep(20);
-  for (i=0; i<block_num; i++)
+  i_data[0] = reverse_gray_code_table[0]>>(8-post);
+  jtag->shiftDR(i_data, NULL, post);
+  io->cycleTCK(100);
+  for (i=1; i<=block_num; i++)
     {
-      memset(i_data, reverse_gray_code_table[block_num+1]>>(8-post), MAXSIZE);
-	     //      i_data[((block_size+post)/8)] = reverse_gray_code_table[block_num+1]>>(8-post);
-      jtag->shiftDR(i_data, o_data, block_size + post);
+      i_data[0] = reverse_gray_code_table[i]>>(8-post);
+      jtag->shiftDR(NULL, o_data, block_size, 0, false);
+      jtag->shiftDR(i_data, preamble, post);
       for(j = 0;  j<block_size; j++)
 	{
 	  if ((j & 0x7) == 0)
 	    {
 	      data = o_data[j>>3];
-	      rbfile.getData()[j>>3] = 0;
 	    }
-	  rbfile.getData()[k>>3] =  rbfile.getData()[k>>3] |(data & (1<<(j%8)));
+	  rbfile.set_bit(k, data & (1<<(j%8)));
 	  k++;
 	}
-      //   jtag->Usleep(20);
    }
   jtag->shiftIR(&BYPASS, ircap);
   fprintf(stderr,"IRCAP 0x%02x\n", ircap[0]);
