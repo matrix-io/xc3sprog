@@ -585,7 +585,7 @@ int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, const char
     {
       int len;
       alg.read(file);
-      len = file.saveAs(1, device, fp);
+      len = file.saveAs(STYLE_BIT, device, fp);
       return 0;
     }
   if(!verify)
@@ -606,7 +606,7 @@ int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp, const
     {
       int len;
       alg.read(file);
-      len = file.saveAs(1, device, fp);
+      len = file.saveAs(STYLE_BIT, device, fp);
       return 0;
     }
   if(!verify)
@@ -647,7 +647,7 @@ int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, const ch
   if(fp) /* Readback requested*/
     {
       alg.array_read(file);
-      file.saveAs(1, device, fp);
+      file.saveAs(STYLE_BIT, device, fp);
       return 0;
     }
   if (!verify)
