@@ -80,8 +80,11 @@ int BitFile::readFile(char const * fname)
   }
   catch(...) {
     fclose(fp);
+    fprintf(stderr, "Unknown error\n");
     return 1;
   }
+  if(!length)
+    return 3;
   return 0;
 }
 
@@ -162,6 +165,7 @@ void BitFile::setLength(unsigned int size)
   length = (size+7)>>3;
   if(buffer) delete [] buffer;
   buffer=new byte[length];
+  memset(buffer, 0xff, length);
 }
 
 void BitFile::setNCDFields(const char * partname)
