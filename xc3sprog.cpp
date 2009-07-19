@@ -334,14 +334,10 @@ int main(int argc, char **args)
     }
   }
  args_done:
-  if(argc <= 1)
-    detectchain = true;
-  // Get rid of options
-  //printf("argc: %d\n", argc);
   argc -= optind;
   args += optind;
-  //printf("argc: %d\n", argc);
   if(argc < 0)  usage();
+  if(argc < 1) detectchain = true;
 
   std::auto_ptr<IOBase>  io;
   try {  
