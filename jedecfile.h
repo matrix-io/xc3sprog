@@ -26,12 +26,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include <string>
 
+#define MAX_SIZE 256
 typedef unsigned char byte;
 
 struct jedec_data {
-      char device[256];
-      char version[256];
-      char date[256];
+      char device[MAX_SIZE];
+      char version[MAX_SIZE];
+      char date[MAX_SIZE];
 
       unsigned fuse_count;
       unsigned pin_count;
