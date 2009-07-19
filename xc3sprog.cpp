@@ -47,10 +47,10 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgspiflash.h"
 
 int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
-int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, const char* device);
+int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char* device);
 int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp, const char *device);
-int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, const char *device);
-int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp, const char *device);
+int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char *device);
+int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char *device);
 
 extern char *optarg;
 extern int optind;
@@ -177,7 +177,8 @@ void usage() {
 	  "   -I\t\tWork on connected SPI Flash\n"
           "     \t\t(after bscan_spi Bitfile for device has been loaded)\n"
 	  "   -r\t\tRead from device and write to file\n\n"
-	  "    Supported cable types: pp, ftdi, fx2, xpc\n"
+	  "   -F\t\toutput file format (BIT|BIN|HEX)\n"
+ 	  "    Supported cable types: pp, ftdi, fx2, xpc\n"
     	  "   \tOptional pp arguments:\n"
 	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
 	  "   \tOptional fx2/ftdi arguments:\n"
@@ -222,6 +223,7 @@ int main(int argc, char **args)
   char const *dev       = 0;
   char const *eepromfile= 0;
   char const *fusefile  = 0;
+  OUTFILE_STYLE format = STYLE_BIT;
   int         chainpos  = 0;
   int vendor    = 0;
   int product   = 0;
@@ -239,7 +241,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hCLc:d:D:e:f:Ijp:P:rs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hCLc:d:D:e:f:F:Ijp:P:rs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
@@ -284,6 +286,17 @@ int main(int argc, char **args)
       fusefile = optarg;
       break;
 
+    case 'F':
+      if (!strcasecmp(optarg,"BIT"))
+	format = STYLE_BIT;
+      else if (!strcasecmp(optarg,"HEX"))
+	format = STYLE_HEX;
+      else if (!strcasecmp(optarg,"BIN"))
+	format = STYLE_BIN;
+      else 
+	    usage();
+      break;
+      
     case 'r':
       readback = true;
       break;
@@ -481,14 +494,14 @@ int main(int argc, char **args)
 		  int size_ind = (id & 0x000ff000)>>12;
 		  ProgAlgXCF alg(jtag,io.operator*(),size_ind);
 
-		  return programXCF(alg, file, verify, fp, db.getDeviceDescription(chainpos));
+		  return programXCF(alg, file, verify, fp, format, db.getDeviceDescription(chainpos));
 		}
 	      else 
 		{
 		  if(spiflash)
 		    {
 		      ProgAlgSPIFlash alg(jtag, file, io.operator*());
-		      return programSPI(alg, file, verify, fp, db.getDeviceDescription(chainpos));
+		      return programSPI(alg, file, verify, fp, format, db.getDeviceDescription(chainpos));
 		    }
 		    else
 		      return  programXC3S(jtag,io.operator*(),file, verify, family);
@@ -550,7 +563,7 @@ int main(int argc, char **args)
 	    }
 	  
 	  ProgAlgXC2C alg(jtag, io.operator*(), size_ind);
-	  return programXC2C(alg, file, verify, fp, db.getDeviceDescription(chainpos));
+	  return programXC2C(alg, file, verify, fp, format, db.getDeviceDescription(chainpos));
 	}
     }
   else if  ( manufacturer == 0x01f) /* Atmel */
@@ -575,13 +588,13 @@ int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
   return 0;
 }
 
-int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, const char *device)
+int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char *device)
 {
   if(fp)
     {
       int len;
       alg.read(file);
-      len = file.saveAs(STYLE_BIT, device, fp);
+      len = file.saveAs(format, device, fp);
       return 0;
     }
   if(!verify)
@@ -596,13 +609,13 @@ int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, const char
   return 0;
 }
 
-int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp, const char *device)
+int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char *device)
 {
   if(fp)
     {
       int len;
       alg.read(file);
-      len = file.saveAs(STYLE_BIT, device, fp);
+      len = file.saveAs(format, device, fp);
       return 0;
     }
   if(!verify)
@@ -638,12 +651,12 @@ int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp, cons
   return alg.array_verify(file);
 }
 
-int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, const char *device)
+int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char *device)
 {
   if(fp) /* Readback requested*/
     {
       alg.array_read(file);
-      file.saveAs(STYLE_BIT, device, fp);
+      file.saveAs(format, device, fp);
       return 0;
     }
   if (!verify)
