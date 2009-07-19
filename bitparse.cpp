@@ -30,30 +30,30 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 void usage() {
   fprintf(stderr,
-	  "\nUsage:bitparse [-s style] [-o outfile] infile\n"
+	  "\nUsage:bitparse [-F format] [-o outfile] infile\n"
 	  "   -h\t\tprint this help\n"
 	  "   -v\t\tverbose output\n"
 	  "   -o\t\toutput file (parse input file only if not given"
-	  "   -s\t\toutput file style (BIT|BIN|HEX)\n");
+	  "   -F\t\toutput file format (BIT|BIN|HEX)\n");
   exit(255);
 }
 
 int main(int argc, char**args)
 {
-  OUTFILE_STYLE style = STYLE_BIT;
+  OUTFILE_STYLE format = STYLE_BIT;
   const char * outfile = NULL;
   while(true)
     {
-      switch(getopt(argc, args, "?s:vo:"))
+      switch(getopt(argc, args, "?F:vo:"))
 	{
 	case -1: goto args_done;
-	case 's':
+	case 'F':
 	  if (!strcasecmp(optarg,"BIT"))
-	    style = STYLE_BIT;
+	    format = STYLE_BIT;
 	  else if (!strcasecmp(optarg,"HEX"))
-	    style = STYLE_HEX;
+	    format = STYLE_HEX;
 	  else if (!strcasecmp(optarg,"BIN"))
- 	    style = STYLE_BIN;
+ 	    format = STYLE_BIN;
 	  else 
 	    usage();
 	  break;
@@ -83,10 +83,10 @@ int main(int argc, char**args)
       FILE * fp = fopen(outfile,"wb");
       if (fp)
 	{
-	  file.saveAs(style,file.getPartName(), fp);
-	  printf("Bitstream saved as instyle %s as file: %s\n",
-		 (style == STYLE_HEX)?"HEX":
-		 (style == STYLE_BIN)?"BIN":
+	  file.saveAs(format,file.getPartName(), fp);
+	  printf("Bitstream saved in format %s as file: %s\n",
+		 (format == STYLE_HEX)?"HEX":
+		 (format == STYLE_BIN)?"BIN":
 		 "HEX", outfile);
 	}
       else
