@@ -515,7 +515,7 @@ void JedecFile::setLength(unsigned int f_count)
       if (jed.fuse_list)
 	free(jed.fuse_list);
       jed.fuse_list = new byte[f_count+7/8];
-      memset(jed.fuse_list, 0, f_count+7/8);
+      memset(jed.fuse_list, 0xff, f_count+7/8);
     }
   jed.fuse_count = f_count;
 }
@@ -535,7 +535,7 @@ unsigned short JedecFile::calcChecksum()
   int i;
   unsigned short cc=0;
   
-  for(i=0; i<jed.fuse_count/8; i++)
+  for(i=0; i<(jed.fuse_count+7)/8; i++)
     cc += jed.fuse_list[i];
   return cc;
 }
