@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 static unsigned char*allocate_fusemap(unsigned size)
 {
-  unsigned char*ptr = (unsigned char*) calloc((size+7) / 8, 1);
+  unsigned char*ptr = (unsigned char*) calloc(size/8 + ((size%8)?1:0), 1);
       return ptr;
 }
 
@@ -47,7 +47,7 @@ int jedec_get_fuse(jedec_data_t jed, unsigned idx)
 
 void jedec_set_fuse(jedec_data_t jed, unsigned idx, int blow)
 {
-      unsigned bval, bit;
+      unsigned int bval, bit;
       if(idx >= jed->fuse_count)
 	throw  io_exception(std::string("jedec_set_fuse"));
 
@@ -118,7 +118,7 @@ static void m_header(int ch, struct state_mach*m)
 	   {
 	     char * ptr = strchr( m_H_string, ':');
 	     if (ptr)
-	       strcpy(m->jed->date, ptr);
+	       strncpy(m->jed->date, ptr, MAX_SIZE);
 	   }
 	 m->state = m_startup;
 	 break;
@@ -247,12 +247,12 @@ static void m_N(int ch, struct state_mach*m)
 	if ((stricmp(m_N_strings[0], "DEVICE")) == 0)
 	  {
 	    m_N_strings[m_N_item][m_N_pos] = 0;
-	    strcpy(m->jed->device, m_N_strings[1]);
+	    strncpy(m->jed->device, m_N_strings[1], MAX_SIZE);
 	  }
 	if ((stricmp(m_N_strings[0], "VERSION")) == 0)
 	  {
 	    m_N_strings[m_N_item][m_N_pos] = 0;
-	    strcpy(m->jed->version, m_N_strings[1]);
+	    strncpy(m->jed->version, m_N_strings[1], MAX_SIZE);
 	  }
 	m->state = m_base;
 	m_N_item= -1;
@@ -385,6 +385,9 @@ int JedecFile::readFile(char const * fname)
       return 2;
     }
   }
+  if (!jed.fuse_count)
+    return 3;
+  fclose(fp);
   return 0;
 }
 
@@ -501,7 +504,7 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
        fprintf(fp, "*\n",i);
     }
 
-   for(i=0; i<(jed.fuse_count+7)/8; i++)
+   for(i=0; i<(jed.fuse_count/8 + ((jed.fuse_count%8)?1:0)); i++)
      chksum += jed.fuse_list[i];
   fprintf(fp, "C%04X*\n%c0000\n", chksum, 3);
   fclose(fp);
@@ -514,8 +517,13 @@ void JedecFile::setLength(unsigned int f_count)
     {
       if (jed.fuse_list)
 	free(jed.fuse_list);
-      jed.fuse_list = new byte[f_count+7/8];
-      memset(jed.fuse_list, 0xff, f_count+7/8);
+      jed.fuse_list = new byte[f_count/8 + ((f_count%8)?1:0)];
+      memset(jed.fuse_list, 0, f_count/8 + ((f_count%8)?1:0));
+    }
+  else
+    {
+      for (int i = f_count; i < jed.fuse_count; i++)
+	set_fuse(i, 0);
     }
   jed.fuse_count = f_count;
 }
@@ -535,7 +543,7 @@ unsigned short JedecFile::calcChecksum()
   int i;
   unsigned short cc=0;
   
-  for(i=0; i<(jed.fuse_count+7)/8; i++)
+  for(i=0; i<(jed.fuse_count/8 + ((jed.fuse_count%8)?1:0)); i++)
     cc += jed.fuse_list[i];
   return cc;
 }
