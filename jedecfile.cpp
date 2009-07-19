@@ -501,8 +501,8 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
        fprintf(fp, "*\n",i);
     }
 
-  for(i=0; i<jed.fuse_count/8; i++)
-    chksum += jed.fuse_list[i];
+   for(i=0; i<(jed.fuse_count+7)/8; i++)
+     chksum += jed.fuse_list[i];
   fprintf(fp, "C%04X*\n%c0000\n", chksum, 3);
   fclose(fp);
   
