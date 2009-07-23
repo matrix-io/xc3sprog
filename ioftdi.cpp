@@ -95,21 +95,16 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial, in
     // initialize FTDI structure
     ftdi_init(&ftdi);
     
+    // Set interface
+    if(ftdi_set_interface(&ftdi, INTERFACE_A) < 0) {
+      throw  io_exception(std::string("ftdi_set_interface: ") + ftdi_get_error_string(&ftdi));
+    }
+	
     // Open device
     if (ftdi_usb_open_desc(&ftdi, vendor, product, desc, serial) < 0)
       throw  io_exception(std::string("ftdi_usb_open_desc: ") + 
 			  ftdi_get_error_string(&ftdi));
     
-  // Reset
-  if(ftdi_usb_reset(&ftdi) < 0) {
-    throw  io_exception(std::string("ftdi_usb_reset: ") + ftdi_get_error_string(&ftdi));
-  }
-
-  // Set interface
-  if(ftdi_set_interface(&ftdi, INTERFACE_A) < 0) {
-    throw  io_exception(std::string("ftdi_set_interface: ") + ftdi_get_error_string(&ftdi));
-  }
-	
   //Set the lacentcy time to a low value
   if(ftdi_set_latency_timer(&ftdi, 1) <0) {
     throw  io_exception(std::string("ftdi_set_latency_timer: ") + ftdi_get_error_string(&ftdi));
@@ -127,7 +122,6 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial, in
   
   // Clear the MPSSE buffers
 #endif
-  memset(usbuf,SEND_IMMEDIATE, TX_BUF);
 
 /*FIXME: Without this write/read sequence, xc3sprog hangs on som non-firts runs on the XC3SPROG */
   int read; 
@@ -390,7 +384,6 @@ void IOFtdi::deinit(void)
 #if defined (USE_FTD2XX)
   FT_Close(ftdi);
 #else
-  ftdi_usb_reset(&ftdi);
   ftdi_usb_close(&ftdi);
   ftdi_deinit(&ftdi);
 #endif
@@ -408,7 +401,6 @@ IOFtdi::~IOFtdi()
 				      0xaa, 0x55, 0x00, 0xff, 0xaa, 
 				      LOOPBACK_END};
   mpsse_add_cmd(tbuf, 10);
-  mpsse_send();
   read = readusb( tbuf,5);
   if  (read != 5) 
     {
