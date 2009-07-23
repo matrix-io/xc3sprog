@@ -163,7 +163,8 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
   
   // get last page
   res=spi_xfer_user1((rfile.getData())+((page-1)*pgsize),pgsize,4,NULL,0, 0);
-    
+
+  printf("\n");
   return rc;
 }
 
