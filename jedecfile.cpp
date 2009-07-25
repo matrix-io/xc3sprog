@@ -462,7 +462,7 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
 	    fprintf(fp, "L%07d",i);
 	  if (!b)
 	    fprintf(fp, " ");
-	  fprintf(fp, "%c",( jed.fuse_list[i/8] & (1 << (i%8)))?'1':'0');
+	  fprintf(fp, "%c", get_fuse(i));
 	  if (l<9)
 	    {
 	      if(b==7)
@@ -498,7 +498,7 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
 	{
 	  if ((i %64) == 0)
 	    fprintf(fp, "L%07d ",i);
-	  fprintf(fp, "%c",( jed.fuse_list[i/8] & (1 << (i%8)))?'1':'0');
+	  fprintf(fp, "%c", get_fuse(i));
 	  if ((i %64) == 63)
 	    fprintf(fp, "*\n");
 	}
