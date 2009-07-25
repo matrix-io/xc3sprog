@@ -74,17 +74,17 @@ int main(int argc, char**args)
   try {
     BitFile  file;
     file.readFile(args[0]);
-    printf("Created from NCD file: %s\n",file.getNCDFilename());
-    printf("Target device: %s\n",file.getPartName());
-    printf("Created: %s %s\n",file.getDate(),file.getTime());
-    printf("Bitstream length: %lu bits\n", file.getLength());
+    fprintf(stderr, "Created from NCD file: %s\n",file.getNCDFilename());
+    fprintf(stderr, "Target device: %s\n",file.getPartName());
+    fprintf(stderr, "Created: %s %s\n",file.getDate(),file.getTime());
+    fprintf(stderr, "Bitstream length: %lu bits\n", file.getLength());
     
     if(outfile) {
       FILE * fp = fopen(outfile,"wb");
       if (fp)
 	{
 	  file.saveAs(format,file.getPartName(), fp);
-	  printf("Bitstream saved in format %s as file: %s\n",
+	  fprintf(stderr, "Bitstream saved in format %s as file: %s\n",
 		 (format == STYLE_HEX)?"HEX":
 		 (format == STYLE_BIN)?"BIN":
 		 "HEX", outfile);

@@ -46,11 +46,11 @@ IOXPC::IOXPC(int const vendor, int const product, char const *desc, char const *
     throw  io_exception(std::string("xpcu_write_gpio: ") );
   if (xpcu_read_firmware_version(xpcu, buf) < 0)
     throw  io_exception(std::string("xpcu_read_firmware_version: ") );
-  printf("firmware version = 0x%02x%02x (%u)\n", buf[1], buf[0], buf[1]<<8| buf[0]);
+  fprintf(stderr, "firmware version = 0x%02x%02x (%u)\n", buf[1], buf[0], buf[1]<<8| buf[0]);
   
   if (xpcu_read_cpld_version(xpcu, buf) < 0)
     throw  io_exception(std::string("xpcu_read_cpld_version: ") );
-  printf("CPLD version = 0x%02x%02x (%u)\n", buf[1], buf[0], buf[1]<<8| buf[0]);
+  fprintf(stderr, "CPLD version = 0x%02x%02x (%u)\n", buf[1], buf[0], buf[1]<<8| buf[0]);
   if(!buf[1] && !buf[0])
     throw  io_exception(std::string("Warning: version '0' can't be correct. Please try resetting the cable\n"));
   
@@ -89,7 +89,7 @@ int IOXPC::xpcu_output_enable(struct usb_dev_handle *xpcu, int enable)
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, enable ? 0x18 : 0x10, 0, NULL, 0, 1000)<0)
     {
-      printf("usb_control_msg(%x) %s\n", enable, usb_strerror());
+      fprintf(stderr, "usb_control_msg(%x) %s\n", enable, usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -102,7 +102,7 @@ int IOXPC::xpcu_request_28(struct usb_dev_handle *xpcu, int value)
   
   if(usb_control_msg(xpcu, 0x40, 0xB0, 0x0028, value, NULL, 0, 1000)<0)
     {
-      printf("usb_control_msg(0x28 %x) %s\n", value, usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x28 %x) %s\n", value, usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -114,13 +114,13 @@ int IOXPC::xpcu_write_gpio(struct usb_dev_handle *xpcu, unsigned char bits)
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, 0x0030, bits, NULL, 0, 1000)<0)
     {
-      printf("usb_control_msg(0x30.0x%02x) (write port E) %s\n", bits, usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x30.0x%02x) (write port E) %s\n", bits, usb_strerror());
       return -1;
     }
   call_ctrl++; 
   //#define VERBOSE
 #ifdef VERBOSE
-  printf("w%02x ", bits);
+  fprintf(stderr, "w%02x ", bits);
 #endif
   return 0;
 }
@@ -131,12 +131,12 @@ int IOXPC::xpcu_read_gpio(struct usb_dev_handle *xpcu, unsigned char *bits)
 {
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0038, 0, (char*)bits, 1, 1000)<0)
     {
-      printf("usb_control_msg(0x38.0x02x) (read port E)\n", bits, usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x38.0x02x) (read port E)\n", bits, usb_strerror());
       return -1;
     }
   call_ctrl++; 
 #ifdef VERBOSE
-  printf("r%02x ", bits[0]);
+  fprintf(stderr, "r%02x ", bits[0]);
 #endif
   
   return 0;
@@ -149,7 +149,7 @@ int IOXPC::xpcu_read_cpld_version(struct usb_dev_handle *xpcu, unsigned char *bu
 {
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0050, 0x0001, (char*)buf, 2, 1000)<0)
     {
-      printf("usb_control_msg(0x50.1) (read_cpld_version) %s\n", usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x50.1) (read_cpld_version) %s\n", usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -162,7 +162,7 @@ int IOXPC::xpcu_read_firmware_version(struct usb_dev_handle *xpcu, unsigned char
 {
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0050, 0x0000, (char*)buf, 2, 1000)<0)
     {
-      printf("usb_control_msg(0x50.0) (read_firmware_version) %s\n", usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x50.0) (read_firmware_version) %s\n", usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -173,7 +173,7 @@ int IOXPC::xpcu_select_gpio(struct usb_dev_handle *xpcu, int int_or_ext )
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, 0x0052, int_or_ext, NULL, 0, 1000)<0)
     {
-      printf("usb_control_msg(0x52.x) (select gpio) %s\n", usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x52.x) (select gpio) %s\n", usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -225,28 +225,28 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, 
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, reqno, bits, NULL, 0, 1000)<0)
     {
-      printf("usb_control_msg(0x40.0x%02x 0x%02x) (shift) %s\n", reqno, bits, usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x40.0x%02x 0x%02x) (shift) %s\n", reqno, bits, usb_strerror());
       return -1;
     }
   call_ctrl++; 
 #ifdef VERBOSE
   {
     int i;
-    printf("###\n");
-    printf("reqno = %02X\n", reqno);
-    printf("bits    = %d\n", bits);
-    printf("in_len  = %d, in_len*2  = %d\n", in_len, in_len * 2);
-    printf("out_len = %d, out_len*8 = %d\n", out_len, out_len * 8);
+    fprintf(stderr, "###\n");
+    fprintf(stderr, "reqno = %02X\n", reqno);
+    fprintf(stderr, "bits    = %d\n", bits);
+    fprintf(stderr, "in_len  = %d, in_len*2  = %d\n", in_len, in_len * 2);
+    fprintf(stderr, "out_len = %d, out_len*8 = %d\n", out_len, out_len * 8);
     
-    printf("a6_display(\"%02X\", \"", bits);
-    for(i=0;i<in_len;i++) printf("%02X%s", in[i], (i+1<in_len)?",":"");
-    printf("\", ");
+    fprintf(stderr, "a6_display(\"%02X\", \"", bits);
+    for(i=0;i<in_len;i++) fprintf(stderr, "%02X%s", in[i], (i+1<in_len)?",":"");
+    fprintf(stderr, "\", ");
   }
 #endif
   
   if(usb_bulk_write(xpcu, 0x02, (char*)in, in_len, 1000)<0)
     {
-      printf("\nusb_bulk_write error(shift): %s\n", usb_strerror());
+      fprintf(stderr, "\nusb_bulk_write error(shift): %s\n", usb_strerror());
       return -1;
     }
   calls_wr++;
@@ -254,7 +254,7 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, 
     {
       if(usb_bulk_read(xpcu, 0x86, (char*)out, out_len, 1000)<0)
 	{
-	  printf("\nusb_bulk_read error(shift): %s\n", usb_strerror());
+	  fprintf(stderr, "\nusb_bulk_read error(shift): %s\n", usb_strerror());
 	  return -1;
 	}
       calls_rd++;
@@ -263,9 +263,9 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, 
 #ifdef VERBOSE
   {
     int i;
-    printf("\"");
-    for(i=0;i<out_len;i++) printf("%02X%s", out[i], (i+1<out_len)?",":"");
-    printf("\")\n");
+    fprintf(stderr, "\"");
+    for(i=0;i<out_len;i++) fprintf(stderr, "%02X%s", out[i], (i+1<out_len)?",":"");
+    fprintf(stderr, "\")\n");
   }
 #endif
   
@@ -368,12 +368,12 @@ void IOXPC::txrx_block(const unsigned char *in, unsigned char *out, int len, boo
 {
   int i;
 #ifdef VERBOSE
-  printf("---\n");
-  printf("transfer size %d, %s output\n", len, (out!=NULL) ? "with" : "without");
-  printf("tdi: ");
+  fprintf(stderr, "---\n");
+  fprintf(stderr, "transfer size %d, %s output\n", len, (out!=NULL) ? "with" : "without");
+  fprintf(stderr, "tdi: ");
   for(i=0;i<len;i++) 
-    printf("%c", (in)?((in[i>>3] & (1<<i%8))?'1':'0'):'0');
-  printf("%s\n",(last)?"last":"");
+    fprintf(stderr, "%c", (in)?((in[i>>3] & (1<<i%8))?'1':'0'):'0');
+  fprintf(stderr, "%s\n",(last)?"last":"");
 #endif
   
   if (subtype == XPC_INTERNAL)
@@ -446,11 +446,11 @@ void IOXPC::tx_tms(unsigned char *in, int len)
   int i;
 
 #ifdef VERBOSE
-  printf("---\n");
-  printf("transfer size %d\n", len);
-  printf("TMS: ");
-  for(i=0;i<len;i++) printf("%c", (in[i>>3] & 1<<(i%8))?'1':'0');
-  printf("\n");
+  fprintf(stderr, "---\n");
+  fprintf(stderr, "transfer size %d\n", len);
+  fprintf(stderr, "TMS: ");
+  for(i=0;i<len;i++) fprintf(stderr, "%c", (in[i>>3] & 1<<(i%8))?'1':'0');
+  fprintf(stderr, "\n");
 #endif
       
   if (subtype == XPC_INTERNAL)
@@ -571,7 +571,7 @@ bool IOXPC::xpc_close_interface (struct usb_dev_handle *udh)
 {
   // we're assuming that closing an interface automatically releases it.
   if(verbose)
-    printf("USB Read Transactions: %d Write Transactions: %d Control Transaction %d\n", 
+    fprintf(stderr, "USB Read Transactions: %d Write Transactions: %d Control Transaction %d\n", 
 	   calls_rd, calls_wr, call_ctrl);
   return usb_close (udh) == 0;
 }

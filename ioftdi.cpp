@@ -376,7 +376,7 @@ void IOFtdi::deinit(void)
   ftdi_usb_close(&ftdi);
   ftdi_deinit(&ftdi);
 #endif
-  if(verbose)  printf("USB transactions: Write %d read %d retries %d\n", calls_wr, calls_rd, retries);
+  if(verbose)  fprintf(stderr, "USB transactions: Write %d read %d retries %d\n", calls_wr, calls_rd, retries);
 }
   
 IOFtdi::~IOFtdi()

@@ -53,7 +53,7 @@ ProgAlgXC95X::ProgAlgXC95X(Jtag &j, IOBase &i, int s)
      break;
    case 11: DRegLength = 16;
      break;
-   default: printf("Unknown device\n");
+   default: fprintf(stderr, "Unknown device\n");
    }
 }
 
@@ -93,9 +93,9 @@ int ProgAlgXC95X::flow_blank_check()
   if(io->getVerbose())
     {
       if ((o_data[0] & 0x03) == 0x01)
-	printf("Device is blank\n");
+	fprintf(stderr, "Device is blank\n");
       else
-	printf("Device is not blank\n");
+	fprintf(stderr, "Device is not blank\n");
     }
   return ((o_data[0] & 0x03) == 0x01);
   
@@ -109,7 +109,7 @@ void ProgAlgXC95X::flow_erase()
   jtag->Usleep(500000);
   jtag->shiftDR(0,data,18);
   if((data[0]& 0x01) != 0x01)
-    printf("Erase still running %02x\n", data[0]);
+    fprintf(stderr, "Erase still running %02x\n", data[0]);
 }
   
 #define MaxSector 108
@@ -132,7 +132,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
   for(sec=0;sec < MaxSector;sec++)
     {
     if(io->getVerbose())
-      printf("                            \rProgramming Sector %3d", sec);
+      fprintf(stderr, "                            \rProgramming Sector %3d", sec);
       preamble[0]= 0x01;
       for(l=0;l<3;l++){
 	for(m=0;m<5;m++){
@@ -177,7 +177,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
 		  jtag->shiftDR(0,o_data, ((DRegLength+2)*8)+2);
 		  if(io->getVerbose())
 		    {
-		      printf(".");
+		      fprintf(stderr, ".");
 		      fflush(stdout);
 		    }
 		  if ((o_data[0] & 0x03) == 0x01)
@@ -185,7 +185,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
 		}
 	      if (k == 32)
 		{
-		  printf("failed\n");
+		  fprintf(stderr, "failed\n");
 		  return 1;
 		}
 	    }
@@ -194,7 +194,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
     }
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    printf("\nProgramming  time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+    fprintf(stderr, "\nProgramming  time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
   return 0;
 }
 
@@ -216,7 +216,7 @@ void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
     {
       if(io->getVerbose())
 	{
-	  printf("\rReading Sector %3d", sec);
+	  fprintf(stderr, "\rReading Sector %3d", sec);
 	  fflush(stdout);
 	}
       for(l=0;l<3;l++){
@@ -264,7 +264,7 @@ void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
   
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    printf("\nReadback time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+    fprintf(stderr, "\nReadback time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
 }
 
 int ProgAlgXC95X::flow_array_verify(JedecFile &file)
@@ -285,7 +285,7 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
     {
       if(io->getVerbose())
 	{
-	  printf("\rVerify Sector %3d", sec);
+	  fprintf(stderr, "\rVerify Sector %3d", sec);
 	  fflush(stdout);
 	}
       for(l=0;l<3;l++){
@@ -307,7 +307,7 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
 		      if ((data& 0x01) != file.get_fuse(idx++))
 			{
 			  idx--;
-			  printf("\nMismatch at fuse %6d: %d vs %d\n",
+			  fprintf(stderr, "\nMismatch at fuse %6d: %d vs %d\n",
 				 idx, data& 0x01, file.get_fuse(idx));
 			  return 1;
 			}
@@ -335,7 +335,7 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
 	if ((data& 0x01) != file.get_fuse(idx++))
 	  {
 	    idx--;
-	    printf("\nMismatch at security fuse %6d: %c vs %c\n",
+	    fprintf(stderr, "\nMismatch at security fuse %6d: %c vs %c\n",
 		   idx, data& 0x01, file.get_fuse(idx));
 	    return 1;
 	  }
@@ -345,7 +345,7 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
   
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    printf("\nSuccess! Verify time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+    fprintf(stderr, "\nSuccess! Verify time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
   return 0;
 }	    
 

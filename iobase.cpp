@@ -344,7 +344,7 @@ void IOBase::cycleTCK(int n, bool tdi)
   flush_tms();
  if(current_state==TEST_LOGIC_RESET)
   {
-      printf("cycleTCK in TEST_LOGIC_RESET\n");
+      fprintf(stderr, "cycleTCK in TEST_LOGIC_RESET\n");
      for(int i=0; i<n; i++)
          shift(tdi, 1, true);
   }

@@ -134,10 +134,10 @@ int main(int argc, char **args)
     }
 args_done:
   // Get rid of options
-  //printf("argc: %d\n", argc);
+  //fprintf(stderr, "argc: %d\n", argc);
   argc -= optind;
   args += optind;
-  //printf("argc: %d\n", argc);
+  //fprintf(stderr, "argc: %d\n", argc);
   if(argc != 0)  usage();
 
   std::auto_ptr<IOBase>  io;

@@ -427,7 +427,7 @@ IOParport::~IOParport()
 #elif defined(__WIN32__)
   CloseHandle((HANDLE)(fd));
 #endif
-  if (verbose) printf("Total bytes sent: %d\n", total>>3);
+  if (verbose) fprintf(stderr, "Total bytes sent: %d\n", total>>3);
 }
 #define XC3S_OK 0
 #define XC3S_EIO 1

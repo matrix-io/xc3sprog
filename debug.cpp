@@ -51,7 +51,7 @@ void testDebug()
   unsigned char tdo[10];
   io.setTapState(IOBase::SHIFT_DR);
   io.shiftTDITDO(tdi,tdo,16,false);
-  for(int i=0; i<2; i++)printf("TDO %02x\n",tdo[i]);
+  for(int i=0; i<2; i++)fprintf(stderr, "TDO %02x\n",tdo[i]);
 }
 
 void testPP()
@@ -62,16 +62,16 @@ void testPP()
   unsigned char tdo[100];
   io.setTapState(IOBase::SHIFT_DR);
   io.shiftTDITDO(tdi,tdo,64);
-  for(int i=0; i<8; i++)printf("TDO %02x\n",tdo[i]);
-  printf("\n");
+  for(int i=0; i<8; i++)fprintf(stderr, "TDO %02x\n",tdo[i]);
+  fprintf(stderr, "\n");
   getSwitches(&io);
   getID(&io);
 }
 
 void printBit1(bool val)
 {
-  if(val)printf("|=| ");
-  else printf("| | ");
+  if(val)fprintf(stderr, "|=| ");
+  else fprintf(stderr, "| | ");
 }
 
 void getID(IOBase *io)
@@ -83,8 +83,8 @@ void getID(IOBase *io)
   io->setTapState(IOBase::RUN_TEST_IDLE);
   io->setTapState(IOBase::SHIFT_DR);
   io->shiftTDO(tdo,64);
-  for(int i=0; i<8; i++)printf("TDO %02x\n",tdo[i]);
-  printf("\n");
+  for(int i=0; i<8; i++)fprintf(stderr, "TDO %02x\n",tdo[i]);
+  fprintf(stderr, "\n");
 }
 
 void getSwitches(IOBase *io)
@@ -101,18 +101,18 @@ void getSwitches(IOBase *io)
     bool val=(tdo[bit/8]>>(bit%8))&1;
     printBit1(val);
   }
-  printf("\n");
+  fprintf(stderr, "\n");
   for(int i=0; i<8; i++){
     int bit=swi[i];
     bool val=(tdo[bit/8]>>(bit%8))&1;
     printBit1(!val);
   }
-  printf("\n\n");
+  fprintf(stderr, "\n\n");
 }
 
 void printBit(unsigned char *data, int bit)
 {
-  printf("bit %d = %d\n",bit,(data[bit/8]>>(bit%8))&1);
+  fprintf(stderr, "bit %d = %d\n",bit,(data[bit/8]>>(bit%8))&1);
 }
 
 

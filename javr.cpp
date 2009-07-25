@@ -23,8 +23,8 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	break;
       }
   
-  printf("%s, Rev %c with",gDeviceData.name,((id>>28) & 0xf)+'A'); 
-  printf(" %ldK Flash, %u Bytes EEPROM and %u Bytes RAM\r\n",gDeviceData.flash/1024,
+  fprintf(stderr, "%s, Rev %c with",gDeviceData.name,((id>>28) & 0xf)+'A'); 
+  fprintf(stderr, " %ldK Flash, %u Bytes EEPROM and %u Bytes RAM\r\n",gDeviceData.flash/1024,
 	 gDeviceData.eeprom, gDeviceData.ram);
   
   ProgAlgAVR alg (jtag, gDeviceData.fp_size);
@@ -39,7 +39,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
     {
       byte fuses[4];
       alg.read_fuses(fuses);
-      printf("Extended Fuse Byte: 0x%02x High Fuse Byte: 0x%02x  Low Fuse Byte: 0x%02x LOCK Byte 0x%02x\n",
+      fprintf(stderr, "Extended Fuse Byte: 0x%02x High Fuse Byte: 0x%02x  Low Fuse Byte: 0x%02x LOCK Byte 0x%02x\n",
 	     fuses[FUSE_EXT], fuses[FUSE_HIGH],
 	     fuses[FUSE_LOW], fuses[FUSE_LOCK]);
 
@@ -50,7 +50,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 
       if (file.getLength() == 0)
 	{
-	  printf("%s or %s.rom not found or no valid SREC File\n", flashfile, flashfile);
+	  fprintf(stderr, "%s or %s.rom not found or no valid SREC File\n", flashfile, flashfile);
 	  goto bailout;
 	}
       if (verify)
@@ -71,31 +71,31 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	      match = memcmp(buffer, file.getData()+i, to_read);
 	      if (match !=0)
 		{
-		  printf("\n");
+		  fprintf(stderr, "\n");
 		  for (j = 0; j< to_read; j +=32)
 		    {
 		      match = memcmp(buffer+j, file.getData()+i+j, 32);
 		      if (match !=0)
 			{
-			  printf("Mismatch at chunk at address: 0x%08x\n", i+j);
-			  printf("Device: ");
+			  fprintf(stderr, "Mismatch at chunk at address: 0x%08x\n", i+j);
+			  fprintf(stderr, "Device: ");
 			  for(k =0; k<32; k++)
-			    printf("%02x ", buffer[j+k]);
-			  printf("\nFile  : ");
+			    fprintf(stderr, "%02x ", buffer[j+k]);
+			  fprintf(stderr, "\nFile  : ");
 			  for(k =0; k<32; k++)
-			    printf("%02x ", file.getData()[i+j +k ]);
-			  printf("\n      : ");
+			    fprintf(stderr, "%02x ", file.getData()[i+j +k ]);
+			  fprintf(stderr, "\n      : ");
 			  for(k =0; k<32; k++)
 			    {
 			      if(buffer[j+k] != file.getData()[i+j+k])
 				{
-				  printf("^^^");
+				  fprintf(stderr, "^^^");
 				  count++;
 				}
 			      else
-				printf("   ");
+				fprintf(stderr, "   ");
 			    }
-			  printf("\n");
+			  fprintf(stderr, "\n");
 			}
 		    }
 		}
@@ -104,25 +104,25 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	    }
 	  if(count)
 	    {
-	      printf("Chip Verify failed\n");
+	      fprintf(stderr, "Chip Verify failed\n");
 	      goto bailout;
 	    }
 	  else
-	    printf("\tSuccess \n");
+	    fprintf(stderr, "\tSuccess \n");
 	}
       else
 	{
 	  unsigned int i;
 	  if (alg.erase())
 	    {
-	      printf("Chip Erase failed\n");
+	      fprintf(stderr, "Chip Erase failed\n");
 	      goto bailout;
 	    }
 	  else
-	     printf("Chip Erase success\n");
+	     fprintf(stderr, "Chip Erase success\n");
 	  if (file.getStart() & gDeviceData.fp_size)
 	    {
-	      printf(" File doesn't start at Page Border, aborting\n");
+	      fprintf(stderr, " File doesn't start at Page Border, aborting\n");
 	      goto bailout;
 	    }
 	  for (i= file.getStart(); i < file.getLength()-gDeviceData.fp_size; i += gDeviceData.fp_size)
@@ -130,7 +130,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	      fprintf(stdout, "\rWriting page %4d/%4d", i/gDeviceData.fp_size, file.getLength()/gDeviceData.fp_size);
 	      if (alg.pagewrite_flash(i, file.getData()+i, gDeviceData.fp_size))
 		{
-		  printf("\nError writing page %d\n", i/gDeviceData.fp_size);
+		  fprintf(stderr, "\nError writing page %d\n", i/gDeviceData.fp_size);
 		  goto bailout;
 		}
 	      fflush(stdout);
@@ -144,7 +144,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	      memset(buffer + (file.getLength() -i), FILL_BYTE, gDeviceData.fp_size- (file.getLength() -i));
 	      if (alg.pagewrite_flash(i, buffer, gDeviceData.fp_size))
 		{
-		  printf("\nError writing page %d\n", i/gDeviceData.fp_size);
+		  fprintf(stderr, "\nError writing page %d\n", i/gDeviceData.fp_size);
 		  goto bailout;
 		}
 	      else
@@ -153,7 +153,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 		  fflush(stdout);
 		}
 	    }
-	  printf("         done.\nBytes from 0x%05x to 0x%05x filled with 0x%02x\n", 
+	  fprintf(stderr, "         done.\nBytes from 0x%05x to 0x%05x filled with 0x%02x\n", 
 		 file.getEnd(), i+gDeviceData.fp_size -1, FILL_BYTE);
 	  
 	}

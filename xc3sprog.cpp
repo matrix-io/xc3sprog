@@ -74,28 +74,28 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
   
   if(test_count == 0)
     test_count = INT_MAX;
-  printf("Running %d  times\n", test_count);
+  fprintf(stderr, "Running %d  times\n", test_count);
   /* exercise the chain */
   for(i=0; i<num; i++)
     {
       len += db.loadDevice(jtag.getDeviceID(i));
     }
-  printf("IR len = %d\n", len);
+  fprintf(stderr, "IR len = %d\n", len);
   io.setTapState(IOBase::TEST_LOGIC_RESET);
   io.setTapState(IOBase::SHIFT_IR);
   io.shiftTDITDO(din,dout,len,true);
   for(i=0; i <len>>3;  i++)
-    printf("%02x", dout[i]);
-  printf(" ");
+    fprintf(stderr, "%02x", dout[i]);
+  fprintf(stderr, " ");
   k=len-1;
   for(i = 0; i<num; i++)
     {
       for(j=0; j<db.getIRLength(i); j++)
 	{
-	  printf("%c", (((dout[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
+	  fprintf(stderr, "%c", (((dout[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
 	  k--;
 	}
-      printf(" ");
+      fprintf(stderr, " ");
     }
   fflush(stdout);
   for(i=0; i<test_count; i++)
@@ -105,29 +105,29 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
       io.shiftTDITDO(din,dcmp,len,true);
       if (memcmp(dout, dcmp, (len+1)>>3) !=0)
 	{
-	  printf("mismatch run %d\n", i);
+	  fprintf(stderr, "mismatch run %d\n", i);
 	  for(j=0; j <len>>3;  j++)
-	    printf("%02x", dcmp[j]);
-	  printf(" ");
+	    fprintf(stderr, "%02x", dcmp[j]);
+	  fprintf(stderr, " ");
 	  k=len-1;
 	  for(i = 0; i<num; i++)
 	    {
 	      for(j=0; j<db.getIRLength(i); j++)
 		{
-		  printf("%c", (((dcmp[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
+		  fprintf(stderr, "%c", (((dcmp[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
 		  k--;
 		}
-	      printf(" ");
+	      fprintf(stderr, " ");
 	    }
 	}
       fflush(stdout);
       if(i%1000 == 999)
 	{
-	  printf(".");
+	  fprintf(stderr, ".");
 	  fflush(stdout);
 	}
     }
-  printf("\n");
+  fprintf(stderr, "\n");
 }
 
 unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
@@ -161,7 +161,7 @@ unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
   id = jtag.getDeviceID(chainpos);
   if (verbose)
   {
-    printf("JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\nProgramming: ", chainpos,id, dd);
+    fprintf(stderr, "JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\nProgramming: ", chainpos,id, dd);
     fflush(stdout);
   }
   return id;
@@ -238,7 +238,7 @@ int main(int argc, char **args)
   FILE *fp =0;
   
   // Produce release info from CVS tags
-  printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests!\nCheck Sourceforge SVN!\n");
+  fprintf(stderr, "Release $Rev$\nPlease provide feedback on success/failure/enhancement requests!\nCheck Sourceforge SVN!\n");
 
   // Start from parsing command line arguments
   while(true) {
@@ -415,14 +415,14 @@ int main(int argc, char **args)
       fp=fopen(args[0],"rb");
       if(fp)
 	{
-	  printf("File %s already exists. Aborting\n", args[0]);
+	  fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
 	  fclose(fp);
 	  return 1;
 	}
       fp=fopen(args[0],"wb");
       if(!fp)
 	{
-	  printf("Unable to open File %s. Aborting\n", args[0]);
+	  fprintf(stderr, "Unable to open File %s. Aborting\n", args[0]);
 	  return 1;
 	}
       
@@ -448,10 +448,10 @@ int main(int argc, char **args)
 		  file.readFile(args[0]);
 		  if(verbose) 
 		    {
-		      printf("Created from NCD file: %s\n",file.getNCDFilename());
-		      printf("Target device: %s\n",file.getPartName());
-		      printf("Created: %s %s\n",file.getDate(),file.getTime());
-		      printf("Bitstream length: %lu bits\n", file.getLength());
+		      fprintf(stderr, "Created from NCD file: %s\n",file.getNCDFilename());
+		      fprintf(stderr, "Target device: %s\n",file.getPartName());
+		      fprintf(stderr, "Created: %s %s\n",file.getDate(),file.getTime());
+		      fprintf(stderr, "Bitstream length: %lu bits\n", file.getLength());
 		    }      
 		  if (family == 0x28)
 		    {
@@ -504,18 +504,18 @@ int main(int argc, char **args)
 	    {
 	      if (file.readFile(args[0]))
 		{
-		  printf("Probably no JEDEC File, aborting\n");
+		  fprintf(stderr, "Probably no JEDEC File, aborting\n");
 		  return 2;
 		}
 		  
 	      if (file.getLength() == 0)
 		{
-		  printf("Short JEDEC File, aborting\n");
+		  fprintf(stderr, "Short JEDEC File, aborting\n");
 		  return 3;
 		}
 	      if(strncmp(db.getDeviceDescription(chainpos), file.getDevice(), sizeof(db.getDeviceDescription(chainpos))) !=0)
 		{
-		  printf("Incompatible Jedec File for Device %s\n"
+		  fprintf(stderr, "Incompatible Jedec File for Device %s\n"
 			 "Actual device in Chain is %s\n", 
 			 file.getDevice(), db.getDeviceDescription(chainpos));
 		  return 4;
@@ -533,12 +533,12 @@ int main(int argc, char **args)
               file.readFile(args[0]);
               if (file.getLength() == 0)
                 {
-                  printf("Probably no Bitfile, aborting\n");
+                  fprintf(stderr, "Probably no Bitfile, aborting\n");
                   return 2;
                 }
               if(strncmp(db.getDeviceDescription(chainpos), file.getPartName(), sizeof("XC2CXX")) !=0)
                 {
-                  printf("Incompatible Bin File for Device %s\n"
+                  fprintf(stderr, "Incompatible Bin File for Device %s\n"
                          "Actual device in Chain is %s\n", 
                          file.getPartName(), db.getDeviceDescription(chainpos));
                   return 3;
@@ -563,7 +563,7 @@ int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
 
   if(verify)
     {
-      printf("Sorry, FPGA can't be verified (yet)\n");
+      fprintf(stderr, "Sorry, FPGA can't be verified (yet)\n");
       return 1;
     }
   ProgAlgXC3S alg(jtag,io, family);
@@ -626,7 +626,7 @@ int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp, cons
     {
       if (!alg.erase())
 	{
-	  printf("Erase failed\n");
+	  fprintf(stderr, "Erase failed\n");
 	  return 1;
 	}
       alg.array_program(file);
@@ -647,14 +647,14 @@ int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_
       alg.erase();
       if (alg.blank_check())
 	{
-	  printf("Erase failed\n");
+	  fprintf(stderr, "Erase failed\n");
 	  return 1;
 	}
       alg.array_program(file);
     }
   if(alg.array_verify(file))
     {
-      printf("Verify failed\n");
+      fprintf(stderr, "Verify failed\n");
       return 1;
     }
   if(!verify)
