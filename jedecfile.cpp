@@ -396,7 +396,7 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
 {
   unsigned int i, b=0, l=0 ,w=0;
   unsigned short chksum=0;
-  int DRegLength;
+  unsigned int DRegLength;
   int type=-1;
 
   if (!fp)
@@ -500,9 +500,9 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
 	    fprintf(fp, "L%07d ",i);
 	  fprintf(fp, "%c",( jed.fuse_list[i/8] & (1 << (i%8)))?'1':'0');
 	  if ((i %64) == 63)
-	    fprintf(fp, "*\n",i);
+	    fprintf(fp, "*\n");
 	}
-       fprintf(fp, "*\n",i);
+       fprintf(fp, "*\n");
     }
 
    for(i=0; i<(jed.fuse_count/8 + ((jed.fuse_count%8)?1:0)); i++)
@@ -514,16 +514,17 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
 
 void JedecFile::setLength(unsigned int f_count)
 {
+  fprintf(stderr," setLength %d\n", f_count);
   if(f_count > jed.fuse_count)
     {
       if (jed.fuse_list)
 	free(jed.fuse_list);
       jed.fuse_list = new byte[f_count/8 + ((f_count%8)?1:0)];
-      memset(jed.fuse_list, 0, f_count/8 + ((f_count%8)?1:0));
+      memset(jed.fuse_list, 0xff, f_count/8 + ((f_count%8)?1:0));
     }
   else
     {
-      for (int i = f_count; i < jed.fuse_count; i++)
+      for (unsigned int i = f_count; i < jed.fuse_count; i++)
 	set_fuse(i, 0);
     }
   jed.fuse_count = f_count;
@@ -541,7 +542,7 @@ int JedecFile::get_fuse(unsigned int idx)
 
 unsigned short JedecFile::calcChecksum()
 {
-  int i;
+  unsigned int i;
   unsigned short cc=0;
   
   for(i=0; i<(jed.fuse_count/8 + ((jed.fuse_count%8)?1:0)); i++)
