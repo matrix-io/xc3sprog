@@ -550,10 +550,10 @@ int main(int argc, char **args)
               file.readFile(args[0]);
               if (file.getLength() == 0)
                 {
-                  printf("Probably no JEDEC File, aborting\n");
+                  printf("Probably no Bitfile, aborting\n");
                   return 2;
                 }
-              if(strncmp(db.getDeviceDescription(chainpos), file.getPartName(), sizeof(db.getDeviceDescription(chainpos))) !=0)
+              if(strncmp(db.getDeviceDescription(chainpos), file.getPartName(), sizeof("XC2CXX")) !=0)
                 {
                   printf("Incompatible Bin File for Device %s\n"
                          "Actual device in Chain is %s\n", 
@@ -661,12 +661,20 @@ int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_
     }
   if (!verify)
     {
-      if (!alg.erase())
-        {
-          printf("Erase failed\n");
-          return 1;
-        }
+      alg.erase();
+      if (alg.blank_check())
+	{
+	  printf("Erase failed\n");
+	  return 1;
+	}
       alg.array_program(file);
     }
-  return alg.array_verify(file);
+  if(alg.array_verify(file))
+    {
+      printf("Verify failed\n");
+      return 1;
+    }
+  if(!verify)
+    alg.done_program();
+	     
 }
