@@ -259,7 +259,6 @@ int ProgAlgXCF::read(BitFile &file)
   for(unsigned int i=0; i<file.getLength(); i+=block_size)
     {
       int frame=i/(block_size/32);
-      int res;
 
       if(io->getVerbose())
 	{

@@ -73,14 +73,27 @@ int main(int argc, char**args)
     usage();
   try {
     BitFile  file;
-    file.readFile(args[0]);
+    FILE* fp;
+    if (*args[0] == '-')
+      fp = stdin;
+    else
+      {
+	fp=fopen(args[0],"rb");
+	if(!fp)
+	  {
+	    fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
+		    strerror(errno));
+	  return 1;
+	  }
+      }
+    file.readFile(fp);
     fprintf(stderr, "Created from NCD file: %s\n",file.getNCDFilename());
     fprintf(stderr, "Target device: %s\n",file.getPartName());
     fprintf(stderr, "Created: %s %s\n",file.getDate(),file.getTime());
     fprintf(stderr, "Bitstream length: %lu bits\n", file.getLength());
     
     if(outfile) {
-      FILE * fp = fopen(outfile,"wb");
+      fp = fopen(outfile,"wb");
       if (fp)
 	{
 	  file.saveAs(format,file.getPartName(), fp);

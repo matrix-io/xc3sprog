@@ -101,7 +101,7 @@ class BitFile
  public:
   void append(unsigned long  val, unsigned cnt);
   void append(char const *file);
-  int readFile(char const *fname);
+  int readFile(FILE *fp);
   
  public:
   inline byte *getData(){return buffer;}

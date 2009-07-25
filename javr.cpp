@@ -5,7 +5,7 @@
 int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock, 
 	const char * eepromfile, const char * fusefile)
 {
-  bool menu = (!flashfile && !eepromfile && !fusefile);
+  /*bool menu = (!flashfile && !eepromfile && !fusefile);*/
   unsigned short partnum = (id>>12) & 0xffff;
   int i;
   AVR_Data gDeviceData;
@@ -60,7 +60,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	{
 	  byte buffer[gDeviceData.fp_size];
 	  int count = 0;
-	  int i, j, k, match;
+	  unsigned int i, j, k, match;
 	  for (i = file.getStart(); i < file.getEnd() ; i+= gDeviceData.fp_size)
 	    {
 	      unsigned int to_read;
@@ -145,7 +145,6 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	  /* eventual last page is not full. Fill it up with FILL_BYTE)*/
 	  if (i != file.getLength())
 	    {
-	      unsigned int j;
 	      byte *buffer = new byte[gDeviceData.fp_size];
 	      memcpy(buffer, file.getData()+i,file.getLength() -i); 
 	      memset(buffer + (file.getLength() -i), FILL_BYTE,

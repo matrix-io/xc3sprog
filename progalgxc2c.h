@@ -55,9 +55,6 @@ class ProgAlgXC2C
   void flow_reinit();
   void flow_error_exit(){};
   void flow_array_read(BitFile &file){};
-  int flow_array_program(BitFile &file){};
-  int flow_array_verify(BitFile &file){};
-  int flow_blank_check(){};
   void flow_erase(){};
   void flow_enable_highz();
  public:

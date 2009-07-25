@@ -264,7 +264,6 @@ int WriteFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *src)
   unsigned char *ptr,tmp1,mask,high,low;
   char * cptr;
   unsigned int i;
-  struct timeval actualtime, endtime;
 
   //printf("WriteFlashPage pagenum 0x%8x pagesize 0x%04x\n", pagenumber, pagesize);
   ptr=gPageBuffer;
@@ -345,7 +344,7 @@ int WriteFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *src)
     }
   if(i >=  T_WLRH_CE+999)
     {
-      fprintf(stderr,"\nWriting page %4d failed! Aborting\n, ");
+      fprintf(stderr,"\nWriting page %4d failed! Aborting\n", i);
       return 0;
     }
   return(1);  /* Page succesfully written */

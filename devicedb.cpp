@@ -37,7 +37,6 @@ Dmitry Teytelman [dimtey@gmail.com] 19 May 2006 [applied 13 Aug 2006]:
 using namespace std;
 
 DeviceDB::DeviceDB(const char *fname) {
-  int i;
   device_t id;
   char text[256];
   int irlen;

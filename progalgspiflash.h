@@ -35,7 +35,7 @@ class ProgAlgSPIFlash
   int spi_flashinfo(int *size, int *pages);
  public:
   ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i);
-  int erase(){};
+  int erase(){return 0;};
   int program(BitFile &file);
   int verify(BitFile &file);
   int read(BitFile &file);

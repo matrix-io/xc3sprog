@@ -72,7 +72,20 @@ int main(int argc, char**args)
   MapFile_XC2C map;
   JedecFile  fuses;
   BitFile bits;
-  if (fuses.readFile(args[0]) == 0)
+  if (*args[0] == '-')
+    fp = stdin;
+  else
+    {
+      fp=fopen(args[0],"rb");
+      if(!fp)
+	{
+	  fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
+		  strerror(errno));
+	  return 1;
+	}
+    }
+  
+  if (fuses.readFile(fp) == 0)
     {
       if (verbose)
 	fprintf(stderr,"Jedecfile %s for %s: %d Fuses, Checksum: 0x%04x\n", 
@@ -80,18 +93,35 @@ int main(int argc, char**args)
 		fuses.getChecksum());
       strncpy(device, fuses.getDevice(), 255);
     }
-  else if (bits.readFile(args[0]) == 0 )
-    {
-      if (verbose)
-	fprintf(stderr,"Got Bitfile for Device %s: %d Fuses\n", 
-		bits.getPartName(), bits.getLength());
-      revert = true;
-      strncpy(device, bits.getPartName(), 255);
-    }
   else
     {
-      fprintf(stderr, "File %s not recognized as Bit- or Jedecfile\n",args[0]);
-      return 3;
+      if (*args[0] == '-')
+	fp = stdin;
+      else
+	{
+	  fp=fopen(args[0],"rb");
+	  if(!fp)
+	    {
+	      fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
+		  strerror(errno));
+	      return 1;
+	    }
+	}
+      if (bits.readFile(fp) == 0 )
+	{
+	  if (verbose)
+	    fprintf(stderr,"Got Bitfile for Device %s: %ld Fuses\n", 
+		    bits.getPartName(), bits.getLength());
+	  revert = true;
+	  strncpy(device, bits.getPartName(), 255);
+	}
+      
+      else
+	{
+	  fprintf(stderr, "File %s not recognized as Bit- or Jedecfile\n",
+		  args[0]);
+	  return 3;
+	}
     }
   if (map.loadmapfile(mapdir, device))
     {

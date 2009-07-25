@@ -291,7 +291,7 @@ void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer,
 
   jtag->shiftIR(&PROG_PAGEREAD);
 
-  for(int i = 0; i<size; i++)
+  for(unsigned int i = 0; i<size; i++)
     {
       jtag->shiftDR(buffer+i, buffer+i, 8, 0, 1);
     }
@@ -311,7 +311,7 @@ int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer,
   if(address & (fp_size -1)) 
     fprintf(stderr, "Unalied write access to address 0x%08x\n", address);
   if(size != fp_size)
-    fprintf(stderr, "Size is too small for a full page\n", address);
+    fprintf(stderr, "Size is too small for a full page\n");
 
   Prog_enable(true);
   
@@ -337,7 +337,7 @@ int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer,
 
   jtag->shiftIR(&PROG_PAGELOAD);
 
-  for(int i = 0; i<size; i++)
+  for(unsigned int i = 0; i<size; i++)
     {
       jtag->shiftDR(buffer+i, 0, 8);
     }

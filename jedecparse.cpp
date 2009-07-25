@@ -40,8 +40,22 @@ int main(int argc, char**args)
       try 
 	{
 	  JedecFile  file;
-	  file.readFile(args[1]);
-	  FILE *fp = NULL;
+	  FILE *fp;
+	  if (*args[0] == '-')
+	    fp = stdin;
+	  else
+	    {
+	      fp=fopen(args[0],"rb");
+	      if(!fp)
+		{
+		  fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
+			  strerror(errno));
+		  return 1;
+		}
+	    }
+	    
+	  file.readFile(fp);
+	  fp = NULL;
 	  if(args[2])
 	    {
 	      fp = fopen(args[2], "wb");

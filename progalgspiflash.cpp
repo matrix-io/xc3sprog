@@ -125,6 +125,7 @@ int ProgAlgSPIFlash::xc_user(byte *in, byte *out, int len)
 {
   jtag->shiftIR(&USER1);
   jtag->shiftDR(in, out, len);
+  return 0;
 }
 
 int ProgAlgSPIFlash::read(BitFile &rfile) 
@@ -173,7 +174,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
 
 int ProgAlgSPIFlash::verify(BitFile &vfile) 
 {
-  int page, res,rc=0, k=0;
+  unsigned int page, res,rc=0, k=0;
   byte *data = new byte[pgsize];
   byte buf[4];
         
