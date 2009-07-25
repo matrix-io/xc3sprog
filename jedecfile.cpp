@@ -88,8 +88,8 @@ static void m_N(int ch, struct state_mach*m);
 int m_N_item;
 int m_N_pos;
 int m_H_pos = 0;
-char m_H_string[256];
-char m_N_strings[8][256];
+char m_H_string[MAX_SIZE];
+char m_N_strings[MAX_ITEM][MAX_SIZE];
 
 static void m_startup(int ch, struct state_mach*m)
 {
@@ -260,14 +260,15 @@ static void m_N(int ch, struct state_mach*m)
       case ' ':
 	if(m_N_item >=0)
 	  m_N_strings[m_N_item][m_N_pos] = 0;
-	m_N_item++;
+	if (m_N_item < MAX_ITEM) /* Don't stumble on too many items like in ISE XC2C Jedecfiles */
+	  m_N_item++;
 	m_N_pos = 0;
       case '\n':
       case '\r':
 	  break;
 	  
       default:
-	if((m_N_item >=0) && (m_N_item <8) && (m_N_pos <255))
+	if((m_N_item >=0) && (m_N_item <MAX_ITEM) && (m_N_pos < MAX_SIZE-1))
 	  m_N_strings[m_N_item][m_N_pos] = ch;
 	m_N_pos++;
 	break;
@@ -514,7 +515,6 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
 
 void JedecFile::setLength(unsigned int f_count)
 {
-  fprintf(stderr," setLength %d\n", f_count);
   if(f_count > jed.fuse_count)
     {
       if (jed.fuse_list)
