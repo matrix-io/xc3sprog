@@ -41,14 +41,14 @@ int main(int argc, char**args)
 	{
 	  JedecFile  file;
 	  FILE *fp;
-	  if (*args[0] == '-')
+	  if (*args[1] == '-')
 	    fp = stdin;
 	  else
 	    {
-	      fp=fopen(args[0],"rb");
+	      fp=fopen(args[1],"rb");
 	      if(!fp)
 		{
-		  fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
+		  fprintf(stderr, "Can't open datafile %s: %s\n", args[1], 
 			  strerror(errno));
 		  return 1;
 		}
@@ -58,6 +58,8 @@ int main(int argc, char**args)
 	  fp = NULL;
 	  if(args[2])
 	    {
+	      if (*args[2] == '-')
+		fp = stdout;
 	      fp = fopen(args[2], "wb");
 	      if (!fp)
 		fprintf(stderr," Can't open %s: %s  \n", args[2], 
