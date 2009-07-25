@@ -150,10 +150,11 @@ int MapFile_XC2C::loadmapfile(const char *mapdir, const char *device)
   if (fp == NULL)
     return 1;
 
-  map = (int *) malloc(block_size * block_num * sizeof(unsigned int));
+  /* there are twoo extra rows for security/done and usercode bits*/
+  map = (int *) malloc(block_size * (block_num + 2) * sizeof(unsigned int));
   if (map == NULL)
     return 2;
-  memset(map, 0, block_size * block_num * sizeof(unsigned int));
+  memset(map, 0, block_size * (block_num + 2)* sizeof(unsigned int));
   readmap(fp);
   fclose(fp);
   return 0;
