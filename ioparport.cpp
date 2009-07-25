@@ -440,7 +440,7 @@ int IOParport::write_data(int fd, unsigned char data)
     status = ioctl(fd, PPWDATA, &data);
     return  status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__FreeBSD__)
-    status = ioctl(port->fd, PPISDATA, &data);
+    status = ioctl(fd, PPISDATA, &data);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined(__WIN32__)
     DWORD dummy;
@@ -460,7 +460,7 @@ int IOParport::write_control(int fd, unsigned char control)
     status = ioctl(fd, PPWCONTROL, &control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__FreeBSD__)
-    status = ioctl(port->fd, PPISCTRL, &control);
+    status = ioctl(fd, PPISCTRL, &control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined(__WIN32__)
     DWORD dummyc;
@@ -481,7 +481,7 @@ int IOParport::read_control(int fd, unsigned char *control)
     status = ioctl(fd, PPRCONTROL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__FreeBSD__)
-    status = ioctl(port->fd, PPIGCTRL, control);
+    status = ioctl(fd, PPIGCTRL, control);
     return status == 0 ? XC3S_OK : -XC3S_EIO;
 #elif defined (__WIN32__)
     char ret;
