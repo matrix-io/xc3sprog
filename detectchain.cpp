@@ -59,10 +59,10 @@ void usage(void)
 	  "   \t\t[-t subtype]\n"
 	  "   \t\t\t(NONE\t\t(0x0403:0x0610) or\n"
 	  "   \t\t\t IKDA\t\t(0x0403:0x0610, EN_N on ACBUS2) or\n"
-	  "   \t\t\t OLIMEX\t\t(0x15b1:0x0003, JTAG_EN_N on ADBUS4, LED on ACBUS3))\n"
-	  "   \t\t\t AMONTEC\t(0x0403:0xcff8, JTAG_EN_N on ADBUS4)\n"
+	  "   \t\t\t OLIMEX\t\t(0x15b1:0x0003, EN on ADBUS4, LED on ACBUS3))\n"
+	  "   \t\t\t AMONTEC\t(0x0403:0xcff8, EN on ADBUS4)\n"
 	  "   \tOptional xpc arguments:\n"
-	  "   \t\t[-t subtype] (NONE or INT  (Internal Chain on XPC, doesn't work for now on DLC10))\n");
+	  "   \t\t[-t subtype] (NONE or INT (Internal Chain, not on DLC10))\n");
   exit(255);
 }
 

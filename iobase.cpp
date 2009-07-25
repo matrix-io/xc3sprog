@@ -52,7 +52,8 @@ void IOBase::flush_tms(void)
   tms_len = 0;
 }
     
-void IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
+void IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo,
+			 int length, bool last)
 {
   if(length==0) return;
   flush_tms();

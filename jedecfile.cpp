@@ -228,7 +228,8 @@ static void m_Lfuse(int ch, struct state_mach*m)
             break;
 
           default:
-	    fprintf(stderr, "m_LFuse: Dangling '%c' 0x%02x\n", ch, ch);fflush(stdout);
+	    fprintf(stderr, "m_LFuse: Dangling '%c' 0x%02x\n", ch, ch);
+	    fflush(stdout);
             m->state = 0;
             break;
       }
@@ -260,8 +261,11 @@ static void m_N(int ch, struct state_mach*m)
       case ' ':
 	if(m_N_item >=0)
 	  m_N_strings[m_N_item][m_N_pos] = 0;
-	if (m_N_item < MAX_ITEM) /* Don't stumble on too many items like in ISE XC2C Jedecfiles */
-	  m_N_item++;
+	if (m_N_item < MAX_ITEM)
+	  {
+	    /* Don't stumble on too many items like in ISE XC2C Jedecfiles */
+	    m_N_item++;
+	  }
 	m_N_pos = 0;
       case '\n':
       case '\r':

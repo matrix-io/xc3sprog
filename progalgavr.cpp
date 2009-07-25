@@ -259,7 +259,8 @@ int ProgAlgAVR::write_fuses(byte * fuses)
   return 0;
 }
 
-void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer, unsigned int size)
+void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer,
+				unsigned int size)
 {
   byte cookies[2];
 
@@ -300,7 +301,8 @@ void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer, unsigned in
   Prog_enable(false);
 }
 
-int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer, unsigned int size)
+int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer,
+				unsigned int size)
 {
   byte cookies[2];
   byte o_data[2];

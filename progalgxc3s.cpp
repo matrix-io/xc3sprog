@@ -101,7 +101,8 @@ void ProgAlgXC3S::flow_array_program(BitFile &file)
   
   // Print the timing summary
   if (io->getVerbose())
-    fprintf(stderr, " done. Programming time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+    fprintf(stderr, " done. Programming time %.1f ms\n",
+	    (double)deltaT(tv, tv + 1)/1.0e3);
 }
 
 void ProgAlgXC3S::flow_program_legacy(BitFile &file)
@@ -126,7 +127,8 @@ void ProgAlgXC3S::flow_program_legacy(BitFile &file)
   if (io->getVerbose())
     {
       gettimeofday(tv+1, NULL);
-      fprintf(stderr, "done. Programming time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+      fprintf(stderr, "done. Programming time %.1f ms\n",
+	      (double)deltaT(tv, tv + 1)/1.0e3);
     }
  
 }
@@ -170,5 +172,7 @@ void ProgAlgXC3S::array_program(BitFile &file)
       i++;
     }
   if (i == 50)
-    fprintf(stderr, "Device faild to configure, INSTRUCTION_CAPTURE is 0x%02x\n", buf[0]);
+    fprintf(stderr, 
+	    "Device failed to configure, INSTRUCTION_CAPTURE is 0x%02x\n",
+	    buf[0]);
 }

@@ -170,7 +170,9 @@ void MapFile_XC2C::jedecfile2bitfile(JedecFile *fuses, BitFile  *bits)
 	  int fuse_idx = map[j*block_num +i];
 	  int fuse = (fuse_idx == -1)? 0:1;
 	  int bitnum = (i+1)*block_size -j -1;
-	  if (fuse_idx >=0 && fuse_idx < (int)fuses->getLength()) /* xc2c32a.map from 10.1 contain 0 .. 12278 versus 0..12277 */
+	  if (fuse_idx >=0 && 
+	      fuse_idx < (int)fuses->getLength() 
+	      /* xc2c32a.map from 10.1 contain 0 .. 12278 versus 0..12277 */)
 	    fuse = fuses->get_fuse(fuse_idx);
 	  bits->set_bit(bitnum, fuse);
 	}

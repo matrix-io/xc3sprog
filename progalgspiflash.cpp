@@ -79,7 +79,9 @@ int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages) {
         return 0;
 }
 
-int ProgAlgSPIFlash::spi_xfer_user1(uint8_t *last_miso, int miso_len, int miso_skip, uint8_t *mosi, int mosi_len, int preamble) 
+int ProgAlgSPIFlash::spi_xfer_user1
+(uint8_t *last_miso, int miso_len,int miso_skip, uint8_t *mosi,
+ int mosi_len, int preamble) 
 {
   int cnt, rc, maxlen = miso_len+miso_skip;
   
@@ -155,7 +157,8 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
     buf[2]=paddr&0xff;
     
     // get: page n-1, send: read page n             
-    res=spi_xfer_user1((rfile.getData())+((page-1)*pgsize),pgsize,4,buf,pgsize, 4);
+    res=spi_xfer_user1((rfile.getData())+((page-1)*pgsize),pgsize,4,
+		       buf,pgsize, 4);
     //TODO: check res
     
     rc+=pgsize;
@@ -248,7 +251,8 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
       
       if(io->getVerbose())
 	{
-	  fprintf(stderr, "                                              \rWriting page %4d",page-1); 
+	  fprintf(stderr, "                                              \r"
+		  "Writing page %4d",page-1); 
 	  fflush(stdout);
 	}
     
@@ -282,7 +286,8 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
 	}
       if(i==9)
 	{
-	  fprintf(stderr, "                               \rFailed to programm page %d\n", page); 
+	  fprintf(stderr, "                               \r"
+		  "Failed to programm page %d\n", page); 
 	}
       page++;
     } 
@@ -294,7 +299,8 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
 void ProgAlgSPIFlash::reconfig(void)
 {
   /* Sequence is from AR #31913*/
-  byte buf[12]= {0xff, 0xff, 0x55, 0x99, 0x0c, 0x85, 0x00, 0x70, 0x04, 0x00, 0x04, 0x00};
+  byte buf[12]= {0xff, 0xff, 0x55, 0x99, 0x0c,
+		 0x85, 0x00, 0x70, 0x04, 0x00, 0x04, 0x00};
   byte buf1[12];
   int i;
   for (i=0; i<12; i++)

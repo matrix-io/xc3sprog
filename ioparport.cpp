@@ -2,7 +2,7 @@
 
 Copyright (C) 2004 Andrew Rogers
 Additions for Byte Blaster Cable (C) 2005 Uwe Bonnes 
-                                        on@elektron.ikp.physik.tu-darmstadt.de
+                              bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -102,29 +102,29 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 /* Attention: PARPORT_CONTROL_AUTOFD write zero to output */
 
 /* Altera Byteblaster Definitions */
-#define BBLST_DEF_BYTE        0
-#define BBLST_ENABLE_N        PARPORT_CONTROL_AUTOFD      /* Base + 2, Inverted */
-#define BBLST_TCK_VALUE       BIT_MASK(0)                 /* Base */
-#define BBLST_TMS_VALUE       BIT_MASK(1)                 /* Base */
-#define BBLST_TDI_VALUE       BIT_MASK(6)                 /* Base */
-#define BBLST_RESET_VALUE     BIT_MASK(3)                 /* Base, Inverted by Open 
-							     Collector Transistor */
-#define BBLST_TDO_MASK        PARPORT_STATUS_BUSY         /* Base + 1, Input */
-#define BBLST_LB_IN_MASK      PARPORT_STATUS_PAPEROUT     /* Base + 1, Input */
-#define BBLST_LB_OUT_VALUE    BIT_MASK(7)                 /* Base */
-#define BBLST_ACK_OUT_VALUE   BIT_MASK(5)
-#define BBLST_ACK_IN_MASK     PARPORT_STATUS_ACK
+#define BBLST_DEF_BYTE      0
+#define BBLST_ENABLE_N      PARPORT_CONTROL_AUTOFD   /* Base + 2, Inv */
+#define BBLST_TCK_VALUE     BIT_MASK(0)              /* Base */
+#define BBLST_TMS_VALUE     BIT_MASK(1)              /* Base */
+#define BBLST_TDI_VALUE     BIT_MASK(6)              /* Base */
+#define BBLST_RESET_VALUE   BIT_MASK(3)              /* Base, Inv by Open 
+			    			        Collector Transistor */
+#define BBLST_TDO_MASK      PARPORT_STATUS_BUSY      /* Base + 1, Input */
+#define BBLST_LB_IN_MASK    PARPORT_STATUS_PAPEROUT  /* Base + 1, Input */
+#define BBLST_LB_OUT_VALUE  BIT_MASK(7)              /* Base */
+#define BBLST_ACK_OUT_VALUE BIT_MASK(5)
+#define BBLST_ACK_IN_MASK   PARPORT_STATUS_ACK
 
 /* Xilinx Parallel Cable III Definitions */
-#define PCIII_PROG_EN_N       BIT_MASK(4)
-#define PCIII_DEF_BYTE        PCIII_PROG_EN_N
-#define PCIII_TCK_VALUE       BIT_MASK(1)                 /* Base */
-#define PCIII_TMS_VALUE       BIT_MASK(2)                 /* Base */
-#define PCIII_TDI_VALUE       BIT_MASK(0)                 /* Base */
-#define PCIII_TDO_MASK        PARPORT_STATUS_SELECT
-#define PCIII_CHECK_OUT       BIT_MASK(6)
-#define PCIII_CHECK_IN1       PARPORT_STATUS_BUSY
-#define PCIII_CHECK_IN2       PARPORT_STATUS_PAPEROUT
+#define PCIII_PROG_EN_N     BIT_MASK(4)
+#define PCIII_DEF_BYTE      PCIII_PROG_EN_N
+#define PCIII_TCK_VALUE     BIT_MASK(1)              /* Base */
+#define PCIII_TMS_VALUE     BIT_MASK(2)              /* Base */
+#define PCIII_TDI_VALUE     BIT_MASK(0)              /* Base */
+#define PCIII_TDO_MASK      PARPORT_STATUS_SELECT
+#define PCIII_CHECK_OUT     BIT_MASK(6)
+#define PCIII_CHECK_IN1     PARPORT_STATUS_BUSY
+#define PCIII_CHECK_IN2     PARPORT_STATUS_PAPEROUT
 
 							 
 using namespace std;
@@ -139,7 +139,8 @@ int  IOParport::detectcable(void)
   read_control(fd, &control);
   if ((status == 0) || (status == 0xff))
     {
-      fprintf(stderr,"IOParport::detectcable status 0x%02x control %02x: Check system driver setup\n",
+      fprintf(stderr,"IOParport::detectcable status 0x%02x control %02x"
+	      " Check system driver setup\n",
 	      status, control);
       throw  io_exception(std::string("Driver Problem"));
     }
@@ -152,17 +153,18 @@ int  IOParport::detectcable(void)
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
 	  (!(data & BBLST_LB_OUT_VALUE)  &&  (status & BBLST_LB_IN_MASK)))
 	{ /* The difference is in D7/PE if the card is unpowered*/
-	  if (( (data & BBLST_ACK_OUT_VALUE) &&  (status & BBLST_ACK_IN_MASK))||
-	      (!(data & BBLST_ACK_OUT_VALUE) && !(status & BBLST_ACK_IN_MASK)))
+	  if(( (data & BBLST_ACK_OUT_VALUE) &&  (status & BBLST_ACK_IN_MASK))||
+	     (!(data & BBLST_ACK_OUT_VALUE) && !(status & BBLST_ACK_IN_MASK)))
 	    {
 	      fprintf(stderr,"Unpowered Byteblaster cable\n");
 	      return NO_CABLE;
 	    }
 	  /*We have an unpowered Xilinx cable if D6/Busy/PE are connected */
-	  else if ( ( (data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN1))||
-		    (!(data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN1))||
-		    ( (data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN2))||
-		    (!(data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN2))) {
+	  else if
+	    ( ( (data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN1))||
+	      (!(data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN1))||
+	      ( (data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN2))||
+	      (!(data & PCIII_CHECK_OUT) && !(status & PCIII_CHECK_IN2))) {
 	    fprintf(stderr,"Unpowered Parallel Cable III cable\n");
 	    return NO_CABLE;
 	  }
@@ -184,7 +186,8 @@ int  IOParport::detectcable(void)
 	  fprintf(stderr,"Missing reaction for Altera cable(1)\n");
 	  return NO_CABLE;
 	}
-      data = (data & BBLST_ACK_OUT_VALUE) ? (data & ~BBLST_ACK_OUT_VALUE) : (data | BBLST_ACK_OUT_VALUE);
+      data = (data & BBLST_ACK_OUT_VALUE) ? (data & ~BBLST_ACK_OUT_VALUE) :
+	(data | BBLST_ACK_OUT_VALUE);
       write_data(fd, data);
       read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
@@ -195,7 +198,8 @@ int  IOParport::detectcable(void)
 	  fprintf(stderr,"Missing reaction for Altera cable(2)\n");
 	  return NO_CABLE;
 	}
-      data = (data & BBLST_LB_OUT_VALUE) ? (data & ~BBLST_LB_OUT_VALUE) : (data | BBLST_LB_OUT_VALUE);
+      data = (data & BBLST_LB_OUT_VALUE) ? (data & ~BBLST_LB_OUT_VALUE) :
+	(data | BBLST_LB_OUT_VALUE);
       write_data(fd, data);
       read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
@@ -206,7 +210,8 @@ int  IOParport::detectcable(void)
 	  fprintf(stderr,"Missing reaction for Altera cable(3)\n");
 	  return NO_CABLE;
 	}
-      data = (data & BBLST_ACK_OUT_VALUE) ? (data & ~BBLST_ACK_OUT_VALUE) : (data | BBLST_ACK_OUT_VALUE);
+      data = (data & BBLST_ACK_OUT_VALUE) ? (data & ~BBLST_ACK_OUT_VALUE) :
+	(data | BBLST_ACK_OUT_VALUE);
       write_data(fd, data);
       read_status(fd, &status);
       if (( (data & BBLST_LB_OUT_VALUE)  && !(status & BBLST_LB_IN_MASK)) ||
@@ -245,7 +250,8 @@ int  IOParport::detectcable(void)
 	return NO_CABLE;
     }
 
-    data = (data & PCIII_CHECK_OUT) ? (data & ~PCIII_CHECK_OUT) : (data | PCIII_CHECK_OUT);
+    data = (data & PCIII_CHECK_OUT) ? (data & ~PCIII_CHECK_OUT) :
+      (data |PCIII_CHECK_OUT);
     write_data(fd, data);
     read_status(fd, &status);
     if ( ( (data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN1))||
@@ -256,7 +262,8 @@ int  IOParport::detectcable(void)
 	  fprintf(stderr,"Missing reaction on XILINX Cable(1)\n");
 	  return NO_CABLE;
 	}
-    data = (data & PCIII_CHECK_OUT) ? (data & ~PCIII_CHECK_OUT) : (data | PCIII_CHECK_OUT);
+    data = (data & PCIII_CHECK_OUT) ? (data & ~PCIII_CHECK_OUT) :
+      (data | PCIII_CHECK_OUT);
     write_data(fd, data);
     read_status(fd, &status);
     if ( ( (data & PCIII_CHECK_OUT) &&  (status & PCIII_CHECK_IN1))||
@@ -294,7 +301,8 @@ IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
 	== (int)INVALID_HANDLE_VALUE)
 #endif
       {
-	fprintf(stderr,"Could not access parallel device '%s': %s\n", dev, strerror(errno));
+	fprintf(stderr,"Could not access parallel device '%s': %s\n",
+		dev, strerror(errno));
 	throw  io_exception(std::string("Failed to open: ") + dev);
       }
   
@@ -307,7 +315,8 @@ IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
   // Switch to compatibility mode
   int const  mode = IEEE1284_MODE_COMPAT;
   if(ioctl(fd, PPNEGOT, &mode)) {
-    throw  io_exception(std::string("IEEE1284 compatibility not available: ") + dev);
+    throw  io_exception(std::string("IEEE1284 compatibility not available: ")
+			+ dev);
   }
 #endif
   cable = detectcable();
@@ -333,7 +342,8 @@ bool IOParport::txrx(bool tms, bool tdi)
   retval = (ret&tdo_mask)?!tdo_inv:tdo_inv;
   if (debug & HW_FUNCTIONS)
     fprintf(stderr,"IOParport::txrx tms %s tdi %s tdo %s \n",
-	    (tms)?"true ":"false", (tdi)?"true ":"false",(retval)?"true ":"false");
+	    (tms)?"true ":"false", (tdi)?"true ":"false",
+	    (retval)?"true ":"false");
   return retval; 
     
 }
@@ -342,7 +352,8 @@ void IOParport::tx(bool tms, bool tdi)
 {
   unsigned char data=def_byte; // D4 pin5 TDI enable
   if (debug & HW_FUNCTIONS)
-    fprintf(stderr,"tx tms %s tdi %s\n",(tms)?"true ":"false", (tdi)?"true ":"false");
+    fprintf(stderr,"tx tms %s tdi %s\n",(tms)?"true ":"false",
+	    (tdi)?"true ":"false");
   if(tdi)data|=tdi_value; // D0 pin2
   if(tms)data|=tms_value; // D2 pin4
   write_data(fd, data);
@@ -364,7 +375,8 @@ void IOParport::tx_tdi_byte(unsigned char tdi_byte)
     tx(false, (tdi_byte>>k)&1);
 }
  
-void IOParport::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
+void IOParport::txrx_block(const unsigned char *tdi, unsigned char *tdo,
+			   int length, bool last)
 {
   int i=0;
   int j=0;
@@ -388,7 +400,7 @@ void IOParport::txrx_block(const unsigned char *tdi, unsigned char *tdo, int len
 	  tdi_byte=tdi[j]; // Get the next TDI byte
     }
   };
-  tdo_byte=tdo_byte+(txrx(last, (tdi_byte&1)==1)<<(i%8)); // TMS set if last=true
+  tdo_byte=tdo_byte+(txrx(last, (tdi_byte&1)==1)<<(i%8)); 
   if(tdo)
       tdo[j]=tdo_byte;
   write_data(fd, data); /* Make sure, TCK is low */
@@ -467,7 +479,8 @@ int IOParport::write_control(int fd, unsigned char control)
     DWORD dummy;
     /*FIXME: hamlib used much more compicated expression*/
     status = DeviceIoControl((HANDLE)(fd),NT_IOCTL_CONTROL, &control,
-                             sizeof(control), &dummyc, sizeof(dummyc), (LPDWORD)&dummy, NULL);
+                             sizeof(control), &dummyc, sizeof(dummyc),
+			     (LPDWORD)&dummy, NULL);
     return status != 0 ? XC3S_OK : -XC3S_EIO;
 #else
     return -XC3S_ENIMPL;

@@ -224,7 +224,8 @@ void ProgAlgXC2C::array_program(BitFile &file)
 
   for (i=1; i<block_num; i++)
     {
-      fprintf(stderr, "                                        \rProgramming row %3d", i);
+      fprintf(stderr, "                                        \r"
+	      "Programming row %3d", i);
       fflush(stderr);
       a_data[0] = reverse_gray_code_table[i]>>(8-post);
       for(j = 0; j < block_size; j++)
@@ -264,7 +265,8 @@ int ProgAlgXC2C::array_verify(BitFile &file)
   jtag->shiftDR(a_data, NULL, post);
   for (i=1; i<=block_num; i++)
     {
-      fprintf(stderr, "                                        \rVerify: Row %3d", i);
+      fprintf(stderr, "                                        \r"
+	      "Verify: Row %3d", i);
       fflush(stderr);
       jtag->Usleep(20);
       a_data[0] = reverse_gray_code_table[i]>>(8-post);
@@ -278,7 +280,8 @@ int ProgAlgXC2C::array_verify(BitFile &file)
 	    }
 	  if (file.get_bit(k) !=  ((data & (1<<(j%8)))?1:0))
 	    {
-	      fprintf(stderr,"\nVerify mismatch row %d  byte %d cal file %d device %d\n",
+	      fprintf(stderr, "\n"
+		      "Verify mismatch row %d  byte %d cal file %d device %d\n",
 		      i, j, file.get_bit(k), (data & (1<<(j%8)))?1:0);
 	      res = 1;
 	      i = block_size +1;
@@ -288,7 +291,8 @@ int ProgAlgXC2C::array_verify(BitFile &file)
 	}
     }
   jtag->shiftIR(&ISC_DISABLE, ircap);
-  fprintf(stderr, "                                        \rVerify: %s\n",(res)?"Failure":"Success");
+  fprintf(stderr, "                                        \r"
+	  "Verify: %s\n",(res)?"Failure":"Success");
   return res;
 }
 
