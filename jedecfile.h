@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include <string>
 
+#define MAX_ITEM   8
 #define MAX_SIZE 256
 typedef unsigned char byte;
 
