@@ -27,14 +27,14 @@ using namespace std;
 bool IODebug::txrx(bool tms, bool tdi)
 {
   int tdo;
-  printf("txrx(%d,%d) enter tdo>",tms,tdi);
+  fprintf(stderr, "txrx(%d,%d) enter tdo>",tms,tdi);
   scanf("%d",&tdo);
   return tdo!=0;
 }
 
 void IODebug::tx(bool tms, bool tdi)
 {
-  printf("tx(%d,%d)\n",tms,tdi);
+  fprintf(stderr, "tx(%d,%d)\n",tms,tdi);
   
 }
 

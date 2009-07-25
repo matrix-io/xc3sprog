@@ -179,7 +179,7 @@ static void m_C(int ch, struct state_mach*m)
           return;
         }
 
-      printf("m_C: Dangling '%c' 0x%02x\n", ch, ch);fflush(stdout);
+      fprintf(stderr, "m_C: Dangling '%c' 0x%02x\n", ch, ch);fflush(stdout);
       throw  io_exception(std::string("m_C"));
  }  
 static void m_L(int ch, struct state_mach*m)
@@ -200,7 +200,7 @@ static void m_L(int ch, struct state_mach*m)
             return;
       }
 
-      printf("m_L: Dangling '%c' 0x%02x\n", ch, ch);fflush(stdout);
+      fprintf(stderr, "m_L: Dangling '%c' 0x%02x\n", ch, ch);fflush(stdout);
       m->state = 0;
 }
 
@@ -228,7 +228,7 @@ static void m_Lfuse(int ch, struct state_mach*m)
             break;
 
           default:
-	    printf("m_LFuse: Dangling '%c' 0x%02x\n", ch, ch);fflush(stdout);
+	    fprintf(stderr, "m_LFuse: Dangling '%c' 0x%02x\n", ch, ch);fflush(stdout);
             m->state = 0;
             break;
       }

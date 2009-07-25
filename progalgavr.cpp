@@ -124,7 +124,7 @@ int ProgAlgAVR::erase(void)
     }
   if (1 == 10)
     {
-      printf("Problem Writing Fuse Extended Byte!!!\r\n");
+      fprintf(stderr, "Problem Writing Fuse Extended Byte!!!\r\n");
       return 1;
     }
   return 0;
@@ -196,7 +196,7 @@ int ProgAlgAVR::write_fuses(byte * fuses)
 	}
       if (1 == 10)
 	{
-	  printf("Problem Writing Fuse Extended Byte!!!\r\n");
+	  fprintf(stderr, "Problem Writing Fuse Extended Byte!!!\r\n");
 	  return 1;
 	}
     }
@@ -223,7 +223,7 @@ int ProgAlgAVR::write_fuses(byte * fuses)
 	}
       if (1 == 10)
 	{
-	  printf("Problem Writing Fuse HIGH Byte!!!\r\n");
+	  fprintf(stderr, "Problem Writing Fuse HIGH Byte!!!\r\n");
 	  return 1;
 	}
     }
@@ -250,7 +250,7 @@ int ProgAlgAVR::write_fuses(byte * fuses)
 	}
       if (1 == 10)
 	{
-	  printf("Problem Writing Fuse LOW Byte!!!\r\n");
+	  fprintf(stderr, "Problem Writing Fuse LOW Byte!!!\r\n");
 	  return 1;
 	}
     }
@@ -271,7 +271,7 @@ void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer, unsigned in
   jtag->shiftDR(buffer,0, 15);
 
   if(address & (fp_size -1) )
-    printf("Unalied read access to address 0x%08x\n", address);
+    fprintf(stderr, "Unalied read access to address 0x%08x\n", address);
 
   if (address >> 17)
     {
@@ -307,9 +307,9 @@ int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer, unsigned in
   int i;
 
   if(address & (fp_size -1)) 
-    printf("Unalied write access to address 0x%08x\n", address);
+    fprintf(stderr, "Unalied write access to address 0x%08x\n", address);
   if(size != fp_size)
-    printf("Size is too small for a full page\n", address);
+    fprintf(stderr, "Size is too small for a full page\n", address);
 
   Prog_enable(true);
   
@@ -356,7 +356,7 @@ int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer, unsigned in
     }
   if (1 == 10)
     {
-      printf("Problem Writing Fuse LOW Byte!!!\r\n");
+      fprintf(stderr, "Problem Writing Fuse LOW Byte!!!\r\n");
       return 1;
     }
   

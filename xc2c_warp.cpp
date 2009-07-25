@@ -26,7 +26,7 @@ int main(int argc, char**args)
   char device[256]= "";
   FILE *fp = NULL;
   const char * mapdir = NULL;
-  printf("Release $Rev: 237 $\nPlease provide feedback on success/failure/enhancement requests!\nCheck Sourceforge SVN for updates!\n");
+  fprintf(stderr, "Release $Rev: 237 $\nPlease provide feedback on success/failure/enhancement requests!\nCheck Sourceforge SVN for updates!\n");
 
   while(true) {
     switch(getopt(argc, args, "?m:F:vo:")) {
@@ -108,7 +108,7 @@ int main(int argc, char**args)
   if (revert)
     {
       map.bitfile2jedecfile(&bits, &fuses);
-      printf("Device %s: %d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n",
+      fprintf(stderr, "Device %s: %d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n",
 		 fuses.getDevice(), fuses.getLength(), fuses.calcChecksum(),fuses.getChecksum());
       fuses.saveAsJed( device, fp);
     }

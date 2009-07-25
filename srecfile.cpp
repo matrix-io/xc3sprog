@@ -38,7 +38,7 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
 
   if(*source!='S')
   {
-     printf("\r\n%s\r\n",source);
+     fprintf(stderr, "\r\n%s\r\n",source);
      if(*source != 'S')
        throw  io_exception(std::string("DecodeSRecordLine: unexpected char ") 
 			   +*source
@@ -245,7 +245,7 @@ SrecFile::SrecFile(char const * fname, unsigned int bufsize)
   buffer = (byte*)malloc(bufsize);
   if(!buffer)
     {
-      printf("Cannot allocate buffer\n");
+      fprintf(stderr, "Cannot allocate buffer\n");
       return;
     }
 

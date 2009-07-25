@@ -34,7 +34,7 @@ int main(int argc, char**args)
       try 
 	{
 	  SrecFile file(args[1], 0);
-	  printf("start 0x%08lx end 0x%08lx len 0x%08lx\n",
+	  fprintf(stderr, "start 0x%08lx end 0x%08lx len 0x%08lx\n",
 		 file.getStart(), file.getEnd(), file.getLength());
 	}
       catch(io_exception& e) 

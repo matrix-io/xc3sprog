@@ -49,7 +49,7 @@ void IOFX2::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length,
   unsigned char *tmprbuf = tdo;
   unsigned int rem = (last)? length - 1: length;
   int i2c_write_addr;
-  //printf("txrx_block tdi %p tdo %p len %3d last %s\n", tdi, tdo, length, (last)?"TRUE":"FALSE");
+  //fprintf(stderr, "txrx_block tdi %p tdo %p len %3d last %s\n", tdi, tdo, length, (last)?"TRUE":"FALSE");
   if (tdi && tdo)
     {
       i2c_write_addr = USRP_CLOCK_INOUT_BYTES;
@@ -144,7 +144,7 @@ void IOFX2::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length,
 void IOFX2::tx_tms(unsigned char *pat, int length)
 {
   if (length > USRP_CMD_SIZE*8)
-    printf("ToDo: Break up long TMS sequences\n");
+    fprintf(stderr, "ToDo: Break up long TMS sequences\n");
   usrp_i2c_write( USPR_CLOCK_OUT_TMS, pat, length);
 }
 
@@ -264,7 +264,7 @@ bool IOFX2::usrp_close_interface (struct usb_dev_handle *udh)
 {
   // we're assuming that closing an interface automatically releases it.
   if(verbose)
-    printf("USB Read Transactions: %d USB Write Transactions %d\n", 
+    fprintf(stderr, "USB Read Transactions: %d USB Write Transactions %d\n", 
 	   calls_rd, calls_wr);
   return usb_close (udh) == 0;
 }
@@ -276,10 +276,10 @@ bool IOFX2::usrp_i2c_write(int i2c_addr, const void *buf, int len)
   calls_wr++;
 
   //int i;
-  //  printf("usrp_i2c_write Addr 0x%02x len %d: ", i2c_addr, len);
+  //  fprintf(stderr, "usrp_i2c_write Addr 0x%02x len %d: ", i2c_addr, len);
   //for(i=0; i<len; i++)
-  //  printf(" %02x", ((const unsigned char *)buf)[i]);
-  //printf("\n");
+  //  fprintf(stderr, " %02x", ((const unsigned char *)buf)[i]);
+  //fprintf(stderr, "\n");
 
   return write_cmd (fx2_dev, VRQ_I2C_WRITE, i2c_addr, 0,
                     (unsigned char *) buf, len) == len;
@@ -295,10 +295,10 @@ bool IOFX2::usrp_i2c_read (int i2c_addr, void *buf, int len)
   ret = write_cmd (fx2_dev, VRQ_I2C_READ, i2c_addr, 0,
 		   (unsigned char *) buf, len) == len;
   //int i;
-  //printf("usrp_i2c_read  Addr 0x%02x len %d: ", i2c_addr, len);
+  //fprintf(stderr, "usrp_i2c_read  Addr 0x%02x len %d: ", i2c_addr, len);
   //for(i=0; i<len; i++)
-  //  printf(" %02x", ((unsigned char *)buf)[i]);
-  //printf("\n");
+  //  fprintf(stderr, " %02x", ((unsigned char *)buf)[i]);
+  //fprintf(stderr, "\n");
 
   return ret;
 }

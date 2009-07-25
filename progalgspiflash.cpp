@@ -45,20 +45,20 @@ int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages) {
         
 	fbuf[0] = file->reverse8(fbuf[0]);
 	fbuf[1] = file->reverse8(fbuf[1]);
-        printf("JEDEC: %02x %02x",fbuf[0],fbuf[1]);
+        fprintf(stderr, "JEDEC: %02x %02x",fbuf[0],fbuf[1]);
         
         // tiny sanity check
         if(fbuf[0] != 0x1f) {
-                printf("unknown JEDEC manufacturer: %02x\n",fbuf[0]);
+                fprintf(stderr, "unknown JEDEC manufacturer: %02x\n",fbuf[0]);
                 return -1;
         }
 	else
-	  printf("\n");
+	  fprintf(stderr, "\n");
         
         // get status
         spi_xfer_user1(fbuf,1,1, NULL, 0, 0);
 	fbuf[0] = file->reverse8(fbuf[0]);
-        printf("status: %02x\n",fbuf[0]);
+        fprintf(stderr, "status: %02x\n",fbuf[0]);
         
         for(idx=0;spi_cfg[idx] != -1;idx+=3) {
                 if(spi_cfg[idx] == ((fbuf[0]>>2)&0x0f))
@@ -66,11 +66,11 @@ int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages) {
         }
         
         if(spi_cfg[idx] == -1) {
-                printf("don't know that flash or status b0rken!\n");
+                fprintf(stderr, "don't know that flash or status b0rken!\n");
                 return -1;
         }
         
-        printf("%d bytes/page, %d pages = %d bytes total \n",
+        fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
 	       spi_cfg[idx+1],spi_cfg[idx+2],spi_cfg[idx+1]*spi_cfg[idx+2]);
         
         *size=spi_cfg[idx+1];
@@ -115,7 +115,7 @@ int ProgAlgSPIFlash::spi_xfer_user1(uint8_t *last_miso, int miso_len, int miso_s
       memcpy(last_miso, miso_buf+miso_skip, miso_len);
     }
   
-  //printf("-\n");
+  //fprintf(stderr, "-\n");
   return rc;
 }
 
@@ -143,7 +143,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
     
     if(io->getVerbose())
       {
-	printf("\rReading page %4d",page-1); 
+	fprintf(stderr, "\rReading page %4d",page-1); 
 	fflush(stdout);
       }
     
@@ -164,7 +164,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
   // get last page
   res=spi_xfer_user1((rfile.getData())+((page-1)*pgsize),pgsize,4,NULL,0, 0);
 
-  printf("\n");
+  fprintf(stderr, "\n");
   return rc;
 }
 
@@ -184,7 +184,7 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     
     if(io->getVerbose())
       {
-	printf("\rVerifying page %4d",page-1); 
+	fprintf(stderr, "\rVerifying page %4d",page-1); 
 	fflush(stdout);
       }
     
@@ -201,14 +201,14 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     if (res)
       {
 	int i;
-	printf("\nVerify failed  at page %4d\nread:",page-1);
+	fprintf(stderr, "\nVerify failed  at page %4d\nread:",page-1);
 	k++;
 	for(i =0; i<pgsize; i++)
-	  printf("%02x", data[i]);
-	printf("\nfile:");
+	  fprintf(stderr, "%02x", data[i]);
+	fprintf(stderr, "\nfile:");
 	for(i =0; i<pgsize; i++)
-	  printf("%02x", vfile.getData()[((page-1)*pgsize)+i]);
-	printf("\n");
+	  fprintf(stderr, "%02x", vfile.getData()[((page-1)*pgsize)+i]);
+	fprintf(stderr, "\n");
 		   
 	if(k>5)
 	  return k;
@@ -220,7 +220,7 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
   res=spi_xfer_user1(data,pgsize,4,NULL,0, 0);
   res=memcmp(data, &(vfile.getData())[(page-1)*pgsize], pgsize);
   
-  printf("\rVerify: Success!                               \n");
+  fprintf(stderr, "\rVerify: Success!                               \n");
   
   return rc;
 }
@@ -234,7 +234,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
         
   if(len>(pgsize*pages))
     {
-      printf("dude, that file is larger than the flash!\n");
+      fprintf(stderr, "dude, that file is larger than the flash!\n");
       return -1;
     }
     
@@ -248,7 +248,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
       
       if(io->getVerbose())
 	{
-	  printf("                                              \rWriting page %4d",page-1); 
+	  fprintf(stderr, "                                              \rWriting page %4d",page-1); 
 	  fflush(stdout);
 	}
     
@@ -268,7 +268,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
 	{
 	  if(io->getVerbose())
 	    {
-	      printf("."); 
+	      fprintf(stderr, "."); 
 	      fflush(stdout);
 	    }
 	  jtag->Usleep(5000);       
@@ -282,7 +282,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
 	}
       if(i==9)
 	{
-	  printf("                               \rFailed to programm page %d\n", page); 
+	  fprintf(stderr, "                               \rFailed to programm page %d\n", page); 
 	}
       page++;
     } 
@@ -303,7 +303,7 @@ void ProgAlgSPIFlash::reconfig(void)
   io->cycleTCK(16);
   jtag->shiftIR(&CFG_IN);
   if(io->getVerbose())
-    printf("Trying reconfigure\n"); 
+    fprintf(stderr, "Trying reconfigure\n"); 
   jtag->shiftDR(buf, NULL, 92 );
   jtag->shiftIR(&JSTART);
   io->cycleTCK(32);
