@@ -24,6 +24,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <string.h>
 #include <sys/time.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "progalgxc2c.h"
 
 const byte ProgAlgXC2C::IDCODE        = 0x01;
@@ -34,12 +35,10 @@ const byte ProgAlgXC2C::ISC_WRITE     = 0xe6;
 const byte ProgAlgXC2C::ISC_ERASE     = 0xed;
 const byte ProgAlgXC2C::ISC_PROGRAM   = 0xea;
 const byte ProgAlgXC2C::ISC_READ      = 0xee;
-const byte ProgAlgXC2C::ISC_INIT      = 0xe0;
+const byte ProgAlgXC2C::ISC_INIT      = 0xf0;
 const byte ProgAlgXC2C::ISC_DISABLE   = 0xc0;
+const byte ProgAlgXC2C::USERCODE      = 0xfd;
 const byte ProgAlgXC2C::BYPASS        = 0xff;
-
-#define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
-                              (tvp2)->tv_usec - (tvp1)->tv_usec)
 
 static byte reverse_gray_code_table[256];
 static byte gray_code_table[256];
@@ -155,39 +154,203 @@ void ProgAlgXC2C::flow_reinit()
   io->cycleTCK(1);
   jtag->Usleep(100);
 }
-void ProgAlgXC2C::array_read(BitFile &rbfile)
+
+void ProgAlgXC2C::erase(void)
+{
+  jtag->shiftIR(&ISC_ENABLE_OTF);
+  jtag->shiftIR(&ISC_ERASE);
+  jtag->Usleep(100000);
+  jtag->shiftIR(&ISC_DISABLE);
+}
+
+/* Blank check by OTF Verification */
+int ProgAlgXC2C::blank_check(void)
 {
   int i, j, k=0;
-  byte i_data[MAXSIZE];
+  byte i_data[1];
   byte o_data[MAXSIZE];
-  byte preamble[1]={0}; /* NULL keeps NULL in Gray code */
+  byte preamble[1]={0};
   byte data;
-  struct timeval tv[2];
   unsigned int idx=0;
   byte ircap[1];
 
-  memset(i_data, 0, MAXSIZE);
-  rbfile.setLength(block_num *block_size);
-  
-  gettimeofday(tv, NULL);
-
-  io->setTapState(IOBase::TEST_LOGIC_RESET);
   jtag->shiftIR(&BYPASS, ircap);
-  fprintf(stderr,"IRCAP 0x%02x\n", ircap[0]);
-
-  jtag->shiftIR(&ISC_ENABLE_OTF, ircap);
-
-  jtag->shiftIR(&ISC_READ, ircap);
-  fprintf(stderr,"IRCAP 0x%02x\n", ircap[0]);
-
+  jtag->shiftIR(&ISC_ENABLE_OTF);
+  jtag->shiftIR(&ISC_READ);
   i_data[0] = reverse_gray_code_table[0]>>(8-post);
   jtag->shiftDR(i_data, NULL, post);
-  io->cycleTCK(100);
   for (i=1; i<=block_num; i++)
     {
+      io->cycleTCK(20);
       i_data[0] = reverse_gray_code_table[i]>>(8-post);
       jtag->shiftDR(NULL, o_data, block_size, 0, false);
       jtag->shiftDR(i_data, preamble, post);
+      for(j =0; j < block_size%8; j ++)
+	o_data[block_size/8] |= 1<<(7-j);
+      for(j = 0;  j*8<block_size-8; j++)
+	if(o_data[j]!=0xff)
+	  {
+	    fprintf(stderr,"Not erased in block %d byte %d value 0x%02x\n",
+		    i, j, o_data[j]);
+	    return 1;
+	  }
+    }
+  jtag->shiftIR(&ISC_DISABLE);
+  return 0;
+}
+
+void ProgAlgXC2C::array_program(BitFile &file)
+{
+  int i, j, k=0;
+  byte a_data[1];
+  byte i_data[MAXSIZE];
+  byte preamble[1]={0};
+  byte data;
+  unsigned int idx=0;
+  byte ircap[1];
+
+  jtag->shiftIR(&ISC_ENABLE_OTF, ircap);
+  jtag->shiftIR(&ISC_PROGRAM, ircap);
+  a_data[0] = reverse_gray_code_table[0]>>(8-post);
+  jtag->shiftDR(i_data, NULL, post);
+  for(k = 0; k < block_size; k++)
+    if (file.get_bit(k))
+      i_data[k/8] |= (1 <<(k%8));
+    else
+      i_data[k/8] &= ~(1 <<(k%8));
+  jtag->shiftDR(i_data, NULL, block_size, 0, false);
+  jtag->shiftDR(a_data, preamble, post);
+  jtag->Usleep(10000);
+
+  for (i=1; i<block_num; i++)
+    {
+      fprintf(stderr, "                                        \rProgramming row %3d", i);
+      fflush(stderr);
+      a_data[0] = reverse_gray_code_table[i]>>(8-post);
+      for(j = 0; j < block_size; j++)
+	{
+	  if (file.get_bit(k))
+	    i_data[j/8] |=  (1 <<(j%8));
+	  else
+	    i_data[j/8] &= ~(1 <<(j%8));
+	  k++;
+	}
+      jtag->shiftDR(i_data, NULL, block_size, 0, false);
+      jtag->shiftDR(a_data, preamble, post);
+      jtag->Usleep(10000);
+    }
+  fprintf(stderr, "\n");
+  jtag->shiftIR(&ISC_DISABLE, ircap);
+
+ 
+}
+
+int ProgAlgXC2C::array_verify(BitFile &file)
+{
+  int i, j, k=0;
+  int res = 0;
+  byte a_data[1];
+  byte i_data[MAXSIZE];
+  byte o_data[MAXSIZE];
+  byte preamble[1]={0};
+  byte data;
+  unsigned int idx=0;
+  byte ircap[1];
+
+  jtag->shiftIR(&BYPASS, ircap);
+  jtag->shiftIR(&ISC_ENABLE_OTF, ircap);
+  jtag->shiftIR(&ISC_READ, ircap);
+  a_data[0] = reverse_gray_code_table[0]>>(8-post);
+  jtag->shiftDR(a_data, NULL, post);
+  for (i=1; i<=block_num; i++)
+    {
+      fprintf(stderr, "                                        \rVerify: Row %3d", i);
+      fflush(stderr);
+      jtag->Usleep(20);
+      a_data[0] = reverse_gray_code_table[i]>>(8-post);
+      jtag->shiftDR(NULL, o_data, block_size, 0, false);
+      jtag->shiftDR(a_data, preamble, post);
+      for(j = 0;  j<block_size; j++)
+	{
+	  if ((j & 0x7) == 0)
+	    {
+	      data = o_data[j>>3];
+	    }
+	  if (file.get_bit(k) !=  ((data & (1<<(j%8)))?1:0))
+	    {
+	      fprintf(stderr,"\nVerify mismatch row %d  byte %d cal file %d device %d\n",
+		      i, j, file.get_bit(k), (data & (1<<(j%8)))?1:0);
+	      res = 1;
+	      i = block_size +1;
+	      break;
+	    }
+	  k++;
+	}
+    }
+  jtag->shiftIR(&ISC_DISABLE, ircap);
+  fprintf(stderr, "                                        \rVerify: %s\n",(res)?"Failure":"Success");
+  return res;
+}
+
+void ProgAlgXC2C::done_program(void)
+{
+  int i, j, k=0;
+  byte a_data[1];
+  byte i_data[MAXSIZE];
+  byte o_data[MAXSIZE];
+  byte preamble[1]={0};
+  byte data;
+  unsigned int idx=0;
+  byte ircap[1];
+
+  /* Program Done Bits */
+  jtag->shiftIR(&ISC_ENABLE_OTF);
+  jtag->shiftIR(&ISC_PROGRAM, ircap);
+  memset(i_data, 0 , MAXSIZE);
+  jtag->shiftDR(i_data, NULL, block_size-12, 0, false); 
+  i_data[0] = (block_size == 274)? 0xf7: 0xfb;/* XC2c64 has no transfer bits */
+  i_data[1] = 0x0f;
+  jtag->shiftDR(i_data, NULL, 12, 0, false);
+  a_data[0] = reverse_gray_code_table[block_num]>>(8-post);
+  jtag->shiftDR(a_data, preamble, post);
+  jtag->Usleep(10000);
+  jtag->shiftIR(&ISC_DISABLE, ircap);
+  
+  jtag->shiftIR(&ISC_ENABLE_OTF);
+  jtag->shiftIR(&ISC_INIT);
+  jtag->Usleep(20);
+  jtag->shiftIR(&ISC_INIT);
+  jtag->shiftDR(i_data, NULL, 8, 0, false);
+  jtag->Usleep(800);
+  jtag->shiftIR(&ISC_DISABLE);
+  jtag->shiftIR(&BYPASS);
+}
+
+void ProgAlgXC2C::array_read(BitFile &rbfile)
+{
+  int i, j, k=0;
+  byte a_data[1];
+  byte o_data[MAXSIZE];
+  byte preamble[1]={0};
+  byte data;
+  unsigned int idx=0;
+  byte ircap[1];
+
+  rbfile.setLength(block_num *block_size);
+  
+  jtag->shiftIR(&BYPASS, ircap);
+  jtag->shiftIR(&ISC_ENABLE_OTF, ircap);
+
+  jtag->shiftIR(&ISC_READ, ircap);
+  a_data[0] = reverse_gray_code_table[0]>>(8-post);
+  jtag->shiftDR(a_data, NULL, post);
+  jtag->Usleep(20);
+  for (i=1; i<=block_num; i++)
+    {
+      a_data[0] = reverse_gray_code_table[i]>>(8-post);
+      jtag->shiftDR(NULL, o_data, block_size, 0, false);
+      jtag->shiftDR(a_data, preamble, post);
+      jtag->Usleep(20);
       for(j = 0;  j<block_size; j++)
 	{
 	  if ((j & 0x7) == 0)
@@ -198,17 +361,6 @@ void ProgAlgXC2C::array_read(BitFile &rbfile)
 	  k++;
 	}
    }
-  jtag->shiftIR(&BYPASS, ircap);
-  fprintf(stderr,"IRCAP 0x%02x\n", ircap[0]);
   jtag->shiftIR(&ISC_DISABLE);
-  io->cycleTCK(100);
-  //  io->setTapState(IOBase::TEST_LOGIC_RESET);
 
-  jtag->shiftIR(&BYPASS, ircap);
-  fprintf(stderr,"IRCAP 0x%02x\n", ircap[0]);
-
-  io->setTapState(IOBase::TEST_LOGIC_RESET);
-  jtag->shiftIR(&BYPASS, ircap);
-  fprintf(stderr,"IRCAP 0x%02x\n", ircap[0]);
- 
 }
