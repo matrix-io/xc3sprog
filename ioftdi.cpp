@@ -130,7 +130,7 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
 
   // Prepare for JTAG operation
   static unsigned char   buf[9] = { SET_BITS_LOW, 0x08, 0x0b,
-				    TCK_DIVISOR,  0x02, 0x00 ,
+				    TCK_DIVISOR,  0x00, 0x00 ,
 				    SET_BITS_HIGH, ~0x04, 0x04};
 
   /* FIXME: Without this read, consecutive runs on the FT2232H may hang */
