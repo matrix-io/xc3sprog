@@ -43,6 +43,7 @@ class ProgAlgXC2C
   static const byte ISC_INIT;	  
   static const byte ISC_DISABLE;  
   static const byte CONFIG;	  
+  static const byte USERCODE;
   static const byte BYPASS;	  
 
   Jtag *jtag;
@@ -61,11 +62,13 @@ class ProgAlgXC2C
   void flow_enable_highz();
  public:
   ProgAlgXC2C(Jtag &j, IOBase &i, int si);
-  int blank_check(){};
-  int erase(){};
-  int array_verify(BitFile &file){};
+  int blank_check(void);
+  void erase(void);
+  int array_verify(BitFile &file);
   void array_read(BitFile &file);
-  void array_program(BitFile &file){};
+  void array_program(BitFile &file);
+  void done_program(void);
+  void read_usercode(void);
 };
 
 
