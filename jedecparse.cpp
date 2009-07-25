@@ -65,7 +65,8 @@ int main(int argc, char**args)
 		fprintf(stderr," Can't open %s: %s  \n", args[2], 
 			strerror(errno));
 	    }
-	  fprintf(stderr, "Device %s: %d Fuses, Checksum calculated: 0x%04x,"
+	  fprintf(stderr, "Device %s: %d Fuses\n"
+		  "Checksum calculated: 0x%04x,"
 		  "Checksum from file 0x%04x\n",
 		 file.getDevice(), file.getLength(), file.calcChecksum(),
 		  file.getChecksum());
