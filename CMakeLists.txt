@@ -29,6 +29,7 @@ add_executable(debug debug.cpp iobase.cpp ioparport.cpp iodebug.cpp)
 
 add_executable(bitparse bitfile.cpp bitparse.cpp)
 add_executable(jedecparse  jedecparse.cpp jedecfile.cpp)
+add_executable(xc2c_warp xc2c_warp.cpp mapfile_xc2c.cpp jedecfile.cpp bitfile.cpp)
 add_executable(srecparse  srecparse.cpp srecfile.cpp)
 
 ADD_CUSTOM_COMMAND(OUTPUT config.h
