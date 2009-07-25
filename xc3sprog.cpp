@@ -59,9 +59,6 @@ int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp,
 int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
 	       OUTFILE_STYLE format, const char *device);
 
-extern char *optarg;
-extern int optind;
-
 /* Excercise the IR Chain for at least 10000 Times
    If we read a different pattern, print the pattern for for optical 
    comparision and read for at least 100000 times more
