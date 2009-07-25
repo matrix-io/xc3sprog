@@ -426,20 +426,24 @@ int main(int argc, char **args)
 
   if (readback)
     {
-      fp=fopen(args[0],"rb");
-      if(fp)
+      if (*args[0] == '-')
+	fp = stdout;
+      else
 	{
-	  fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
-	  fclose(fp);
-	  return 1;
+	  fp=fopen(args[0],"rb");
+	  if(fp)
+	    {
+	      fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
+	      fclose(fp);
+	      return 1;
+	    }
+	  fp=fopen(args[0],"wb");
+	  if(!fp)
+	    {
+	      fprintf(stderr, "Unable to open File %s. Aborting\n", args[0]);
+	      return 1;
+	    }
 	}
-      fp=fopen(args[0],"wb");
-      if(!fp)
-	{
-	  fprintf(stderr, "Unable to open File %s. Aborting\n", args[0]);
-	  return 1;
-	}
-      
     }
 
   if ( manufacturer == 0x049) /* XILINX*/
