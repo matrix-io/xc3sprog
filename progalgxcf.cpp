@@ -112,7 +112,8 @@ int ProgAlgXCF::erase()
   if (i < 32)
   {
     if(io->getVerbose())
-      fprintf(stderr, "done\nErase time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+      fprintf(stderr, "done\nErase time %.1f ms\n",
+	      (double)deltaT(tv, tv + 1)/1.0e3);
     return 0;
   }
   else
@@ -141,7 +142,8 @@ int ProgAlgXCF::program(BitFile &file)
     int j;
 
     if(io->getVerbose())
-      fprintf(stderr, "                            \rProgramming frames 0x%04x to 0x%04x",frame,frame+31); ;
+      fprintf(stderr, "                            \r"
+	      "Programming frames 0x%04x to 0x%04x",frame,frame+31); ;
     jtag->shiftIR(&ISC_DATA_SHIFT);
     if((i+block_size)<=file.getLength()){
       jtag->shiftDR(&(file.getData())[i/8],0,block_size);
@@ -150,7 +152,7 @@ int ProgAlgXCF::program(BitFile &file)
       int rem=(file.getLength()-i)/8; // Bytes remaining
       int pad=(block_size/8)-rem;
       byte paddata[pad]; for(int k=0; k<pad; k++)paddata[k]=0xff;
-      jtag->shiftDR(&(file.getData())[i/8],0,rem*8,0,false); // Do not goto EXIT1-DR
+      jtag->shiftDR(&(file.getData())[i/8],0,rem*8,0,false); 
       jtag->shiftDR(paddata,0,pad*8);
     }
     jtag->longToByteArray(frame,data);
@@ -181,7 +183,8 @@ int ProgAlgXCF::program(BitFile &file)
   } 
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    fprintf(stderr, "done\nProgramming time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+    fprintf(stderr, "done\nProgramming time %.1f ms\n",
+	    (double)deltaT(tv, tv + 1)/1.0e3);
   jtag->shiftIR(&BYPASS);
   io->cycleTCK(1);
   io->tapTestLogicReset();
@@ -206,7 +209,8 @@ int ProgAlgXCF::verify(BitFile &file)
 
       if(io->getVerbose())
 	{
-	  fprintf(stderr, "\rVerifying frames 0x%04x to 0x%04x",frame,frame+31); 
+	  fprintf(stderr, "\rVerifying frames 0x%04x to 0x%04x",
+		  frame,frame+31); 
 	  fflush(stdout);
 	}
       jtag->longToByteArray(frame,data);
@@ -226,7 +230,8 @@ int ProgAlgXCF::verify(BitFile &file)
 	}
       if (res)
 	{
-	  fprintf(stderr, "\nVerify failed at frame 0x%04x to 0x%04x\n",frame,frame+31);
+	  fprintf(stderr, "\nVerify failed at frame 0x%04x to 0x%04x\n",
+		  frame,frame+31);
 	  return res;
 	}
        

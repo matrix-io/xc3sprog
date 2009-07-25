@@ -30,7 +30,8 @@
 #include "ioxpc.h"
 #include "io_exception.h"
 
-IOXPC::IOXPC(int const vendor, int const product, char const *desc, char const *serial, int stype)
+IOXPC::IOXPC(int const vendor, int const product, char const *desc,
+	     char const *serial, int stype)
   :  IOBase(), bptr(0), calls_rd(0) , calls_wr(0), call_ctrl(0)
 {
   unsigned char buf[2];
@@ -46,13 +47,16 @@ IOXPC::IOXPC(int const vendor, int const product, char const *desc, char const *
     throw  io_exception(std::string("xpcu_write_gpio: ") );
   if (xpcu_read_firmware_version(xpcu, buf) < 0)
     throw  io_exception(std::string("xpcu_read_firmware_version: ") );
-  fprintf(stderr, "firmware version = 0x%02x%02x (%u)\n", buf[1], buf[0], buf[1]<<8| buf[0]);
+  fprintf(stderr, "firmware version = 0x%02x%02x (%u)\n", 
+	  buf[1], buf[0], buf[1]<<8| buf[0]);
   
   if (xpcu_read_cpld_version(xpcu, buf) < 0)
     throw  io_exception(std::string("xpcu_read_cpld_version: ") );
-  fprintf(stderr, "CPLD version = 0x%02x%02x (%u)\n", buf[1], buf[0], buf[1]<<8| buf[0]);
+  fprintf(stderr, "CPLD version = 0x%02x%02x (%u)\n", 
+	  buf[1], buf[0], buf[1]<<8| buf[0]);
   if(!buf[1] && !buf[0])
-    throw  io_exception(std::string("Warning: version '0' can't be correct. Please try resetting the cable\n"));
+    throw  io_exception(std::string("Warning: version '0' can't be correct."
+				    " Please try resetting the cable\n"));
   
   if (subtype == XPC_INTERNAL)
     {
@@ -87,7 +91,8 @@ IOXPC::~IOXPC()
 
 int IOXPC::xpcu_output_enable(struct usb_dev_handle *xpcu, int enable)
 {
-  if(usb_control_msg(xpcu, 0x40, 0xB0, enable ? 0x18 : 0x10, 0, NULL, 0, 1000)<0)
+  if(usb_control_msg(xpcu, 0x40, 0xB0, enable ? 0x18 : 0x10, 0, NULL, 0, 1000)
+     <0)
     {
       fprintf(stderr, "usb_control_msg(%x) %s\n", enable, usb_strerror());
       return -1;
@@ -98,7 +103,8 @@ int IOXPC::xpcu_output_enable(struct usb_dev_handle *xpcu, int enable)
 
 int IOXPC::xpcu_request_28(struct usb_dev_handle *xpcu, int value)
 {
-  /* Typical values seen during autodetection of chain configuration: 0x11, 0x12 */
+  /* Typical values seen during autodetection of chain configuration: 
+     0x11, 0x12 */
   
   if(usb_control_msg(xpcu, 0x40, 0xB0, 0x0028, value, NULL, 0, 1000)<0)
     {
@@ -114,7 +120,8 @@ int IOXPC::xpcu_write_gpio(struct usb_dev_handle *xpcu, unsigned char bits)
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, 0x0030, bits, NULL, 0, 1000)<0)
     {
-      fprintf(stderr, "usb_control_msg(0x30.0x%02x) (write port E) %s\n", bits, usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x30.0x%02x) (write port E) %s\n",
+	      bits, usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -131,7 +138,8 @@ int IOXPC::xpcu_read_gpio(struct usb_dev_handle *xpcu, unsigned char *bits)
 {
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0038, 0, (char*)bits, 1, 1000)<0)
     {
-      fprintf(stderr, "usb_control_msg(0x38.0x02x) (read port E)\n", bits, usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x38.0x02x) (read port E)\n", bits,
+	      usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -145,11 +153,13 @@ int IOXPC::xpcu_read_gpio(struct usb_dev_handle *xpcu, unsigned char *bits)
 /* ---------------------------------------------------------------------- */
 
 
-int IOXPC::xpcu_read_cpld_version(struct usb_dev_handle *xpcu, unsigned char *buf)
+int IOXPC::xpcu_read_cpld_version(struct usb_dev_handle *xpcu, 
+				  unsigned char *buf)
 {
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0050, 0x0001, (char*)buf, 2, 1000)<0)
     {
-      fprintf(stderr, "usb_control_msg(0x50.1) (read_cpld_version) %s\n", usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x50.1) (read_cpld_version) %s\n",
+	      usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -158,11 +168,13 @@ int IOXPC::xpcu_read_cpld_version(struct usb_dev_handle *xpcu, unsigned char *bu
 
 /* ---------------------------------------------------------------------- */
 
-int IOXPC::xpcu_read_firmware_version(struct usb_dev_handle *xpcu, unsigned char *buf)
+int IOXPC::xpcu_read_firmware_version(struct usb_dev_handle *xpcu,
+				      unsigned char *buf)
 {
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0050, 0x0000, (char*)buf, 2, 1000)<0)
     {
-      fprintf(stderr, "usb_control_msg(0x50.0) (read_firmware_version) %s\n", usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x50.0) (read_firmware_version) %s\n",
+	      usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -173,7 +185,8 @@ int IOXPC::xpcu_select_gpio(struct usb_dev_handle *xpcu, int int_or_ext )
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, 0x0052, int_or_ext, NULL, 0, 1000)<0)
     {
-      fprintf(stderr, "usb_control_msg(0x52.x) (select gpio) %s\n", usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x52.x) (select gpio) %s\n",
+	      usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -217,15 +230,19 @@ int IOXPC::xpcu_select_gpio(struct usb_dev_handle *xpcu, int int_or_ext )
  *   bulk_read shall follow to collect the TDO data.
  *
  *   TDO data is shifted in from MSB. In a "full" word with 16 TDO bits, the
- *   earliest one reached bit 0. The earliest of 15 bits however would be bit 0,
- *   and if there's only one TDO bit, it arrives as the MSB of the word.
+ *   earliest one reached bit 0. The earliest of 15 bits however would 
+ *   be bit 0, and if there's only one TDO bit, it arrives as the MSB
+ *   of the word.
  */
 int
-IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, unsigned char *in, int out_len, unsigned char *out )
+IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits,
+		  int in_len, unsigned char *in, int out_len,
+		  unsigned char *out )
 {
   if(usb_control_msg(xpcu, 0x40, 0xB0, reqno, bits, NULL, 0, 1000)<0)
     {
-      fprintf(stderr, "usb_control_msg(0x40.0x%02x 0x%02x) (shift) %s\n", reqno, bits, usb_strerror());
+      fprintf(stderr, "usb_control_msg(0x40.0x%02x 0x%02x) (shift) %s\n",
+	      reqno, bits, usb_strerror());
       return -1;
     }
   call_ctrl++; 
@@ -239,7 +256,8 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, 
     fprintf(stderr, "out_len = %d, out_len*8 = %d\n", out_len, out_len * 8);
     
     fprintf(stderr, "a6_display(\"%02X\", \"", bits);
-    for(i=0;i<in_len;i++) fprintf(stderr, "%02X%s", in[i], (i+1<in_len)?",":"");
+    for(i=0;i<in_len;i++) fprintf(stderr, "%02X%s", in[i],
+				  (i+1<in_len)?",":"");
     fprintf(stderr, "\", ");
   }
 #endif
@@ -254,7 +272,8 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, 
     {
       if(usb_bulk_read(xpcu, 0x86, (char*)out, out_len, 1000)<0)
 	{
-	  fprintf(stderr, "\nusb_bulk_read error(shift): %s\n", usb_strerror());
+	  fprintf(stderr, "\nusb_bulk_read error(shift): %s\n",
+		  usb_strerror());
 	  return -1;
 	}
       calls_rd++;
@@ -264,7 +283,8 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, 
   {
     int i;
     fprintf(stderr, "\"");
-    for(i=0;i<out_len;i++) fprintf(stderr, "%02X%s", out[i], (i+1<out_len)?",":"");
+    for(i=0;i<out_len;i++)
+      fprintf(stderr, "%02X%s", out[i], (i+1<out_len)?",":"");
     fprintf(stderr, "\")\n");
   }
 #endif
@@ -287,7 +307,8 @@ IOXPC::xpcu_do_ext_transfer( xpc_ext_transfer_state_t *xts )
   
   if(xts->out != NULL)
     {
-      r = xpcu_shift (xpcu, 0xA6, xts->in_bits, in_len, xts->buf, out_len, xts->buf);
+      r = xpcu_shift (xpcu, 0xA6, xts->in_bits, in_len, xts->buf,
+		      out_len, xts->buf);
     }
   else
     {
@@ -304,7 +325,8 @@ IOXPC::xpcu_do_ext_transfer( xpc_ext_transfer_state_t *xts )
 	  
 	  rxw = (xts->buf[out_idx+1]<<8) | xts->buf[out_idx];
 	  
-	  /* In the last (incomplete) word, the data isn't shifted completely to LSB */
+	  /* In the last (incomplete) word, 
+	     the data isn't shifted completely to LSB */
 	  
 	  mask = (out_rem >= 16) ? 1 : (1<<(16 - out_rem));
 	  
@@ -331,7 +353,8 @@ IOXPC::xpcu_do_ext_transfer( xpc_ext_transfer_state_t *xts )
 
 /* ---------------------------------------------------------------------- */
 void
-IOXPC::xpcu_add_bit_for_ext_transfer( xpc_ext_transfer_state_t *xts, bool in, bool tms, bool is_real )
+IOXPC::xpcu_add_bit_for_ext_transfer( xpc_ext_transfer_state_t *xts, bool in,
+				      bool tms, bool is_real )
 {
   int bit_idx = (xts->in_bits & 3);
   int buf_idx = (xts->in_bits - bit_idx) >> 1;
@@ -364,12 +387,14 @@ IOXPC::xpcu_add_bit_for_ext_transfer( xpc_ext_transfer_state_t *xts, bool in, bo
 /* ---------------------------------------------------------------------- */
 
 
-void IOXPC::txrx_block(const unsigned char *in, unsigned char *out, int len, bool last)
+void IOXPC::txrx_block(const unsigned char *in, unsigned char *out, int len,
+		       bool last)
 {
   int i;
 #ifdef VERBOSE
   fprintf(stderr, "---\n");
-  fprintf(stderr, "transfer size %d, %s output\n", len, (out!=NULL) ? "with" : "without");
+  fprintf(stderr, "transfer size %d, %s output\n", len, 
+	  (out!=NULL) ? "with" : "without");
   fprintf(stderr, "tdi: ");
   for(i=0;i<len;i++) 
     fprintf(stderr, "%c", (in)?((in[i>>3] & (1<<i%8))?'1':'0'):'0');
@@ -390,13 +415,15 @@ void IOXPC::txrx_block(const unsigned char *in, unsigned char *out, int len, boo
 	      if(out)
 		out[i>>3] = 0;
 	    }
-	  xpcu_write_gpio(xpcu, XPC_PROG | XPC_TCK | ((last)? XPC_TMS : 0) | ((tdi & 0x01)? XPC_TDI : 0));
+	  xpcu_write_gpio(xpcu, XPC_PROG | XPC_TCK | ((last)? XPC_TMS : 0) |
+			  ((tdi & 0x01)? XPC_TDI : 0));
 	  if(out)
 	    {
 	      xpcu_read_gpio(xpcu, &d);
 	      out[i>>3] |= ((d & XPC_TDO) == XPC_TDO)?(i%8):0;
 	    }
-	  xpcu_write_gpio(xpcu, XPC_PROG |       0 | ((last)? XPC_TMS : 0) | ((tdi & 0x01)? XPC_TDI : 0));
+	  xpcu_write_gpio(xpcu, XPC_PROG |       0 | ((last)? XPC_TMS : 0) |
+			  ((tdi & 0x01)? XPC_TDI : 0));
 	  tdi = tdi >> 1;
 	}
     }
@@ -421,7 +448,8 @@ void IOXPC::txrx_block(const unsigned char *in, unsigned char *out, int len, boo
 	  else
 	    tdi = 0;
 	    
-	  xpcu_add_bit_for_ext_transfer( &xts, (tdi & 1), (i== len-1)?last:0, 1 );
+	  xpcu_add_bit_for_ext_transfer( &xts, (tdi & 1),
+					 (i== len-1)?last:0, 1 );
 	  tdi >>= 1;
 	  if(xts.in_bits == (4*XPC_A6_CHUNKSIZE - 1))
 	    {
@@ -460,8 +488,10 @@ void IOXPC::tx_tms(unsigned char *in, int len)
 	{
 	  if ((i & 0x7) == 0)
 	    tms = in[i>>3];
-	  xpcu_write_gpio(xpcu, XPC_PROG | XPC_TCK | ((tms & 0x01)? XPC_TMS : 0) | XPC_TDI);
-	  xpcu_write_gpio(xpcu, XPC_PROG |       0 | ((tms & 0x01)? XPC_TMS : 0) | XPC_TDI);
+	  xpcu_write_gpio(xpcu, XPC_PROG | XPC_TCK |
+			  ((tms & 0x01)? XPC_TMS : 0) | XPC_TDI);
+	  xpcu_write_gpio(xpcu, XPC_PROG |       0 |
+			  ((tms & 0x01)? XPC_TMS : 0) | XPC_TDI);
 	  tms = tms >> 1;
 	}
     }
@@ -502,7 +532,8 @@ void IOXPC::tx_tms(unsigned char *in, int len)
     return code;				\
   } while(0);
 
-int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description, const char* serial)
+int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
+			     const char* serial)
 {
   /* Adapted from libftdi:ftdi_usb_open_desc()
      
@@ -532,10 +563,12 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description, c
 		xpc_error_return(-4, "usb_open() failed");
 	      if (description != NULL) 
 		{
-		  if (usb_get_string_simple(xpcu, dev->descriptor.iProduct, string, sizeof(string)) <= 0) 
+		  if (usb_get_string_simple(xpcu, dev->descriptor.iProduct,
+					    string, sizeof(string)) <= 0) 
 		    {
 		      usb_close (xpcu);
-		      xpc_error_return(-8, "unable to fetch product description");
+		      xpc_error_return(-8, 
+				       "unable to fetch product description");
 		    }
 		  if (strncmp(string, description, sizeof(string)) != 0) 
 		    {
@@ -547,7 +580,9 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description, c
 	      
 	      if (serial != NULL) 
 		{
-		  if (usb_get_string_simple(xpcu, dev->descriptor.iSerialNumber, string, sizeof(string)) <= 0) 
+		  if (usb_get_string_simple(xpcu, 
+					    dev->descriptor.iSerialNumber,
+					    string, sizeof(string)) <= 0) 
 		    {
 		      usb_close (xpcu);
 		      xpc_error_return(-9, "unable to fetch serial number");
@@ -571,7 +606,8 @@ bool IOXPC::xpc_close_interface (struct usb_dev_handle *udh)
 {
   // we're assuming that closing an interface automatically releases it.
   if(verbose)
-    fprintf(stderr, "USB Read Transactions: %d Write Transactions: %d Control Transaction %d\n", 
+    fprintf(stderr, "USB Read Transactions: %d Write Transactions: %d"
+	    " Control Transaction %d\n", 
 	   calls_rd, calls_wr, call_ctrl);
   return usb_close (udh) == 0;
 }

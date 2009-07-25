@@ -210,7 +210,8 @@ void BitFile::setNCDFields(const char * partname)
     }
 }
 
-unsigned long BitFile::saveAs(OUTFILE_STYLE style, const char  *device, FILE *fp)
+unsigned long BitFile::saveAs(OUTFILE_STYLE style, const char  *device,
+			      FILE *fp)
 {
   if(length<=0)return length;
   unsigned int clip;

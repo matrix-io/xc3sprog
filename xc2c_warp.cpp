@@ -26,7 +26,9 @@ int main(int argc, char**args)
   char device[256]= "";
   FILE *fp = NULL;
   const char * mapdir = NULL;
-  fprintf(stderr, "Release $Rev: 237 $\nPlease provide feedback on success/failure/enhancement requests!\nCheck Sourceforge SVN for updates!\n");
+  fprintf(stderr, "Release $Rev: 237 $\n"
+	  "Please provide feedback on success/failure/enhancement requests!\n"
+	  "Check Sourceforge SVN for updates!\n");
 
   while(true) {
     switch(getopt(argc, args, "?m:F:vo:")) {
@@ -73,8 +75,9 @@ int main(int argc, char**args)
   if (fuses.readFile(args[0]) == 0)
     {
       if (verbose)
-	fprintf(stderr,"Got Jedecfile %s for Device %s: %d Fuses, Checksum: 0x%04x\n", 
-		args[0], fuses.getDevice(), fuses.getLength(), fuses.getChecksum());
+	fprintf(stderr,"Jedecfile %s for %s: %d Fuses, Checksum: 0x%04x\n", 
+		args[0], fuses.getDevice(), fuses.getLength(),
+		fuses.getChecksum());
       strncpy(device, fuses.getDevice(), 255);
     }
   else if (bits.readFile(args[0]) == 0 )
@@ -92,7 +95,8 @@ int main(int argc, char**args)
     }
   if (map.loadmapfile(mapdir, device))
     {
-      fprintf(stderr, "failed to load Mapfile %s, aborting\n",  map.GetFilename());
+      fprintf(stderr, "failed to load Mapfile %s, aborting\n",
+	      map.GetFilename());
       return 2;
     }
   if(outfile)
@@ -100,7 +104,8 @@ int main(int argc, char**args)
       fp = fopen(outfile,"wb");
       if (!fp)
 	{
-	  fprintf(stderr, "failed to open %s: %s\n", outfile, strerror(errno));
+	  fprintf(stderr, "failed to open %s: %s\n", outfile,
+		  strerror(errno));
 	  return 1;
 	}
     }
@@ -108,8 +113,10 @@ int main(int argc, char**args)
   if (revert)
     {
       map.bitfile2jedecfile(&bits, &fuses);
-      fprintf(stderr, "Device %s: %d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n",
-		 fuses.getDevice(), fuses.getLength(), fuses.calcChecksum(),fuses.getChecksum());
+      fprintf(stderr, "Device %s: %d Fuses, Checksum calculated: 0x%04x,"
+	      " Checksum from file 0x%04x\n",
+		 fuses.getDevice(), fuses.getLength(), fuses.calcChecksum(),
+	      fuses.getChecksum());
       fuses.saveAsJed( device, fp);
     }
   else

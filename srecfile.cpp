@@ -258,8 +258,6 @@ SrecFile::SrecFile(char const * fname, unsigned int bufsize)
     k=RecordType(SRec.Type);
     if(k==DATARECORD)
       {
-	//	if (SRec.Address > 0x800000) /* for new avr-obj setting the ARAM section 081202*/
-	//	  break;
 	for(i=0;i<SRec.DataLength;)
 	  {
 	    Address=SRec.Address;
@@ -272,7 +270,8 @@ SrecFile::SrecFile(char const * fname, unsigned int bufsize)
 	      {
 		fprintf(stderr,"\n Address: 0x%lx",Address);
 		Bytes_Read = 0;
-		fprintf(stderr, "\n Buffer too small, Number of bytes read = %lu \n ",NumberOfBytes);
+		fprintf(stderr, "\n Buffer too small, "
+			"Number of bytes read = %lu \n ",NumberOfBytes);
 		return;
 	      }
 	    buffer[(size_t)Address] = LBuf[i];

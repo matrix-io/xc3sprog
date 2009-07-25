@@ -29,7 +29,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 using namespace std;
 
-IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial, int subtype)
+IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
+	       int subtype)
   : IOBase(), bptr(0), calls_rd(0), calls_wr(0), retries(0){
     
   if (subtype == FTDI_NO_EN)
@@ -97,7 +98,8 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial, in
     
     // Set interface
     if(ftdi_set_interface(&ftdi, INTERFACE_A) < 0) {
-      throw  io_exception(std::string("ftdi_set_interface: ") + ftdi_get_error_string(&ftdi));
+      throw  io_exception(std::string("ftdi_set_interface: ") 
+			  + ftdi_get_error_string(&ftdi));
     }
 	
     // Open device
@@ -107,17 +109,20 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial, in
     
   //Set the lacentcy time to a low value
   if(ftdi_set_latency_timer(&ftdi, 1) <0) {
-    throw  io_exception(std::string("ftdi_set_latency_timer: ") + ftdi_get_error_string(&ftdi));
+    throw  io_exception(std::string("ftdi_set_latency_timer: ")
+			+ ftdi_get_error_string(&ftdi));
   }
 
   // Set mode to MPSSE
   if(ftdi_set_bitmode(&ftdi, 0xfb, BITMODE_MPSSE) < 0) {
-    throw  io_exception(std::string("ftdi_set_bitmode: ") + ftdi_get_error_string(&ftdi));
+    throw  io_exception(std::string("ftdi_set_bitmode: ")
+			+ ftdi_get_error_string(&ftdi));
   }
 
   // Purge buffers
   if(ftdi_usb_purge_buffers(&ftdi) < 0) {
-    throw  io_exception(std::string("ftdi_usb_purge_buffers: ") + ftdi_get_error_string(&ftdi));
+    throw  io_exception(std::string("ftdi_usb_purge_buffers: ")
+			+ ftdi_get_error_string(&ftdi));
   }
   
   // Clear the MPSSE buffers
@@ -150,7 +155,8 @@ void IOFtdi::settype(int sub_type)
   subtype = sub_type;
 }
 
-void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
+void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo,
+			int length, bool last)
 {
   unsigned char rbuf[TX_BUF];
   unsigned const char *tmpsbuf = tdi;
@@ -182,7 +188,8 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 	    {
 	      if  (readusb(tmprbuf,buflen) != buflen) 
 		{
-		  fprintf(stderr,"IO_JTAG_MPSSE::shiftTDITDO: Failed to read block 0x%x bytes\n", buflen );
+		  fprintf(stderr,"IO_JTAG_MPSSE::shiftTDITDO:"
+			  "Failed to read block 0x%x bytes\n", buflen );
 		}
 	      tmprbuf+=buflen;
 	    }
@@ -237,7 +244,8 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 	lastbit = (*tmpsbuf & (1<< rembits));
       /* TMS/CS with LSB first on -ve TCK/SK edge, read on +ve edge 
 	 - use if TCK/SK is set to 0*/
-      buf[0] = MPSSE_WRITE_TMS|((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
+      buf[0] = MPSSE_WRITE_TMS|((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)|
+	MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
       buf[1] = 0;     /* only one bit */
       buf[2] = (lastbit) ? 0x81 : 1 ;     /* TMS set */
       mpsse_add_cmd (buf, 3);
@@ -262,7 +270,8 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 	    {
 	      /* TDO Bits are shifted downwards, so align them 
 		 We only shift TMS once, so the relevant bit is bit 7 (0x80) */
-	      rbuf[buflen-2] = rbuf[buflen-2]>>(8-rembits) | ((rbuf[buflen - 1]&0x80) >> (7 - rembits));
+	      rbuf[buflen-2] = rbuf[buflen-2]>>(8-rembits) |
+		((rbuf[buflen - 1]&0x80) >> (7 - rembits));
 	      buflen--;
 	    }
 	  memcpy(tmprbuf,rbuf,buflen);
@@ -272,7 +281,8 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length
 
 void IOFtdi::tx_tms(unsigned char *pat, int length)
 {
-    unsigned char buf[3] = {MPSSE_WRITE_TMS|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG, length-1, pat[0]};
+    unsigned char buf[3] = {MPSSE_WRITE_TMS|MPSSE_LSB|MPSSE_BITMODE|
+			    MPSSE_WRITE_NEG, length-1, pat[0]};
     int len = length, i, j=0;
     if (!len)
       return;
@@ -350,7 +360,8 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
     }
   if (timeout >= 1000)
     {
-      fprintf(stderr,"readusb waiting too long for %ld bytes, only %d available\n", len, read);
+      fprintf(stderr,"readusb waiting too long for %ld bytes, only %d read\n",
+	      len, read);
       if (last_errno)
 	{
 	  fprintf(stderr,"error %s\n", strerror(last_errno));
@@ -376,16 +387,20 @@ void IOFtdi::deinit(void)
   ftdi_usb_close(&ftdi);
   ftdi_deinit(&ftdi);
 #endif
-  if(verbose)  fprintf(stderr, "USB transactions: Write %d read %d retries %d\n", calls_wr, calls_rd, retries);
+  if(verbose)
+    fprintf(stderr, "USB transactions: Write %d read %d retries %d\n",
+	    calls_wr, calls_rd, retries);
 }
   
 IOFtdi::~IOFtdi()
 {
   int read;
   /* Before shutdown, we must wait until everything is shifted out
-     Do this by temporary enabling loopback mode, write something and wait until we can read it back */
+     Do this by temporary enabling loopback mode, write something 
+     and wait until we can read it back */
   static unsigned char   tbuf[10] = { LOOPBACK_START,
-				      MPSSE_DO_READ|MPSSE_READ_NEG|MPSSE_DO_WRITE|MPSSE_WRITE_NEG|MPSSE_LSB, 
+				      MPSSE_DO_READ|MPSSE_READ_NEG|
+				      MPSSE_DO_WRITE|MPSSE_WRITE_NEG|MPSSE_LSB, 
 				      0x04, 0x00,
 				      0xaa, 0x55, 0x00, 0xff, 0xaa, 
 				      LOOPBACK_END};

@@ -40,7 +40,8 @@ void IODebug::tx(bool tms, bool tdi)
 
 void IODebug::tx_tdi_byte(unsigned char tdi_byte) {
 }
-void IODebug::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)
+void IODebug::txrx_block(const unsigned char *tdi, unsigned char *tdo,
+			 int length, bool last)
 {
   int i=0;
   int j=0;
@@ -57,7 +58,7 @@ void IODebug::txrx_block(const unsigned char *tdi, unsigned char *tdo, int lengt
       tdi_byte=tdi[j]; // Get the next TDI byte
     }
   };
-  tdo_byte=tdo_byte+(txrx(last, (tdi_byte&1)==1)<<(i%8)); // TMS set if last=true
+  tdo_byte=tdo_byte+(txrx(last, (tdi_byte&1)==1)<<(i%8)); 
   tdo[j]=tdo_byte;
   return;
 }

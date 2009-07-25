@@ -47,18 +47,23 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgspiflash.h"
 #include "utilities.h"
 
-int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
-int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char* device);
-int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp, const char *device);
-int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char *device);
-int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char *device);
+int programXC3S(Jtag &g, IOBase &io, BitFile &file, bool verify,
+		int jstart_len);
+int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp,
+	       OUTFILE_STYLE format, const char* device);
+int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
+		 const char *device);
+int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp,
+		OUTFILE_STYLE format, const char *device);
+int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
+	       OUTFILE_STYLE format, const char *device);
 
 extern char *optarg;
 extern int optind;
 
 /* Excercise the IR Chain for at least 10000 Times
-   If we read a different pattern, print the pattern for for optical comparision
-   and read for at least 100000 times more
+   If we read a different pattern, print the pattern for for optical 
+   comparision and read for at least 100000 times more
 
    This may result in an endless loop to facilitate debugging with a scope etc 
 */
@@ -92,7 +97,8 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
     {
       for(j=0; j<db.getIRLength(i); j++)
 	{
-	  fprintf(stderr, "%c", (((dout[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
+	  fprintf(stderr, "%c", 
+		  (((dout[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
 	  k--;
 	}
       fprintf(stderr, " ");
@@ -114,7 +120,8 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
 	    {
 	      for(j=0; j<db.getIRLength(i); j++)
 		{
-		  fprintf(stderr, "%c", (((dcmp[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
+		  fprintf(stderr, "%c",
+			  (((dcmp[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
 		  k--;
 		}
 	      fprintf(stderr, " ");
@@ -153,7 +160,8 @@ unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
   }
   
   if(jtag.selectDevice(chainpos)<0){
-    fprintf(stderr,"Invalid chain position %d, position must be less than %d (but not less than 0).\n",chainpos,num);
+    fprintf(stderr,"Invalid chain position %d, must be >= 0 and < %d\n",
+	    chainpos,num);
     return 0;
   }
 
@@ -161,52 +169,56 @@ unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
   id = jtag.getDeviceID(chainpos);
   if (verbose)
   {
-    fprintf(stderr, "JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\nProgramming: ", chainpos,id, dd);
+    fprintf(stderr, "JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\n"
+	    , chainpos,id, dd);
     fflush(stdout);
   }
   return id;
 }
   
-void usage() {
-  fprintf(stderr,
-	  "\nUsage:\txc3sprog [-v] [-c cable_type] [-p chainpos] bitfile [+ (val[*cnt]|binfile) ...]\n"
-	  "   -?\t\tprint this help\n"
-	  "   -v\t\tverbose output\n"
-	  "   -j\t\tDetect JTAG chain, nothing else\n"
-	  "   -T[val]\tTest chain integrity val times (0 = forever) or 10000 times default\n"
-	  "   -C\t\tVerify device against File (no programming)\n"
-	  "   -I\t\tWork on connected SPI Flash\n"
-          "     \t\t(after bscan_spi Bitfile for device has been loaded)\n"
-	  "   -r\t\tRead from device and write to file\n\n"
-	  "   -F\t\toutput file format (BIT|BIN|HEX)\n"
- 	  "    Supported cable types: pp, ftdi, fx2, xpc\n"
-    	  "   \tOptional pp arguments:\n"
-	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
-	  "   \tOptional fx2/ftdi arguments:\n"
-	  "   \t\t[-V vendor]      (idVendor)\n"
-	  "   \t\t[-P product]     (idProduct)\n"
-	  "   \t\t[-S description string] (Product string)\n"
-	  "   \t\t[-s serial]      (SerialNumber string)\n"
-	  "   \tOptional ftdi arguments:\n"
-	  "   \t\t[-t subtype]\n"
-	  "   \t\t\t(NONE\t\t(0x0403:0x0610) or\n"
-	  "   \t\t\t IKDA\t\t(0x0403:0x0610, EN_N on ACBUS2) or\n"
-	  "   \t\t\t OLIMEX\t\t(0x15b1:0x0003, JTAG_EN_N on ADBUS4, LED on ACBUS3))\n"
-	  "   \t\t\t AMONTEC\t(0x0403:0xcff8, JTAG_EN_N on ADBUS4)\n"
-	  "   \tOptional xpc arguments:\n"
-	  "   \t\t[-t subtype] (NONE or INT  (Internal Chain on XPC, doesn't work for now on DLC10))\n"
-	  "   chainpos\n"
-	  "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
-          "   AVR specific arguments\n"
-	  "\t[-L ] (Program Lockbits if defined in fusefile)\n"
-	  "\t[-e eepromfile]\n"
-	  "\t[-f fusefile] (default extension: .fus; leave fuses untouched if no file given)\n"
-	  "\n"
-	  "   val[*cnt]|binfile\n"
-	  "\tAdditional data to append to bitfile when programming.\n"
-	  "\tOnly sensible for programming platform flashes (PROMs).\n"
-	  "\t   val[*cnt]  explicitly given 32-bit padding repeated cnt times\n"
-	  "\t   binfile    binary file content to append\n\n");
+void usage()
+{
+  fprintf
+    (
+     stderr,
+     "\nUsage:\txc3sprog [-v] [-p pos] [...] bitfile [+(val[*cnt]|binfile)]\n"
+     "   -?\t\tprint this help\n"
+     "   -v\t\tverbose output\n"
+     "   -j\t\tDetect JTAG chain, nothing else\n"
+     "   -T[val]\tTest chain val times (0 = forever) or 10000 times default\n"
+     "   -C\t\tVerify device against File (no programming)\n"
+     "   -I\t\tWork on connected SPI Flash\n"
+     "     \t\t(after bscan_spi Bitfile for device has been loaded)\n"
+     "   -r\t\tRead from device and write to file\n\n"
+     "   -F\t\toutput file format (BIT|BIN|HEX)\n"
+     "    Supported cable types: pp, ftdi, fx2, xpc\n"
+     "   \tOptional pp arguments:\n"
+     "   \t\t[-d device] (e.g. /dev/parport0)\n"
+     "   \tOptional fx2/ftdi arguments:\n"
+     "   \t\t[-V vendor]      (idVendor)\n"
+     "   \t\t[-P product]     (idProduct)\n"
+     "   \t\t[-S description string] (Product string)\n"
+     "   \t\t[-s serial]      (SerialNumber string)\n"
+     "   \tOptional ftdi arguments:\n"
+     "   \t\t[-t subtype]\n"
+     "   \t\t\t(NONE\t\t(0x0403:0x0610) or\n"
+     "   \t\t\t IKDA\t\t(0x0403:0x0610, EN_N on ACBUS2) or\n"
+     "   \t\t\t OLIMEX\t\t(0x15b1:0x0003, EN on ADBUS4, LED on ACBUS3))\n"
+     "   \t\t\t AMONTEC\t(0x0403:0xcff8, EN on ADBUS4)\n"
+     "   \tOptional xpc arguments:\n"
+     "   \t\t[-t subtype] (NONE or INT  (Internal Chain , not for DLC10))\n"
+     "   chainpos\n"
+     "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
+     "   AVR specific arguments\n"
+     "\t[-L ] (Program Lockbits if defined in fusefile)\n"
+     "\t[-e eepromfile]\n"
+     "\t[-f fusefile] (def extension: .fus, don't touch fuses if not given)\n"
+     "\n"
+     "   val[*cnt]|binfile\n"
+     "\tAdditional data to append to bitfile when programming.\n"
+     "\tOnly sensible for programming platform flashes (PROMs).\n"
+	  "\t   val[*cnt]  pas with 32-bit val cnt times\n"
+     "\t   binfile    binary file content to append\n\n");
   exit(255);
 }
 
@@ -238,7 +250,9 @@ int main(int argc, char **args)
   FILE *fp =0;
   
   // Produce release info from CVS tags
-  fprintf(stderr, "Release $Rev$\nPlease provide feedback on success/failure/enhancement requests!\nCheck Sourceforge SVN!\n");
+  fprintf(stderr, "Release $Rev$\n"
+	  "Please provide feedback on success/failure/enhancement requests!\n"
+	  "Check Sourceforge SVN for updates!\n");
 
   // Start from parsing command line arguments
   while(true) {
@@ -448,10 +462,14 @@ int main(int argc, char **args)
 		  file.readFile(args[0]);
 		  if(verbose) 
 		    {
-		      fprintf(stderr, "Created from NCD file: %s\n",file.getNCDFilename());
-		      fprintf(stderr, "Target device: %s\n",file.getPartName());
-		      fprintf(stderr, "Created: %s %s\n",file.getDate(),file.getTime());
-		      fprintf(stderr, "Bitstream length: %lu bits\n", file.getLength());
+		      fprintf(stderr, "Created from NCD file: %s\n",
+			      file.getNCDFilename());
+		      fprintf(stderr, "Target device: %s\n",
+			      file.getPartName());
+		      fprintf(stderr, "Created: %s %s\n",
+			      file.getDate(),file.getTime());
+		      fprintf(stderr, "Bitstream length: %lu bits\n",
+			      file.getLength());
 		    }      
 		  if (family == 0x28)
 		    {
@@ -477,17 +495,20 @@ int main(int argc, char **args)
 		  int size_ind = (id & 0x000ff000)>>12;
 		  ProgAlgXCF alg(jtag,io.operator*(),size_ind);
 
-		  return programXCF(alg, file, verify, fp, format, db.getDeviceDescription(chainpos));
+		  return programXCF(alg, file, verify, fp, format, 
+				    db.getDeviceDescription(chainpos));
 		}
 	      else 
 		{
 		  if(spiflash)
 		    {
 		      ProgAlgSPIFlash alg(jtag, file, io.operator*());
-		      return programSPI(alg, file, verify, fp, format, db.getDeviceDescription(chainpos));
+		      return programSPI(alg, file, verify, fp, format, 
+					db.getDeviceDescription(chainpos));
 		    }
 		    else
-		      return  programXC3S(jtag,io.operator*(),file, verify, family);
+		      return  programXC3S(jtag,io.operator*(),file,
+					  verify, family);
 		}
 	    }
 	  catch(io_exception& e) {
@@ -513,7 +534,8 @@ int main(int argc, char **args)
 		  fprintf(stderr, "Short JEDEC File, aborting\n");
 		  return 3;
 		}
-	      if(strncmp(db.getDeviceDescription(chainpos), file.getDevice(), sizeof(db.getDeviceDescription(chainpos))) !=0)
+	      if(strncmp(db.getDeviceDescription(chainpos), file.getDevice(), 
+			 sizeof(db.getDeviceDescription(chainpos))) !=0)
 		{
 		  fprintf(stderr, "Incompatible Jedec File for Device %s\n"
 			 "Actual device in Chain is %s\n", 
@@ -522,7 +544,8 @@ int main(int argc, char **args)
 		}
 	    }
 	  
-	  return programXC95X(alg, file, verify, fp, db.getDeviceDescription(chainpos));
+	  return programXC95X(alg, file, verify, fp,
+			      db.getDeviceDescription(chainpos));
 	}
       else if ((family & 0x7e) == 0x36) /* XC2C */
 	{
@@ -536,24 +559,29 @@ int main(int argc, char **args)
                   fprintf(stderr, "Probably no Bitfile, aborting\n");
                   return 2;
                 }
-              if(strncmp(db.getDeviceDescription(chainpos), file.getPartName(), sizeof("XC2CXX")) !=0)
+              if(strncmp(db.getDeviceDescription(chainpos),
+			 file.getPartName(), sizeof("XC2CXX")) !=0)
                 {
                   fprintf(stderr, "Incompatible Bin File for Device %s\n"
                          "Actual device in Chain is %s\n", 
-                         file.getPartName(), db.getDeviceDescription(chainpos));
+                         file.getPartName(), 
+			  db.getDeviceDescription(chainpos));
                   return 3;
                 }
 	    }
 	  
 	  ProgAlgXC2C alg(jtag, io.operator*(), size_ind);
-	  return programXC2C(alg, file, verify, fp, format, db.getDeviceDescription(chainpos));
+	  return programXC2C(alg, file, verify, fp, format,
+			     db.getDeviceDescription(chainpos));
 	}
     }
   else if  ( manufacturer == 0x01f) /* Atmel */
     {
       return jAVR (jtag, id, args[0],verify, lock, eepromfile, fusefile);
     }
-  fprintf(stderr,"Sorry, cannot program '%s', a later release may be able to.\n", db.getDeviceDescription(chainpos));
+  fprintf(stderr,
+	  "Sorry, cannot program '%s', a later release may be able to.\n", 
+	  db.getDeviceDescription(chainpos));
   return 1;
 }
 
@@ -571,7 +599,8 @@ int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
   return 0;
 }
 
-int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char *device)
+int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp,
+	       OUTFILE_STYLE format, const char *device)
 {
   if(fp)
     {
@@ -592,7 +621,8 @@ int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_ST
   return 0;
 }
 
-int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char *device)
+int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
+	       OUTFILE_STYLE format, const char *device)
 {
   if(fp)
     {
@@ -614,7 +644,8 @@ int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp, OUTFI
   return 0;
 }
 
-int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp, const char *device)
+int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
+		 const char *device)
 {
   if(fp) /* Readback requested*/
     {
@@ -634,7 +665,8 @@ int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp, cons
   return alg.array_verify(file);
 }
 
-int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char *device)
+int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp,
+		OUTFILE_STYLE format, const char *device)
 {
   if(fp) /* Readback requested*/
     {

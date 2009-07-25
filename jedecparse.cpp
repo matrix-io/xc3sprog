@@ -46,11 +46,15 @@ int main(int argc, char**args)
 	    {
 	      fp = fopen(args[2], "wb");
 	      if (!fp)
-		fprintf(stderr," Can't open %s: %s  \n", args[2], strerror(errno));
+		fprintf(stderr," Can't open %s: %s  \n", args[2], 
+			strerror(errno));
 	    }
-	  fprintf(stderr, "Device %s: %d Fuses, Checksum calculated: 0x%04x, Checksum from file 0x%04x\n",
-		 file.getDevice(), file.getLength(), file.calcChecksum(),file.getChecksum());
-	  fprintf(stderr, "Version : %s Date %s\n",  file.getVersion(), file.getDate());
+	  fprintf(stderr, "Device %s: %d Fuses, Checksum calculated: 0x%04x,"
+		  "Checksum from file 0x%04x\n",
+		 file.getDevice(), file.getLength(), file.calcChecksum(),
+		  file.getChecksum());
+	  fprintf(stderr, "Version : %s Date %s\n",  file.getVersion(),
+		  file.getDate());
 	  file.saveAsJed(file.getDevice(), fp);
 	}
       catch(io_exception& e) 

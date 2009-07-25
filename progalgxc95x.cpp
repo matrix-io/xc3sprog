@@ -132,7 +132,8 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
   for(sec=0;sec < MaxSector;sec++)
     {
     if(io->getVerbose())
-      fprintf(stderr, "                            \rProgramming Sector %3d", sec);
+      fprintf(stderr, "                            \r"
+	      "Programming Sector %3d", sec);
       preamble[0]= 0x01;
       for(l=0;l<3;l++){
 	for(m=0;m<5;m++){
@@ -194,7 +195,8 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
     }
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    fprintf(stderr, "\nProgramming  time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+    fprintf(stderr, "\nProgramming  time %.1f ms\n",
+	    (double)deltaT(tv, tv + 1)/1.0e3);
   return 0;
 }
 
@@ -264,7 +266,8 @@ void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
   
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    fprintf(stderr, "\nReadback time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+    fprintf(stderr, "\nReadback time %.1f ms\n",
+	    (double)deltaT(tv, tv + 1)/1.0e3);
 }
 
 int ProgAlgXC95X::flow_array_verify(JedecFile &file)
@@ -345,7 +348,8 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
   
   gettimeofday(tv+1, NULL);
   if(io->getVerbose())
-    fprintf(stderr, "\nSuccess! Verify time %.1f ms\n", (double)deltaT(tv, tv + 1)/1.0e3);
+    fprintf(stderr, "\nSuccess! Verify time %.1f ms\n",
+	    (double)deltaT(tv, tv + 1)/1.0e3);
   return 0;
 }	    
 

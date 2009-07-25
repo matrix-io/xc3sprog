@@ -29,7 +29,8 @@ Jtag::Jtag(IOBase *iob)
   hinstLib = LoadLibrary(TEXT("ntdll"));
   if(hinstLib)
   // Get the pointer to the function
-    ZwDelayExecution = (pfZwDelayExecution) GetProcAddress(hinstLib, "ZwDelayExecution");
+    ZwDelayExecution = 
+      (pfZwDelayExecution)GetProcAddress(hinstLib, "ZwDelayExecution");
 #endif
 }
 
@@ -60,7 +61,7 @@ int Jtag::getChain()
     else{
       if (id == 0xffffffff && numDevices >0)
        {
-         fprintf(stderr,"You probably have a broken Atmel device in your chain!\n");
+         fprintf(stderr,"Probably a broken Atmel device in your chain!\n");
          fprintf(stderr,"No succeeding device can be identified\n");
        }
       break;
@@ -84,7 +85,8 @@ void Jtag::Usleep(unsigned int usec)
 #ifdef __WIN32__
   if (ZwDelayExecution)
     {
-      __int64 delay = usec * -10; /* FIXME: Check Type usege __int64 versus LARGE_INTEGER */
+      /* FIXME: Check Type usage __int64 versus LARGE_INTEGER */
+      __int64 delay = usec * -10; 
       ZwDelayExecution(FALSE, &delay);
     }
   else
@@ -101,7 +103,8 @@ int Jtag::setDeviceIRLength(int dev, int len)
   return dev;
 }
 
-void Jtag::shiftDR(const byte *tdi, byte *tdo, int length, int align, bool exit)
+void Jtag::shiftDR(const byte *tdi, byte *tdo, int length,
+		   int align, bool exit)
 {
   if(deviceIndex<0)return;
   int post=deviceIndex;
@@ -132,9 +135,11 @@ void Jtag::shiftIR(const byte *tdi, byte *tdo)
   if(deviceIndex<0)return;
   io->setTapState(IOBase::SHIFT_IR);
   int pre=0;
-  for(int dev=deviceIndex+1; dev<numDevices; dev++)pre+=devices[dev].irlen; // Calculate number of pre BYPASS bits.
+  for(int dev=deviceIndex+1; dev<numDevices; dev++)
+    pre+=devices[dev].irlen; // Calculate number of pre BYPASS bits.
   int post=0;
-  for(int dev=0; dev<deviceIndex; dev++)post+=devices[dev].irlen; // Calculate number of post BYPASS bits.
+  for(int dev=0; dev<deviceIndex; dev++)
+    post+=devices[dev].irlen; // Calculate number of post BYPASS bits.
   io->shift(true,pre,false);
   if(tdo!=0)io->shiftTDITDO(tdi,tdo,devices[deviceIndex].irlen,post==0);
   else if(tdo==0)io->shiftTDI(tdi,devices[deviceIndex].irlen,post==0);
