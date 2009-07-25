@@ -28,6 +28,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <string.h>
 #include <unistd.h>
 #include <memory>
+#include "errno.h"
 
 #include "io_exception.h"
 #include "ioparport.h"
@@ -140,7 +141,6 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
 unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
 {
   int num=jtag.getChain();
-  int family, manufacturer;
   unsigned int id;
 
   if (num == 0)
@@ -247,8 +247,8 @@ int main(int argc, char **args)
   char *devicedb = NULL;
   DeviceDB db(devicedb);
   long value;
-  FILE *fp =0;
-  
+  FILE *fpin =0;
+  FILE *fpout = 0;
   // Produce release info from CVS tags
   fprintf(stderr, "Release $Rev$\n"
 	  "Please provide feedback on success/failure/enhancement requests!\n"
@@ -427,18 +427,18 @@ int main(int argc, char **args)
   if (readback)
     {
       if (*args[0] == '-')
-	fp = stdout;
+	fpout = stdout;
       else
 	{
-	  fp=fopen(args[0],"rb");
-	  if(fp)
+	  fpout=fopen(args[0],"rb");
+	  if(fpout)
 	    {
 	      fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
-	      fclose(fp);
+	      fclose(fpout);
 	      return 1;
 	    }
-	  fp=fopen(args[0],"wb");
-	  if(!fp)
+	  fpout=fopen(args[0],"wb");
+	  if(!fpout)
 	    {
 	      fprintf(stderr, "Unable to open File %s. Aborting\n", args[0]);
 	      return 1;
@@ -446,6 +446,19 @@ int main(int argc, char **args)
 	}
     }
 
+  if (*args[0] == '-')
+    fpin = stdin;
+  else
+    {
+      fpin=fopen(args[0],"rb");
+      if(!fpin)
+	{
+	  fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
+		  strerror(errno));
+	  return 1;
+	}
+    }
+      
   if ( manufacturer == 0x049) /* XILINX*/
     {
       /* Probably XC4V and  XC5V should work too. No devices to test at IKDA */
@@ -463,7 +476,8 @@ int main(int argc, char **args)
 	      BitFile  file;
 	      if (!readback)
 		{
-		  file.readFile(args[0]);
+		  file.readFile(fpin);
+		  fclose(fpin);
 		  if(verbose) 
 		    {
 		      fprintf(stderr, "Created from NCD file: %s\n",
@@ -499,7 +513,7 @@ int main(int argc, char **args)
 		  int size_ind = (id & 0x000ff000)>>12;
 		  ProgAlgXCF alg(jtag,io.operator*(),size_ind);
 
-		  return programXCF(alg, file, verify, fp, format, 
+		  return programXCF(alg, file, verify, fpout, format, 
 				    db.getDeviceDescription(chainpos));
 		}
 	      else 
@@ -507,7 +521,7 @@ int main(int argc, char **args)
 		  if(spiflash)
 		    {
 		      ProgAlgSPIFlash alg(jtag, file, io.operator*());
-		      return programSPI(alg, file, verify, fp, format, 
+		      return programSPI(alg, file, verify, fpout, format, 
 					db.getDeviceDescription(chainpos));
 		    }
 		    else
@@ -527,7 +541,9 @@ int main(int argc, char **args)
 	  ProgAlgXC95X alg(jtag, io.operator*(), size);
 	  if (!readback)
 	    {
-	      if (file.readFile(args[0]))
+	      int res = file.readFile(fpin);
+	      fclose (fpin);
+	      if (res)
 		{
 		  fprintf(stderr, "Probably no JEDEC File, aborting\n");
 		  return 2;
@@ -548,7 +564,7 @@ int main(int argc, char **args)
 		}
 	    }
 	  
-	  return programXC95X(alg, file, verify, fp,
+	  return programXC95X(alg, file, verify, fpout,
 			      db.getDeviceDescription(chainpos));
 	}
       else if ((family & 0x7e) == 0x36) /* XC2C */
@@ -557,7 +573,8 @@ int main(int argc, char **args)
 	  BitFile  file;
 	  if (!readback)
 	    {
-              file.readFile(args[0]);
+              file.readFile(fpin);
+	      fclose(fpin);
               if (file.getLength() == 0)
                 {
                   fprintf(stderr, "Probably no Bitfile, aborting\n");
@@ -575,7 +592,7 @@ int main(int argc, char **args)
 	    }
 	  
 	  ProgAlgXC2C alg(jtag, io.operator*(), size_ind);
-	  return programXC2C(alg, file, verify, fp, format,
+	  return programXC2C(alg, file, verify, fpout, format,
 			     db.getDeviceDescription(chainpos));
 	}
     }
@@ -695,5 +712,5 @@ int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp,
     }
   if(!verify)
     alg.done_program();
-	     
+  return 0;
 }

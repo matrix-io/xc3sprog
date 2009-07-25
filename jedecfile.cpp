@@ -374,12 +374,11 @@ JedecFile::~JedecFile(void)
     free(jed.fuse_list);
 }
 
-int JedecFile::readFile(char const * fname)
+int JedecFile::readFile(FILE *fp)
 {
   int ch;
   struct state_mach m;
 
-  FILE *const  fp=fopen(fname,"rb");
   if(!fp) 
     return 1;
   
@@ -395,7 +394,6 @@ int JedecFile::readFile(char const * fname)
   }
   if (!jed.fuse_count)
     return 3;
-  fclose(fp);
   return 0;
 }
 

@@ -138,7 +138,7 @@ int IOXPC::xpcu_read_gpio(struct usb_dev_handle *xpcu, unsigned char *bits)
 {
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0038, 0, (char*)bits, 1, 1000)<0)
     {
-      fprintf(stderr, "usb_control_msg(0x38.0x02x) (read port E)\n", bits,
+      fprintf(stderr, "usb_control_msg(0x38) (read port E) %s\n",
 	      usb_strerror());
       return -1;
     }

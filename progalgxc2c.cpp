@@ -45,7 +45,7 @@ static byte gray_code_table[256];
 
 void init_bin2rev_gray(void)
 {
-  int i, j, k;
+  int i, j;
   unsigned char c;
   for (i=0; i<0x100; i++)
     {
@@ -67,7 +67,7 @@ void init_bin2rev_gray(void)
 
 void init_bin2gray(void)
 {
-  int i, j, k;
+  int i, j;
   unsigned char c;
   for (i=0; i<0x100; i++)
     {
@@ -166,12 +166,10 @@ void ProgAlgXC2C::erase(void)
 /* Blank check by OTF Verification */
 int ProgAlgXC2C::blank_check(void)
 {
-  int i, j, k=0;
+  int i, j;
   byte i_data[1];
   byte o_data[MAXSIZE];
   byte preamble[1]={0};
-  byte data;
-  unsigned int idx=0;
   byte ircap[1];
 
   jtag->shiftIR(&BYPASS, ircap);
@@ -205,8 +203,6 @@ void ProgAlgXC2C::array_program(BitFile &file)
   byte a_data[1];
   byte i_data[MAXSIZE];
   byte preamble[1]={0};
-  byte data;
-  unsigned int idx=0;
   byte ircap[1];
 
   jtag->shiftIR(&ISC_ENABLE_OTF, ircap);
@@ -251,11 +247,9 @@ int ProgAlgXC2C::array_verify(BitFile &file)
   int i, j, k=0;
   int res = 0;
   byte a_data[1];
-  byte i_data[MAXSIZE];
   byte o_data[MAXSIZE];
   byte preamble[1]={0};
   byte data;
-  unsigned int idx=0;
   byte ircap[1];
 
   jtag->shiftIR(&BYPASS, ircap);
@@ -298,13 +292,9 @@ int ProgAlgXC2C::array_verify(BitFile &file)
 
 void ProgAlgXC2C::done_program(void)
 {
-  int i, j, k=0;
   byte a_data[1];
   byte i_data[MAXSIZE];
-  byte o_data[MAXSIZE];
   byte preamble[1]={0};
-  byte data;
-  unsigned int idx=0;
   byte ircap[1];
 
   /* Program Done Bits */
@@ -337,7 +327,6 @@ void ProgAlgXC2C::array_read(BitFile &rbfile)
   byte o_data[MAXSIZE];
   byte preamble[1]={0};
   byte data;
-  unsigned int idx=0;
   byte ircap[1];
 
   rbfile.setLength(block_num *block_size);

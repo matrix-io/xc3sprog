@@ -1,6 +1,7 @@
 # Project
 project(xc3sprog)
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
+set(CMAKE_CXX_FLAGS "-g -Wall")
 cmake_minimum_required(VERSION 2.6)
 
 set(USE_STATIC_FTDI ON)

@@ -15,7 +15,7 @@
 
 #ifndef MAPDIR
 #if defined (__linux__) || defined(__FreeBSD__)
-#define MAPDIR "/opt/Xilinx/11.1/ISE/xbr/data"
+#define MAPDIR "/opt/Xilinx/10.1/ISE/xbr/data"
 #elif defined(__WIN32__)
 #define MAPDIR "c:"
 #endif

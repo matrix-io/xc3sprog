@@ -43,12 +43,10 @@ BitFile::BitFile()
 }
 
 // Read in file
-int BitFile::readFile(char const * fname)
+int BitFile::readFile(FILE *fp)
 {
-  FILE *const  fp=fopen(fname,"rb");
   if(!fp) 
     return 1;
-  filename = fname;
 
   try {  
     { // Skip the header
@@ -69,7 +67,6 @@ int BitFile::readFile(char const * fname)
       case 'd': field = &dtime;        break;
       case 'e':
 	processData(fp);
-	fclose(fp);
 	return 0;
       default:
 	fprintf(stderr, "Ignoring unknown field '%c'\n", key);
@@ -80,7 +77,6 @@ int BitFile::readFile(char const * fname)
     throw  io_exception("Unexpected end of file");
   }
   catch(...) {
-    fclose(fp);
     fprintf(stderr, "Unknown error\n");
     return 2;
   }
