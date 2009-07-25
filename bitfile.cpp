@@ -163,7 +163,7 @@ void BitFile::append(char const *fname) {
 
 void BitFile::setLength(unsigned int size)
 {
-  length = (size+7)>>3;
+  length = size/8 + ((size%8)?1:0);
   if(buffer) delete [] buffer;
   buffer=new byte[length];
   memset(buffer, 0xff, length);
@@ -213,7 +213,7 @@ void BitFile::setNCDFields(const char * partname)
 unsigned long BitFile::saveAs(OUTFILE_STYLE style, const char  *device, FILE *fp)
 {
   if(length<=0)return length;
-  int clip;
+  unsigned int clip;
   unsigned int i;
 
   setNCDFields(device);
@@ -329,9 +329,9 @@ void BitFile::set_bit(unsigned int idx, int blow)
 {
   unsigned int bval, bit;
   bval = idx / 8;
-  if(bval > length)
+  if(bval >= length)
     {
-      fprintf(stderr,"set_bit invalid index %d lenght %d\n", idx, length*8);
+      fprintf(stderr,"set_bit invalid index %d lenght %ld\n", idx, length*8);
       throw  io_exception(std::string("bit_set_fuse"));
     }
   bit  = idx % 8;
