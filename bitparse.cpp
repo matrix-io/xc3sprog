@@ -24,6 +24,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "bitfile.h"
 #include "io_exception.h"
@@ -40,6 +41,7 @@ void usage() {
 
 int main(int argc, char**args)
 {
+
   OUTFILE_STYLE format = STYLE_BIT;
   const char * outfile = NULL;
   while(true)
