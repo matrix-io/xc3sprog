@@ -28,55 +28,137 @@ int spi_cfg[] = {
         7, 264, 2048, // XC3S200AN / XC3S400AN
         9, 264, 4096, // XC3S700AN
         11, 528, 4096, // XC3S1400AN
+	13, 528, 8192, /* AT45DB321*/
         -1, 0, 0
 };
 
-int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages) {
-        byte fbuf[8];
-        int idx;
+int ProgAlgSPIFlash::spi_flashinfo_s33(int *size, int *pages, 
+				       unsigned char *buf) 
+{
+  fprintf(stderr, "Found Intel Device, Device ID 0x%02x%02x\n",
+	  buf[1], buf[2]);
+  if (buf[1] != 0x89)
+    {
+      fprintf(stderr,"Unexpected RDID  upper Device ID 0x%02x\n", buf[1]);
+      return -1;
+    }
+  switch (buf[2])
+    {
+    case 0x11:
+      *pages = 8192;
+      break;
+    case 0x12:
+      *pages = 16364;
+      break;
+    case 0x13:
+      *pages = 32768;
+      break;
+    default:
+      fprintf(stderr,"Unexpected S33 size ID 0x%02x\n", buf[2]);
+      return -1;
+    }
+  *size = 256;
+  fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
+	  *size, *pages, *size *  *pages);
+
+  /* try to read the OTP Number */ 
+  buf[0]=0x4B;
+  buf[1]=0x00;
+  buf[2]=0x01;
+  buf[3]=0x02;
+  
+  spi_xfer_user1(NULL,0,0,buf,8, 4);
+  spi_xfer_user1(buf, 8,4,NULL,0, 0);
+  
+  fprintf(stderr,"Unique number: ");
+  for (int i= 0; i<8 ; i++)
+    fprintf(stderr,"%02x", buf[i]);
+ 
+  fprintf(stderr, " \n");
+
+  return 1;
+}
+
+int ProgAlgSPIFlash::spi_flashinfo_at45(int *size, int *pages) 
+{
         
-        // send JEDEC info
-        fbuf[0]=0x9f;
-        spi_xfer_user1(NULL,0,0,fbuf,2,1);
+  byte fbuf[128];
+  int idx;
+  
+  // read result
+  fbuf[0]=0xd7;
+  spi_xfer_user1(NULL,0,0,fbuf, 2, 1);
+  
+  // get status
+  spi_xfer_user1(fbuf,2,1, NULL, 0, 0);
+  fbuf[0] = file->reverse8(fbuf[0]);
+  fbuf[1] = file->reverse8(fbuf[1]);
+  fprintf(stderr, "status: %02x\n",fbuf[1]);
         
-        // get JEDEC, send status
-        fbuf[4]=0xd7;
-        spi_xfer_user1(fbuf,2,1,fbuf+4,1, 1);
-        
-	fbuf[0] = file->reverse8(fbuf[0]);
-	fbuf[1] = file->reverse8(fbuf[1]);
-        fprintf(stderr, "JEDEC: %02x %02x",fbuf[0],fbuf[1]);
-        
-        // tiny sanity check
-        if(fbuf[0] != 0x1f) {
-                fprintf(stderr, "unknown JEDEC manufacturer: %02x\n",fbuf[0]);
-                return -1;
-        }
-	else
-	  fprintf(stderr, "\n");
-        
-        // get status
-        spi_xfer_user1(fbuf,1,1, NULL, 0, 0);
-	fbuf[0] = file->reverse8(fbuf[0]);
-        fprintf(stderr, "status: %02x\n",fbuf[0]);
-        
-        for(idx=0;spi_cfg[idx] != -1;idx+=3) {
-                if(spi_cfg[idx] == ((fbuf[0]>>2)&0x0f))
-                        break;
-        }
-        
-        if(spi_cfg[idx] == -1) {
-                fprintf(stderr, "don't know that flash or status b0rken!\n");
-                return -1;
-        }
-        
-        fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
-	       spi_cfg[idx+1],spi_cfg[idx+2],spi_cfg[idx+1]*spi_cfg[idx+2]);
-        
-        *size=spi_cfg[idx+1];
-        *pages=spi_cfg[idx+2];
-        
-        return 0;
+  for(idx=0;spi_cfg[idx] != -1;idx+=3) {
+    if(spi_cfg[idx] == ((fbuf[0]>>2)&0x0f))
+      break;
+  }
+  
+  if(spi_cfg[idx] == -1) {
+    fprintf(stderr, "don't know that flash or status b0rken!\n");
+    return -1;
+  }
+  
+  fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
+	  spi_cfg[idx+1],spi_cfg[idx+2],spi_cfg[idx+1]*spi_cfg[idx+2]);
+  
+  *size=spi_cfg[idx+1];
+  *pages=spi_cfg[idx+2];
+  
+  /* try to read the OTP Number */ 
+  fbuf[0]=0x77;
+  fbuf[3]=fbuf[2]=fbuf[1]=0;
+  spi_xfer_user1(NULL,0,0,fbuf,128, 4);
+  spi_xfer_user1(fbuf, 128,4,NULL,0, 0);
+  fprintf(stderr,"Unique number:\n");
+  for (int i= 64; i< 128; i++)
+    {
+      fprintf(stderr,"%02x", fbuf[i]);
+      if ((i & 0x1f) == 0x1f)
+	fprintf(stderr,"\n");
+    }
+ 
+  return 0;
+}
+
+int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages) 
+{
+  byte fbuf[4];
+  int res;
+  
+  // send JEDEC info
+  fbuf[0]=0x9f;
+  spi_xfer_user1(NULL,0,0,fbuf,4,1);
+  
+  // read result
+  spi_xfer_user1(fbuf,4,1,NULL, 0, 1);
+  
+  fbuf[0] = file->reverse8(fbuf[0]);
+  fbuf[1] = file->reverse8(fbuf[1]);
+  fbuf[2] = file->reverse8(fbuf[2]);
+  fbuf[3] = file->reverse8(fbuf[3]);
+  fprintf(stderr, "JEDEC: %02x %02x 0x%02x 0x%02x\n",
+	  fbuf[0],fbuf[1], fbuf[2], fbuf[3]);
+  
+  switch (fbuf[0])
+    {
+    case 0x1f:
+      res = spi_flashinfo_at45(size, pages);
+      break;
+    case 0x89:
+      res = spi_flashinfo_s33(size, pages, fbuf); 
+      break;
+    default:
+      fprintf(stderr, "unknown JEDEC manufacturer: %02x\n",fbuf[0]);
+      return -1;
+    }
+  return res;
 }
 
 int ProgAlgSPIFlash::spi_xfer_user1
