@@ -66,7 +66,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	      unsigned int to_read;
 	      fprintf(stdout, "\rVerify page %4d/%4d", i/gDeviceData.fp_size,
 		      file.getLength()/gDeviceData.fp_size);
-	      fflush(stdout);
+	      fflush(stderr);
 	      if ( i< (file.getEnd() - gDeviceData.fp_size))
 		to_read = gDeviceData.fp_size;
 	      else
@@ -140,7 +140,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 			  i/gDeviceData.fp_size);
 		  goto bailout;
 		}
-	      fflush(stdout);
+	      fflush(stderr);
 	    }
 	  /* eventual last page is not full. Fill it up with FILL_BYTE)*/
 	  if (i != file.getLength())
@@ -161,7 +161,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 		  fprintf(stdout, "\rWriting page %4d/%4d",
 			  i/gDeviceData.fp_size, 
 			  file.getEnd()/gDeviceData.fp_size);
-		  fflush(stdout);
+		  fflush(stderr);
 		}
 	    }
 	  fprintf(stderr, "         done.\n"

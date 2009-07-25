@@ -146,7 +146,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
     if(io->getVerbose())
       {
 	fprintf(stderr, "\rReading page %4d",page-1); 
-	fflush(stdout);
+	fflush(stderr);
       }
     
     // see UG333 page 19
@@ -188,7 +188,7 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     if(io->getVerbose())
       {
 	fprintf(stderr, "\rVerifying page %4d",page-1); 
-	fflush(stdout);
+	fflush(stderr);
       }
     
     // see UG333 page 19
@@ -253,7 +253,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
 	{
 	  fprintf(stderr, "                                              \r"
 		  "Writing page %4d",page-1); 
-	  fflush(stdout);
+	  fflush(stderr);
 	}
     
      // see UG333 page 19
@@ -273,7 +273,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
 	  if(io->getVerbose())
 	    {
 	      fprintf(stderr, "."); 
-	      fflush(stdout);
+	      fflush(stderr);
 	    }
 	  jtag->Usleep(5000);       
 

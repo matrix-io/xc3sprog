@@ -91,7 +91,7 @@ int ProgAlgXCF::erase()
   if(io->getVerbose())
     {
       fprintf(stderr, "Erasing");
-      fflush(stdout);
+      fflush(stderr);
     }
   jtag->shiftIR(&ISC_ERASE);
   for(i=0; i<32;i++)
@@ -103,7 +103,7 @@ int ProgAlgXCF::erase()
       if(io->getVerbose())
 	{
 	  fprintf(stderr, "."); 
-	  fflush(stdout);
+	  fflush(stderr);
 	}
       if (xcstatus[0] & 0x04)
           break;
@@ -172,7 +172,7 @@ int ProgAlgXCF::program(BitFile &file)
       else if(io->getVerbose())
 	{
 	  fprintf(stderr, ".");
-	  fflush(stdout);
+	  fflush(stderr);
 	}
       }
     if(j == 28)
@@ -211,7 +211,7 @@ int ProgAlgXCF::verify(BitFile &file)
 	{
 	  fprintf(stderr, "\rVerifying frames 0x%04x to 0x%04x",
 		  frame,frame+31); 
-	  fflush(stdout);
+	  fflush(stderr);
 	}
       jtag->longToByteArray(frame,data);
       jtag->shiftIR(&ISC_ADDRESS_SHIFT);
@@ -264,7 +264,7 @@ int ProgAlgXCF::read(BitFile &file)
       if(io->getVerbose())
 	{
 	  fprintf(stderr, "\rReading frames 0x%04x to 0x%04x",frame,frame+31); 
-	  fflush(stdout);
+	  fflush(stderr);
 	}
       jtag->longToByteArray(frame,data);
       jtag->shiftIR(&ISC_ADDRESS_SHIFT);
