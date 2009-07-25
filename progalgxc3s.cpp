@@ -94,7 +94,7 @@ void ProgAlgXC3S::flow_array_program(BitFile &file)
       if((i % (10000*array_transfer_len)) == 0)
 	{
 	  fprintf(stdout,".");
-	  fflush(stdout);
+	  fflush(stderr);
 	}
     }
   gettimeofday(tv+1, NULL);

@@ -103,7 +103,7 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
 	}
       fprintf(stderr, " ");
     }
-  fflush(stdout);
+  fflush(stderr);
   for(i=0; i<test_count; i++)
     {
       io.setTapState(IOBase::TEST_LOGIC_RESET);
@@ -127,11 +127,11 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
 	      fprintf(stderr, " ");
 	    }
 	}
-      fflush(stdout);
+      fflush(stderr);
       if(i%1000 == 999)
 	{
 	  fprintf(stderr, ".");
-	  fflush(stdout);
+	  fflush(stderr);
 	}
     }
   fprintf(stderr, "\n");
@@ -171,7 +171,7 @@ unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
   {
     fprintf(stderr, "JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\n"
 	    , chainpos,id, dd);
-    fflush(stdout);
+    fflush(stderr);
   }
   return id;
 }

@@ -353,7 +353,7 @@ int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer,
       if(o_data[1] & 0x02)
 	break;
       fprintf(stdout,".");
-      fflush(stdout);
+      fflush(stderr);
       jtag->Usleep(1000);
     }
   if (1 == 10)

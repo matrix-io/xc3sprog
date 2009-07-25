@@ -179,7 +179,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
 		  if(io->getVerbose())
 		    {
 		      fprintf(stderr, ".");
-		      fflush(stdout);
+		      fflush(stderr);
 		    }
 		  if ((o_data[0] & 0x03) == 0x01)
 		    break;
@@ -219,7 +219,7 @@ void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
       if(io->getVerbose())
 	{
 	  fprintf(stderr, "\rReading Sector %3d", sec);
-	  fflush(stdout);
+	  fflush(stderr);
 	}
       for(l=0;l<3;l++){
 	for(m=0;m<5;m++){
@@ -289,7 +289,7 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
       if(io->getVerbose())
 	{
 	  fprintf(stderr, "\rVerify Sector %3d", sec);
-	  fflush(stdout);
+	  fflush(stderr);
 	}
       for(l=0;l<3;l++){
 	for(m=0;m<5;m++){
