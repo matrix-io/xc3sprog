@@ -30,7 +30,6 @@ add_executable(debug debug.cpp iobase.cpp ioparport.cpp iodebug.cpp)
 
 add_executable(bitparse bitfile.cpp bitparse.cpp)
 add_executable(jedecparse  jedecparse.cpp jedecfile.cpp)
-add_executable(xc2c_warp xc2c_warp.cpp mapfile_xc2c.cpp jedecfile.cpp bitfile.cpp)
 add_executable(srecparse  srecparse.cpp srecfile.cpp)
 
 ADD_CUSTOM_COMMAND(OUTPUT config.h
@@ -44,15 +43,17 @@ add_library(xc3sproglib  STATIC ioparport.cpp ioftdi.cpp iofx2.cpp
                       devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp  progalgxc95x.cpp utilities.cpp
 			progalgxcf.cpp progalgxc3s.cpp progalgavr.cpp 
-			progalgxc2c.cpp
+			progalgxc2c.cpp  mapfile_xc2c.cpp
 			ioxpc.cpp progalgspiflash.cpp ${CONDITIONAL_FILES} config.h)
+
+add_executable(xc2c_warp xc2c_warp.cpp)
+target_link_libraries(xc2c_warp xc3sproglib ${CONDITIONAL_LIBS})
 
 add_executable(detectchain detectchain.cpp  config.h)
 target_link_libraries(detectchain xc3sproglib ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS})
 
 add_executable(xc3sprog xc3sprog.cpp javr.cpp srecfile.cpp progalgavr.cpp 
 			config.h)
-
 target_link_libraries(xc3sprog xc3sproglib ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS}  )
 
 add_subdirectory(javr)
