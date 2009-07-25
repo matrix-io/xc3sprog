@@ -38,6 +38,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "iodebug.h"
 #include "jtag.h"
 #include "devicedb.h"
+#include "utilities.h"
 
 extern char *optarg;
 
@@ -178,25 +179,10 @@ args_done:
 
   
   Jtag jtag(io.get());
-  int num=jtag.getChain();
 
   DeviceDB db(0);
-  int dblast=0;
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
-  for(int i=0; i<num; i++){
-    unsigned long id=jtag.getDeviceID(i);
-    int length=db.loadDevice(id);
-    // Sandro in the following print also the location of the devices found in the jtag chain
-    printf("JTAG loc.: %d\tIDCODE: 0x%08lx\t", i, id);
-    if(length>0){
-      jtag.setDeviceIRLength(i,length);
-      printf("Desc: %15s\tIR length: %d\n",db.getDeviceDescription(dblast),length);
-      dblast++;
-    } 
-    else{
-      printf("not found in '%s'.\n", db.getFile().c_str());
-    }
-  }
+  detect_chain(jtag,db);
   return 0;
 }

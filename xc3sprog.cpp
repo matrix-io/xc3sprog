@@ -45,6 +45,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgxc2c.h"
 #include "progalgavr.h"
 #include "progalgspiflash.h"
+#include "utilities.h"
 
 int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int jstart_len);
 int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp, OUTFILE_STYLE format, const char* device);
@@ -399,25 +400,7 @@ int main(int argc, char **args)
 
   if (detectchain)
     {
-      int dblast = 0;
-      int num_devices = jtag.getChain();
-      for(int i=0; i< num_devices; i++)
-	{
-	  unsigned long id=jtag.getDeviceID(i);
-	  int length=db.loadDevice(id);
-	  // Sandro in the following print also the location of the devices found in the jtag chain
-	  printf("JTAG loc.: %d\tIDCODE: 0x%08lx\t", i, id);
-	  if(length>0)
-	    {
-	      jtag.setDeviceIRLength(i,length);
-	      printf("Desc: %15s\tIR length: %d\n",db.getDeviceDescription(dblast),length);
-	      dblast++;
-	    } 
-	  else
-	    {
-	      printf("not found in '%s'.\n", db.getFile().c_str());
-	    }
-	}
+      detect_chain(jtag, db);
       return 0;
     }
 
