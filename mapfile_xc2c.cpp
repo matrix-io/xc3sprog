@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "mapfile_xc2c.h"
 
@@ -144,8 +145,14 @@ int MapFile_XC2C::loadmapfile(const char *mapdir, const char *device)
       strcat(mapfilename, ".map");
     }
   fp = fopen(mapfilename, "rb");
+  free(mapfilename);
+
   if (fp == NULL)
-    return 1;
+    {
+      fprintf(stderr,"Mapfile %s/%s.map not found: %s\n", mapdir, mapfile,
+	      strerror(errno));
+       return 1;
+    }
 
   /* there are twoo extra rows for security/done and usercode bits*/
   map = (int *) malloc(block_size * (block_num + 2) * sizeof(unsigned int));
