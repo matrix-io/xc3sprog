@@ -30,11 +30,10 @@ int MapFile_XC2C::readmap(FILE *fp)
   int i=0, j=0;
   int num = -1;
   int x;
-  x =fgetc(fp);
    /* Lines with all TABs mark transfer bits and those bits should be set 0
       other empty places should be set 1 */
   int transferline = 1;
-  while (x != EOF)
+  while ((  x =fgetc(fp))!= EOF)
     {
       switch (x)
 	{
@@ -80,8 +79,6 @@ int MapFile_XC2C::readmap(FILE *fp)
 	  num = -2;
 	break;
 	}
-      x =fgetc(fp);
-     
     }
   return 0;
 }
