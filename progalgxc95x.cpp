@@ -338,7 +338,7 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
 	if ((data& 0x01) != file.get_fuse(idx++))
 	  {
 	    idx--;
-	    fprintf(stderr, "\nMismatch at security fuse %6d: %c vs %c\n",
+	    fprintf(stderr, "\nMismatch at security fuse %6d: %d vs %d\n",
 		   idx, data& 0x01, file.get_fuse(idx));
 	    return 1;
 	  }
