@@ -2,7 +2,7 @@
 
 Using I2C addresses above 0x80 in the USRP/XGUFF framework
  
-Copyright (C) 2005-2009 Uwe Bonnes
+Copyright (C) 2005-2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

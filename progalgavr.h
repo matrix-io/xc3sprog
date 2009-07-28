@@ -1,6 +1,6 @@
 /* AVR programming algorithms
 
-Copyright (C) 2009 Uwe Bonnes
+Copyright (C) 2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 Copyright (C) <2001>  <AJ Erasmus> antone@sentechsa.com
 
 This program is free software; you can redistribute it and/or modify

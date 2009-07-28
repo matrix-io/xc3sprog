@@ -1,6 +1,6 @@
 /* JTAG GNU/Linux FTDI FT2232 low-level I/O
 
-Copyright (C) 2005-2009 Uwe Bonnes
+Copyright (C) 2005-2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 Copyright (C) 2006 Dmitry Teytelman
 
 This program is free software; you can redistribute it and/or modify

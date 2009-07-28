@@ -1,7 +1,7 @@
 /* JTAG GNU/Linux parport device io
 
 Copyright (C) 2004 Andrew Rogers
-Additions for Byte Blaster Cable (C) 2005 Uwe Bonnes 
+Additions for Byte Blaster Cable (C) 2005-2009  Uwe Bonnes 
                               bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify

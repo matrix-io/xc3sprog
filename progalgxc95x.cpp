@@ -1,6 +1,6 @@
 /* XC95 CPLD JTAG programming algorithms
 
-Copyright (C) 2008 Uwe Bonnes
+Copyright (C) 2008-2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 (C) Copyright 2001 Nahitafu,Naitou Ryuji
 
 This program is free software; you can redistribute it and/or modify
