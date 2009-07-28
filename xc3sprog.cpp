@@ -1,7 +1,7 @@
 /* Spartan3 JTAG programmer
 
 Copyright (C) 2004 Andrew Rogers
-              2005-2009 Uwe Bonnes
+              2005-2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -4,7 +4,7 @@
    Adapted from urjtag/trunk/jtag/xpc.c
    Copyright (C) 2008 Kolja Waschk
    
-   Copyright (C) 2009 Uwe Bonnes
+   Copyright (C) 2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
    
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

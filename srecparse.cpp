@@ -1,6 +1,6 @@
 /* Srec .rom file parser
 
-Copyright (C) 2009 Uwe Bonnes
+Copyright (C) 2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -4,7 +4,7 @@
  *
  * Needs access to the Xilinx supplied .map files for transformation
  *
- * Copyright Uwe Bonnes 2009
+ * Copyright Uwe Bonnes 2009 bon@elektron.ikp.physik.tu-darmstadt.de
  *
 */
 #include <stdlib.h>
