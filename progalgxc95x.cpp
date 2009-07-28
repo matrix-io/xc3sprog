@@ -307,14 +307,14 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
 		  data = o_data[j];
 		  for(int i=0;i<bitlen;i++)
 		    {
-		      if ((data& 0x01) != file.get_fuse(idx++))
+		      if ((data& 0x01) != file.get_fuse(idx))
 			{
-			  idx--;
 			  fprintf(stderr, "\nMismatch at fuse %6d: %d vs %d\n",
 				 idx, data& 0x01, file.get_fuse(idx));
 			  return 1;
 			}
 		      data = data >> 1;
+		      idx++;
 		    }
 		}
 	    }
