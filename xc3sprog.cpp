@@ -42,6 +42,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "javr.h"
 #include "progalgxc3s.h"
 #include "jedecfile.h"
+#include "mapfile_xc2c.h"
 #include "progalgxc95x.h"
 #include "progalgxc2c.h"
 #include "progalgavr.h"
@@ -54,8 +55,8 @@ int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp,
 	       OUTFILE_STYLE format, const char* device);
 int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
 		 const char *device);
-int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp,
-		OUTFILE_STYLE format, const char *device);
+int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback,
+		const char *device);
 int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
 	       OUTFILE_STYLE format, const char *device);
 
@@ -188,6 +189,7 @@ void usage()
      "     \t\t(after bscan_spi Bitfile for device has been loaded)\n"
      "   -r\t\tRead from device and write to file\n\n"
      "   -F\t\toutput file format (BIT|BIN|HEX)\n"
+     "   -m\t mapdir for XC2C mapfiles\n"
      "    Supported cable types: pp, ftdi, fx2, xpc\n"
      "   \tOptional pp arguments:\n"
      "   \t\t[-d device] (e.g. /dev/parport0)\n"
@@ -233,6 +235,7 @@ int main(int argc, char **args)
   char const *dev       = 0;
   char const *eepromfile= 0;
   char const *fusefile  = 0;
+  char const *mapdir    = 0;
   OUTFILE_STYLE format = STYLE_BIT;
   int         chainpos  = 0;
   int vendor    = 0;
@@ -253,7 +256,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hCLc:d:D:e:f:F:Ijp:P:rs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hCLc:d:D:e:f:F:Ijm:p:P:rs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
@@ -288,6 +291,10 @@ int main(int argc, char **args)
 
     case 'c':
       cable = optarg;
+      break;
+
+    case 'm':
+      mapdir = optarg;
       break;
 
     case 'e':
@@ -568,8 +575,16 @@ int main(int argc, char **args)
 	{
 	  int size_ind = (id & 0x001f0000)>>16;
 	  BitFile  file;
-	  if (!readback)
+	  MapFile_XC2C map;
+	  JedecFile  fuses;
+	  bool map_available = false;
+	  int res;
+
+	  if (map.loadmapfile(mapdir, db.getDeviceDescription(chainpos)))
 	    {
+	      fprintf(stderr, "Failed to load Mapfile %s, aborting\n"
+		      "Only Bitfile can be handled, e.g. read back, verified and proframmed in other device\n",
+		      map.GetFilename());
               file.readFile(fpin);
 	      fclose(fpin);
               if (file.getLength() == 0)
@@ -577,20 +592,43 @@ int main(int argc, char **args)
                   fprintf(stderr, "Probably no Bitfile, aborting\n");
                   return 2;
                 }
+ 	    }
+	  else
+	    {
+	      map_available = true;
+	      int res = fuses.readFile(fpin);
+	      fclose (fpin);
+	      if (res)
+		{
+		  fprintf(stderr, "Probably no JEDEC File, aborting\n");
+		  return 2;
+		}
+	      map.jedecfile2bitfile(&fuses, &file);
+
+	    }
+	  if (!readback)
+	    {
               if(strncmp(db.getDeviceDescription(chainpos),
 			 file.getPartName(), sizeof("XC2CXX")) !=0)
                 {
-                  fprintf(stderr, "Incompatible Bin File for Device %s\n"
+                  fprintf(stderr, "Incompatible File for Device %s\n"
                          "Actual device in Chain is %s\n", 
                          file.getPartName(), 
 			  db.getDeviceDescription(chainpos));
                   return 3;
                 }
 	    }
-	  
 	  ProgAlgXC2C alg(jtag, io.operator*(), size_ind);
-	  return programXC2C(alg, file, verify, fpout, format,
-			     db.getDeviceDescription(chainpos));
+	  res = programXC2C(alg, file, verify, readback, db.getDeviceDescription(chainpos));
+	  if (res)
+	    return res;
+	  if (map_available)
+	    {
+	      map.bitfile2jedecfile(&file, &fuses);
+	      fuses.saveAsJed( db.getDeviceDescription(chainpos), fpout);
+	    }
+	  else
+	    file.saveAs(format, db.getDeviceDescription(chainpos), fpout);
 	}
     }
   else if  ( manufacturer == 0x01f) /* Atmel */
@@ -602,7 +640,6 @@ int main(int argc, char **args)
 	  db.getDeviceDescription(chainpos));
   return 1;
 }
-
 
 int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
 {
@@ -683,13 +720,11 @@ int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
   return alg.array_verify(file);
 }
 
-int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, FILE *fp,
-		OUTFILE_STYLE format, const char *device)
+int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback, const char *device)
 {
-  if(fp) /* Readback requested*/
+  if(readback) /* Readback requested*/
     {
       alg.array_read(file);
-      file.saveAs(format, device, fp);
       return 0;
     }
   if (!verify)
