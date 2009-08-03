@@ -581,39 +581,42 @@ int main(int argc, char **args)
 	  int res;
 
 	  if (map.loadmapfile(mapdir, db.getDeviceDescription(chainpos)))
-	    {
-	      fprintf(stderr, "Failed to load Mapfile %s, aborting\n"
-		      "Only Bitfile can be handled, e.g. read back, verified and proframmed in other device\n",
-		      map.GetFilename());
-              file.readFile(fpin);
-	      fclose(fpin);
-              if (file.getLength() == 0)
-                {
-                  fprintf(stderr, "Probably no Bitfile, aborting\n");
-                  return 2;
-                }
- 	    }
+	    fprintf(stderr, "Failed to load Mapfile %s, aborting\n"
+		    "Only Bitfile can be handled, e.g. read back, verified and proframmed in other device\n",
+		    map.GetFilename());
 	  else
-	    {
-	      map_available = true;
-	      int res = fuses.readFile(fpin);
-	      fclose (fpin);
-	      if (res)
-		{
-		  fprintf(stderr, "Probably no JEDEC File, aborting\n");
-		  return 2;
-		}
-	      map.jedecfile2bitfile(&fuses, &file);
-
-	    }
+	    map_available = true;
+	  
 	  if (!readback)
 	    {
-              if(strncmp(db.getDeviceDescription(chainpos),
-			 file.getPartName(), sizeof("XC2CXX")) !=0)
+	      if (map_available)
+		{
+		  int res = fuses.readFile(fpin);
+		  fclose (fpin);
+		  if (res)
+		    {
+		      fprintf(stderr, "Probably no JEDEC File, aborting\n");
+		      return 2;
+		    }
+		  map.jedecfile2bitfile(&fuses, &file);
+		}
+	      else
+		{
+		  file.readFile(fpin);
+		  fclose(fpin);
+		  if (file.getLength() == 0)
+		    {
+		      fprintf(stderr, "Probably no Bitfile, aborting\n");
+		      return 2;
+		    }
+		}
+	      if(strncmp(db.getDeviceDescription(chainpos),
+			 (map_available)?fuses.getDevice():file.getPartName(),
+			 sizeof("XC2CXX")) !=0)
                 {
                   fprintf(stderr, "Incompatible File for Device %s\n"
                          "Actual device in Chain is %s\n", 
-                         file.getPartName(), 
+			  (map_available)?fuses.getDevice():file.getPartName(), 
 			  db.getDeviceDescription(chainpos));
                   return 3;
                 }
@@ -629,6 +632,7 @@ int main(int argc, char **args)
 	    }
 	  else
 	    file.saveAs(format, db.getDeviceDescription(chainpos), fpout);
+	  return 0;
 	}
     }
   else if  ( manufacturer == 0x01f) /* Atmel */
