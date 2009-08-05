@@ -42,22 +42,18 @@ BitFile::BitFile()
   initFlip();
 }
 
-// Read in file
-int BitFile::readFile(FILE *fp)
+int BitFile::readBitfile(FILE *fp)
 {
-  if(!fp) 
-    return 1;
-
   try {  
     { // Skip the header
       char hdr[13];
       fread(hdr, 1, 13, fp); // 13 byte header
     }
-
+    
     char         key;
     std::string *field;
     std::string  dummy;
-
+    
     while(!feof(fp)) {
       fread(&key, 1, 1, fp);
       switch(key) {
@@ -83,6 +79,13 @@ int BitFile::readFile(FILE *fp)
   if(!length)
     return 3;
   return 0;
+}
+// Read in file
+int BitFile::readFile(FILE *fp)
+{
+  if(!fp) 
+    return 1;
+  return readBitfile(fp);
 }
 
 void BitFile::processData(FILE *fp)
