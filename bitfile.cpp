@@ -81,6 +81,17 @@ int BitFile::readBitfile(FILE *fp)
   return 0;
 }
 
+/* Adapted from openocd : src/target/image.c : image_ihex_buffer_complete()
+ *   Copyright (C) 2007 by Dominic Rath                                    *
+ *   Dominic.Rath@gmx.de                                                   *
+ *                                                                         *
+ *   Copyright (C) 2007,2008 330yvind Harboe                                *
+ *   oyvind.harboe@zylin.com                                               *
+ *                                                                         *
+ *   Copyright (C) 2008 by Spencer Oliver                                  *
+ *   spen@spen-soft.co.uk                                                  *
+ */ 
+
 int BitFile::readIHexfile(FILE *fp)
 {
   unsigned int full_address = 0;
@@ -89,6 +100,8 @@ int BitFile::readIHexfile(FILE *fp)
   fseek(fp, 0, SEEK_END);
   length = (ftell(fp)  >> 1);
   fseek(fp, 0, SEEK_SET);
+
+  /* FIXME: Fill in dtime and date from the input file */
 
   if(buffer) delete [] buffer;
   buffer=new byte[length];
