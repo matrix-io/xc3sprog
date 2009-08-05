@@ -94,6 +94,7 @@ class BitFile
   void readField(std::string &field, FILE *fp);
   void processData(FILE *fp);
   int  readBitfile(FILE *fp);
+  int  readIHexfile(FILE *fp);
   unsigned char checksum(char * buf);
  
  public:
