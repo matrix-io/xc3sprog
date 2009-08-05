@@ -188,7 +188,8 @@ void usage()
      "   -I\t\tWork on connected SPI Flash\n"
      "     \t\t(after bscan_spi Bitfile for device has been loaded)\n"
      "   -r\t\tRead from device and write to file\n\n"
-     "   -F\t\toutput file format (BIT|BIN|HEX)\n"
+     "   -i\t\tinput file format (BIT|BIN|HEX)\n"
+     "   -o\t\toutput file format (BIT|BIN|HEX)\n"
      "   -m\t mapdir for XC2C mapfiles\n"
      "    Supported cable types: pp, ftdi, fx2, xpc\n"
      "   \tOptional pp arguments:\n"
@@ -236,6 +237,7 @@ int main(int argc, char **args)
   char const *eepromfile= 0;
   char const *fusefile  = 0;
   char const *mapdir    = 0;
+  FILE_STYLE in_style  = STYLE_BIT;
   FILE_STYLE out_style = STYLE_BIT;
   int         chainpos  = 0;
   int vendor    = 0;
@@ -256,7 +258,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hCLc:d:D:e:f:F:Ijm:p:P:rs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hCLc:d:D:e:f:i:Ijm:o:p:P:rs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
@@ -305,11 +307,26 @@ int main(int argc, char **args)
       fusefile = optarg;
       break;
 
-    case 'F':
+    case 'o':
       if (!strcasecmp(optarg,"BIT"))
 	out_style = STYLE_BIT;
       else if (!strcasecmp(optarg,"HEX"))
 	out_style = STYLE_HEX;
+      else if (!strcasecmp(optarg,"IHEX"))
+	out_style = STYLE_IHEX;
+      else if (!strcasecmp(optarg,"BIN"))
+	out_style = STYLE_BIN;
+      else 
+	    usage();
+      break;
+      
+    case 'i':
+      if (!strcasecmp(optarg,"BIT"))
+	out_style = STYLE_BIT;
+      else if (!strcasecmp(optarg,"HEX"))
+	out_style = STYLE_HEX;
+      else if (!strcasecmp(optarg,"IHEX"))
+	out_style = STYLE_IHEX;
       else if (!strcasecmp(optarg,"BIN"))
 	out_style = STYLE_BIN;
       else 
@@ -480,7 +497,7 @@ int main(int argc, char **args)
 	      BitFile  file;
 	      if (!readback)
 		{
-		  file.readFile(fpin);
+		  file.readFile(fpin, in_style);
 		  fclose(fpin);
 		  if(verbose) 
 		    {
@@ -602,7 +619,7 @@ int main(int argc, char **args)
 		}
 	      else
 		{
-		  file.readFile(fpin);
+		  file.readFile(fpin, in_style);
 		  fclose(fpin);
 		  if (file.getLength() == 0)
 		    {

@@ -13,8 +13,9 @@ void usage() {
 	  "   -h\t\tprint this help\n"
 	  "   -v\t\tverbose output\n"
 	  "   -m\t\tDirectory containg Map files\n"
-	  "   -o\t\toutput file (parse input file only if not given\n"
-	  "   -F\t\toutput file format (BIT|BIN|HEX)\n");
+	  "   -O\t\toutput file (parse input file only if not given\n"
+	  "   -i\t\tintput file format (BIT|BIN|HEX)\n"
+	  "   -o\t\toutput file format (BIT|BIN|HEX)\n");
    exit(255);
 }
 
@@ -23,6 +24,7 @@ int main(int argc, char**args)
   bool verbose = false;
   bool revert  = false;
   const char * outfile = NULL;
+  FILE_STYLE  in_style = STYLE_BIT;
   FILE_STYLE out_style = STYLE_BIT;
   char device[256]= "";
   FILE *fp = NULL;
@@ -32,7 +34,7 @@ int main(int argc, char**args)
 	  "Check Sourceforge SVN for updates!\n");
 
   while(true) {
-    switch(getopt(argc, args, "?m:F:vo:")) {
+    switch(getopt(argc, args, "?m:i:vo:O:")) {
     case -1:
      goto args_done;
 
@@ -40,11 +42,26 @@ int main(int argc, char**args)
       verbose = true;
       break;
 
-    case 'F':
+    case 'i':
+      if (!strcasecmp(optarg,"BIT"))
+	in_style = STYLE_BIT;
+      else if (!strcasecmp(optarg,"HEX"))
+	in_style = STYLE_HEX;
+      else if (!strcasecmp(optarg,"IHEX"))
+	in_style = STYLE_IHEX;
+      else if (!strcasecmp(optarg,"BIN"))
+	in_style = STYLE_BIN;
+      else 
+	    usage();
+      break;
+      
+    case 'o':
       if (!strcasecmp(optarg,"BIT"))
 	out_style = STYLE_BIT;
       else if (!strcasecmp(optarg,"HEX"))
 	out_style = STYLE_HEX;
+      else if (!strcasecmp(optarg,"IHEX"))
+	out_style = STYLE_IHEX;
       else if (!strcasecmp(optarg,"BIN"))
 	out_style = STYLE_BIN;
       else 
@@ -55,7 +72,7 @@ int main(int argc, char**args)
       mapdir = optarg;
       break;
  
-    case 'o':
+    case 'O':
       outfile = optarg;
       break;
       
@@ -108,7 +125,7 @@ int main(int argc, char**args)
 	      return 1;
 	    }
 	}
-      if (bits.readFile(fp) == 0 )
+      if (bits.readFile(fp, in_style) == 0 )
 	{
 	  if (verbose)
 	    fprintf(stderr,"Got Bitfile for Device %s: %ld Fuses\n", 

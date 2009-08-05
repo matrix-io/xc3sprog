@@ -31,35 +31,53 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 void usage() {
   fprintf(stderr,
-	  "\nUsage:bitparse [-F format] [-o outfile] infile\n"
+	  "\nUsage:bitparse [-F format] [-O outfile] infile\n"
 	  "   -h\t\tprint this help\n"
 	  "   -v\t\tverbose output\n"
-	  "   -o\t\toutput file (parse input file only if not given"
-	  "   -F\t\toutput file format (BIT|BIN|HEX)\n");
+	  "   -O\t\toutput file (parse input file only if not given"
+	  "   -i\t\tinput  file format (BIT|BIN|HEX)\n"
+	  "   -o\t\toutput file format (BIT|BIN|HEX)\n");
   exit(255);
 }
 
 int main(int argc, char**args)
 {
 
+  FILE_STYLE in_style  = STYLE_BIT;
   FILE_STYLE out_style = STYLE_BIT;
   const char * outfile = NULL;
   while(true)
     {
-      switch(getopt(argc, args, "?F:vo:"))
+      switch(getopt(argc, args, "?i:vo:O:"))
 	{
 	case -1: goto args_done;
-	case 'F':
+	case 'i':
+	  if (!strcasecmp(optarg,"BIT"))
+	    in_style = STYLE_BIT;
+	  else if (!strcasecmp(optarg,"HEX"))
+	    in_style = STYLE_HEX;
+	  else if (!strcasecmp(optarg,"IHEX"))
+	    in_style = STYLE_IHEX;
+	  else if (!strcasecmp(optarg,"BIN"))
+ 	    in_style = STYLE_BIN;
+	  else 
+	    usage();
+	  break;
+
+	case 'o':
 	  if (!strcasecmp(optarg,"BIT"))
 	    out_style = STYLE_BIT;
 	  else if (!strcasecmp(optarg,"HEX"))
 	    out_style = STYLE_HEX;
+	  else if (!strcasecmp(optarg,"IHEX"))
+	    out_style = STYLE_IHEX;
 	  else if (!strcasecmp(optarg,"BIN"))
  	    out_style = STYLE_BIN;
 	  else 
 	    usage();
 	  break;
-	case 'o':
+
+	case 'O':
 	  outfile = optarg;
 	  break;
 	case '?':
@@ -88,7 +106,7 @@ int main(int argc, char**args)
 	  return 1;
 	  }
       }
-    file.readFile(fp);
+    file.readFile(fp, in_style);
     fprintf(stderr, "Created from NCD file: %s\n",file.getNCDFilename());
     fprintf(stderr, "Target device: %s\n",file.getPartName());
     fprintf(stderr, "Created: %s %s\n",file.getDate(),file.getTime());
