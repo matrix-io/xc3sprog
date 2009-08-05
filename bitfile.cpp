@@ -81,11 +81,17 @@ int BitFile::readBitfile(FILE *fp)
   return 0;
 }
 // Read in file
-int BitFile::readFile(FILE *fp)
+int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
 {
   if(!fp) 
     return 1;
-  return readBitfile(fp);
+  switch (in_style)
+    {
+    case STYLE_BIT:return readBitfile(fp);
+    default: fprintf(stderr, " Handle handle style\n");
+      return 1;
+    }
+	
 }
 
 void BitFile::processData(FILE *fp)
@@ -220,59 +226,60 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
   /* Don't store 0xff bytes from the end of the flash */
   for(clip=length-1; (buffer[clip] == 0xff) && clip>0; clip--){};
   clip++; /* clip is corrected length, not index */
-  if(style == STYLE_BIT)
+  switch (style)
     {
-      char buffer[256] = {0x00, 0x09, 0x0f, 0xf0, 0x0f, 0xf0, 0x0f, 0xf0,
-			  0x0f, 0xf0, 0x00, 0x00, 0x01};
-      int len;
-
-      fwrite(buffer, 1, 13, fp);
-
-      buffer[0] = 'a';
-      len = ncdFilename.size();
-      buffer[1] = len >>8;
-      buffer[2] = len & 0xff;
-      fwrite(buffer, 3, 1, fp);
-      fwrite(ncdFilename.c_str(), len, 1, fp);
-
-      buffer[0] = 'b';
-      len = partName.size();
-      buffer[1] = len >>8;
-      buffer[2] = len & 0xff;
-      fwrite(buffer, 3, 1, fp);
-      fwrite(partName.c_str(), len, 1, fp);
-
-      buffer[0] = 'c';
-      len = date.size();
-      buffer[1] = len >>8;
-      buffer[2] = len & 0xff;
-      fwrite(buffer, 3, 1, fp);
-      fwrite(date.c_str(), len, 1, fp);
-
-      buffer[0] = 'd';
-      len = dtime.size();
-      buffer[1] = len >>8;
-      buffer[2] = len & 0xff;
-      fwrite(buffer, 3, 1, fp);
-      fwrite(dtime.c_str(), len, 1, fp);
-
-      buffer[0] = 'e';
-      buffer[1] = clip >>24 & 0xff;
-      buffer[2] = clip >>16 & 0xff;
-      buffer[3] = clip >> 8 & 0xff;
-      buffer[4] = clip & 0xff;
-      fwrite(buffer, 5, 1, fp);
-    }
-  if ((style == STYLE_BIT) || (style == STYLE_BIN))
-    {
+    case STYLE_BIT:
+    case STYLE_BIN:
+      if(style == STYLE_BIT)
+	{
+	  char buffer[256] = {0x00, 0x09, 0x0f, 0xf0, 0x0f, 0xf0, 0x0f, 0xf0,
+			      0x0f, 0xf0, 0x00, 0x00, 0x01};
+	  int len;
+	  
+	  fwrite(buffer, 1, 13, fp);
+	  
+	  buffer[0] = 'a';
+	  len = ncdFilename.size();
+	  buffer[1] = len >>8;
+	  buffer[2] = len & 0xff;
+	  fwrite(buffer, 3, 1, fp);
+	  fwrite(ncdFilename.c_str(), len, 1, fp);
+	  
+	  buffer[0] = 'b';
+	  len = partName.size();
+	  buffer[1] = len >>8;
+	  buffer[2] = len & 0xff;
+	  fwrite(buffer, 3, 1, fp);
+	  fwrite(partName.c_str(), len, 1, fp);
+	  
+	  buffer[0] = 'c';
+	  len = date.size();
+	  buffer[1] = len >>8;
+	  buffer[2] = len & 0xff;
+	  fwrite(buffer, 3, 1, fp);
+	  fwrite(date.c_str(), len, 1, fp);
+	  
+	  buffer[0] = 'd';
+	  len = dtime.size();
+	  buffer[1] = len >>8;
+	  buffer[2] = len & 0xff;
+	  fwrite(buffer, 3, 1, fp);
+	  fwrite(dtime.c_str(), len, 1, fp);
+	  
+	  buffer[0] = 'e';
+	  buffer[1] = clip >>24 & 0xff;
+	  buffer[2] = clip >>16 & 0xff;
+	  buffer[3] = clip >> 8 & 0xff;
+	  buffer[4] = clip & 0xff;
+	  fwrite(buffer, 5, 1, fp);
+	}
       for(i=0; i<clip; i++)
 	{
 	  byte b=bitRevTable[buffer[i]]; // Reverse bit order
 	  fwrite(&b,1,1,fp);
 	}
-    }
-  else if (style == STYLE_HEX)
-    {
+      break;
+    case STYLE_HEX:
       for(i=0; i<clip; i++)
 	{
 	  byte b=bitRevTable[buffer[i]]; // Reverse bit order
@@ -286,6 +293,9 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
 	}
       if ( (i-1)%16 != 15)
 	fprintf(fp,"\n");
+      break;
+    default:
+      fprintf(stderr, "Style not yet implemted\n");
     }
   
   fclose(fp);
