@@ -42,7 +42,7 @@ void usage() {
 int main(int argc, char**args)
 {
 
-  OUTFILE_STYLE format = STYLE_BIT;
+  FILE_STYLE out_style = STYLE_BIT;
   const char * outfile = NULL;
   while(true)
     {
@@ -51,11 +51,11 @@ int main(int argc, char**args)
 	case -1: goto args_done;
 	case 'F':
 	  if (!strcasecmp(optarg,"BIT"))
-	    format = STYLE_BIT;
+	    out_style = STYLE_BIT;
 	  else if (!strcasecmp(optarg,"HEX"))
-	    format = STYLE_HEX;
+	    out_style = STYLE_HEX;
 	  else if (!strcasecmp(optarg,"BIN"))
- 	    format = STYLE_BIN;
+ 	    out_style = STYLE_BIN;
 	  else 
 	    usage();
 	  break;
@@ -98,10 +98,10 @@ int main(int argc, char**args)
       fp = fopen(outfile,"wb");
       if (fp)
 	{
-	  file.saveAs(format,file.getPartName(), fp);
+	  file.saveAs(out_style,file.getPartName(), fp);
 	  fprintf(stderr, "Bitstream saved in format %s as file: %s\n",
-		 (format == STYLE_HEX)?"HEX":
-		 (format == STYLE_BIN)?"BIN":
+		 (out_style == STYLE_HEX)?"HEX":
+		 (out_style == STYLE_BIN)?"BIN":
 		 "HEX", outfile);
 	}
       else

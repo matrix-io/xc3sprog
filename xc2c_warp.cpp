@@ -23,7 +23,7 @@ int main(int argc, char**args)
   bool verbose = false;
   bool revert  = false;
   const char * outfile = NULL;
-  OUTFILE_STYLE format = STYLE_BIT;
+  FILE_STYLE out_style = STYLE_BIT;
   char device[256]= "";
   FILE *fp = NULL;
   const char * mapdir = NULL;
@@ -42,11 +42,11 @@ int main(int argc, char**args)
 
     case 'F':
       if (!strcasecmp(optarg,"BIT"))
-	format = STYLE_BIT;
+	out_style = STYLE_BIT;
       else if (!strcasecmp(optarg,"HEX"))
-	format = STYLE_HEX;
+	out_style = STYLE_HEX;
       else if (!strcasecmp(optarg,"BIN"))
-	format = STYLE_BIN;
+	out_style = STYLE_BIN;
       else 
 	    usage();
       break;
@@ -153,7 +153,7 @@ int main(int argc, char**args)
   else
     {
       map.jedecfile2bitfile(&fuses, &bits);
-      bits.saveAs(format, device, fp);
+      bits.saveAs(out_style, device, fp);
      }
   return 0; 
 }

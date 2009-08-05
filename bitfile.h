@@ -71,7 +71,7 @@ word. */
 
 typedef unsigned char byte;
 
-enum OUTFILE_STYLE { STYLE_BIT, STYLE_BIN, STYLE_HEX};
+enum FILE_STYLE { STYLE_BIT, STYLE_BIN, STYLE_HEX, STYLE_IHEX};
 
 class BitFile
 {
@@ -117,7 +117,7 @@ class BitFile
   inline const char *getTime(){return dtime.c_str();}
   void setNCDFields(const char * partname);
   void setLength(unsigned int bit_count);
-  unsigned long saveAs(OUTFILE_STYLE style, const char  *device, FILE *fp);
+  unsigned long saveAs(FILE_STYLE style, const char  *device, FILE *fp);
   unsigned char reverse8(unsigned char b){return bitRevTable[b];};
   int get_bit(unsigned int idx);
   void set_bit(unsigned int idx, int blow);
