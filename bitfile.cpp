@@ -80,6 +80,132 @@ int BitFile::readBitfile(FILE *fp)
     return 3;
   return 0;
 }
+
+int BitFile::readIHexfile(FILE *fp)
+{
+  unsigned int full_address = 0;
+  char buf[1024];
+  
+  fseek(fp, 0, SEEK_END);
+  length = (ftell(fp)  >> 1);
+  fseek(fp, 0, SEEK_SET);
+
+  if(buffer) delete [] buffer;
+  buffer=new byte[length];
+  while ((fgets(buf, 1024, fp)) != 0)
+    {
+      unsigned int count;
+      unsigned int address;
+      unsigned int record_type;
+      unsigned int checksum;
+      unsigned char cal_checksum = 0;
+      unsigned int bytes_read = 0;
+      if (sscanf(&buf[bytes_read], ":%2x%4x%2x",
+		 &count, &address, &record_type) != 3)
+	{
+	  fprintf(stderr, "Invalid signature %9s\n", buf);
+	  return 1;
+	}
+      bytes_read += 9;
+      cal_checksum += (unsigned int)count;
+      cal_checksum += (unsigned int)(address >> 8);
+      cal_checksum += (unsigned int)address;
+      cal_checksum += (unsigned int)record_type;
+            
+      switch (record_type)
+	{
+	case 0:
+	  if ((full_address & 0xffff) != address)
+	    {
+	      full_address = (full_address & 0xffff0000) | address;
+	    }
+	  
+	  while (count-- > 0)
+	    {
+	      unsigned char value;
+	      sscanf(&buf[bytes_read], "%2hhx", &value);
+	      buffer[full_address] = value;
+	      cal_checksum += buffer[full_address];
+	      bytes_read += 2;
+	      full_address++;
+	    }
+	  break;
+	case 1:
+	  length = full_address;
+	  return 0;
+	case 2:
+	  {
+	    unsigned short upper_address;
+	    sscanf(&buf[bytes_read], "%4hx", &upper_address);
+	    cal_checksum += (unsigned char)(upper_address >> 8);
+	    cal_checksum += (unsigned char)upper_address;
+	    bytes_read += 4;
+
+	    if ((full_address >> 4) != upper_address)
+	      {
+		full_address = (full_address & 0xffff) | (upper_address << 4);
+	      }
+   	    break;
+	  }
+	case 3:
+	  {
+	    unsigned int dummy;
+	    /* "Start Segment Address Record" will not be supported */
+	    /* but we must consume it, and do not create an error.  */
+	    while (count-- > 0)
+	      {
+		sscanf(&buf[bytes_read], "%2x", &dummy);
+		cal_checksum += (unsigned char)dummy;
+		bytes_read += 2;
+	      }
+  	    break;
+	  }
+	case 4:
+	  {
+	    unsigned short upper_address;
+
+	    sscanf(&buf[bytes_read], "%4hx", &upper_address);
+	    cal_checksum += (unsigned int)(upper_address >> 8);
+	    cal_checksum += (unsigned int)upper_address;
+	    bytes_read += 4;
+	    
+	    if ((full_address >> 16) != upper_address)
+	      {
+		full_address = (full_address & 0xffff) | (upper_address << 16);
+	      }
+	    break;
+	  }
+	case 5:
+	  {
+	    unsigned int start_address;
+
+	    sscanf(&buf[bytes_read], "%8x", &start_address);
+	    cal_checksum += (unsigned char)(start_address >> 24);
+	    cal_checksum += (unsigned char)(start_address >> 16);
+	    cal_checksum += (unsigned char)(start_address >> 8);
+	    cal_checksum += (unsigned char)start_address;
+	    bytes_read += 8;
+	    break;
+	  }
+	default:
+	  fprintf(stderr, "unhandled IHEX record type: %i", record_type);
+	  return 2;
+	}
+      sscanf(&buf[bytes_read], "%2x", &checksum);
+      bytes_read += 2;
+
+      if ((unsigned char)checksum != (unsigned char)(~cal_checksum + 1))
+	{
+	  /* checksum failed */
+	  fprintf(stderr, "incorrect record checksum found in IHEX file");
+	  return 3;
+	}
+    }
+
+  fprintf(stderr, "premature end of IHEX file, no end-of-file record found");
+  return 4;
+}
+
 // Read in file
 int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
 {
@@ -88,6 +214,7 @@ int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
   switch (in_style)
     {
     case STYLE_BIT:return readBitfile(fp);
+    case STYLE_IHEX:return readIHexfile(fp);
     default: fprintf(stderr, " Handle handle style\n");
       return 1;
     }
@@ -311,7 +438,7 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
     case STYLE_IHEX:
       {
         unsigned int base = -1;
-        char buf[1023];
+        char buf[1024];
         int len = 0;
         for(i=0; i<clip; i++)
           {
@@ -321,7 +448,7 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
                 base = i >> 16;
                 fprintf(fp,":");
 		sprintf(buf, "02000004%04X%c", base, 0);
-                fprintf(fp, "%s%02X\n", buf, checksum(buf));
+                fprintf(fp, "%s%02X\r\n", buf, checksum(buf));
               }
 	    if ((i & 0xf) == 0)
 	      {
@@ -336,12 +463,12 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
 	    if (((i & 0xf) == 0xf) || (i == clip -1))
 	      {
 		buf[len] = 0;
-		len = fprintf(fp, "%s%02X\n", buf, checksum(buf));
+		len = fprintf(fp, "%s%02X\r\n", buf, checksum(buf));
 	      }
 	  }
 	fprintf(fp,":");
 	sprintf(buf, "00000001");
-	fprintf(fp, "%s%02X\n", buf, checksum(buf));
+	fprintf(fp, "%s%02X\r\n", buf, checksum(buf));
 	break;
       }
      default:
