@@ -52,13 +52,13 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 int programXC3S(Jtag &g, IOBase &io, BitFile &file, bool verify,
 		int jstart_len);
 int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp,
-	       OUTFILE_STYLE format, const char* device);
+	       FILE_STYLE out_style, const char* device);
 int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
 		 const char *device);
 int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback,
 		const char *device);
 int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
-	       OUTFILE_STYLE format, const char *device);
+	       FILE_STYLE out_style, const char *device);
 
 /* Excercise the IR Chain for at least 10000 Times
    If we read a different pattern, print the pattern for for optical 
@@ -236,7 +236,7 @@ int main(int argc, char **args)
   char const *eepromfile= 0;
   char const *fusefile  = 0;
   char const *mapdir    = 0;
-  OUTFILE_STYLE format = STYLE_BIT;
+  FILE_STYLE out_style = STYLE_BIT;
   int         chainpos  = 0;
   int vendor    = 0;
   int product   = 0;
@@ -307,11 +307,11 @@ int main(int argc, char **args)
 
     case 'F':
       if (!strcasecmp(optarg,"BIT"))
-	format = STYLE_BIT;
+	out_style = STYLE_BIT;
       else if (!strcasecmp(optarg,"HEX"))
-	format = STYLE_HEX;
+	out_style = STYLE_HEX;
       else if (!strcasecmp(optarg,"BIN"))
-	format = STYLE_BIN;
+	out_style = STYLE_BIN;
       else 
 	    usage();
       break;
@@ -517,7 +517,7 @@ int main(int argc, char **args)
 		  int size_ind = (id & 0x000ff000)>>12;
 		  ProgAlgXCF alg(jtag,io.operator*(),size_ind);
 
-		  return programXCF(alg, file, verify, fpout, format, 
+		  return programXCF(alg, file, verify, fpout, out_style, 
 				    db.getDeviceDescription(chainpos));
 		}
 	      else 
@@ -525,7 +525,7 @@ int main(int argc, char **args)
 		  if(spiflash)
 		    {
 		      ProgAlgSPIFlash alg(jtag, file, io.operator*());
-		      return programSPI(alg, file, verify, fpout, format, 
+		      return programSPI(alg, file, verify, fpout, out_style, 
 					db.getDeviceDescription(chainpos));
 		    }
 		    else
@@ -631,7 +631,7 @@ int main(int argc, char **args)
 	      fuses.saveAsJed( db.getDeviceDescription(chainpos), fpout);
 	    }
 	  else
-	    file.saveAs(format, db.getDeviceDescription(chainpos), fpout);
+	    file.saveAs(out_style, db.getDeviceDescription(chainpos), fpout);
 	  return 0;
 	}
     }
@@ -659,13 +659,13 @@ int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
 }
 
 int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp,
-	       OUTFILE_STYLE format, const char *device)
+	       FILE_STYLE out_style, const char *device)
 {
   if(fp)
     {
       int len;
       alg.read(file);
-      len = file.saveAs(format, device, fp);
+      len = file.saveAs(out_style, device, fp);
       return 0;
     }
   if(!verify)
@@ -681,13 +681,13 @@ int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp,
 }
 
 int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
-	       OUTFILE_STYLE format, const char *device)
+	       FILE_STYLE out_style, const char *device)
 {
   if(fp)
     {
       int len;
       alg.read(file);
-      len = file.saveAs(format, device, fp);
+      len = file.saveAs(out_style, device, fp);
       return 0;
     }
   if(!verify)
