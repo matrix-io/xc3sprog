@@ -113,11 +113,15 @@ int main(int argc, char**args)
     fprintf(stderr, "Bitstream length: %lu bits\n", file.getLength());
     
     if(outfile) {
-      fp = fopen(outfile,"wb");
+      if(outfile[0] == '-')
+	fp = stdout;
+      else
+	fp = fopen(outfile,"wb");
       if (fp)
 	{
 	  file.saveAs(out_style,file.getPartName(), fp);
 	  fprintf(stderr, "Bitstream saved in format %s as file: %s\n",
+		 (out_style == STYLE_IHEX)?"IHEX":
 		 (out_style == STYLE_HEX)?"HEX":
 		 (out_style == STYLE_BIN)?"BIN":
 		 "HEX", outfile);
