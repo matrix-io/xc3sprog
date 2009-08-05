@@ -93,7 +93,8 @@ class BitFile
   void error(const std::string &str);
   void readField(std::string &field, FILE *fp);
   void processData(FILE *fp);
- 
+  int  readBitfile(FILE *fp);
+
  public:
   BitFile();
   ~BitFile();
