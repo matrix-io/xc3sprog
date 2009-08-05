@@ -215,6 +215,20 @@ void BitFile::setNCDFields(const char * partname)
     }
 }
 
+unsigned char BitFile::checksum(char *buf)
+{
+  int i;
+  unsigned char chksum = 0;
+  unsigned char val;
+  for (i = 0; buf[i]; i = i +2)
+    {
+      if (sscanf(buf +i, "%2hhX", &val) == 1)
+	chksum += val;
+      else break;
+    }
+  return (chksum ^ 0xff) + 1;
+}
+
 unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
 			      FILE *fp)
 {
@@ -294,7 +308,43 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
       if ( (i-1)%16 != 15)
 	fprintf(fp,"\n");
       break;
-    default:
+    case STYLE_IHEX:
+      {
+        unsigned int base = -1;
+        char buf[1023];
+        int len = 0;
+        for(i=0; i<clip; i++)
+          {
+            byte b=buffer[i];
+            if (base != i>>16)
+              {
+                base = i >> 16;
+                fprintf(fp,":");
+		sprintf(buf, "02000004%04X%c", base, 0);
+                fprintf(fp, "%s%02X\n", buf, checksum(buf));
+              }
+	    if ((i & 0xf) == 0)
+	      {
+                fprintf(fp,":");
+		sprintf(buf, "%02X", (i & 0xf) +1 );
+		if (clip -i < 0xf)
+		  len = sprintf(buf, "%02X%04X00", clip-i, i & 0xffff);
+		else
+		  len = sprintf(buf, "10%04X00", i & 0xffff);
+	      }
+	    len += sprintf(buf+len, "%02X", b);
+	    if (((i & 0xf) == 0xf) || (i == clip -1))
+	      {
+		buf[len] = 0;
+		len = fprintf(fp, "%s%02X\n", buf, checksum(buf));
+	      }
+	  }
+	fprintf(fp,":");
+	sprintf(buf, "00000001");
+	fprintf(fp, "%s%02X\n", buf, checksum(buf));
+	break;
+      }
+     default:
       fprintf(stderr, "Style not yet implemted\n");
     }
   
