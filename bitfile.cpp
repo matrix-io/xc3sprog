@@ -450,7 +450,7 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
       break;
     case STYLE_IHEX:
       {
-        unsigned int base = -1;
+        unsigned int base = (unsigned int)-1;
         char buf[1024];
         int len = 0;
         for(i=0; i<clip; i++)
