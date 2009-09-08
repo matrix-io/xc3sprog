@@ -657,8 +657,8 @@ int main(int argc, char **args)
       return jAVR (jtag, id, args[0],verify, lock, eepromfile, fusefile);
     }
   fprintf(stderr,
-	  "Sorry, cannot program '%s', a later release may be able to.\n", 
-	  db.getDeviceDescription(chainpos));
+	  "Sorry, cannot program '%s' from family 0x%02x, a later release may be able to.\n", 
+	  db.getDeviceDescription(chainpos), family);
   return 1;
 }
 
