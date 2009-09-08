@@ -296,8 +296,8 @@ IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
   // Try to open parport device
   if((fd = open(dev, O_RDWR)) == -1) 
 #elif defined(__WIN32__)
-    if (fd = (int)CreateFile(dev, GENERIC_READ | GENERIC_WRITE,
-			     0, NULL, OPEN_EXISTING, 0, NULL) 
+    if ((fd = (int)CreateFile(dev, GENERIC_READ | GENERIC_WRITE,
+			      0, NULL, OPEN_EXISTING, 0, NULL)) 
 	== (int)INVALID_HANDLE_VALUE)
 #endif
       {
