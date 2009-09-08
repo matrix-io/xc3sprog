@@ -488,6 +488,7 @@ int main(int argc, char **args)
 	  (family == 0x11) || /*XC3SA*/
 	  (family == 0x13) || /*XC3SAN*/
 	  (family == 0x1c) || /*XC3SD*/
+	  (family == 0x20) || /*XC6S*/
 	  (family == 0x28) || /*XCF*/
 	  (family == 0x08)    /*XC2V*/
 	  )
