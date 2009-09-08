@@ -79,6 +79,70 @@ int ProgAlgSPIFlash::spi_flashinfo_s33(int *size, int *pages,
   return 1;
 }
 
+int ProgAlgSPIFlash::spi_flashinfo_w25(int *size, int *pages, 
+				       unsigned char *buf) 
+{
+  fprintf(stderr, "Found Winbond Device, Device ID 0x%02x%02x\n",
+	  buf[1], buf[2]);
+  if ((buf[1] != 0x30) && (buf[1] != 0x40))
+    {
+      fprintf(stderr,"Unexpected RDID  upper Device ID 0x%02x\n", buf[1]);
+      return -1;
+    }
+  switch (buf[2])
+    {
+    case 0x11:
+      *pages = 512;
+      break;
+    case 0x12:
+      *pages = 1024;
+      break;
+    case 0x13:
+      *pages = 2048;
+      break;
+    case 0x14:
+      *pages = 4096;
+      break;
+    case 0x15:
+      *pages = 8192;
+      break;
+    case 0x16:
+      *pages = 16384;
+      break;
+    case 0x17:
+      *pages = 32768;
+      break;
+    case 0x18:
+      *pages = 65536;
+      break;
+    default:
+      fprintf(stderr,"Unexpected W25 size ID 0x%02x\n", buf[2]);
+      return -1;
+    }
+  *size = 256;
+  fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
+	  *size, *pages, *size *  *pages);
+
+  if (buf[1] == 0x40)
+    {
+      /* try to read the OTP Number */ 
+      buf[0]=0x4B;
+      buf[1]=0x00;
+      buf[2]=0x01;
+      buf[3]=0x02;
+      
+      spi_xfer_user1(NULL,0,0,buf,8, 4);
+      spi_xfer_user1(buf, 8,4,NULL,0, 0);
+      
+      fprintf(stderr,"Unique number: ");
+      for (int i= 0; i<8 ; i++)
+	fprintf(stderr,"%02x", buf[i]);
+      
+      fprintf(stderr, " \n");
+    }
+  return 1;
+}
+
 int ProgAlgSPIFlash::spi_flashinfo_at45(int *size, int *pages) 
 {
         
@@ -153,6 +217,9 @@ int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages)
       break;
     case 0x89:
       res = spi_flashinfo_s33(size, pages, fbuf); 
+      break;
+    case 0xef:
+      res = spi_flashinfo_w25(size, pages, fbuf); 
       break;
     default:
       fprintf(stderr, "unknown JEDEC manufacturer: %02x\n",fbuf[0]);
