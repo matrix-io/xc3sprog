@@ -38,28 +38,6 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
 			     TCK_DIVISOR,  0x00, 0x00 ,
 			     SET_BITS_HIGH, ~0x84, 0x84};
 
-  if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA))
-    {
-      if (vendor == 0)
-	vendor = VENDOR_FTDI;
-      if(product == 0)
-	product = DEVICE_DEF;
-    }
-  else if (subtype ==  FTDI_OLIMEX)
-    {
-      if (vendor == 0)
-	vendor = VENDOR_OLIMEX;
-      if(product == 0)
-	product = DEVICE_OLIMEX_ARM_USB_OCD;
-    }
-  else if (subtype ==  FTDI_AMONTEC)
-    {
-      if (vendor == 0)
-	vendor = VENDOR_FTDI;
-      if(product == 0)
-	product = DEVICE_AMONTEC_KEY;
-    }
-  
 #if defined (USE_FTD2XX)
     FT_STATUS res;
 #if defined (__linux)
