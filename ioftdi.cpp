@@ -33,7 +33,12 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
 	       int subtype)
   : IOBase(), bptr(0), calls_rd(0), calls_wr(0), retries(0){
     
-  if (subtype == FTDI_NO_EN)
+  unsigned char   buf1[5];
+  unsigned char   buf[9] = { SET_BITS_LOW, 0x08, 0x0b,
+			     TCK_DIVISOR,  0x00, 0x00 ,
+			     SET_BITS_HIGH, ~0x84, 0x84};
+
+  if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA))
     {
       if (vendor == 0)
 	vendor = VENDOR_FTDI;
@@ -129,12 +134,8 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
 #endif
 
   // Prepare for JTAG operation
-  static unsigned char   buf[9] = { SET_BITS_LOW, 0x08, 0x0b,
-				    TCK_DIVISOR,  0x00, 0x00 ,
-				    SET_BITS_HIGH, ~0x04, 0x04};
-
   /* FIXME: Without this read, consecutive runs on the FT2232H may hang */
-  ftdi_read_data(&ftdi, buf,5);
+  ftdi_read_data(&ftdi, buf1,5);
 
   if (subtype == FTDI_NO_EN)
     mpsse_add_cmd(buf, 6);
