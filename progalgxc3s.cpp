@@ -146,6 +146,7 @@ void ProgAlgXC3S::array_program(BitFile &file)
     case 0x11: /* XC3SA*/
     case 0x13: /* XC3SAN*/
     case 0x1c: /* SC3SADSP*/
+    case 0x20: /* SC3SADSP*/
       {
 	byte data[8];
 	jtag->shiftIR(&ISC_DNA);
