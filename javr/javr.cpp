@@ -282,6 +282,27 @@ int main(int argc, char **args)
     if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
     else if(strcmp(cable, "ftdi") == 0)  
       {
+	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA))
+	  {
+	    if (vendor == 0)
+	      vendor = VENDOR_FTDI;
+	    if(product == 0)
+	      product = DEVICE_DEF;
+	  }
+	else if (subtype ==  FTDI_OLIMEX)
+	  {
+	    if (vendor == 0)
+	      vendor = VENDOR_OLIMEX;
+	    if(product == 0)
+	      product = DEVICE_OLIMEX_ARM_USB_OCD;
+	  }
+	else if (subtype ==  FTDI_AMONTEC)
+	  {
+	    if (vendor == 0)
+	      vendor = VENDOR_FTDI;
+	    if(product == 0)
+	      product = DEVICE_AMONTEC_KEY;
+	  }
 	io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
       }
     else if(strcmp(cable,  "fx2") == 0)  
