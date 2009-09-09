@@ -322,13 +322,13 @@ int main(int argc, char **args)
       
     case 'i':
       if (!strcasecmp(optarg,"BIT"))
-	out_style = STYLE_BIT;
+	in_style = STYLE_BIT;
       else if (!strcasecmp(optarg,"HEX"))
-	out_style = STYLE_HEX;
+	in_style = STYLE_HEX;
       else if (!strcasecmp(optarg,"IHEX"))
-	out_style = STYLE_IHEX;
+	in_style = STYLE_IHEX;
       else if (!strcasecmp(optarg,"BIN"))
-	out_style = STYLE_BIN;
+	in_style = STYLE_BIN;
       else 
 	    usage();
       break;
