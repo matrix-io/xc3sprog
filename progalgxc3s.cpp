@@ -137,7 +137,7 @@ void ProgAlgXC3S::array_program(BitFile &file)
   unsigned char buf[1] = {0};
   int i = 0;
   flow_enable();
-  /* JPROGAM: Trigerr reconfiguration, not explained in ug332, but
+  /* JPROGAM: Triger reconfiguration, not explained in ug332, but
      DS099 Figure 28:  Boundary-Scan Configuration Flow Diagram (p.49) */
   jtag->shiftIR(&JPROGRAM);
 
@@ -161,7 +161,7 @@ void ProgAlgXC3S::array_program(BitFile &file)
       }
     }
 
-  /* use leagcy, if large transfers are faster then chunks */
+  /* use leagcy, as large USB transfers are faster then chunks */
   flow_program_legacy(file);
   /*flow_array_program(file);*/
   flow_disable();
