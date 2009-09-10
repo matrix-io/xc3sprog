@@ -569,6 +569,11 @@ int main(int argc, char **args)
 		  if(spiflash)
 		    {
 		      ProgAlgSPIFlash alg(jtag, file, io.operator*());
+		      if (alg.spi_flashinfo() != 1)
+			{
+			  fprintf(stderr,"ISF Bitfile probably not loaded\n");
+			  return 2;
+			}
 		      if (chaintest)
 			{
 			  alg.test(test_count);

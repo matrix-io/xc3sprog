@@ -62,10 +62,10 @@ class ProgAlgSPIFlash
   int spi_flashinfo_w25 (unsigned char * fbuf);
   int spi_flashinfo_at45(unsigned char * fbuf);
   int spi_flashinfo_m25p(unsigned char * fbuf);
-  int spi_flashinfo(void);
   int program_at45(BitFile &file);
  public:
   ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i);
+  int spi_flashinfo(void);
   int erase(){return 0;};
   int program(BitFile &file);
   int verify(BitFile &file);
