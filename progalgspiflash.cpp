@@ -228,6 +228,35 @@ int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages)
   return res;
 }
 
+void ProgAlgSPIFlash::test(int test_count) 
+{
+  int i;
+  
+  fprintf(stderr, "Running %d  times\n", test_count);
+  for(i=0; i<test_count; i++)
+    {
+      byte fbuf[4];
+     
+      // send JEDEC info
+      fbuf[0]=0x9f;
+      spi_xfer_user1(NULL,0,0,fbuf,4,1);
+      
+      // read result
+      spi_xfer_user1(fbuf,4,1,NULL, 0, 1);
+      
+      fbuf[0] = file->reverse8(fbuf[0]);
+      fbuf[1] = file->reverse8(fbuf[1]);
+      fbuf[2] = file->reverse8(fbuf[2]);
+      fbuf[3] = file->reverse8(fbuf[3]);
+      fflush(stderr);
+      if(i%1000 == 999)
+	{
+	  fprintf(stderr, ".");
+	  fflush(stderr);
+	}
+    }
+}
+
 int ProgAlgSPIFlash::spi_xfer_user1
 (uint8_t *last_miso, int miso_len,int miso_skip, uint8_t *mosi,
  int mosi_len, int preamble) 
