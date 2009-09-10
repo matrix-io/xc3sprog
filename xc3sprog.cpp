@@ -182,14 +182,15 @@ void usage()
      "   -v\t\tverbose output\n"
      "   -j\t\tDetect JTAG chain, nothing else\n"
      "   -T[val]\tTest chain val times (0 = forever) or 10000 times default\n"
+     "    \t\tin ISF Mode, test the SPI connection\n"
      "   -C\t\tVerify device against File (no programming)\n"
-     "   -I\t\tWork on connected SPI Flash\n"
+     "   -I\t\tWork on connected SPI Flash (ISF Mode)\n"
      "     \t\t(after bscan_spi Bitfile for device has been loaded)\n"
      "   -r\t\tRead from device and write to file\n\n"
-     "   -i\t\tinput file format (BIT|BIN|HEX)\n"
-     "   -o\t\toutput file format (BIT|BIN|HEX)\n"
-     "   -m\t mapdir for XC2C mapfiles\n"
-     "    Supported cable types: pp, ftdi, fx2, xpc\n"
+     "   -i\t\tinput file format (BIT|BIN|IHEX|HEX)\n"
+     "   -o\t\toutput file format (BIT|BIN|IHEX|HEX)\n"
+     "   -m directory\tDirectory with XC2C mapfiles\n"
+     "   Supported cable types: pp, ftdi, fx2, xpc\n"
      "   \tOptional pp arguments:\n"
      "   \t\t[-d device] (e.g. /dev/parport0)\n"
      "   \tOptional fx2/ftdi arguments:\n"
@@ -199,10 +200,10 @@ void usage()
      "   \t\t[-s serial]      (SerialNumber string)\n"
      "   \tOptional ftdi arguments:\n"
      "   \t\t[-t subtype]\n"
-     "   \t\t\t(NONE\t\t(0x0403:0x0610) or\n"
-     "   \t\t\t IKDA\t\t(0x0403:0x0610, EN_N on ACBUS2) or\n"
-     "   \t\t\t OLIMEX\t\t(0x15b1:0x0003, EN on ADBUS4, LED on ACBUS3))\n"
-     "   \t\t\t AMONTEC\t(0x0403:0xcff8, EN on ADBUS4)\n"
+     "   \t\t\t(NONE\t(0x0403:0x0610) or\n"
+     "   \t\t\t IKDA\t(0x0403:0x0610, EN_N on ACBUS2) or\n"
+     "   \t\t\t OLIMEX\t(0x15b1:0x0003, EN on ADBUS4, LED on ACBUS3))\n"
+     "   \t\t\t AMONTEC\(0x0403:0xcff8, EN on ADBUS4)\n"
      "   \tOptional xpc arguments:\n"
      "   \t\t[-t subtype] (NONE or INT  (Internal Chain , not for DLC10))\n"
      "   chainpos\n"
@@ -450,10 +451,10 @@ int main(int argc, char **args)
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
 
-  if(chaintest)
+  if(chaintest && !spiflash)
     test_IRChain(jtag, io.operator*(), db, test_count);
 
-  if (detectchain)
+  if (detectchain && !spiflash)
     {
       detect_chain(jtag, db);
       return 0;
@@ -568,6 +569,11 @@ int main(int argc, char **args)
 		  if(spiflash)
 		    {
 		      ProgAlgSPIFlash alg(jtag, file, io.operator*());
+		      if (chaintest)
+			{
+			  alg.test(test_count);
+			  return 0;
+			}
 		      return programSPI(alg, file, verify, fpout, out_style, 
 					db.getDeviceDescription(chainpos));
 		    }
