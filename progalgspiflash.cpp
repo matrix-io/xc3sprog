@@ -510,17 +510,29 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
 
 int ProgAlgSPIFlash::program(BitFile &pfile) 
 {
-  byte fbuf[3];
-  fbuf[0]=0xd7;
-  int rc,i, j, len = pfile.getLength()/8;
-  int page = 0;
-        
-  if(len>(pgsize*pages))
+  int len = pfile.getLength()/8;
+  if( len >(pgsize*pages))
     {
       fprintf(stderr, "dude, that file is larger than the flash!\n");
       return -1;
     }
+  switch (manf_id) {
+  case 0x1f:
+    return program_at45(pfile);
+  default:
+    fprintf(stderr,"Programming not yet implemented\n");
+  }
+  return -1;
+}
     
+int ProgAlgSPIFlash::program_at45(BitFile &pfile)
+{
+  byte fbuf[3];
+  fbuf[0]=0xd7;
+  int len = pfile.getLength()/8;
+  int i, j;
+  int page = 0;
+
   buf[0]=0x82;/* page program with builtin erase */
   buf[3]=0;
   
@@ -568,12 +580,11 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
 	{
 	  fprintf(stderr, "                               \r"
 		  "Failed to programm page %d\n", page); 
+         return -1;
 	}
       page++;
     } 
-  
-  rc = 0;
-  return rc;
+  return 0;
 }
 
 void ProgAlgSPIFlash::reconfig(void)
