@@ -56,6 +56,9 @@ add_executable(xc3sprog xc3sprog.cpp javr.cpp srecfile.cpp progalgavr.cpp
 			config.h)
 target_link_libraries(xc3sprog xc3sproglib ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS}  )
 
+add_executable(readdna readdna.cpp config.h)
+target_link_libraries(readdna xc3sproglib ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS}  )
+
 add_subdirectory(javr)
 
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 
