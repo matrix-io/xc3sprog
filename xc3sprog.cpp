@@ -486,20 +486,22 @@ int main(int argc, char **args)
 	    }
 	}
     }
-
-  if (*args[0] == '-')
-    fpin = stdin;
   else
     {
-      fpin=fopen(args[0],"rb");
-      if(!fpin)
+      if (*args[0] == '-')
+	fpin = stdin;
+      else
 	{
-	  fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
-		  strerror(errno));
-	  return 1;
+	  fpin=fopen(args[0],"rb");
+	  if(!fpin)
+	    {
+	      fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
+		      strerror(errno));
+	      return 1;
+	    }
 	}
     }
-      
+
   if ( manufacturer == 0x049) /* XILINX*/
     {
       /* Probably XC4V and  XC5V should work too. No devices to test at IKDA */
