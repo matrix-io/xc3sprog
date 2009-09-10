@@ -521,7 +521,7 @@ int main(int argc, char **args)
 	  try 
 	    {
 	      BitFile  file;
-	      if (!readback)
+	      if (fpin)
 		{
 		  file.readFile(fpin, in_style);
 		  fclose(fpin);
