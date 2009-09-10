@@ -140,6 +140,10 @@ void ProgAlgXC3S::array_program(BitFile &file)
   /* JPROGAM: Triger reconfiguration, not explained in ug332, but
      DS099 Figure 28:  Boundary-Scan Configuration Flow Diagram (p.49) */
   jtag->shiftIR(&JPROGRAM);
+  do
+    jtag->shiftIR(&CFG_IN, buf);
+  while (! (buf[0] & 0x10)); /* wait until configuration cleared */
+  /* As ISC_DNA only works on a unconfigured device, see AR #29977*/
 
   switch(family)
     {
@@ -149,6 +153,7 @@ void ProgAlgXC3S::array_program(BitFile &file)
     case 0x20: /* SC3SADSP*/
       {
 	byte data[8];
+	jtag->shiftIR(&ISC_ENABLE);
 	jtag->shiftIR(&ISC_DNA);
 	jtag->shiftDR(0, data, 64);
 	io->cycleTCK(1);
