@@ -54,10 +54,10 @@ class ProgAlgSPIFlash
   int xc_user(byte *in, byte *out, int len);
   int spi_xfer_user1(uint8_t *last_miso, int miso_len, int miso_skip, 
 		     uint8_t *mosi, int mosi_len, int preamble);
-  int spi_flashinfo_s33(int *size, int *pages, unsigned char * fbuf);
-  int spi_flashinfo_w25(int *size, int *pages, unsigned char * fbuf);
-  int spi_flashinfo_at45(int *size, int *pages, unsigned char * fbuf);
-  int spi_flashinfo(int *size, int *pages);
+  int spi_flashinfo_s33 (unsigned char * fbuf);
+  int spi_flashinfo_w25 (unsigned char * fbuf);
+  int spi_flashinfo_at45(unsigned char * fbuf);
+  int spi_flashinfo(void);
  public:
   ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i);
   int erase(){return 0;};
