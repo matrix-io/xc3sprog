@@ -465,39 +465,42 @@ int main(int argc, char **args)
   family = (id>>21) & 0x7f;
   manufacturer = (id>>1) & 0x3ff;
 
-  if (readback)
+  if (args[0])
     {
-      if (*args[0] == '-')
-	fpout = stdout;
-      else
+      if (readback)
 	{
-	  fpout=fopen(args[0],"rb");
-	  if(fpout)
+	  if (*args[0] == '-')
+	    fpout = stdout;
+	  else
 	    {
-	      fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
-	      fclose(fpout);
-	      return 1;
-	    }
-	  fpout=fopen(args[0],"wb");
-	  if(!fpout)
-	    {
-	      fprintf(stderr, "Unable to open File %s. Aborting\n", args[0]);
-	      return 1;
+	      fpout=fopen(args[0],"rb");
+	      if(fpout)
+		{
+		  fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
+		  fclose(fpout);
+		  return 1;
+		}
+	      fpout=fopen(args[0],"wb");
+	      if(!fpout)
+		{
+		  fprintf(stderr, "Unable to open File %s. Aborting\n", args[0]);
+		  return 1;
+		}
 	    }
 	}
-    }
-  else
-    {
-      if (*args[0] == '-')
-	fpin = stdin;
       else
 	{
-	  fpin=fopen(args[0],"rb");
-	  if(!fpin)
+	  if (*args[0] == '-')
+	    fpin = stdin;
+	  else
 	    {
-	      fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
-		      strerror(errno));
-	      return 1;
+	      fpin=fopen(args[0],"rb");
+	      if(!fpin)
+		{
+		  fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
+			  strerror(errno));
+		  return 1;
+		}
 	    }
 	}
     }
