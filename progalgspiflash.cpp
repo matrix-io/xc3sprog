@@ -203,6 +203,76 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf)
   return 0;
 }
 
+int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf) 
+ 
+{
+  byte fbuf[20]= {0x9f};
+  int i, j = 0;
+
+  fprintf(stderr, "Found Numonyx Device, Device ID 0x%02x%02x\n",
+         buf[1], buf[2]);
+
+  spi_xfer_user1(NULL,0,0,fbuf,20,1);
+  spi_xfer_user1(fbuf, 20, 1, NULL,0, 0);
+
+  fbuf[0] = file->reverse8(fbuf[0]);
+  fbuf[1] = file->reverse8(fbuf[1]);
+  fbuf[2] = file->reverse8(fbuf[2]);
+  fbuf[3] = file->reverse8(fbuf[3]);
+
+  if (fbuf[1] != 0x20)
+    {
+      fprintf(stderr,"Unexpected RDID  upper Device ID 0x%02x\n", fbuf[1]);
+      return -1;
+    }
+  switch (fbuf[2])
+    {
+    case 0x11:
+      pages = 512;
+      break;
+    case 0x12:
+      pages = 1024;
+      break;
+    case 0x13:
+      pages = 2048;
+      break;
+    case 0x14:
+      pages = 4096;
+      break;
+    case 0x15:
+      pages = 8192;
+      break;
+    case 0x16:
+      pages = 16384;
+      break;
+    case 0x17:
+      pages = 32768;
+      break;
+    case 0x18:
+      pages = 65536;
+      break;
+    default:
+      fprintf(stderr,"Unexpected M25P size ID 0x%02x\n", buf[2]);
+      return -1;
+    }
+  pgsize = 256;
+
+  if (fbuf[3] == 0x10)
+    {
+      for (i= 4; i<20 ; i++)
+       j+=fbuf[i];
+      if (j != 0)
+       {
+         fprintf(stderr,"CFI: ");
+         for (i= 5; i<21 ; i++)
+           fprintf(stderr,"%02x", fbuf[i]);
+         
+         fprintf(stderr, " \n");
+       }
+    }
+  return 1;
+}
+
 int ProgAlgSPIFlash::spi_flashinfo(void) 
 {
   byte fbuf[4]={0x9f, 0, 0, 0};
@@ -229,6 +299,9 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
     {
     case 0x1f:
       res = spi_flashinfo_at45(fbuf);
+      break;
+    case 0x20:
+      res = spi_flashinfo_m25p(fbuf);
       break;
     case 0x89:
       res = spi_flashinfo_s33(fbuf); 
