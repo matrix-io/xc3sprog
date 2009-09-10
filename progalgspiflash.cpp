@@ -405,7 +405,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
   res=spi_xfer_user1(NULL,0,0,buf,pgsize, 4);
   
   for(page=1;page<pages;page++) {
-    uint16_t paddr;
+    uint16_t paddr = page;
     int res;
     
     if(io->getVerbose())
@@ -449,7 +449,7 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
   
   res=spi_xfer_user1(NULL,0,0,buf,pgsize, 4);
   for(page=1; page*pgsize < vfile.getLength()/8;page++) {
-    uint16_t paddr;
+    uint16_t paddr = page;
     int res;
     
     if(io->getVerbose())
