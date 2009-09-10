@@ -41,8 +41,6 @@ ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i)
   mosi_buf = new byte[5010];
   sector_size =  65536; /* Many devices have 64 kiByte sectors*/
   sector_erase_cmd = 0xD8; /* default erase command */
-  spi_flashinfo();
-  buf = new byte[pgsize+16];
 }
 
 int spi_cfg[] = {
@@ -326,6 +324,7 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
 	      pgsize, pages, pgsize *  pages);
       manf_id = fbuf[0];
       prod_id = fbuf[1]<<8 | fbuf[2];
+      buf = new byte[pgsize+16];
     }
   return res;
 }
