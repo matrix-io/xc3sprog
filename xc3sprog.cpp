@@ -76,8 +76,6 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
   unsigned char dcmp[256];
   memset(din, 0xff, 256);
   
-  if(test_count == 0)
-    test_count = INT_MAX;
   fprintf(stderr, "Running %d  times\n", test_count);
   /* exercise the chain */
   for(i=0; i<num; i++)
@@ -285,6 +283,7 @@ int main(int argc, char **args)
       else
 	test_count = atoi(optarg);
       if (test_count == 0)
+	test_count = INT_MAX;
       break;
 
     case 'L':
