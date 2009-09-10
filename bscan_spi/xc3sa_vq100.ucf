@@ -1,0 +1,4 @@
+net "MISO" LOC = "P51";
+net "MOSI" LOC = "P46";
+net "DRCK1" LOC= "P53";
+net "CSB"  LOC = "P27";
