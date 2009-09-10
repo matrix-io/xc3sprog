@@ -39,7 +39,7 @@ ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i)
   io=&i;
   miso_buf = new byte[5010];
   mosi_buf = new byte[5010];
-  spi_flashinfo(&pgsize, &pages);
+  spi_flashinfo();
   buf = new byte[pgsize+16];
 }
 
@@ -53,8 +53,7 @@ int spi_cfg[] = {
         -1, 0, 0
 };
 
-int ProgAlgSPIFlash::spi_flashinfo_s33(int *size, int *pages, 
-				       unsigned char *buf) 
+int ProgAlgSPIFlash::spi_flashinfo_s33(unsigned char *buf) 
 {
   fprintf(stderr, "Found Intel Device, Device ID 0x%02x%02x\n",
 	  buf[1], buf[2]);
@@ -66,22 +65,19 @@ int ProgAlgSPIFlash::spi_flashinfo_s33(int *size, int *pages,
   switch (buf[2])
     {
     case 0x11:
-      *pages = 8192;
+      pages = 8192;
       break;
     case 0x12:
-      *pages = 16364;
+      pages = 16364;
       break;
     case 0x13:
-      *pages = 32768;
+      pages = 32768;
       break;
     default:
       fprintf(stderr,"Unexpected S33 size ID 0x%02x\n", buf[2]);
       return -1;
     }
-  *size = 256;
-  fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
-	  *size, *pages, *size *  *pages);
-
+  pgsize = 256;
   /* try to read the OTP Number */ 
   buf[0]=0x4B;
   buf[1]=0x00;
@@ -100,8 +96,7 @@ int ProgAlgSPIFlash::spi_flashinfo_s33(int *size, int *pages,
   return 1;
 }
 
-int ProgAlgSPIFlash::spi_flashinfo_w25(int *size, int *pages, 
-				       unsigned char *buf) 
+int ProgAlgSPIFlash::spi_flashinfo_w25(unsigned char *buf) 
 {
   fprintf(stderr, "Found Winbond Device, Device ID 0x%02x%02x\n",
 	  buf[1], buf[2]);
@@ -113,37 +108,34 @@ int ProgAlgSPIFlash::spi_flashinfo_w25(int *size, int *pages,
   switch (buf[2])
     {
     case 0x11:
-      *pages = 512;
+      pages = 512;
       break;
     case 0x12:
-      *pages = 1024;
+      pages = 1024;
       break;
     case 0x13:
-      *pages = 2048;
+      pages = 2048;
       break;
     case 0x14:
-      *pages = 4096;
+      pages = 4096;
       break;
     case 0x15:
-      *pages = 8192;
+      pages = 8192;
       break;
     case 0x16:
-      *pages = 16384;
+      pages = 16384;
       break;
     case 0x17:
-      *pages = 32768;
+      pages = 32768;
       break;
     case 0x18:
-      *pages = 65536;
+      pages = 65536;
       break;
     default:
       fprintf(stderr,"Unexpected W25 size ID 0x%02x\n", buf[2]);
       return -1;
     }
-  *size = 256;
-  fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
-	  *size, *pages, *size *  *pages);
-
+  pgsize = 256;
   if (buf[1] == 0x40)
     {
       /* try to read the OTP Number */ 
@@ -164,8 +156,7 @@ int ProgAlgSPIFlash::spi_flashinfo_w25(int *size, int *pages,
   return 1;
 }
 
-int ProgAlgSPIFlash::spi_flashinfo_at45(int *size, int *pages,
-				       unsigned char *buf) 
+int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf) 
  
 {
   byte fbuf[128];
@@ -193,11 +184,8 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(int *size, int *pages,
     return -1;
   }
   
-  fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
-	  spi_cfg[idx+1],spi_cfg[idx+2],spi_cfg[idx+1]*spi_cfg[idx+2]);
-  
-  *size=spi_cfg[idx+1];
-  *pages=spi_cfg[idx+2];
+  pgsize=spi_cfg[idx+1];
+  pages=spi_cfg[idx+2];
   
   /* try to read the OTP Number */ 
   fbuf[0]=0x77;
@@ -215,7 +203,7 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(int *size, int *pages,
   return 0;
 }
 
-int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages) 
+int ProgAlgSPIFlash::spi_flashinfo(void) 
 {
   byte fbuf[4]={0x9f, 0, 0, 0};
   int res;
@@ -240,18 +228,21 @@ int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages)
   switch (fbuf[0])
     {
     case 0x1f:
-      res = spi_flashinfo_at45(size, pages, fbuf);
+      res = spi_flashinfo_at45(fbuf);
       break;
     case 0x89:
-      res = spi_flashinfo_s33(size, pages, fbuf); 
+      res = spi_flashinfo_s33(fbuf); 
       break;
     case 0xef:
-      res = spi_flashinfo_w25(size, pages, fbuf); 
+      res = spi_flashinfo_w25(fbuf); 
       break;
     default:
       fprintf(stderr, "unknown JEDEC manufacturer: %02x\n",fbuf[0]);
       return -1;
     }
+  if (res == 1)
+    fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
+	    pgsize, pages, pgsize *  pages);
   return res;
 }
 
