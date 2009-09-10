@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 Code based on http://code.google.com/p/xilprg-hunz/
 
 */
+#include <sys/time.h>
+
 #include "progalgspiflash.h"
 #include <stdlib.h>
 #include <assert.h>
@@ -507,6 +509,123 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
   return rc;
 }
 
+#define PAGE_PROGRAM         0x02
+#define READ_STATUS_REGISTER 0x05
+#define WRITE_ENABLE         0x06
+#define SECTOR_ERASE         0xD8
+
+#define WRITE_BUSY           0x80
+
+#define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
+			    (tvp2)->tv_usec - (tvp1)->tv_usec)
+int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile) 
+{
+  byte fbuf[4];
+  byte rbuf[1];;
+  int sector_nr = 0;
+  int i, j;
+  int len = pfile.getLength()/8;
+  struct timeval tv[2];
+  double max_sector_erase = 0.0;
+  double max_page_program = 0.0;
+  
+  for(i = 0; i < len; i += pgsize)
+    {
+      /* Find out if sector needs to be erased*/
+      if (sector_nr * sector_size  <= i)
+	{
+	  /* Enable Write */
+	  fbuf[0] = WRITE_ENABLE;
+	  spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
+	  /* Erase selected page */
+	  fbuf[0] = SECTOR_ERASE;
+	  fbuf[1]=i>>16;
+	  fbuf[2]=(i>>8) & 0xff;
+	  fbuf[3]=i & 0xff;
+	  spi_xfer_user1(NULL,0,0,fbuf, 0, 4);
+	  fbuf[0] = READ_STATUS_REGISTER;
+	  if(io->getVerbose())
+	    fprintf(stderr,"                                              \r"
+		    "Erasing sector %2d", sector_nr);
+	  j = 0;
+	  spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
+	  gettimeofday(tv, NULL);
+	  /* wait for erase complete */
+	  do
+	    {
+	      jtag->Usleep(1000);       
+	      spi_xfer_user1(rbuf,1,1,fbuf, 1, 1);
+	      j++;
+	      if ((io->getVerbose()) &&((j & 0xf) == 0xf))
+		{
+		  fprintf(stderr,".");
+		  fflush(stderr);
+		}
+	    }
+	  while ((rbuf[0] & WRITE_BUSY)&& (j <3000));
+	  gettimeofday(tv+1, NULL);
+	  if(j >= 3000)
+           {
+             fprintf(stderr,"\nErase failed for sector %2d\n", sector_nr);
+             return -1;
+           }
+         else
+           {
+             sector_nr ++;
+	     if ((double)deltaT(tv, tv + 1) > max_sector_erase)
+	       max_sector_erase= (double)deltaT(tv, tv + 1);
+           }
+       }
+      if(io->getVerbose())
+       {
+         fprintf(stderr, "                                               "
+		 "                  \r"
+                 "Sector %3d, Writing page %5d/%5d", 
+		 sector_nr,i >>8, len>>8); 
+         fflush(stderr);
+       }
+      /* Enable Write */
+      fbuf[0] = WRITE_ENABLE;
+      spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
+      fbuf[0] = READ_STATUS_REGISTER;
+      j = 0;
+      buf[0] = PAGE_PROGRAM;
+      buf[1]=i>>16;
+      buf[2]=(i>>8) & 0xff;
+      buf[3]=0;
+      memcpy(buf+4,&pfile.getData()[i],((len-i)>pgsize) ? pgsize : (len-i));
+      spi_xfer_user1(NULL,0,0,buf, ((len-i)>pgsize) ? pgsize : (len-i), 4);
+      spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
+      gettimeofday(tv, NULL);
+      do
+	{
+	  spi_xfer_user1(rbuf,1,1,fbuf, 1, 1);
+	  j++;
+	  fprintf(stderr,".");
+	  fflush(stderr);
+	}
+      while ((rbuf[0] & WRITE_BUSY) && (j <50));
+      gettimeofday(tv+1, NULL);
+      if(j >= 50)
+       {
+         fprintf(stderr,"\nPage Program failed for page %4d\n", i>>8);
+         return -1;
+       }
+      else
+	{
+	  if ((double)deltaT(tv, tv + 1) > max_page_program)
+	    max_page_program= (double)deltaT(tv, tv + 1);
+	  
+	}
+    }
+  if(io->getVerbose())
+    {
+      fprintf(stderr, "\nMaximum erase time %.1f ms, Max PP time %.0f us\n",
+	      max_sector_erase/1.0e3, max_sector_erase/1e1);
+    }
+  return 1;
+}
+
 int ProgAlgSPIFlash::program(BitFile &pfile) 
 {
   int len = pfile.getLength()/8;
@@ -518,6 +637,8 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
   switch (manf_id) {
   case 0x1f:
     return program_at45(pfile);
+  case 0x20:
+    return sectorerase_and_program(pfile);
   default:
     fprintf(stderr,"Programming not yet implemented\n");
   }
