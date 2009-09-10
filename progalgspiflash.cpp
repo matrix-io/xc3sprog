@@ -143,12 +143,15 @@ int ProgAlgSPIFlash::spi_flashinfo_w25(int *size, int *pages,
   return 1;
 }
 
-int ProgAlgSPIFlash::spi_flashinfo_at45(int *size, int *pages) 
+int ProgAlgSPIFlash::spi_flashinfo_at45(int *size, int *pages,
+				       unsigned char *buf) 
+ 
 {
-        
   byte fbuf[128];
   int idx;
   
+  fprintf(stderr, "Found Atmel Device, Device ID 0x%02x%02x\n",
+	  buf[1], buf[2]);
   // read result
   fbuf[0]=0xd7;
   spi_xfer_user1(NULL,0,0,fbuf, 2, 1);
@@ -193,11 +196,14 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(int *size, int *pages)
 
 int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages) 
 {
-  byte fbuf[4];
+  byte fbuf[4]={0x9f, 0, 0, 0};
   int res;
   
   // send JEDEC info
-  fbuf[0]=0x9f;
+  spi_xfer_user1(NULL,0,0,fbuf,4,1);
+
+  /* FIXME: for some reason on the FT2232test board  
+     with XC3S200 and AT45DB321 the commands need to be repeated*/
   spi_xfer_user1(NULL,0,0,fbuf,4,1);
   
   // read result
@@ -213,7 +219,7 @@ int ProgAlgSPIFlash::spi_flashinfo(int *size, int *pages)
   switch (fbuf[0])
     {
     case 0x1f:
-      res = spi_flashinfo_at45(size, pages);
+      res = spi_flashinfo_at45(size, pages, fbuf);
       break;
     case 0x89:
       res = spi_flashinfo_s33(size, pages, fbuf); 
@@ -235,19 +241,14 @@ void ProgAlgSPIFlash::test(int test_count)
   fprintf(stderr, "Running %d  times\n", test_count);
   for(i=0; i<test_count; i++)
     {
-      byte fbuf[4];
+      byte fbuf[4]= {0x9f, 0, 0, 0};
      
       // send JEDEC info
-      fbuf[0]=0x9f;
       spi_xfer_user1(NULL,0,0,fbuf,4,1);
       
       // read result
       spi_xfer_user1(fbuf,4,1,NULL, 0, 1);
       
-      fbuf[0] = file->reverse8(fbuf[0]);
-      fbuf[1] = file->reverse8(fbuf[1]);
-      fbuf[2] = file->reverse8(fbuf[2]);
-      fbuf[3] = file->reverse8(fbuf[3]);
       fflush(stderr);
       if(i%1000 == 999)
 	{
