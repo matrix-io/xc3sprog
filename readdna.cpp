@@ -68,7 +68,6 @@ void usage(void)
 unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
 {
   int num=jtag.getChain();
-  int family, manufacturer;
   unsigned int id;
 
   if (num == 0)
@@ -119,6 +118,7 @@ int main(int argc, char **args)
     unsigned int id;
     char *devicedb = NULL;
     DeviceDB db(devicedb);
+    int i;
    
     // Start from parsing command line arguments
     while(true) {
@@ -246,7 +246,6 @@ args_done:
   Jtag jtag(io.get());
   id = get_id (jtag, db, chainpos, verbose);
 
-  int dblast=0;
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
 #define CFG_IN      0x05
@@ -283,6 +282,22 @@ args_done:
   idata[0] = JPROGRAM;
   jtag.shiftIR(idata); 
   /* Now device will reconfigure from standard configuration source */
+  idata[0] = BYPASS;
+  fprintf(stderr, "Will wait up to 10 seconds for device to reconfigure.");
+  fflush(stderr);
+  do
+    {
+      jtag.Usleep(1000);
+      jtag.shiftIR(idata, odata);
+      if(i%250 == 249)
+	{
+	  fprintf(stderr, ".");
+	  fflush(stderr);
+	}
+      i++;
+    }
+  while ((( odata[0] & 0x23) != 0x21) && (i <10000));
+  fprintf(stderr, "\n");
 
   return 0;
 }
