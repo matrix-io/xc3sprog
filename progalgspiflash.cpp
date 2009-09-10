@@ -39,6 +39,8 @@ ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i)
   io=&i;
   miso_buf = new byte[5010];
   mosi_buf = new byte[5010];
+  sector_size =  65536; /* Many devices have 64 kiByte sectors*/
+  sector_erase_cmd = 0xD8; /* default erase command */
   spi_flashinfo();
   buf = new byte[pgsize+16];
 }
@@ -136,6 +138,8 @@ int ProgAlgSPIFlash::spi_flashinfo_w25(unsigned char *buf)
       return -1;
     }
   pgsize = 256;
+  sector_size = 4096; /* Bytes = 32 kiBits*/
+  sector_erase_cmd = 0x20; 
   if (buf[1] == 0x40)
     {
       /* try to read the OTP Number */ 
@@ -229,6 +233,7 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf)
     {
     case 0x11:
       pages = 512;
+      sector_size = 32768; /* Bytes = 262144 bits*/
       break;
     case 0x12:
       pages = 1024;
@@ -247,9 +252,11 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf)
       break;
     case 0x17:
       pages = 32768;
+      sector_size = 131072; /* Bytes = 1 Mi Bit*/
       break;
     case 0x18:
       pages = 65536;
+      sector_size = 262144; /* Bytes = 2 Mi Bit*/
       break;
     default:
       fprintf(stderr,"Unexpected M25P size ID 0x%02x\n", buf[2]);
@@ -314,8 +321,12 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
       return -1;
     }
   if (res == 1)
-    fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
-	    pgsize, pages, pgsize *  pages);
+    {
+      fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
+	      pgsize, pages, pgsize *  pages);
+      manf_id = fbuf[0];
+      prod_id = fbuf[1]<<8 | fbuf[2];
+    }
   return res;
 }
 

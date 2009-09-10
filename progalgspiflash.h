@@ -47,6 +47,10 @@ class ProgAlgSPIFlash
   IOBase *io;
   int pgsize;
   int pages;
+  int sector_size;
+  int sector_erase_cmd;
+  int manf_id;
+  int prod_id;
   byte *miso_buf;
   byte *mosi_buf;
   byte *buf;
