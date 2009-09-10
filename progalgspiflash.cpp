@@ -341,7 +341,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
   res=spi_xfer_user1(NULL,0,0,buf,pgsize, 4);
   
   for(page=1;page<pages;page++) {
-    uint16_t paddr=page<<1;
+    uint16_t paddr;
     int res;
     
     if(io->getVerbose())
@@ -352,6 +352,8 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
     
     // see UG333 page 19
     if(pgsize>512)
+      paddr<<=2;
+    else if (pgsize > 256)
       paddr<<=1;
     
     buf[1]=paddr>>8;
@@ -383,7 +385,7 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
   
   res=spi_xfer_user1(NULL,0,0,buf,pgsize, 4);
   for(page=1; page*pgsize < vfile.getLength()/8;page++) {
-    uint16_t paddr=page<<1;
+    uint16_t paddr;
     int res;
     
     if(io->getVerbose())
@@ -394,6 +396,8 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     
     // see UG333 page 19
     if(pgsize>512)
+      paddr<<=2;
+    else if (pgsize > 256)
       paddr<<=1;
                 
     buf[1]=paddr>>8;
