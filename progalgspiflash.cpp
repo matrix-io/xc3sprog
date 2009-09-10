@@ -576,7 +576,7 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
 	  if (fbuf[2] & 1)
 	    break;
 	}
-      if(i==9)
+      if(j >= 9)
 	{
 	  fprintf(stderr, "                               \r"
 		  "Failed to programm page %d\n", page); 
