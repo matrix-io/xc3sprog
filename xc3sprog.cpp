@@ -198,6 +198,7 @@ void usage()
      "   \t\t[-P product]     (idProduct)\n"
      "   \t\t[-S description string] (Product string)\n"
      "   \t\t[-s serial]      (SerialNumber string)\n"
+     "   \t\t\tFor DLCx: Unique hardware number\n"
      "   \tOptional ftdi arguments:\n"
      "   \t\t[-t subtype]\n"
      "   \t\t\t(NONE\t(0x0403:0x0610) or\n"

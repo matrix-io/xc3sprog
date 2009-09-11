@@ -59,6 +59,7 @@ class IOXPC : public IOBase
  protected:
   int bptr, calls_rd, calls_wr, call_ctrl;
   int subtype;
+  unsigned long long hid;
   
  public:
   IOXPC(int const vendor, int const product, char const *desc, char const *serial, int subtype);
@@ -76,14 +77,14 @@ class IOXPC : public IOBase
   int xpcu_write_gpio(struct usb_dev_handle *xpcu, unsigned char bits);
   int xpcu_read_gpio(struct usb_dev_handle *xpcu, unsigned char *bits);
   int xpcu_read_cpld_version(struct usb_dev_handle *xpcu, unsigned char *buf);
-  int xpcu_read_hid(struct usb_dev_handle *xpcu, unsigned char *buf);
+  int xpcu_read_hid(struct usb_dev_handle *xpcu);
   int xpcu_read_firmware_version(struct usb_dev_handle *xpcu, unsigned char *buf);
   int xpcu_select_gpio(struct usb_dev_handle *xpcu, int int_or_ext );
   int xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, unsigned char *in, int out_len, unsigned char *out );
   void xpcu_add_bit_for_ext_transfer( xpc_ext_transfer_state_t *xts, bool in, bool tms, bool is_real );
   int xpcu_do_ext_transfer( xpc_ext_transfer_state_t *xts );
   
-  int xpc_usb_open_desc(int vendor, int product, const char* description, const char* serial);
+  int xpc_usb_open_desc(int vendor, int product, const char* description, unsigned long long int serial);
   bool xpc_close_interface (struct usb_dev_handle *udh);
 };
 
