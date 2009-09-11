@@ -54,6 +54,10 @@ IOXPC::IOXPC(int const vendor, int const product, char const *desc,
     throw  io_exception(std::string("xpcu_read_cpld_version: ") );
   fprintf(stderr, "CPLD version = 0x%02x%02x (%u)\n", 
 	  buf[1], buf[0], buf[1]<<8| buf[0]);
+  if (xpcu_read_hid(xpcu, buf) < 0)
+    throw  io_exception(std::string("xpcu_read_cpld_version: ") );
+  fprintf(stderr, "DLC HID = 0x%02x%02x%02x%02x%02x%02x%02x\n", 
+	  buf[6], buf[5], buf[4], buf[3], buf[2],buf[1], buf[0]);
   if(!buf[1] && !buf[0])
     throw  io_exception(std::string("Warning: version '0' can't be correct."
 				    " Please try resetting the cable\n"));
@@ -159,6 +163,22 @@ int IOXPC::xpcu_read_cpld_version(struct usb_dev_handle *xpcu,
   if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0050, 0x0001, (char*)buf, 2, 1000)<0)
     {
       fprintf(stderr, "usb_control_msg(0x50.1) (read_cpld_version) %s\n",
+	      usb_strerror());
+      return -1;
+    }
+  call_ctrl++; 
+  return 0;
+}
+
+/* ---------------------------------------------------------------------- */
+
+
+int IOXPC::xpcu_read_hid(struct usb_dev_handle *xpcu, 
+				  unsigned char *buf)
+{
+  if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0042, 0x000, (char*)buf, 8, 1000)<0)
+    {
+      fprintf(stderr, "usb_control_msg(0x50.1) (read_hid) %s\n",
 	      usb_strerror());
       return -1;
     }
