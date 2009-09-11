@@ -71,7 +71,7 @@ word. */
 
 typedef unsigned char byte;
 
-enum FILE_STYLE { STYLE_BIT, STYLE_BIN, STYLE_HEX, STYLE_IHEX};
+enum FILE_STYLE { STYLE_BIT, STYLE_BIN, STYLE_HEX, STYLE_MCS};
 
 class BitFile
 {
@@ -94,7 +94,7 @@ class BitFile
   void readField(std::string &field, FILE *fp);
   void processData(FILE *fp);
   int  readBitfile(FILE *fp);
-  int  readIHexfile(FILE *fp);
+  int  readMCSfile(FILE *fp);
   unsigned char checksum(char * buf);
  
  public:

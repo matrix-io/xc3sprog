@@ -187,8 +187,8 @@ void usage()
      "   -I\t\tWork on connected SPI Flash (ISF Mode)\n"
      "     \t\t(after bscan_spi Bitfile for device has been loaded)\n"
      "   -r\t\tRead from device and write to file\n\n"
-     "   -i\t\tinput file format (BIT|BIN|IHEX|HEX)\n"
-     "   -o\t\toutput file format (BIT|BIN|IHEX|HEX)\n"
+     "   -i\t\tinput file format (BIT|BIN|MCS|HEX)\n"
+     "   -o\t\toutput file format (BIT|BIN|MCS|HEX)\n"
      "   -m directory\tDirectory with XC2C mapfiles\n"
      "   Supported cable types: pp, ftdi, fx2, xpc\n"
      "   \tOptional pp arguments:\n"
@@ -312,8 +312,8 @@ int main(int argc, char **args)
 	out_style = STYLE_BIT;
       else if (!strcasecmp(optarg,"HEX"))
 	out_style = STYLE_HEX;
-      else if (!strcasecmp(optarg,"IHEX"))
-	out_style = STYLE_IHEX;
+      else if (!strcasecmp(optarg,"MCS"))
+	out_style = STYLE_MCS;
       else if (!strcasecmp(optarg,"BIN"))
 	out_style = STYLE_BIN;
       else 
@@ -325,8 +325,8 @@ int main(int argc, char **args)
 	in_style = STYLE_BIT;
       else if (!strcasecmp(optarg,"HEX"))
 	in_style = STYLE_HEX;
-      else if (!strcasecmp(optarg,"IHEX"))
-	in_style = STYLE_IHEX;
+      else if (!strcasecmp(optarg,"MCS"))
+	in_style = STYLE_MCS;
       else if (!strcasecmp(optarg,"BIN"))
 	in_style = STYLE_BIN;
       else 
