@@ -1,6 +1,11 @@
 090605: 
 Tested with a DLC10 cable.
 
+The Xilinx cable setup has to be run before so that on detecting the FX2 chip
+when plugging the cable udev loads the cable specific hex file. lsusb must
+report a device "03fd:0008". This VID:PID is the same for DLC9/DLC9 embedded
+and DLC10. 
+
 The buffer size could be increased substantial against Koljas observations
 on the DLC9, resulting in great speed increase. 
 
@@ -11,3 +16,4 @@ deepth.
 
 Internal chain didn't work for the DLC9, neither in SVN-urjtag, nor in
 xc3sprog.
+
