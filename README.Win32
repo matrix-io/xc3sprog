@@ -9,3 +9,21 @@ On different machines here, "sc start parvdm" refused to start the service
 with  Error 1058. You can get information about the parvdm in the Device
 Manager with the display of hidden devices enables under the NON-PNP
 section.
+
+
+Sometimes deinstalling parvdm in the device manager and then reenabling it
+with regedit by setting "Start" to "2" in
+HKLM/SYSTEM/ControlSet001/Services/ParVdm
+got it working.
+
+Please report your findings!
+
+Lib-USB Access
+==============
+For devices access to devices with already installed drivers, like the
+Xilinx Download cables or FTDI cables with default VID:PID, install the
+filter driver. Follow the instructions given in the download page of the
+sourceforge libusb-win32 project.
+
+Only if your device has no driver, create an inf file as explaind in
+the "Device driver Installation" on above page.
