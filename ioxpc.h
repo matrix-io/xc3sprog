@@ -76,6 +76,7 @@ class IOXPC : public IOBase
   int xpcu_write_gpio(struct usb_dev_handle *xpcu, unsigned char bits);
   int xpcu_read_gpio(struct usb_dev_handle *xpcu, unsigned char *bits);
   int xpcu_read_cpld_version(struct usb_dev_handle *xpcu, unsigned char *buf);
+  int xpcu_read_hid(struct usb_dev_handle *xpcu, unsigned char *buf);
   int xpcu_read_firmware_version(struct usb_dev_handle *xpcu, unsigned char *buf);
   int xpcu_select_gpio(struct usb_dev_handle *xpcu, int int_or_ext );
   int xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits, int in_len, unsigned char *in, int out_len, unsigned char *out );
