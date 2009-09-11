@@ -35,11 +35,14 @@ IOXPC::IOXPC(int const vendor, int const product, char const *desc,
   :  IOBase(), bptr(0), calls_rd(0) , calls_wr(0), call_ctrl(0)
 {
   unsigned char buf[2];
+  unsigned long long lserial=0;
   int r;
   
   subtype = stype;
   // Open device
-  if (xpc_usb_open_desc(vendor, product, desc, serial) < 0)
+  if(serial)
+    sscanf(serial,"%Lx", &lserial);
+  if (xpc_usb_open_desc(vendor, product, desc, lserial) < 0)
     throw  io_exception(std::string("ftdi_usb_open_desc: ") );
   if (xpcu_request_28(xpcu, 0x11) < 0)
     throw  io_exception(std::string("xpcu_request_28: ") );
@@ -54,10 +57,12 @@ IOXPC::IOXPC(int const vendor, int const product, char const *desc,
     throw  io_exception(std::string("xpcu_read_cpld_version: ") );
   fprintf(stderr, "CPLD version = 0x%02x%02x (%u)\n", 
 	  buf[1], buf[0], buf[1]<<8| buf[0]);
-  if (xpcu_read_hid(xpcu, buf) < 0)
-    throw  io_exception(std::string("xpcu_read_cpld_version: ") );
-  fprintf(stderr, "DLC HID = 0x%02x%02x%02x%02x%02x%02x%02x\n", 
-	  buf[6], buf[5], buf[4], buf[3], buf[2],buf[1], buf[0]);
+  if(hid)
+#ifdef __WIN32__
+    fprintf(stderr, "DLC HID = 0x%I64x\n", hid);
+#else
+    fprintf(stderr, "DLC HID = 0x%015Lx\n", hid);
+#endif
   if(!buf[1] && !buf[0])
     throw  io_exception(std::string("Warning: version '0' can't be correct."
 				    " Please try resetting the cable\n"));
@@ -173,15 +178,19 @@ int IOXPC::xpcu_read_cpld_version(struct usb_dev_handle *xpcu,
 /* ---------------------------------------------------------------------- */
 
 
-int IOXPC::xpcu_read_hid(struct usb_dev_handle *xpcu, 
-				  unsigned char *buf)
+int IOXPC::xpcu_read_hid(struct usb_dev_handle *xpcu)
 {
-  if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0042, 0x000, (char*)buf, 8, 1000)<0)
+  int i;
+  char buf[8];
+  hid = 0;
+  if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0042, 0x000, buf, 8, 1000)<0)
     {
-      fprintf(stderr, "usb_control_msg(0x50.1) (read_hid) %s\n",
+      fprintf(stderr, "usb_control_msg(0x42.1) (read_hid) %s\n",
 	      usb_strerror());
       return -1;
     }
+  for (i=6; i>= 0; i--)
+    hid = (hid<<8) +buf[i];
   call_ctrl++; 
   return 0;
 }
@@ -553,7 +562,7 @@ void IOXPC::tx_tms(unsigned char *in, int len)
   } while(0);
 
 int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
-			     const char* serial)
+			     unsigned long long int lserial)
 {
   /* Adapted from libftdi:ftdi_usb_open_desc()
      
@@ -598,22 +607,6 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
 		    }
 		}
 	      
-	      if (serial != NULL) 
-		{
-		  if (usb_get_string_simple(xpcu, 
-					    dev->descriptor.iSerialNumber,
-					    string, sizeof(string)) <= 0) 
-		    {
-		      usb_close (xpcu);
-		      xpc_error_return(-9, "unable to fetch serial number");
-		    }
-		  if (strncmp(string, serial, sizeof(string)) != 0) 
-		    {
-		      if (usb_close (xpcu) != 0)
-			xpc_error_return(-10, "unable to close device");
-		      continue;
-		    }
-		}
 	      if (usb_set_configuration (xpcu, dev->config[0].bConfigurationValue) < 0)
 		{
 		  fprintf (stderr, "%s: usb_set_configuration: failed conf %d\n",
@@ -631,6 +624,12 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
 		xpc_error_return(-11, 
 				       "unable to claim interface");
 	      }
+	      xpcu_read_hid(xpcu);
+	      if ((lserial != 0) && (lserial != hid))
+		{
+		  usb_close (xpcu);
+		  continue;
+		}
 	      return 0;
 	    }
 	}

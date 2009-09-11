@@ -17,3 +17,12 @@ deepth.
 Internal chain didn't work for the DLC9, neither in SVN-urjtag, nor in
 xc3sprog.
 
+For serial number readout: 
+
+DLC10: First load /usr/share/xusb_xp2.hex (Version 2300)
+       then /opt/Xilinx/11.1/ISE/data/xusb_xp2.hex (Version 2401)
+SP601: First load  /usr/share/xusb_emb.hex (Version 1028)
+       then /opt/Xilinx/11.1/ISE/data/xusb_emp.hex (Version 1303)
+
+Get firmware Version form HEX file like 
+grep :0219B900 /opt/Xilinx/11.1/ISE/data/*hex
