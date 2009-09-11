@@ -47,8 +47,8 @@ int main(int argc, char**args)
 	in_style = STYLE_BIT;
       else if (!strcasecmp(optarg,"HEX"))
 	in_style = STYLE_HEX;
-      else if (!strcasecmp(optarg,"IHEX"))
-	in_style = STYLE_IHEX;
+      else if (!strcasecmp(optarg,"MCS"))
+	in_style = STYLE_MCS;
       else if (!strcasecmp(optarg,"BIN"))
 	in_style = STYLE_BIN;
       else 
@@ -60,8 +60,8 @@ int main(int argc, char**args)
 	out_style = STYLE_BIT;
       else if (!strcasecmp(optarg,"HEX"))
 	out_style = STYLE_HEX;
-      else if (!strcasecmp(optarg,"IHEX"))
-	out_style = STYLE_IHEX;
+      else if (!strcasecmp(optarg,"MCS"))
+	out_style = STYLE_MCS;
       else if (!strcasecmp(optarg,"BIN"))
 	out_style = STYLE_BIN;
       else 

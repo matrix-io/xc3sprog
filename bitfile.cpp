@@ -92,7 +92,7 @@ int BitFile::readBitfile(FILE *fp)
  *   spen@spen-soft.co.uk                                                  *
  */ 
 
-int BitFile::readIHexfile(FILE *fp)
+int BitFile::readMCSfile(FILE *fp)
 {
   unsigned int full_address = 0;
   char buf[1024];
@@ -201,7 +201,7 @@ int BitFile::readIHexfile(FILE *fp)
 	    break;
 	  }
 	default:
-	  fprintf(stderr, "unhandled IHEX record type: %i", record_type);
+	  fprintf(stderr, "unhandled MCS record type: %i", record_type);
 	  return 2;
 	}
       sscanf(&buf[bytes_read], "%2x", &checksum);
@@ -210,12 +210,12 @@ int BitFile::readIHexfile(FILE *fp)
       if ((unsigned char)checksum != (unsigned char)(~cal_checksum + 1))
 	{
 	  /* checksum failed */
-	  fprintf(stderr, "incorrect record checksum found in IHEX file");
+	  fprintf(stderr, "incorrect record checksum found in MCS file");
 	  return 3;
 	}
     }
 
-  fprintf(stderr, "premature end of IHEX file, no end-of-file record found");
+  fprintf(stderr, "premature end of MCS file, no end-of-file record found");
   return 4;
 }
 
@@ -227,7 +227,17 @@ int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
   switch (in_style)
     {
     case STYLE_BIT:return readBitfile(fp);
-    case STYLE_IHEX:return readIHexfile(fp);
+    case STYLE_MCS:
+      {
+	int res = readMCSfile(fp);
+	if (res == 0)
+	  {
+	    unsigned int i;
+	    for (i=0; i<length; i++)
+	      buffer[i] = bitRevTable[buffer[i]];
+	  }
+	return res;
+      }
     default: fprintf(stderr, " Handle handle style\n");
       return 1;
     }
@@ -448,14 +458,14 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
       if ( (i-1)%16 != 15)
 	fprintf(fp,"\n");
       break;
-    case STYLE_IHEX:
+    case STYLE_MCS:
       {
         unsigned int base = (unsigned int)-1;
         char buf[1024];
         int len = 0;
         for(i=0; i<clip; i++)
           {
-            byte b=buffer[i];
+            byte b = bitRevTable[buffer[i]];
             if (base != i>>16)
               {
                 base = i >> 16;
