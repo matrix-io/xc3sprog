@@ -213,9 +213,11 @@ void hint_loadfirmware(void)
   fprintf(stderr,
 	  "\nFirmware doesn't support unique number readout! If unique \n"
 	  "number is needed for board destinction, try overloading(!)\n"
-	  "an appropriate firmware from ../Xilinx/nn.n/ISE/data\n"
-	  "e.g. ../Xilinx/nn.n/ISE/data/xusb_emb.hex for SP601\n"
-	  "e.g. ../Xilinx/nn.n/ISE/data/xusb_xp2.hex for DLC10\n\n");
+	  "with an firmware from ../Xilinx/nn.n/ISE/data\n"
+	  "e.g. with fxload -t fx2lp -I <firmware> -D </dev/bus/usb/nnn/nnn>\n"
+	  "and e.g. firmware ../Xilinx/nn.n/ISE/data/xusb_emb.hex for SP601\n"
+	  "or  e.g. firmware ../Xilinx/nn.n/ISE/data/xusb_xp2.hex for DLC10\n"
+	  "\n");
 }
 
 int IOXPC::xpcu_select_gpio(struct usb_dev_handle *xpcu, int int_or_ext )
