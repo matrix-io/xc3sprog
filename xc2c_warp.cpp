@@ -52,7 +52,10 @@ int main(int argc, char**args)
       else if (!strcasecmp(optarg,"BIN"))
 	in_style = STYLE_BIN;
       else 
-	    usage();
+	{
+	  fprintf(stderr, "Unknown format \"%s\"\n", optarg);
+	  usage();
+	}
       break;
       
     case 'o':
@@ -65,7 +68,10 @@ int main(int argc, char**args)
       else if (!strcasecmp(optarg,"BIN"))
 	out_style = STYLE_BIN;
       else 
-	    usage();
+	{
+	  fprintf(stderr, "Unknown format \"%s\"\n", optarg);
+	  usage();
+	}
       break;
       
     case 'm':

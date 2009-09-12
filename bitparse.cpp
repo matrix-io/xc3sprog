@@ -31,12 +31,11 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 void usage() {
   fprintf(stderr,
-	  "\nUsage:bitparse [-F format] [-O outfile] infile\n"
-	  "   -h\t\tprint this help\n"
+	  "\nUsage:bitparse [-i input format] [-o output format ][-O outfile] infile\n"	  "   -h\t\tprint this help\n"
 	  "   -v\t\tverbose output\n"
-	  "   -O\t\toutput file (parse input file only if not given"
-	  "   -i\t\tinput  file format (BIT|BIN|HEX)\n"
-	  "   -o\t\toutput file format (BIT|BIN|HEX)\n");
+	  "   -O\t\toutput file (parse input file only if not given\n"
+	  "   -i\t\tinput  file format (BIT|BIN|HEX|MCS)\n"
+	  "   -o\t\toutput file format (BIT|BIN|HEX|MCS\n");
   exit(255);
 }
 
@@ -61,7 +60,10 @@ int main(int argc, char**args)
 	  else if (!strcasecmp(optarg,"BIN"))
  	    in_style = STYLE_BIN;
 	  else 
-	    usage();
+	    {
+	      fprintf(stderr, "Unknown format \"%s\"\n", optarg);
+	      usage();
+	    }
 	  break;
 
 	case 'o':
@@ -74,7 +76,10 @@ int main(int argc, char**args)
 	  else if (!strcasecmp(optarg,"BIN"))
  	    out_style = STYLE_BIN;
 	  else 
-	    usage();
+	    {
+	      fprintf(stderr, "Unknown format \"%s\"\n", optarg);
+	      usage();
+	    }
 	  break;
 
 	case 'O':
