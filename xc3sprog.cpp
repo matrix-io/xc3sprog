@@ -317,8 +317,11 @@ int main(int argc, char **args)
 	out_style = STYLE_MCS;
       else if (!strcasecmp(optarg,"BIN"))
 	out_style = STYLE_BIN;
-      else 
-	    usage();
+      else
+	{
+	  fprintf(stderr, "Unknown format \"%s\"\n", optarg);
+	  usage();
+	}
       break;
       
     case 'i':
@@ -331,7 +334,10 @@ int main(int argc, char **args)
       else if (!strcasecmp(optarg,"BIN"))
 	in_style = STYLE_BIN;
       else 
-	    usage();
+	{
+	  fprintf(stderr, "Unknown format \"%s\"\n", optarg);
+	  usage();
+	}
       break;
       
     case 'r':
