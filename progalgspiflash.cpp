@@ -302,6 +302,9 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
   fprintf(stderr, "JEDEC: %02x %02x 0x%02x 0x%02x\n",
 	  fbuf[0],fbuf[1], fbuf[2], fbuf[3]);
   
+  manf_id = fbuf[0];
+  prod_id = fbuf[1]<<8 | fbuf[2];
+  
   switch (fbuf[0])
     {
     case 0x1f:
@@ -324,8 +327,6 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
     {
       fprintf(stderr, "%d bytes/page, %d pages = %d bytes total \n",
 	      pgsize, pages, pgsize *  pages);
-      manf_id = fbuf[0];
-      prod_id = fbuf[1]<<8 | fbuf[2];
       buf = new byte[pgsize+16];
     }
   return res;
@@ -538,7 +539,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	  fbuf[0] = WRITE_ENABLE;
 	  spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
 	  /* Erase selected page */
-	  fbuf[0] = SECTOR_ERASE;
+	  fbuf[0] = sector_erase_cmd;
 	  fbuf[1]=i>>16;
 	  fbuf[2]=(i>>8) & 0xff;
 	  fbuf[3]=i & 0xff;
@@ -635,9 +636,10 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
       return -1;
     }
   switch (manf_id) {
-  case 0x1f:
+  case 0x1f: /* Atmel */
     return program_at45(pfile);
-  case 0x20:
+  case 0x20: /* Numonyx */
+  case 0xef: /* Winbond */
     return sectorerase_and_program(pfile);
   default:
     fprintf(stderr,"Programming not yet implemented\n");
