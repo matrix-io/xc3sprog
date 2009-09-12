@@ -172,13 +172,18 @@ unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
   return id;
 }
   
-void usage()
+void usage(bool all_options)
 {
   fprintf
     (
      stderr,
      "\nUsage:\txc3sprog [-v] [-p pos] [...] bitfile [+(val[*cnt]|binfile)]\n"
-     "   -?\t\tprint this help\n"
+     "   -[?|h]\t\tprint this help\n"
+     );
+  if (!all_options) exit(255);
+  fprintf
+    (
+     stderr,
      "   -v\t\tverbose output\n"
      "   -j\t\tDetect JTAG chain, nothing else\n"
      "   -T[val]\tTest chain val times (0 = forever) or 10000 times default\n"
@@ -319,8 +324,8 @@ int main(int argc, char **args)
 	out_style = STYLE_BIN;
       else
 	{
-	  fprintf(stderr, "Unknown format \"%s\"\n", optarg);
-	  usage();
+	  fprintf(stderr, "\nUnknown format \"%s\"\n", optarg);
+	  usage(false);
 	}
       break;
       
@@ -335,8 +340,8 @@ int main(int argc, char **args)
 	in_style = STYLE_BIN;
       else 
 	{
-	  fprintf(stderr, "Unknown format \"%s\"\n", optarg);
-	  usage();
+	  fprintf(stderr, "\nUnknown format \"%s\"\n", optarg);
+	  usage(false);
 	}
       break;
       
@@ -354,7 +359,10 @@ int main(int argc, char **args)
        else if (strcasecmp(optarg, "int") == 0)
          subtype = XPC_INTERNAL;
        else
-         usage();
+	 {
+	   fprintf(stderr, "\bUnknown subtype \"%s\"\n", optarg);
+	   usage(false);
+         }
        break;
 
     case 'd':
@@ -386,19 +394,19 @@ int main(int argc, char **args)
     case '?':
     case 'h':
     default:
-      usage();
+      usage(true);
     }
   }
  args_done:
   argc -= optind;
   args += optind;
-  if(argc < 0)  usage();
+  if(argc < 0)  usage(true);
   if(argc < 1) detectchain = true;
 
   std::auto_ptr<IOBase>  io;
   try {  
-    if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
-    else if(strcmp(cable, "ftdi") == 0)  
+    if     (strcasecmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
+    else if(strcasecmp(cable, "ftdi") == 0)  
       {
 	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA))
 	  {
@@ -423,7 +431,7 @@ int main(int argc, char **args)
 	  }
 	io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
       }
-    else if(strcmp(cable,  "fx2") == 0)  
+    else if(strcasecmp(cable,  "fx2") == 0)  
       {
 	if (vendor == 0)
 	  vendor = USRP_VENDOR;
@@ -431,7 +439,7 @@ int main(int argc, char **args)
 	  product = USRP_DEVICE;
 	io.reset(new IOFX2(vendor, product, desc, serial));
       }
-    else if(strcmp(cable,  "xpc") == 0)  
+    else if(strcasecmp(cable,  "xpc") == 0)  
       {
 	if (vendor == 0)
 	  vendor = XPC_VENDOR;
@@ -439,16 +447,23 @@ int main(int argc, char **args)
 	  product = XPC_DEVICE;
 	io.reset(new IOXPC(vendor, product, desc, serial, subtype));
       }
-    else  usage();
-
+    else
+      {
+	fprintf(stderr, "\nUnknown cable \"%s\"\n", cable);
+	usage(false);
+      }
     io->setVerbose(verbose);
   }
   catch(io_exception& e) 
     {
     if(strcmp(cable, "pp") != 0) 
       {
-	fprintf(stderr, "Could not access USB device %04x:%04x.\n", 
-		vendor, product);
+	fprintf(stderr, "Could not find %s dongle %04x:%04x", 
+		cable, vendor, product);
+	if (desc)
+	  fprintf(stderr, " with given description \"%s\"\n", desc);
+	if (serial)
+	  fprintf(stderr, " with given Serial Number \"%s\"\n", serial);
       }
     return 1;
     }
