@@ -769,7 +769,8 @@ int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
   if(!verify)
     {
       alg.erase();
-      alg.program(file);
+      if (alg.program(file) <0 )
+	return 1;
       alg.disable();
     }
   alg.verify(file);
