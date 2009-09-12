@@ -183,11 +183,10 @@ int IOXPC::xpcu_read_hid(struct usb_dev_handle *xpcu)
   int i;
   char buf[8];
   hid = 0;
-  if(usb_control_msg(xpcu, 0xC0, 0xB0, 0x0042, 0x000, buf, 8, 1000)<0)
+  int rc = usb_control_msg(xpcu, 0xC0, 0xB0, 0x0042, 0x000, buf, 8, 1000);
+  if(rc<0)
     {
-      fprintf(stderr, "usb_control_msg(0x42.1) (read_hid) %s\n",
-	      usb_strerror());
-      return -1;
+      return rc;
     }
   for (i=6; i>= 0; i--)
     hid = (hid<<8) +buf[i];
@@ -208,6 +207,15 @@ int IOXPC::xpcu_read_firmware_version(struct usb_dev_handle *xpcu,
     }
   call_ctrl++; 
   return 0;
+}
+void hint_loadfirmware(void)
+{
+  fprintf(stderr,
+	  "\nFirmware doesn't support unique number readout! If unique \n"
+	  "number is needed for board destinction, try overloading(!)\n"
+	  "an appropriate firmware from ../Xilinx/nn.n/ISE/data\n"
+	  "e.g. ../Xilinx/nn.n/ISE/data/xusb_emb.hex for SP601\n"
+	  "e.g. ../Xilinx/nn.n/ISE/data/xusb_xp2.hex for DLC10\n\n");
 }
 
 int IOXPC::xpcu_select_gpio(struct usb_dev_handle *xpcu, int int_or_ext )
@@ -573,7 +581,8 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
   struct usb_bus *bus;
   struct usb_device *dev;
   char string[256];
-  
+  int rc;
+
   usb_init();
   
   if (usb_find_busses() < 0)
@@ -624,12 +633,27 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
 		xpc_error_return(-11, 
 				       "unable to claim interface");
 	      }
-	      xpcu_read_hid(xpcu);
-	      if ((lserial != 0) && (lserial != hid))
+	      rc = xpcu_read_hid(xpcu);
+	      if (rc < 0)
 		{
-		  usb_close (xpcu);
-		  continue;
+		  if (rc == -EPIPE)
+		    {
+		      if (lserial != 0)
+			{
+			  hint_loadfirmware();
+			  return 0;
+			}
+		    }
+		    else
+		      fprintf(stderr, "usb_control_msg(0x42.1 %s\n",
+			      usb_strerror());
 		}
+	      else
+		if ((lserial != 0) && (lserial != hid))
+		  {
+		    usb_close (xpcu);
+		    continue;
+		  }
 	      return 0;
 	    }
 	}
