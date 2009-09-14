@@ -33,9 +33,12 @@ int main(int argc, char**args)
     {
       try 
 	{
-	  SrecFile file(args[1], 0);
-	  fprintf(stderr, "start 0x%08x end 0x%08x len 0x%08x\n",
-		 file.getStart(), file.getEnd(), file.getLength());
+	  SrecFile file;
+	  if (file.readSrecFile(args[1], 0)<0)
+	    fprintf(stderr, "no valid file given\n");
+	  else
+	    fprintf(stderr, "start 0x%08x end 0x%08x len 0x%08x\n",
+		    file.getStart(), file.getEnd(), file.getLength());
 	}
       catch(io_exception& e) 
 	{

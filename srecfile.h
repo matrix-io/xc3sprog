@@ -52,11 +52,12 @@ private:
   unsigned long bufsize;
 
   int ReadOneLine(FILE *fp,char *dest);
-  S_Record DecodeSRecordLine(char *source, unsigned char *dest);
+  int DecodeSRecordLine(char *source, unsigned char *dest, S_Record *SRec);
   long Hex2Bin(char *ptr);
   char RecordType(char Type);
 public:
-  SrecFile(char const *fname, unsigned int bufsize);
+  SrecFile(void);
+  int readSrecFile(char const * fname, unsigned int bufsize);
   inline byte *getData(){return buffer;}
   inline unsigned int getStart(){return StartAddr;}
   inline unsigned int getEnd(){return EndAddr;}

@@ -30,9 +30,8 @@ Modifyied from srecdec
 
 using namespace std;
 
-S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
+int SrecFile::DecodeSRecordLine(char *source, unsigned char *dest, S_Record *SRec)
 {
-  S_Record SRec;
   char buffer[16];
   int i,l;
 
@@ -40,19 +39,23 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
   {
      fprintf(stderr, "\r\n%s\r\n",source);
      if(*source != 'S')
-       throw  io_exception(std::string("DecodeSRecordLine: unexpected char ") 
-			   +*source
-			   +std::string("\n") );
+       { 
+	 fprintf(stderr, "DecodeSRecordLine: unexpected char 0x%02x", *source);
+	 if (isprint(*source))
+	   fprintf(stderr," \"%c\"", *source);
+	 fprintf(stderr, "\n");  
+	 return -1;
+       }
   }
   source++;
-  SRec.Type=*source++-'0';
+  SRec->Type=*source++-'0';
   for(i=0;i<2;i++)
   {
     buffer[i]=*source++;
   }
   buffer[i]=0;
-  SRec.Length=(char)Hex2Bin(buffer);
-  switch(SRec.Type)
+  SRec->Length=(char)Hex2Bin(buffer);
+  switch(SRec->Type)
   {
     case 0:  /* Start Record */
       for(i=0;i<4;i++)
@@ -60,8 +63,8 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         buffer[i]=*source++;
       }
       buffer[i]=0;
-      SRec.Address=Hex2Bin(buffer);
-      l=SRec.Length-3;  /* 2 Address Bytes + 1 Checksum Bytes */
+      SRec->Address=Hex2Bin(buffer);
+      l=SRec->Length-3;  /* 2 Address Bytes + 1 Checksum Bytes */
       for(i=0;i<l;i++)
       {
         buffer[0]=*source++;
@@ -70,7 +73,7 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         *dest++=(unsigned char)Hex2Bin(buffer);
       }
       *dest=0;
-      SRec.DataLength=l;  /* Actual Number of Data Bytes */
+      SRec->DataLength=l;  /* Actual Number of Data Bytes */
       break;
     case 1: /* Data Record 16 bit address */
       for(i=0;i<4;i++)
@@ -78,8 +81,8 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         buffer[i]=*source++;
       }
       buffer[i]=0;
-      SRec.Address=Hex2Bin(buffer);
-      l=SRec.Length-3;  /* 2 Address Bytes + 1 Checksum Bytes */
+      SRec->Address=Hex2Bin(buffer);
+      l=SRec->Length-3;  /* 2 Address Bytes + 1 Checksum Bytes */
       for(i=0;i<l;i++)
       {
         buffer[0]=*source++;
@@ -87,7 +90,7 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         buffer[2]=0;
         *dest++=(unsigned char)Hex2Bin(buffer);
       }
-      SRec.DataLength=l;  /* Actual Number of Data Bytes */
+      SRec->DataLength=l;  /* Actual Number of Data Bytes */
       break;
     case 2: /* Data Record 24 bit address */
       for(i=0;i<6;i++)
@@ -95,8 +98,8 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         buffer[i]=*source++;
       }
       buffer[i]=0;
-      SRec.Address=Hex2Bin(buffer);
-      l=SRec.Length-4;  /* 3 Address Bytes + 1 Checksum Bytes */
+      SRec->Address=Hex2Bin(buffer);
+      l=SRec->Length-4;  /* 3 Address Bytes + 1 Checksum Bytes */
       for(i=0;i<l;i++)
       {
         buffer[0]=*source++;
@@ -104,7 +107,7 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         buffer[2]=0;
         *dest++=(unsigned char)Hex2Bin(buffer);
       }
-      SRec.DataLength=l;  /* Actual Number of Data Bytes */
+      SRec->DataLength=l;  /* Actual Number of Data Bytes */
       break;
     case 3: /* Data Record 32 bit address */
       for(i=0;i<8;i++)
@@ -112,8 +115,8 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         buffer[i]=*source++;
       }
       buffer[i]=0;
-      SRec.Address=Hex2Bin(buffer);
-      l=SRec.Length-5;  /* 4 Address Bytes + 1 Checksum Bytes */
+      SRec->Address=Hex2Bin(buffer);
+      l=SRec->Length-5;  /* 4 Address Bytes + 1 Checksum Bytes */
       for(i=0;i<l;i++)
       {
         buffer[0]=*source++;
@@ -121,7 +124,7 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         buffer[2]=0;
         *dest++=(unsigned char)Hex2Bin(buffer);
       }
-      SRec.DataLength=l;  /* Actual Number of Data Bytes */
+      SRec->DataLength=l;  /* Actual Number of Data Bytes */
       break;
     case 9: /* End Record 16 bit address */
       for(i=0;i<4;i++)
@@ -129,8 +132,8 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         buffer[i]=*source++;
       }
       buffer[i]=0;
-      SRec.Address=Hex2Bin(buffer);
-      SRec.DataLength=0;
+      SRec->Address=Hex2Bin(buffer);
+      SRec->DataLength=0;
       break;
     case 8: /* End Record 24 bit address */
       for(i=0;i<6;i++)
@@ -138,8 +141,8 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         buffer[i]=*source++;
       }
       buffer[i]=0;
-      SRec.Address=Hex2Bin(buffer);
-      SRec.DataLength=0;
+      SRec->Address=Hex2Bin(buffer);
+      SRec->DataLength=0;
       break;
     case 7: /* End Record 32 bit address */
       for(i=0;i<8;i++)
@@ -147,17 +150,17 @@ S_Record SrecFile::DecodeSRecordLine(char *source, unsigned char *dest)
         buffer[i]=*source++;
       }
       buffer[i]=0;
-      SRec.Address=Hex2Bin(buffer);
-      SRec.DataLength=0;
+      SRec->Address=Hex2Bin(buffer);
+      SRec->DataLength=0;
       break;
     default:
-      SRec.Type=255;
-      SRec.Address=0;
-      SRec.Length=0;
-      SRec.DataLength=0;
+      SRec->Type=255;
+      SRec->Address=0;
+      SRec->Length=0;
+      SRec->DataLength=0;
       break;
   }
- return SRec;
+ return -1;
 }
 
 
@@ -213,7 +216,11 @@ int SrecFile::ReadOneLine(FILE *fp,char *dest)
    return(count);
 }
 
-SrecFile::SrecFile(char const * fname, unsigned int bufsize)
+SrecFile::SrecFile(void)
+{
+}
+
+int SrecFile::readSrecFile(char const * fname, unsigned int bufsize)
 {
   static unsigned char LBuf[256];
   static char LineBuffer[256];
@@ -237,7 +244,7 @@ SrecFile::SrecFile(char const * fname, unsigned int bufsize)
 	}
     }
   if (!fp)
-    return;
+    return -1;
 
   if (bufsize == 0)
     bufsize = 1024*1024; /* Defaule size if no size given*/
@@ -246,7 +253,7 @@ SrecFile::SrecFile(char const * fname, unsigned int bufsize)
   if(!buffer)
     {
       fprintf(stderr, "Cannot allocate buffer\n");
-      return;
+      return -2;
     }
 
   while(!feof(fp))
@@ -254,7 +261,8 @@ SrecFile::SrecFile(char const * fname, unsigned int bufsize)
     i=ReadOneLine(fp,LineBuffer);
     if(i<=2)
       break;
-    SRec = DecodeSRecordLine(LineBuffer,LBuf);
+    if (DecodeSRecordLine(LineBuffer,LBuf, &SRec) <0)
+      return -3;
     k=RecordType(SRec.Type);
     if(k==DATARECORD)
       {
@@ -272,7 +280,7 @@ SrecFile::SrecFile(char const * fname, unsigned int bufsize)
 		Bytes_Read = 0;
 		fprintf(stderr, "\n Buffer too small, "
 			"Number of bytes read = %lu \n ",NumberOfBytes);
-		return;
+		return -3;
 	      }
 	    buffer[(size_t)Address] = LBuf[i];
 	    NumberOfBytes++;
@@ -287,4 +295,5 @@ SrecFile::SrecFile(char const * fname, unsigned int bufsize)
   StartAddr  = StartAddress;
   Bytes_Read = NumberOfBytes;
   EndAddr    = MaxA;
+  return 0;
 }
