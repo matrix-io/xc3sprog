@@ -48,7 +48,9 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
     }
   if (flashfile)
     {
-      SrecFile file(flashfile, 0);
+      SrecFile file;
+      if(file.readSrecFile(flashfile, 0) <0)
+	return 1;
 
       if (file.getLength() == 0)
 	{
