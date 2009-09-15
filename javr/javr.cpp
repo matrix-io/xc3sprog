@@ -397,6 +397,12 @@ int main(int argc, char **args)
 
   ResetAVR();
 
+  /* FIXME: It seems, that an AVR JTAG reset also resets the JTAG Chain
+   *
+   * AVR second in chain after an XC3S200A didn't work without this tap reset
+   * With AVR first, this setTapState is not needed! Strange!
+   */
+  jtag.setTapState(IOBase::TEST_LOGIC_RESET);
 
   AVR_Prog_Enable();
 
