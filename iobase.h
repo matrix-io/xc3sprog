@@ -79,6 +79,7 @@ class IOBase
 
  public:
   void setTapState(tapState_t state, int pre=0);
+  tapState_t getTapState(void){return current_state;};
   void tapTestLogicReset();
   void cycleTCK(int n, bool tdi=1);
   void flush_tms(void);
