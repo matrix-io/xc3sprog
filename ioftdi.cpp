@@ -38,6 +38,10 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
 			     TCK_DIVISOR,  0x00, 0x00 ,
 			     SET_BITS_HIGH, ~0x84, 0x84};
 
+  char *fname = getenv("FTDI_DEBUG");
+  if (fname)
+    fp_dbg = fopen(fname,"wb");
+ 
 #if defined (USE_FTD2XX)
     FT_STATUS res;
 #if defined (__linux)
@@ -152,7 +156,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo,
       while (rem/8 > buflen) 
 	{
 	  /* full chunks*/
-	  buf[0] = ((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)
+	  buf[0] = ((tdo)?(MPSSE_DO_READ |MPSSE_READ_NEG):0)
 	    |((tdi)?(MPSSE_DO_WRITE|MPSSE_WRITE_NEG):0)|MPSSE_LSB;
 	  buf[1] = (buflen-1) & 0xff;        /* low lenbth byte */
 	  buf[2] = ((buflen-1) >> 8) & 0xff; /* high lenbth byte */
@@ -355,6 +359,15 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
       throw  io_exception();
     }
 #endif
+  if(fp_dbg)
+    {
+      unsigned int i;
+      fprintf(fp_dbg,"readusb len %ld:", len);
+      for(i=0; i<len; i++)
+	fprintf(fp_dbg," %02x",rbuf[i]);
+      fprintf(fp_dbg,"\n");
+    }
+
   return read;
 }
 
@@ -390,6 +403,8 @@ IOFtdi::~IOFtdi()
       fprintf(stderr,"Loopback: Failed to read 5 bytes, read %d\n", read);
     };
   deinit();
+  if(fp_dbg)
+    fclose(fp_dbg);
 }
 
 void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
@@ -398,6 +413,14 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
     that the OS USB scheduler gives the MPSSE machine 
     enough time empty the buffer
  */
+  if(fp_dbg)
+    {
+      int i;
+      fprintf(fp_dbg,"mpsse_add_cmd len %d:", len);
+      for(i=0; i<len; i++)
+	fprintf(fp_dbg," %02x",buf[i]);
+      fprintf(fp_dbg,"\n");
+    }
  if (bptr + len +1 >= TX_BUF)
    mpsse_send();
   memcpy(usbuf + bptr, buf, len);
@@ -407,6 +430,8 @@ void IOFtdi::mpsse_add_cmd(unsigned char const *const buf, int const len) {
 void IOFtdi::mpsse_send() {
   if(bptr == 0)  return;
 
+  if(fp_dbg)
+    fprintf(fp_dbg,"mpsse_send\n");
 #if defined (USE_FTD2XX)
   DWORD written, last_written;
   int res, timeout = 0;
