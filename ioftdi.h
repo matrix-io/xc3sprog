@@ -62,6 +62,7 @@ class IOFtdi : public IOBase
   int bptr;
 #endif
   int calls_rd, calls_wr, subtype, retries;
+  FILE *fp_dbg;
 
  public:
   IOFtdi(int vendor, int product, char const *desc, char const *serial, int subtype);
