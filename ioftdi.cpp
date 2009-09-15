@@ -431,7 +431,7 @@ void IOFtdi::mpsse_send() {
   if(bptr == 0)  return;
 
   if(fp_dbg)
-    fprintf(fp_dbg,"mpsse_send\n");
+    fprintf(fp_dbg,"mpsse_send %d\n", bptr);
 #if defined (USE_FTD2XX)
   DWORD written, last_written;
   int res, timeout = 0;
