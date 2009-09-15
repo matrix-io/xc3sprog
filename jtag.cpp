@@ -1,6 +1,7 @@
 /* JTAG routines
 
 Copyright (C) 2004 Andrew Rogers
+Copyright (C) 2005-2009 Uwe Bonnes
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,9 +22,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 Jtag::Jtag(IOBase *iob)
 {
   io=iob;
-  postDRState=IOBase::RUN_TEST_IDLE;
-  postIRState=IOBase::RUN_TEST_IDLE;
-  deviceIndex=-1;
+  postDRState = IOBase::RUN_TEST_IDLE;
+  postIRState = IOBase::RUN_TEST_IDLE;
+  deviceIndex = -1;
+  numDevices  = -1;
   shiftDRincomplete=false;
 #ifdef __WIN32__
   hinstLib = LoadLibrary(TEXT("ntdll"));
@@ -41,33 +43,37 @@ Jtag::~Jtag(void)
 #endif
 }
 
+/* Detect chain length on first start, return chain length else*/
 int Jtag::getChain()
 {
-  io->tapTestLogicReset();
-  io->setTapState(IOBase::SHIFT_DR);
-  byte idx[4];
-  byte zero[4];
-  numDevices=0;
-  for(int i=0; i<4; i++)zero[i]=0;
-  do{
-    io->shiftTDITDO(zero,idx,32,false);
-    unsigned long id=byteArrayToLong(idx);
-    if(id!=0 && id !=0xffffffff){
-      numDevices++;
-      chainParam_t dev;
-      dev.idcode=id;
-      devices.insert(devices.begin(),dev);
+  if(numDevices  == -1)
+    {
+      io->tapTestLogicReset();
+      io->setTapState(IOBase::SHIFT_DR);
+      byte idx[4];
+      byte zero[4];
+      numDevices=0;
+      for(int i=0; i<4; i++)zero[i]=0;
+      do{
+	io->shiftTDITDO(zero,idx,32,false);
+	unsigned long id=byteArrayToLong(idx);
+	if(id!=0 && id !=0xffffffff){
+	  numDevices++;
+	  chainParam_t dev;
+	  dev.idcode=id;
+	  devices.insert(devices.begin(),dev);
+	}
+	else{
+	  if (id == 0xffffffff && numDevices >0)
+	    {
+	      fprintf(stderr,"Probably a broken Atmel device in your chain!\n");
+	      fprintf(stderr,"No succeeding device can be identified\n");
+	    }
+	  break;
+	}
+      }while(numDevices<MAXNUMDEVICES);
+      io->setTapState(IOBase::TEST_LOGIC_RESET);
     }
-    else{
-      if (id == 0xffffffff && numDevices >0)
-       {
-         fprintf(stderr,"Probably a broken Atmel device in your chain!\n");
-         fprintf(stderr,"No succeeding device can be identified\n");
-       }
-      break;
-    }
-  }while(numDevices<MAXNUMDEVICES);
-  io->setTapState(IOBase::TEST_LOGIC_RESET);
   return numDevices;
 }
 
