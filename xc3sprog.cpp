@@ -710,14 +710,24 @@ int main(int argc, char **args)
 	    file.saveAs(out_style, db.getDeviceDescription(chainpos), fpout);
 	  return 0;
 	}
+      else 
+	{
+	  fprintf(stderr,
+		  "Sorry, can't program Xilinx device '%s' from family 0x%02x "
+		  "A more recent release may be able to.\n", 
+		  db.getDeviceDescription(chainpos), family);
+	  return 1;
+	}
     }
   else if  ( manufacturer == 0x01f) /* Atmel */
     {
       return jAVR (jtag, id, args[0],verify, lock, eepromfile, fusefile);
     }
-  fprintf(stderr,
-	  "Sorry, cannot program '%s' from family 0x%02x, a later release may be able to.\n", 
-	  db.getDeviceDescription(chainpos), family);
+  else
+    fprintf(stderr,
+	    "Sorry, can't program device '%s' from manufacturer 0x%02x "
+	    "A more recent release may be able to.\n", 
+	    db.getDeviceDescription(chainpos), manufacturer);
   return 1;
 }
 
