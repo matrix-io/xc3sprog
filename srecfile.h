@@ -51,7 +51,7 @@ private:
   byte *buffer;
   unsigned long bufsize;
 
-  int ReadOneLine(FILE *fp,char *dest);
+  int ReadOneLine(FILE *fp,char *dest, int len);
   int DecodeSRecordLine(char *source, unsigned char *dest, S_Record *SRec);
   long Hex2Bin(char *ptr);
   char RecordType(char Type);

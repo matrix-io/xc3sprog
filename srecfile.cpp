@@ -194,12 +194,12 @@ char SrecFile::RecordType(char Type)
   return(tmp);
 }
 
-int SrecFile::ReadOneLine(FILE *fp,char *dest)
+int SrecFile::ReadOneLine(FILE *fp,char *dest, int len)
 {
    char c;
    int count=0;
 
-   while(!feof(fp))
+   while((!feof(fp)) && (count <len))
    {
      c=fgetc(fp);
      if(c=='\r' || c=='\n')
@@ -222,8 +222,8 @@ SrecFile::SrecFile(void)
 
 int SrecFile::readSrecFile(char const * fname, unsigned int bufsize)
 {
-  static unsigned char LBuf[256];
-  static char LineBuffer[256];
+  unsigned char LBuf[256];
+  char LineBuffer[256];
   int i, k;
   S_Record SRec;
   unsigned long StartAddress=0xFFFFFFFFUL,Address=0,NumberOfBytes=0,MaxA=0;
@@ -237,10 +237,9 @@ int SrecFile::readSrecFile(char const * fname, unsigned int bufsize)
     {
       if(!strchr(fname,'.'))
 	{
-	  static char buffer[256];
-	  strncpy(buffer,fname, 252);
-	  strcat(buffer,".rom");
-	  fp=fopen(buffer,"rb");
+	  strncpy(LineBuffer,fname, 252);
+	  strcat(LineBuffer,".rom");
+	  fp=fopen(LineBuffer,"rb");
 	}
     }
   if (!fp)
@@ -258,7 +257,7 @@ int SrecFile::readSrecFile(char const * fname, unsigned int bufsize)
 
   while(!feof(fp))
   {
-    i=ReadOneLine(fp,LineBuffer);
+    i=ReadOneLine(fp,LineBuffer, sizeof(LineBuffer));
     if(i<=2)
       break;
     if (DecodeSRecordLine(LineBuffer,LBuf, &SRec) <0)
