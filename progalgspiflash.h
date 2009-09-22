@@ -66,6 +66,7 @@ class ProgAlgSPIFlash
   int sectorerase_and_program(BitFile &file);
  public:
   ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i);
+  ~ProgAlgSPIFlash(void);
   int spi_flashinfo(void);
   int erase(){return 0;};
   int program(BitFile &file);

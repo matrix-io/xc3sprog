@@ -24,6 +24,13 @@
 
 MapFile_XC2C::MapFile_XC2C()
 {
+  map = 0;
+}
+
+MapFile_XC2C::~MapFile_XC2C()
+{
+  if (map)
+    free(map);
 }
 
 int MapFile_XC2C::readmap(FILE *fp)
@@ -154,6 +161,8 @@ int MapFile_XC2C::loadmapfile(const char *mapdir, const char *device)
        return 1;
     }
 
+  if(map)
+    free (map);
   /* there are twoo extra rows for security/done and usercode bits*/
   map = (int *) malloc(block_size * (block_num + 2) * sizeof(unsigned int));
   if (map == NULL)
