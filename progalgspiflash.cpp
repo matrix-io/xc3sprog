@@ -45,6 +45,13 @@ ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i)
   sector_erase_cmd = 0xD8; /* default erase command */
 }
 
+ProgAlgSPIFlash::~ProgAlgSPIFlash(void)
+{
+  delete[] miso_buf;
+  delete[] mosi_buf;
+  delete[] buf;
+}
+
 int spi_cfg[] = {
         // sreg[5..2], pagesize, pages
         3, 264, 512, // XC3S50AN
@@ -210,7 +217,7 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf)
 int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf) 
  
 {
-  byte fbuf[20]= {0x9f};
+  byte fbuf[21]= {0x9f};
   int i, j = 0;
 
   fprintf(stderr, "Found Numonyx Device, Device ID 0x%02x%02x\n",
@@ -282,7 +289,7 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf)
 
 int ProgAlgSPIFlash::spi_flashinfo(void) 
 {
-  byte fbuf[4]={0x9f, 0, 0, 0};
+  byte fbuf[8]={0x9f, 0, 0, 0, 0, 0, 0, 0};
   int res;
   
   // send JEDEC info
