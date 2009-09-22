@@ -220,6 +220,12 @@ SrecFile::SrecFile(void)
 {
 }
 
+SrecFile::~SrecFile(void)
+{
+  if (buffer)
+   free(buffer);
+}
+
 int SrecFile::readSrecFile(char const * fname, unsigned int bufsize)
 {
   unsigned char LBuf[256];

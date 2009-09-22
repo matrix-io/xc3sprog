@@ -57,6 +57,7 @@ private:
   char RecordType(char Type);
 public:
   SrecFile(void);
+  ~SrecFile(void);
   int readSrecFile(char const * fname, unsigned int bufsize);
   inline byte *getData(){return buffer;}
   inline unsigned int getStart(){return StartAddr;}
