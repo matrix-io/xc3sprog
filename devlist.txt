@@ -1,19 +1,19 @@
 # IDCODE    IR Length	Text
-04244093        6       XC6VLX75T(L)
-0424a093        6       XC6VLX130T(L)
-0424c093        6       XC6VLX195T(L)
-04250093        6       XC6VLX240T(L)
-04252093        6       XC6VLX365T(L)
-04256093        6       XC6VLX550T(L)
-0423a093        6       XC6VLX760(L)
+04244093       10       XC6VLX75T(L)
+0424a093       10       XC6VLX130T(L)
+0424c093       10       XC6VLX195T(L)
+04250093       10       XC6VLX240T(L)
+04252093       10       XC6VLX365T(L)
+04256093       10       XC6VLX550T(L)
+0423a093       10       XC6VLX760(L)
 
-04286093        6       XC6VSX315T(L)
-04288093        6       XC6VSX475T(L)
+04286093       10       XC6VSX315T(L)
+04288093       10       XC6VSX475T(L)
 
-042c4093        6       XC6VCX75T
-042ca093        6       XC6VCX130T
-042cc093        6       XC6VCX195T
-042d0093        6       XC6VCX240T
+042c4093       10       XC6VCX75T
+042ca093       10       XC6VCX130T
+042cc093       10       XC6VCX195T
+042d0093       10       XC6VCX240T
 
 04002093        6       XC6SLX16
 04008093        6       XC6SLX45
