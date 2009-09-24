@@ -41,6 +41,7 @@ DeviceDB::DeviceDB(const char *fname) {
   char text[256];
   int irlen;
   uint32_t idr;
+  int id_cmd;
   // Fall back to environment or default if no file specified
   if(!fname) {
     if(!(fname = getenv("XCDB")))  fname = DEVICEDB;
@@ -54,11 +55,12 @@ DeviceDB::DeviceDB(const char *fname) {
 	{
 	  char buffer[256];
 	  fgets(buffer,256,fp);  // Get next line from file
-	  if (sscanf(buffer,"%08x %d %s", &idr, &irlen, text) == 3)
+	  if (sscanf(buffer,"%08x %d %d %s", &idr, &irlen, &id_cmd, text) == 4)
 	    {
 	      id.text = text;
 	      id.idcode = idr & 0x0fffffff; /* Mask out revisions*/
 	      id.irlen = irlen;
+	      id.id_cmd = id_cmd;
 	      id_db.push_back(id);
 	    }
 	}
@@ -81,11 +83,12 @@ DeviceDB::DeviceDB(const char *fname) {
 	  buffer[i] = 0;
 	  while(*p && *p == ';')
 	    p++;
-	  if (i &&  (sscanf(buffer,"%08x %d %s", &idr, &irlen, text) == 3))
+	  if (i &&  (sscanf(buffer,"%08x %d %d %s", &idr, &irlen, &id_cmd, text) == 4))
 	    {
 	      id.text = text;
 	      id.idcode = idr & 0x0fffffff; /* Mask out revisions*/
 	      id.irlen = irlen;
+	      id.id_cmd = id_cmd;
 	      id_db.push_back(id);
 	    }
 	}
@@ -103,6 +106,7 @@ int DeviceDB::loadDevice(const uint32_t id)
 	  dev.text=id_db[i].text;
 	  dev.idcode=id_db[i].idcode;
 	  dev.irlen=id_db[i].irlen;
+	  dev.id_cmd=id_db[i].id_cmd;
 	  devices.push_back(dev);
 	  return dev.irlen;
 	}
@@ -114,6 +118,12 @@ int DeviceDB::getIRLength(unsigned int i)
 {
   if(i >= devices.size())return 0;
   return devices[i].irlen;
+}
+
+int DeviceDB::getIDCmd(unsigned int i)
+{
+  if(i >= devices.size())return 0;
+  return devices[i].id_cmd;
 }
 
 const char *DeviceDB::getDeviceDescription(unsigned int i)
