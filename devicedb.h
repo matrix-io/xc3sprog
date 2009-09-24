@@ -40,6 +40,7 @@ class DeviceDB
   {
     uint32_t idcode; // Store IDCODE
     int irlen; // instruction register length.
+    int id_cmd; // instruction register length.
     std::string text;
   };
   std::vector<device_t> id_db;
@@ -54,6 +55,7 @@ class DeviceDB
 
   int loadDevice(const uint32_t id);
   int getIRLength(unsigned int i);
+  int getIDCmd(unsigned int i);
   const char *getDeviceDescription(unsigned int i);
 };
 
