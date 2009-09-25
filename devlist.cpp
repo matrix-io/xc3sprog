@@ -15,15 +15,17 @@ int main(void)
       char text[256];
       char buffer[256];
       int irlen;
+      int id_cmd;
       uint32_t idr;
       
       fprintf(fout, "const char *fb_string[]={\n");
       while(!feof(fp))
 	{
 	  fgets(buffer,256,fp);  // Get next line from file
-	  if (sscanf(buffer,"%08x %d %s", &idr, &irlen, text) == 3)
+	  if (sscanf(buffer,"%08x %d %d %s", &idr, &irlen, &id_cmd, text) == 3)
 	    {
-	      fprintf(fout, "\t\"%08x %6d %s\",\n", idr, irlen, text); 
+	      fprintf(fout, "\t\"%08x %6d %2d %s\",\n",
+		      idr, irlen, id_cmd, text); 
 	    }
 	}
       fprintf(fout, "\tNULL };\n");
