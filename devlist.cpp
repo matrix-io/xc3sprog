@@ -22,7 +22,7 @@ int main(void)
       while(!feof(fp))
 	{
 	  fgets(buffer,256,fp);  // Get next line from file
-	  if (sscanf(buffer,"%08x %d %d %s", &idr, &irlen, &id_cmd, text) == 3)
+	  if (sscanf(buffer,"%08x %d %x %s", &idr, &irlen, &id_cmd, text) == 3)
 	    {
 	      fprintf(fout, "\t\"%08x %6d %2d %s\",\n",
 		      idr, irlen, id_cmd, text); 
