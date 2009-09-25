@@ -55,7 +55,7 @@ DeviceDB::DeviceDB(const char *fname) {
 	{
 	  char buffer[256];
 	  fgets(buffer,256,fp);  // Get next line from file
-	  if (sscanf(buffer,"%08x %d %d %s", &idr, &irlen, &id_cmd, text) == 4)
+	  if (sscanf(buffer,"%08x %d %x %s", &idr, &irlen, &id_cmd, text) == 4)
 	    {
 	      id.text = text;
 	      id.idcode = idr & 0x0fffffff; /* Mask out revisions*/
@@ -83,7 +83,7 @@ DeviceDB::DeviceDB(const char *fname) {
 	  buffer[i] = 0;
 	  while(*p && *p == ';')
 	    p++;
-	  if (i &&  (sscanf(buffer,"%08x %d %d %s", &idr, &irlen, &id_cmd, text) == 4))
+	  if (i &&  (sscanf(buffer,"%08x %d %x %s", &idr, &irlen, &id_cmd, text) == 4))
 	    {
 	      id.text = text;
 	      id.idcode = idr & 0x0fffffff; /* Mask out revisions*/
