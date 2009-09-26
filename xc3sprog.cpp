@@ -762,7 +762,8 @@ int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp,
     }
   alg.verify(file);
   alg.disable();
-  alg.reconfig();
+  if(!verify && !fp)
+    alg.reconfig();
   return 0;
 }
 
