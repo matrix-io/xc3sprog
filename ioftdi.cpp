@@ -483,27 +483,3 @@ void IOFtdi::mpsse_send() {
 void IOFtdi::flush() {
   mpsse_send();
 }
-
-void IOFtdi::cycleTCK(int n, bool tdi=1)
-{
-  
-  unsigned char buf[3];
-  
-  while (n)
-    {
-      buf[0] = MPSSE_WRITE_TMS|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
-      if (n >6)
-        {
-          buf[1] = 6;
-          n -= 7;
-        }
-      else
-        {
-          buf[1] = n -1;
-          n  = 0;
-        }
-      buf[2] = (tdi)?0x80:0 | (current_state==TEST_LOGIC_RESET)?0x7f:0x00;
-      mpsse_add_cmd(buf, 3);
-      if(n == 0) mpsse_send();
-   }
-}
