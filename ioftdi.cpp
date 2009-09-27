@@ -275,10 +275,10 @@ void IOFtdi::tx_tms(unsigned char *pat, int length)
 	buf[2] = 0x80;
 	for (i=0; i <( (len >7)?7:len); i++)
 	  {
-	    buf[2] |= ((pat[j>>3] & (1<< (j &0x7)))?1:0)<<i;
+	    buf[2] |= (((pat[j>>3] & (1<< (j &0x7)))?1:0)<<i);
 	    j++;
 	  }
-	len -=7;
+	len -=i;
 	mpsse_add_cmd (buf, 3);
       }
 }
