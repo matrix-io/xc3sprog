@@ -508,7 +508,7 @@ void IOXPC::txrx_block(const unsigned char *in, unsigned char *out, int len,
     }
 }
 
-void IOXPC::tx_tms(unsigned char *in, int len)
+void IOXPC::tx_tms(unsigned char *in, int len, int force)
 {
   int i;
 

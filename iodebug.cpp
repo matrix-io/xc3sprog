@@ -63,7 +63,7 @@ void IODebug::txrx_block(const unsigned char *tdi, unsigned char *tdo,
   return;
 }
 
-void IODebug::tx_tms(unsigned char *pat, int length)
+void IODebug::tx_tms(unsigned char *pat, int length, int force)
 {
     int i;
     unsigned char tms = pat[0];

@@ -86,7 +86,7 @@ int Jtag::selectDevice(int dev)
 
 void Jtag::Usleep(unsigned int usec)
 {
-  io->flush_tms();
+  io->flush_tms(false);
   io->flush();
 #ifdef __WIN32__
   if (ZwDelayExecution)

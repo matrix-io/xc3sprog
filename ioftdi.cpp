@@ -262,7 +262,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo,
     }
 }
 
-void IOFtdi::tx_tms(unsigned char *pat, int length)
+void IOFtdi::tx_tms(unsigned char *pat, int length, int force)
 {
     unsigned char buf[3] = {MPSSE_WRITE_TMS|MPSSE_LSB|MPSSE_BITMODE|
 			    MPSSE_WRITE_NEG, length-1, pat[0]};
@@ -281,6 +281,8 @@ void IOFtdi::tx_tms(unsigned char *pat, int length)
 	len -=i;
 	mpsse_add_cmd (buf, 3);
       }
+    if(force)
+      mpsse_send();
 }
 
 unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
