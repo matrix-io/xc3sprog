@@ -218,6 +218,7 @@ int ProgAlgXCF::verify(BitFile &file)
       jtag->shiftDR(data,0,16);
       io->cycleTCK(1);
       jtag->shiftIR(&ISC_READ);
+      jtag->Usleep(50);
       jtag->shiftDR(0,data,block_size);
       if((i+block_size)<=file.getLength())
 	{
@@ -270,6 +271,7 @@ int ProgAlgXCF::read(BitFile &file)
       jtag->shiftDR(data,0,16);
       io->cycleTCK(1);
       jtag->shiftIR(&ISC_READ);
+      jtag->Usleep(50);
       jtag->shiftDR(0,data,block_size);
       if((i+block_size)<=file.getLength())
 	{
