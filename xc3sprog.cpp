@@ -473,6 +473,7 @@ int main(int argc, char **args)
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
 
+  id = get_id (jtag, db, chainpos, verbose);
   if(chaintest && !spiflash)
     test_IRChain(jtag, io.operator*(), db, test_count);
 
@@ -482,7 +483,6 @@ int main(int argc, char **args)
       return 0;
     }
 
-  id = get_id (jtag, db, chainpos, verbose);
   if (id == 0)
     return 2;
   family = (id>>21) & 0x7f;
