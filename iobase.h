@@ -82,11 +82,11 @@ class IOBase
   tapState_t getTapState(void){return current_state;};
   void tapTestLogicReset();
   void cycleTCK(int n, bool tdi=1);
-  void flush_tms(void);
+  void flush_tms(int force);
 
  protected:
   virtual void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)=0;
-  virtual void tx_tms(unsigned char *pat, int length)=0;
+  virtual void tx_tms(unsigned char *pat, int length, int force)=0;
   virtual void settype(int subtype) {}
 
 private:

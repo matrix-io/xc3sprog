@@ -44,10 +44,10 @@ IOBase::IOBase(void)
     tms_len = 0;
 }    
 
-void IOBase::flush_tms(void)
+void IOBase::flush_tms(int force)
 {
   if (tms_len)
-    tx_tms(tms_buf, tms_len);
+    tx_tms(tms_buf, tms_len, force);
   memset(tms_buf,   0,CHUNK_SIZE);
   tms_len = 0;
 }
@@ -56,7 +56,7 @@ void IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo,
 			 int length, bool last)
 {
   if(length==0) return;
-  flush_tms();
+  flush_tms(false);
   txrx_block(tdi, tdo, length,last);
   nextTapState(last); // If TMS is set the the state of the tap changes
   return;
@@ -78,7 +78,7 @@ void IOBase::shift(bool tdi, int length, bool last)
 {
     int len = length;
     unsigned char *block = (tdi)?ones:zeros;
-    flush_tms();
+    flush_tms(false);
     while (len > CHUNK_SIZE*8)
     {
 	txrx_block(block, NULL, CHUNK_SIZE*8, false);
@@ -304,14 +304,14 @@ void IOBase::setTapState(tapState_t state, int pre)
       tms=true;
     };
     if( tms_len >= CHUNK_SIZE*8) /* no more room for even one bit */
-      flush_tms();
+      flush_tms(false);
     tms_buf[tms_len/8] |= tms<<(tms_len & 0x7);
     tms_len++;
   };
   if(pre)
     {
       if( tms_len + pre >= CHUNK_SIZE*8) /* no more room for even one bit */
-	flush_tms();
+	flush_tms(false);
       tms_len +=pre;
     }
 }
@@ -332,6 +332,7 @@ void IOBase::nextTapState(bool tms)
 void IOBase::tapTestLogicReset()
 {
   int i;
+  flush_tms(true);
   for(i=0; i<5; i++)
     {
       tms_buf[tms_len/8] |= 1<<(tms_len & 0x7);
@@ -342,7 +343,7 @@ void IOBase::tapTestLogicReset()
 
 void IOBase::cycleTCK(int n, bool tdi)
 {
-  flush_tms();
+  flush_tms(true);
  if(current_state==TEST_LOGIC_RESET)
   {
       fprintf(stderr, "cycleTCK in TEST_LOGIC_RESET\n");

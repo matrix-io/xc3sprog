@@ -407,7 +407,7 @@ void IOParport::txrx_block(const unsigned char *tdi, unsigned char *tdo,
   return;
 }
 
-void IOParport::tx_tms(unsigned char *pat, int length)
+void IOParport::tx_tms(unsigned char *pat, int length, int force)
 {
     int i;
     unsigned char tms;

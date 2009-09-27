@@ -142,7 +142,7 @@ void IOFX2::txrx_block(const unsigned char *tdi, unsigned char *tdo,
     }
 }
 
-void IOFX2::tx_tms(unsigned char *pat, int length)
+void IOFX2::tx_tms(unsigned char *pat, int length, int force)
 {
   if (length > USRP_CMD_SIZE*8)
     fprintf(stderr, "ToDo: Break up long TMS sequences\n");

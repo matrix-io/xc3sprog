@@ -49,7 +49,7 @@ class IOFX2 : public IOBase
   ~IOFX2();
   
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
-  void tx_tms(unsigned char *pat, int length);
+  void tx_tms(unsigned char *pat, int length, int force);
 
  private:
   struct usb_dev_handle *fx2_dev;
