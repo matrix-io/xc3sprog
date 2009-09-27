@@ -44,7 +44,7 @@ extern char *optarg;
 void usage(void)
 {
   fprintf(stderr, 
-	  "\nUsage: detectchain [-c cable_type] [-v]\n"
+	  "\nUsage: readdna [-c cable_type] [-v]\n"
 	  "   -v\tverbose output\n\n"
 	  "   Supported cable types: pp, ftdi, fx2, xpc\n"
 	  "   \tOptional pp arguments:\n"
