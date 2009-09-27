@@ -157,7 +157,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo,
 	{
 	  /* full chunks*/
 	  buf[0] = ((tdo)?(MPSSE_DO_READ |MPSSE_READ_NEG):0)
-	    |((tdi)?(MPSSE_DO_WRITE|MPSSE_WRITE_NEG):0)|MPSSE_LSB;
+	    |((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_WRITE_NEG;
 	  buf[1] = (buflen-1) & 0xff;        /* low lenbth byte */
 	  buf[2] = ((buflen-1) >> 8) & 0xff; /* high lenbth byte */
 	  mpsse_add_cmd (buf, 3);
@@ -186,7 +186,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo,
   if(rem) 
     {
       buf[0] = ((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)
-	|((tdi)?(MPSSE_DO_WRITE|MPSSE_WRITE_NEG):0)|MPSSE_LSB;
+	|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_WRITE_NEG;
       buf[1] =  (buflen - 1)       & 0xff; /* low length byte */
       buf[2] = ((buflen - 1) >> 8) & 0xff; /* high length byte */
       mpsse_add_cmd (buf, 3);
@@ -213,7 +213,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo,
       /* Clock Data Bits Out on -ve Clock Edge LSB First (no Read)
 	 (use if TCK/SK starts at 0) */
       buf[0] = ((tdo)?(MPSSE_DO_READ|MPSSE_READ_NEG):0)
-	|((tdi)?(MPSSE_DO_WRITE|MPSSE_WRITE_NEG):0)|MPSSE_LSB|MPSSE_BITMODE;
+	|((tdi)?MPSSE_DO_WRITE:0)|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
       buf[1] = rembits-1; /* length: only one byte left*/
       mpsse_add_cmd (buf, 2);
       if(tdi)
