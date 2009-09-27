@@ -71,67 +71,140 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
   int num=jtag.getChain();
   int len = 0;
   int i, j, k;
+  unsigned char ir_in[256];
+  unsigned char ir_out[256];
   unsigned char din[256];
   unsigned char dout[256];
   unsigned char dcmp[256];
   memset(din, 0xff, 256);
+  int run_irtest = 0;
   
-  fprintf(stderr, "Running %d  times\n", test_count);
-  /* exercise the chain */
+  /* Read the IDCODE via the IDCODE command */
   for(i=0; i<num; i++)
     {
-      len += db.loadDevice(jtag.getDeviceID(i));
-    }
-  fprintf(stderr, "IR len = %d\n", len);
-  io.setTapState(IOBase::TEST_LOGIC_RESET);
-  io.setTapState(IOBase::SHIFT_IR);
-  io.shiftTDITDO(din,dout,len,true);
-  for(i=0; i <len>>3;  i++)
-    fprintf(stderr, "%02x", dout[i]);
-  fprintf(stderr, " ");
-  k=len-1;
-  for(i = 0; i<num; i++)
-    {
-      for(j=0; j<db.getIRLength(i); j++)
+      io.setTapState(IOBase::TEST_LOGIC_RESET);
+      jtag.selectDevice(i);
+      for (j = 0; j < db.getIRLength(i); j = j+8)
+	ir_in[j>>3] =  (db.getIDCmd(i)>>j) & 0xff;
+      jtag.shiftIR(ir_in, ir_out);
+      io.cycleTCK(1);
+      jtag.shiftDR(NULL, &dout[i*4], 32);
+      if (jtag.byteArrayToLong(dout+i*4) != jtag.getDeviceID(i))
 	{
-	  fprintf(stderr, "%c", 
-		  (((dout[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
-	  k--;
+	  fprintf(stderr, "IDCODE mismatch pos %d Read 0x%08lx vs 0x%08lx\n",
+		  i, jtag.byteArrayToLong(dout+i*4), jtag.getDeviceID(i));
+	  run_irtest++;
 	}
-      fprintf(stderr, " ");
     }
-  fflush(stderr);
-  for(i=0; i<test_count; i++)
-    {
+
+  if(run_irtest)
+    { /* ID Code did fail, to simple shift the IR chain */ 
+      fprintf(stderr, "Running IR_TEST %d  times\n", test_count);
+      /* exercise the chain */
+      for(i=0; i<num; i++)
+	{
+	  len += db.loadDevice(jtag.getDeviceID(i));
+	}
+      fprintf(stderr, "IR len = %d\n", len);
       io.setTapState(IOBase::TEST_LOGIC_RESET);
       io.setTapState(IOBase::SHIFT_IR);
-      io.shiftTDITDO(din,dcmp,len,true);
-      if (memcmp(dout, dcmp, (len+1)>>3) !=0)
+      io.shiftTDITDO(din,dout,len,true);
+      for(i=0; i <len>>3;  i++)
+	fprintf(stderr, "%02x", dout[i]);
+      fprintf(stderr, " ");
+      k=len-1;
+      for(i = 0; i<num; i++)
 	{
-	  fprintf(stderr, "mismatch run %d\n", i);
-	  for(j=0; j <len>>3;  j++)
-	    fprintf(stderr, "%02x", dcmp[j]);
-	  fprintf(stderr, " ");
-	  k=len-1;
-	  for(i = 0; i<num; i++)
+	  for(j=0; j<db.getIRLength(i); j++)
 	    {
-	      for(j=0; j<db.getIRLength(i); j++)
-		{
-		  fprintf(stderr, "%c",
-			  (((dcmp[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
-		  k--;
-		}
-	      fprintf(stderr, " ");
+	      fprintf(stderr, "%c", 
+		      (((dout[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
+	      k--;
 	    }
+	  fprintf(stderr, " ");
 	}
       fflush(stderr);
-      if(i%1000 == 999)
+      for(i=0; i<test_count; i++)
 	{
-	  fprintf(stderr, ".");
+	  io.setTapState(IOBase::TEST_LOGIC_RESET);
+	  io.setTapState(IOBase::SHIFT_IR);
+	  io.shiftTDITDO(din,dcmp,len,true);
+	  if (memcmp(dout, dcmp, (len+1)>>3) !=0)
+	    {
+	      fprintf(stderr, "mismatch run %d\n", i);
+	      for(j=0; j <len>>3;  j++)
+		fprintf(stderr, "%02x", dcmp[j]);
+	      fprintf(stderr, " ");	      k=len-1;
+	      for(i = 0; i<num; i++)
+		{
+		  for(j=0; j<db.getIRLength(i); j++)
+		    {
+		      fprintf(stderr, "%c",
+			      (((dcmp[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
+		      k--;
+		    }
+		  fprintf(stderr, " ");
+		}
+	    }
 	  fflush(stderr);
+	  if(i%1000 == 999)
+	    {
+	      fprintf(stderr, ".");
+	      fflush(stderr);
+	    }
 	}
+      fprintf(stderr, "\n");
     }
-  fprintf(stderr, "\n");
+  else
+    {
+      fprintf(stderr, "Reading ID_CODE %d  times\n", test_count);
+      memset(ir_in, 0, 256);
+      /* exercise the chain */
+      for(i=num-1; i>=0; i--)
+	{
+	  for(j=0; j< db.getIRLength(i); j++)
+	    {
+	      char l = (db.getIDCmd(i) & (1<<j))?1:0;
+	      ir_in[len>>3] |= ((l)?(1<<(len & 0x7)):0);
+	      len++;
+	      jtag.longToByteArray(jtag.getDeviceID(i), dcmp+((num -1 -i)*4)); 
+	    }
+	}
+      fprintf(stderr, "Sending %d bits IDCODE Commands: 0x", len);
+      for(i=0; i <len;  i+=8)
+	fprintf(stderr, "%02x", ir_in[i>>3]);
+      fprintf(stderr, "\n");
+      fprintf(stderr, "Expecting %d IDCODES  :", num);
+      for(i=num-1; i >= 0;  i--)
+	fprintf(stderr, " 0x%08lx", jtag.getDeviceID(i));
+
+      io.tapTestLogicReset();
+      for(i=0; i<test_count; i++)
+	{
+	  io.setTapState(IOBase::SHIFT_IR);
+	  io.shiftTDI(ir_in,len,true);
+	  io.setTapState(IOBase::SHIFT_DR);
+	  io.shiftTDITDO(NULL,dout,num*32,true);
+	  io.setTapState(IOBase::TEST_LOGIC_RESET);
+	  if(memcmp(dout, dcmp, num*4) !=0)
+	    {
+	      fprintf(stderr, "\nMismatch run %8d:", i+1);
+	      for(j=num-1; j>=0; j--)
+		if(memcmp(dout+j*4, dcmp+j*4, 4) !=0)
+		  fprintf(stderr," 0x%08lx", jtag.byteArrayToLong(dout+j*4));
+		else
+		  fprintf(stderr," 0x%08lx", jtag.byteArrayToLong(dout+j*4));
+		  //		  fprintf(stderr,"           ");
+	      fflush(stderr);
+	    }
+	  if(i%1000 == 999)
+	    {
+	      fprintf(stderr, ".");
+	      fflush(stderr);
+	    }
+	} 
+      fprintf(stderr, "\n");
+    }
 }
 
 unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
