@@ -153,6 +153,7 @@ void ReadFuseBits(struct MENU_ITEM *ptr)
     case 'Y':
       printf("\nFilename ? ");
       fgets(buffer, BUFSIZE, stdin);
+      buffer[strlen(buffer) -1] = 0;
       WriteATMegaFuseFile(buffer);
       break;
   }
