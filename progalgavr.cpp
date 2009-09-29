@@ -87,12 +87,6 @@ void ProgAlgAVR::reset(bool reset)
 
   jtag->shiftIR(&AVR_RESET);
   jtag->shiftDR(rstval, 0, 1);
-  /* FIXME: It seems, that an AVR JTAG reset also resets the JTAG Chain
-   *
-   * AVR second in chain after an XC3S200A didn't work without this tap reset
-   * With AVR first, this setTapState is not needed! Strange!
-   */
-  jtag->setTapState(IOBase::TEST_LOGIC_RESET);
 }
 
 void ProgAlgAVR::Prog_enable(bool enable)
