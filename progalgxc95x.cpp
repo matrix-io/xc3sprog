@@ -108,7 +108,7 @@ void ProgAlgXC95X::flow_erase()
   jtag->shiftDR(data,0,18);
   jtag->Usleep(500000);
   jtag->shiftDR(0,data,18);
-  if((data[0]& 0x01) != 0x01)
+  if((data[0]& 0x03) != 0x01)
     fprintf(stderr, "Erase still running %02x\n", data[0]);
 }
   
