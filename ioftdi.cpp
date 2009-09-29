@@ -34,7 +34,7 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
   : IOBase(), bptr(0), calls_rd(0), calls_wr(0), retries(0){
     
   unsigned char   buf1[5];
-  unsigned char   buf[9] = { SET_BITS_LOW, 0x08, 0x0b,
+  unsigned char   buf[9] = { SET_BITS_LOW, 0x00, 0x0b,
 			     TCK_DIVISOR,  0x00, 0x00 ,
 			     SET_BITS_HIGH, ~0x84, 0x84};
 
@@ -271,14 +271,17 @@ void IOFtdi::tx_tms(unsigned char *pat, int length, int force)
       return;
     while (len>0)
       {
-	buf[1] = (len >7)? 6: (len-1);
+	/* Attention: Bug in FT2232L(D?, H not!). 
+	   With 7 bits TMS shift, static TDO 
+	   value gets set to TMS on last TCK edge*/ 
+	buf[1] = (len >6)? 5: (len-1);
 	buf[2] = 0x80;
-	for (i=0; i <( (len >7)?7:len); i++)
+	for (i=0; i < (buf[1]+1); i++)
 	  {
 	    buf[2] |= (((pat[j>>3] & (1<< (j &0x7)))?1:0)<<i);
 	    j++;
 	  }
-	len -=i;
+	len -=(buf[1]+1);
 	mpsse_add_cmd (buf, 3);
       }
     if(force)
