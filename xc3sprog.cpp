@@ -126,7 +126,7 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
       fflush(stderr);
       for(i=0; i<test_count; i++)
 	{
-	  io.setTapState(IOBase::TEST_LOGIC_RESET);
+	  io.setTapState(IOBase::SELECT_DR_SCAN);
 	  io.setTapState(IOBase::SHIFT_IR);
 	  io.shiftTDITDO(din,dcmp,len,true);
 	  if (memcmp(dout, dcmp, (len+1)>>3) !=0)
