@@ -282,6 +282,7 @@ void usage(bool all_options)
      "   \t\t\t(NONE\t(0x0403:0x0610) or\n"
      "   \t\t\t IKDA\t(0x0403:0x0610, EN_N on ACBUS2) or\n"
      "   \t\t\t OLIMEX\t(0x15b1:0x0003, EN on ADBUS4, LED on ACBUS3))\n"
+     "   \t\t\t FTDI_JTAG\t(0x0403:0x6010, EN on ADBUS4, LED on ACBUS3))\n"
      "   \t\t\t AMONTEC\(0x0403:0xcff8, EN on ADBUS4)\n"
      "   \tOptional xpc arguments:\n"
      "   \t\t[-t subtype] (NONE or INT  (Internal Chain , not for DLC10))\n"
@@ -310,7 +311,7 @@ int main(int argc, char **args)
   bool     readback     = false;
   bool     spiflash     = false;
   unsigned int id;
-  char const *cable     = "pp";
+  char const *cable     = 0;
   char const *dev       = 0;
   char const *eepromfile= 0;
   char const *fusefile  = 0;
@@ -422,22 +423,44 @@ int main(int argc, char **args)
       readback = true;
       break;
 
-     case 't':
-       if (strcasecmp(optarg, "ikda") == 0)
-         subtype = FTDI_IKDA;
-       else if (strcasecmp(optarg, "olimex") == 0)
-         subtype = FTDI_OLIMEX;
-       else if (strcasecmp(optarg, "amontec") == 0)
-         subtype = FTDI_AMONTEC;
-       else if (strcasecmp(optarg, "int") == 0)
-         subtype = XPC_INTERNAL;
-       else
-	 {
-	   fprintf(stderr, "\bUnknown subtype \"%s\"\n", optarg);
-	   usage(false);
-         }
-       break;
-
+    case 't':
+      if (strcasecmp(optarg, "ikda") == 0)
+	{
+	  subtype = FTDI_IKDA;
+	  if (!cable)
+	    cable = "ftdi";
+	}
+      else if (strcasecmp(optarg, "ftdijtag") == 0)
+	{
+	  subtype = FTDI_FTDIJTAG;
+	  if (!cable)
+	    cable = "ftdi";
+	}
+      else if (strcasecmp(optarg, "olimex") == 0)
+	{
+	  subtype = FTDI_OLIMEX;
+	  if (!cable)
+	    cable = "ftdi";
+	}
+      else if (strcasecmp(optarg, "amontec") == 0)
+	{
+	  subtype = FTDI_AMONTEC;
+	  if (!cable)
+	    cable = "ftdi";
+	}
+      else if (strcasecmp(optarg, "int") == 0)
+	{
+	  subtype = XPC_INTERNAL;
+	  if (!cable)
+	    cable = "xpc";
+	}
+      else
+	{
+	  fprintf(stderr, "\bUnknown subtype \"%s\"\n", optarg);
+	  usage(false);
+	}
+      break;
+      
     case 'd':
       dev = optarg;
       break;
@@ -476,12 +499,15 @@ int main(int argc, char **args)
   if(argc < 0)  usage(true);
   if(argc < 1) detectchain = true;
 
+  if (!cable) 
+    cable ="pp";
   std::auto_ptr<IOBase>  io;
   try {  
     if     (strcasecmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
     else if(strcasecmp(cable, "ftdi") == 0)  
       {
-	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA))
+	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA)
+	  || (subtype == FTDI_FTDIJTAG))
 	  {
 	    if (vendor == 0)
 	      vendor = VENDOR_FTDI;

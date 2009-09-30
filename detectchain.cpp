@@ -69,7 +69,7 @@ void usage(void)
 int main(int argc, char **args)
 {
     bool        verbose = false;
-    char const *cable   = "pp";
+    char const *cable   = 0;
     char const *dev     = 0;
     int vendor    = 0;
     int product   = 0;
@@ -80,57 +80,83 @@ int main(int argc, char **args)
     
     // Start from parsing command line arguments
     while(true) {
-	switch(getopt(argc, args, "?hvc:d:V:P:D:S:t:")) {
-	    case -1:
-		goto args_done;
-		
-	    case 'v':
-		verbose = true;
-		break;
+      switch(getopt(argc, args, "?hvc:d:V:P:D:S:t:")) {
+      case -1:
+	goto args_done;
+	
+      case 'v':
+	verbose = true;
+	break;
+	
+      case 'c':
+	cable = optarg;
+	break;
+	
+      case 't':
+	if (strcasecmp(optarg, "ikda") == 0)
+	  {
+	    subtype = FTDI_IKDA;
+	    if (!cable)
+	      cable = "ftdi";
+	  }
+	else if (strcasecmp(optarg, "ftdijtag") == 0)
+	  {
+	    subtype = FTDI_FTDIJTAG;
+	    if (!cable)
+	      cable = "ftdi";
+	  }
+	else if (strcasecmp(optarg, "olimex") == 0)
+	  {
+	    subtype = FTDI_OLIMEX;
+	    if (!cable)
+	      cable = "ftdi";
+	  }
+	else if (strcasecmp(optarg, "amontec") == 0)
+	  {
+	    subtype = FTDI_AMONTEC;
+	    if (!cable)
+	      cable = "ftdi";
+	  }
+	else if (strcasecmp(optarg, "int") == 0)
+	  {
+	    subtype = XPC_INTERNAL;
+	    if (!cable)
+	      cable = "xpc";
+	  }
+	else
+	  {
+	    fprintf(stderr, "\bUnknown subtype \"%s\"\n", optarg);
+	    usage();
+	  }
+	break;
       
-	    case 'c':
-		cable = optarg;
-		break;
+      case 'd':
+	dev = optarg;
+	break;
 		
-	    case 'd':
-		dev = optarg;
-		break;
+      case 'V':
+	value = strtol(optarg, NULL, 0);
+	vendor = value;
+	break;
 		
-	    case 'V':
-	      value = strtol(optarg, NULL, 0);
-	      vendor = value;
-	      break;
+      case 'P':
+	value = strtol(optarg, NULL, 0);
+	product = value;
+	break;
 		
-	    case 'P':
-	      value = strtol(optarg, NULL, 0);
-	      product = value;
-	      break;
+      case 'D':
+	desc = optarg;
+	break;
 		
-	    case 'D':
-	      desc = optarg;
-	      break;
+      case 'S':
+	serial = optarg;
+	break;
 		
-	    case 'S':
-		serial = optarg;
-		break;
-		
-	    case 't':
-		if (strcasecmp(optarg, "ikda") == 0)
-		    subtype = FTDI_IKDA;
-		else if (strcasecmp(optarg, "olimex") == 0)
-		    subtype = FTDI_OLIMEX;
-		else if (strcasecmp(optarg, "amontec") == 0)
-		    subtype = FTDI_AMONTEC;
-		else if (strcasecmp(optarg, "int") == 0)
-		    subtype = XPC_INTERNAL;
-		else
-		    usage();
-		break;
-	case '?':
-	case 'h':
-	default:
-	  usage();
-	}
+      case '?':
+      case 'h':
+      default:
+	usage();
+      }
     }
 args_done:
   // Get rid of options
@@ -140,6 +166,8 @@ args_done:
   //fprintf(stderr, "argc: %d\n", argc);
   if(argc != 0)  usage();
 
+  if (!cable) 
+    cable ="pp";
   std::auto_ptr<IOBase>  io;
   try {
     if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));

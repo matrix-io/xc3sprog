@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #define FTDI_IKDA  1
 #define FTDI_OLIMEX  2
 #define FTDI_AMONTEC  3
+#define FTDI_FTDIJTAG 4  
 
 #define TX_BUF (4096)
 

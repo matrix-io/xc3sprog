@@ -108,7 +108,7 @@ int main(int argc, char **args)
   bool    gProgramFlash = false;
   bool    gProgramEeprom = false;
   bool    gProgramFuseBits = false;
-  char const *cable     = "pp";
+  char const *cable     = 0;
   char const *dev       = 0;
   char const *eepromfile= 0;
   static char DefName[256];
@@ -127,7 +127,7 @@ int main(int argc, char **args)
     switch(getopt(argc, args, "?hLc:Cd:D:e:f:jp:P:s:S:t:vV:")) {
     case -1:
       goto args_done;
-
+      
     case 'v':
       verbose = true;
       break;
@@ -152,19 +152,44 @@ int main(int argc, char **args)
       gFuseName = optarg;
       break;
 
-     case 't':
-       if (strcasecmp(optarg, "ikda") == 0)
-         subtype = FTDI_IKDA;
-       else if (strcasecmp(optarg, "olimex") == 0)
-         subtype = FTDI_OLIMEX;
-       else if (strcasecmp(optarg, "amontex") == 0)
-         subtype = FTDI_AMONTEC;
-       else if (strcasecmp(optarg, "int") == 0)
-         subtype = XPC_INTERNAL;
-       else
-         usage();
-       break;
-
+    case 't':
+      if (strcasecmp(optarg, "ikda") == 0)
+	{
+	  subtype = FTDI_IKDA;
+	  if (!cable)
+	    cable = "ftdi";
+	}
+      else if (strcasecmp(optarg, "ftdijtag") == 0)
+	{
+	  subtype = FTDI_FTDIJTAG;
+	   if (!cable)
+	     cable = "ftdi";
+	}
+      else if (strcasecmp(optarg, "olimex") == 0)
+	{
+	  subtype = FTDI_OLIMEX;
+	  if (!cable)
+	    cable = "ftdi";
+	}
+      else if (strcasecmp(optarg, "amontec") == 0)
+	{
+	  subtype = FTDI_AMONTEC;
+	  if (!cable)
+	    cable = "ftdi";
+	}
+      else if (strcasecmp(optarg, "int") == 0)
+	{
+	  subtype = XPC_INTERNAL;
+	  if (!cable)
+	    cable = "xpc";
+	}
+      else
+	{
+	  fprintf(stderr, "\bUnknown subtype \"%s\"\n", optarg);
+	  usage();
+	}
+      break;
+      
     case 'd':
       dev = optarg;
       break;
@@ -277,12 +302,15 @@ int main(int argc, char **args)
   // Produce release info from CVS tags
   printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests! Check Sourceforge SVN!\n");
 
+  if(!cable)
+    cable = "pp";
   std::auto_ptr<IOBase>  io;
   try {  
     if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
     else if(strcmp(cable, "ftdi") == 0)  
       {
-	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA))
+	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA)
+	    || (subtype == FTDI_FTDIJTAG))
 	  {
 	    if (vendor == 0)
 	      vendor = VENDOR_FTDI;
