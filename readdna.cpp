@@ -122,57 +122,83 @@ int main(int argc, char **args)
    
     // Start from parsing command line arguments
     while(true) {
-	switch(getopt(argc, args, "?hvc:d:V:P:D:S:t:")) {
-	    case -1:
-		goto args_done;
+      switch(getopt(argc, args, "?hvc:d:V:P:D:S:t:")) {
+      case -1:
+	goto args_done;
 		
-	    case 'v':
-		verbose = true;
-		break;
+      case 'v':
+	verbose = true;
+	break;
       
-	    case 'c':
-		cable = optarg;
-		break;
+      case 'c':
+	cable = optarg;
+	break;
 		
-	    case 'd':
-		dev = optarg;
-		break;
+      case 't':
+	if (strcasecmp(optarg, "ikda") == 0)
+	  {
+	    subtype = FTDI_IKDA;
+	    if (!cable)
+	      cable = "ftdi";
+	  }
+	else if (strcasecmp(optarg, "ftdijtag") == 0)
+	  {
+	    subtype = FTDI_FTDIJTAG;
+	    if (!cable)
+	      cable = "ftdi";
+	  }
+	else if (strcasecmp(optarg, "olimex") == 0)
+	  {
+	    subtype = FTDI_OLIMEX;
+	    if (!cable)
+	      cable = "ftdi";
+	  }
+	else if (strcasecmp(optarg, "amontec") == 0)
+	  {
+	    subtype = FTDI_AMONTEC;
+	    if (!cable)
+	      cable = "ftdi";
+	  }
+	else if (strcasecmp(optarg, "int") == 0)
+	  {
+	    subtype = XPC_INTERNAL;
+	    if (!cable)
+	      cable = "xpc";
+	  }
+	else
+	  {
+	    fprintf(stderr, "\bUnknown subtype \"%s\"\n", optarg);
+	    usage();
+	  }
+	break;
+      
+      case 'd':
+	dev = optarg;
+	break;
 		
-	    case 'V':
-	      value = strtol(optarg, NULL, 0);
-	      vendor = value;
-	      break;
+      case 'V':
+	value = strtol(optarg, NULL, 0);
+	vendor = value;
+	break;
 		
-	    case 'P':
-	      value = strtol(optarg, NULL, 0);
-	      product = value;
-	      break;
+      case 'P':
+	value = strtol(optarg, NULL, 0);
+	product = value;
+	break;
 		
-	    case 'D':
-	      desc = optarg;
-	      break;
+      case 'D':
+	desc = optarg;
+	break;
 		
-	    case 'S':
-		serial = optarg;
-		break;
+      case 'S':
+	serial = optarg;
+	break;
 		
-	    case 't':
-		if (strcasecmp(optarg, "ikda") == 0)
-		    subtype = FTDI_IKDA;
-		else if (strcasecmp(optarg, "olimex") == 0)
-		    subtype = FTDI_OLIMEX;
-		else if (strcasecmp(optarg, "amontec") == 0)
-		    subtype = FTDI_AMONTEC;
-		else if (strcasecmp(optarg, "int") == 0)
-		    subtype = XPC_INTERNAL;
-		else
-		    usage();
-		break;
-	case '?':
-	case 'h':
-	default:
-	  usage();
-	}
+      case '?':
+      case 'h':
+      default:
+	usage();
+      }
     }
 args_done:
   // Get rid of options
@@ -182,12 +208,15 @@ args_done:
   //printf("argc: %d\n", argc);
   if(argc != 0)  usage();
 
+  if (!cable) 
+    cable ="pp";
   std::auto_ptr<IOBase>  io;
   try {
     if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
     else if(strcmp(cable, "ftdi") == 0)  
       {
-	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA))
+	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA)
+	    || (subtype == FTDI_FTDIJTAG))
 	  {
 	    if (vendor == 0)
 	      vendor = VENDOR_FTDI;
