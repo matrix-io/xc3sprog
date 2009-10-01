@@ -74,7 +74,7 @@ class Jtag
   inline void setPostDRState(IOBase::tapState_t s){postDRState=s;}
   inline void setPostIRState(IOBase::tapState_t s){postIRState=s;}
   void setTapState(IOBase::tapState_t state, int pre=0){io->setTapState(state, pre);};
-  void tapTestLogicReset(void){tapTestLogicReset();};
+  void tapTestLogicReset(void){io->tapTestLogicReset();};
   IOBase::tapState_t getTapState(void){return io->getTapState();};
   void Usleep(unsigned int usec);
   int setDeviceIRLength(int dev, int len);
