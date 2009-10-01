@@ -307,7 +307,7 @@ args_done:
   jtag.shiftIR(idata);
 
   /* Release JTAG control over configuration (AR 16829)*/
-  io->tapTestLogicReset();
+  jtag.tapTestLogicReset();
   idata[0] = JPROGRAM;
   jtag.shiftIR(idata); 
   /* Now device will reconfigure from standard configuration source */
