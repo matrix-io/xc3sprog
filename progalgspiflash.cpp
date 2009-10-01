@@ -428,7 +428,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
     uint16_t paddr = page;
     int res;
     
-    if(io->getVerbose())
+    if(jtag->getVerbose())
       {
 	fprintf(stderr, "\rReading page %4d",page-1); 
 	fflush(stderr);
@@ -472,7 +472,7 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     uint16_t paddr = page;
     int res;
     
-    if(io->getVerbose())
+    if(jtag->getVerbose())
       {
 	fprintf(stderr, "\rVerifying page %4d",page-1); 
 	fflush(stderr);
@@ -552,7 +552,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	  fbuf[3]=i & 0xff;
 	  spi_xfer_user1(NULL,0,0,fbuf, 0, 4);
 	  fbuf[0] = READ_STATUS_REGISTER;
-	  if(io->getVerbose())
+	  if(jtag->getVerbose())
 	    fprintf(stderr,"                                              \r"
 		    "Erasing sector %2d", sector_nr);
 	  j = 0;
@@ -564,7 +564,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	      jtag->Usleep(1000);       
 	      spi_xfer_user1(rbuf,1,1,fbuf, 1, 1);
 	      j++;
-	      if ((io->getVerbose()) &&((j & 0xf) == 0xf))
+	      if ((jtag->getVerbose()) &&((j & 0xf) == 0xf))
 		{
 		  fprintf(stderr,".");
 		  fflush(stderr);
@@ -584,7 +584,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	       max_sector_erase= (double)deltaT(tv, tv + 1);
            }
        }
-      if(io->getVerbose())
+      if(jtag->getVerbose())
        {
          fprintf(stderr, "                                               "
 		 "                  \r"
@@ -626,7 +626,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	  
 	}
     }
-  if(io->getVerbose())
+  if(jtag->getVerbose())
     {
       fprintf(stderr, "\nMaximum erase time %.1f ms, Max PP time %.0f us\n",
 	      max_sector_erase/1.0e3, max_sector_erase/1e1);
@@ -670,7 +670,7 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
       uint16_t paddr = page<<1;
       int res;
       
-      if(io->getVerbose())
+      if(jtag->getVerbose())
 	{
 	  fprintf(stderr, "                                              \r"
 		  "Writing page %4d",page-1); 
@@ -691,7 +691,7 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
       /* Page Erase/Program takes up to 35 ms (t_pep, UG333.pdf page 43)*/
       for (j = 0; j< 9; j++)
 	{
-	  if(io->getVerbose())
+	  if(jtag->getVerbose())
 	    {
 	      fprintf(stderr, "."); 
 	      fflush(stderr);
@@ -728,7 +728,7 @@ void ProgAlgSPIFlash::reconfig(void)
   jtag->shiftIR(&JSHUTDOWN);
   jtag->cycleTCK(16);
   jtag->shiftIR(&CFG_IN);
-  if(io->getVerbose())
+  if(jtag->getVerbose())
     fprintf(stderr, "Trying reconfigure\n"); 
   jtag->shiftDR(buf, NULL, 92 );
   jtag->shiftIR(&JSTART);

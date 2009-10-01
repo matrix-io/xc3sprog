@@ -100,7 +100,7 @@ void ProgAlgXC3S::flow_array_program(BitFile &file)
   gettimeofday(tv+1, NULL);
   
   // Print the timing summary
-  if (io->getVerbose())
+  if (jtag->getVerbose())
     fprintf(stderr, " done. Programming time %.1f ms\n",
 	    (double)deltaT(tv, tv + 1)/1.0e3);
 }
@@ -124,7 +124,7 @@ void ProgAlgXC3S::flow_program_legacy(BitFile &file)
   jtag->cycleTCK(1);
   
   // Print the timing summary
-  if (io->getVerbose())
+  if (jtag->getVerbose())
     {
       gettimeofday(tv+1, NULL);
       fprintf(stderr, "done. Programming time %.1f ms\n",

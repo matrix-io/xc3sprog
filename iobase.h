@@ -69,9 +69,6 @@ class IOBase
 
  public:
   void setVerbose(bool v) { verbose = v; }
-  bool getVerbose(void) { return verbose; }
-
- public:
   void shiftTDITDO(const unsigned char *tdi, unsigned char *tdo, int length, bool last=true);
   void shiftTDI(const unsigned char *tdi, int length, bool last=true);
   void shiftTDO(unsigned char *tdo, int length, bool last=true);

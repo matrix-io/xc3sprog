@@ -273,6 +273,7 @@ args_done:
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
   Jtag jtag(io.get());
+  jtag.setVerbose(verbose);
   id = get_id (jtag, db, chainpos, verbose);
 
   if (verbose)
