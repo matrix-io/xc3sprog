@@ -38,10 +38,9 @@ const byte ProgAlgXC95X::BYPASS=0xff;
 #define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
                               (tvp2)->tv_usec - (tvp1)->tv_usec)
 
-ProgAlgXC95X::ProgAlgXC95X(Jtag &j, IOBase &i, int s)
+ProgAlgXC95X::ProgAlgXC95X(Jtag &j, int s)
 {
   jtag=&j;
-  io=&i;
 
   switch (s)
    {

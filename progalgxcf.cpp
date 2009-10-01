@@ -44,7 +44,7 @@ const byte ProgAlgXCF::BIT4=0x10;
 #define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
                               (tvp2)->tv_usec - (tvp1)->tv_usec)
 
-ProgAlgXCF::ProgAlgXCF(Jtag &j, IOBase &i, int size_ind)
+ProgAlgXCF::ProgAlgXCF(Jtag &j, int size_ind)
 {
   block_size=(size_ind == 0x44) ? 2048 : 4096;
   switch (size_ind)
@@ -61,7 +61,6 @@ ProgAlgXCF::ProgAlgXCF(Jtag &j, IOBase &i, int size_ind)
     }
 	
   jtag=&j;
-  io=&i;
 }
 /* Tries to implement "xflow_erase_optimized" for the serial devices 
  * from the XCF..1532.bsd" files */ 

@@ -34,11 +34,10 @@ const byte ProgAlgSPIFlash::CFG_IN=0x05;
 const byte ProgAlgSPIFlash::CONFIG=0xee;
 const byte ProgAlgSPIFlash::BYPASS=0xff;
 
-ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i)
+ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f)
 {
   jtag=&j;
   file = &f;
-  io=&i;
   miso_buf = new byte[5010];
   mosi_buf = new byte[5010];
   sector_size =  65536; /* Many devices have 64 kiByte sectors*/

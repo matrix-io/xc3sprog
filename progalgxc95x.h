@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define PROGALGXC95X_H
 
 #include "jtag.h"
-#include "iobase.h"
 #include "jedecfile.h"
 
 class ProgAlgXC95X
@@ -44,7 +43,6 @@ class ProgAlgXC95X
   static const byte BYPASS;
 
   Jtag *jtag;
-  IOBase *io;
   int DRegLength;
   void flow_enable();
   void flow_disable();
@@ -55,7 +53,7 @@ class ProgAlgXC95X
   int flow_blank_check();
   void flow_erase();
  public:
-  ProgAlgXC95X(Jtag &j, IOBase &i, int s);
+  ProgAlgXC95X(Jtag &j, int s);
   int blank_check(){flow_enable(); int ret= flow_blank_check(); flow_disable(); return ret;};
   int erase(){flow_enable(); flow_erase(); return flow_blank_check();};
   int array_verify(JedecFile &file);

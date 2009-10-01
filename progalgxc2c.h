@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #define PROGALGXC2_H
 
 #include "jtag.h"
-#include "iobase.h"
 #include "bitfile.h"
 
 #define MAXSIZE 256
@@ -47,7 +46,6 @@ class ProgAlgXC2C
   static const byte BYPASS;	  
 
   Jtag *jtag;
-  IOBase *io;
   int block_size;  
   int block_num;
   int post; 
@@ -58,7 +56,7 @@ class ProgAlgXC2C
   void flow_erase(){};
   void flow_enable_highz();
  public:
-  ProgAlgXC2C(Jtag &j, IOBase &i, int si);
+  ProgAlgXC2C(Jtag &j, int si);
   int blank_check(void);
   void erase(void);
   int array_verify(BitFile &file);
