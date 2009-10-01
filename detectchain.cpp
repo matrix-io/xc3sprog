@@ -69,7 +69,7 @@ void usage(void)
 int main(int argc, char **args)
 {
     bool        verbose = false;
-    char const *cable   = 0;
+    CABLES_TYPES cable    = CABLE_NONE;
     char const *dev     = 0;
     int vendor    = 0;
     int product   = 0;
@@ -91,47 +91,23 @@ int main(int argc, char **args)
 	break;
 	
       case 'c':
-	cable = optarg;
-	break;
-	
-      case 't':
-	if (strcasecmp(optarg, "ikda") == 0)
+	cable =  getCable(optarg);
+	if(cable == CABLE_UNKNOWN)
 	  {
-	    subtype = FTDI_IKDA;
-	    if (!cable)
-	      cable = "ftdi";
-	  }
-	else if (strcasecmp(optarg, "ftdijtag") == 0)
-	  {
-	    subtype = FTDI_FTDIJTAG;
-	    if (!cable)
-	      cable = "ftdi";
-	  }
-	else if (strcasecmp(optarg, "olimex") == 0)
-	  {
-	    subtype = FTDI_OLIMEX;
-	    if (!cable)
-	      cable = "ftdi";
-	  }
-	else if (strcasecmp(optarg, "amontec") == 0)
-	  {
-	    subtype = FTDI_AMONTEC;
-	    if (!cable)
-	      cable = "ftdi";
-	  }
-	else if (strcasecmp(optarg, "int") == 0)
-	  {
-	    subtype = XPC_INTERNAL;
-	    if (!cable)
-	      cable = "xpc";
-	  }
-	else
-	  {
-	    fprintf(stderr, "\bUnknown subtype \"%s\"\n", optarg);
+	    fprintf(stderr,"Unknown cable %s\n", optarg);
 	    usage();
 	  }
 	break;
-      
+	
+      case 't':
+	subtype = getSubtype(optarg, &cable);
+	if (subtype == -1)
+	  {
+	    fprintf(stderr,"Unknow subtype %s\n", optarg);
+	    usage();
+	  }
+	break;
+	
       case 'd':
 	dev = optarg;
 	break;
@@ -182,6 +158,6 @@ args_done:
   DeviceDB db(0);
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
-  detect_chain(jtag,db);
+  detect_chain(&jtag, &db);
   return 0;
 }

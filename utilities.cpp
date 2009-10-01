@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <memory>
 
@@ -9,33 +10,98 @@
 #include "iofx2.h"
 #include "ioftdi.h"
 #include "ioxpc.h"
+#include "utilities.h"
 
-void detect_chain(Jtag &jtag, DeviceDB &db)
+void detect_chain(Jtag *jtag, DeviceDB *db)
 {
   int dblast=0;
-  int num=jtag.getChain();
+  int num=jtag->getChain();
   for(int i=0; i<num; i++)
     {
-      unsigned long id=jtag.getDeviceID(i);
-      int length=db.loadDevice(id);
+      unsigned long id=jtag->getDeviceID(i);
+      int length=db->loadDevice(id);
       fprintf(stderr,"JTAG loc.: %d\tIDCODE: 0x%08lx\t", i, id);
       if(length>0){
-	jtag.setDeviceIRLength(i,length);
+	jtag->setDeviceIRLength(i,length);
 	fprintf(stderr,"Desc: %15s\tIR length: %d\n",
-		db.getDeviceDescription(dblast),length);
+		db->getDeviceDescription(dblast),length);
 	dblast++;
       } 
       else{
-	fprintf(stderr,"not found in '%s'.\n", db.getFile().c_str());
+	fprintf(stderr,"not found in '%s'.\n", db->getFile().c_str());
       }
     }
 }
 
-int  getIO( std::auto_ptr<IOBase> *io, char const *cable, int subtype, int  vendor, int  product, char const *dev, char const *desc, char const *serial)
+CABLES_TYPES getCable(const char *given_name)
+{
+  if (strcasecmp(given_name, "pp") == 0)
+    return CABLE_PP;
+  if (strcasecmp(given_name, "ftdi") == 0)
+    return CABLE_FTDI;
+  if (strcasecmp(given_name, "fx2") == 0)
+    return CABLE_FX2;
+  if (strcasecmp(given_name, "xpc") == 0)
+    return CABLE_XPC;
+  return CABLE_UNKNOWN;
+}
+
+int getFilestyle(const char *given_name, FILE_STYLE *style)
+{
+  int res = 0;
+  if (!strcasecmp(optarg,"BIT"))
+    *style = STYLE_BIT;
+  else if (!strcasecmp(optarg,"HEX"))
+    *style = STYLE_HEX;
+  else if (!strcasecmp(optarg,"MCS"))
+    *style = STYLE_MCS;
+  else if (!strcasecmp(optarg,"BIN"))
+    *style = STYLE_BIN;
+  else
+    res = 1;
+  return 0;
+}
+
+int getSubtype(const char *given_name, CABLES_TYPES *cable)
+{
+  if (strcasecmp(given_name, "ikda") == 0)
+    {
+      if (*cable == CABLE_NONE)
+	*cable = CABLE_FTDI;
+      return FTDI_IKDA;
+    }
+  else if (strcasecmp(given_name, "ftdijtag") == 0)
+    {
+      if (*cable == CABLE_NONE)
+	*cable = CABLE_FTDI;
+      return FTDI_FTDIJTAG;
+    }
+  else if (strcasecmp(given_name, "olimex") == 0)
+    {
+      if (*cable == CABLE_NONE)
+	*cable = CABLE_FTDI;
+      return FTDI_OLIMEX;
+    }
+  else if (strcasecmp(given_name, "amontec") == 0)
+    {
+       if (*cable == CABLE_NONE)
+	*cable = CABLE_FTDI;
+     return FTDI_AMONTEC;
+    }
+  else if (strcasecmp(given_name, "int") == 0)
+    {
+      if (*cable == CABLE_NONE)
+	*cable = CABLE_XPC;
+      return XPC_INTERNAL;
+    }
+  return -1;
+}
+
+int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, int  vendor, int  product, char const *dev, char const *desc, char const *serial)
 {
   if (!cable) 
-    cable ="pp";
-  if (strcasecmp(cable, "pp") == 0)
+    cable = CABLE_PP;
+  if (cable == CABLE_PP)
     {
       try
 	{
@@ -50,7 +116,7 @@ int  getIO( std::auto_ptr<IOBase> *io, char const *cable, int subtype, int  vend
   else 
     try
       {
-	if(strcasecmp(cable, "ftdi") == 0)  
+	if(cable == CABLE_FTDI)  
 	  {
 	    if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA)
 		|| (subtype == FTDI_FTDIJTAG))
@@ -76,7 +142,7 @@ int  getIO( std::auto_ptr<IOBase> *io, char const *cable, int subtype, int  vend
 	      }
 	    io->reset(new IOFtdi(vendor, product, desc, serial, subtype));
 	  }
-	else if(strcasecmp(cable,  "fx2") == 0)  
+	else if(cable == CABLE_FX2)  
 	  {
 	    if (vendor == 0)
 	      vendor = USRP_VENDOR;
@@ -84,7 +150,7 @@ int  getIO( std::auto_ptr<IOBase> *io, char const *cable, int subtype, int  vend
 	      product = USRP_DEVICE;
 	    io->reset(new IOFX2(vendor, product, desc, serial));
 	  }
-	else if(strcasecmp(cable,  "xpc") == 0)  
+	else if(cable == CABLE_XPC)  
 	  {
 	    if (vendor == 0)
 	      vendor = XPC_VENDOR;
@@ -93,15 +159,12 @@ int  getIO( std::auto_ptr<IOBase> *io, char const *cable, int subtype, int  vend
 	    io->reset(new IOXPC(vendor, product, desc, serial, subtype));
 	  }
 	else
-	  {
-	    fprintf(stderr, "\nUnknown cable \"%s\"\n", cable);
-	    return 2;
-	  }
+	  return 2;
       }
     catch(io_exception& e)
       {
-	fprintf(stderr, "Could not find %s dongle %04x:%04x", 
-		cable, vendor, product);
+	fprintf(stderr, "Could not find USB dongle %04x:%04x", 
+		vendor, product);
 	if (desc)
 	  fprintf(stderr, " with given description \"%s\"\n", desc);
 	if (serial)

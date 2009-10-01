@@ -311,7 +311,7 @@ int main(int argc, char **args)
   bool     readback     = false;
   bool     spiflash     = false;
   unsigned int id;
-  char const *cable     = 0;
+  CABLES_TYPES cable    = CABLE_NONE;
   char const *dev       = 0;
   char const *eepromfile= 0;
   char const *fusefile  = 0;
@@ -374,7 +374,12 @@ int main(int argc, char **args)
       break;
 
     case 'c':
-      cable = optarg;
+      cable =  getCable(optarg);
+      if(cable == CABLE_UNKNOWN)
+	{
+	  fprintf(stderr,"Unknown cable %s\n", optarg);
+	  usage(false);
+	}
       break;
 
     case 'm':
@@ -390,15 +395,7 @@ int main(int argc, char **args)
       break;
 
     case 'o':
-      if (!strcasecmp(optarg,"BIT"))
-	out_style = STYLE_BIT;
-      else if (!strcasecmp(optarg,"HEX"))
-	out_style = STYLE_HEX;
-      else if (!strcasecmp(optarg,"MCS"))
-	out_style = STYLE_MCS;
-      else if (!strcasecmp(optarg,"BIN"))
-	out_style = STYLE_BIN;
-      else
+      if ((getFilestyle(optarg, &out_style) != 0))
 	{
 	  fprintf(stderr, "\nUnknown format \"%s\"\n", optarg);
 	  usage(false);
@@ -406,15 +403,7 @@ int main(int argc, char **args)
       break;
       
     case 'i':
-      if (!strcasecmp(optarg,"BIT"))
-	in_style = STYLE_BIT;
-      else if (!strcasecmp(optarg,"HEX"))
-	in_style = STYLE_HEX;
-      else if (!strcasecmp(optarg,"MCS"))
-	in_style = STYLE_MCS;
-      else if (!strcasecmp(optarg,"BIN"))
-	in_style = STYLE_BIN;
-      else 
+      if ((getFilestyle(optarg, &in_style) != 0))
 	{
 	  fprintf(stderr, "\nUnknown format \"%s\"\n", optarg);
 	  usage(false);
@@ -426,43 +415,14 @@ int main(int argc, char **args)
       break;
 
     case 't':
-      if (strcasecmp(optarg, "ikda") == 0)
+      subtype = getSubtype(optarg, &cable);
+      if (subtype == -1)
 	{
-	  subtype = FTDI_IKDA;
-	  if (!cable)
-	    cable = "ftdi";
-	}
-      else if (strcasecmp(optarg, "ftdijtag") == 0)
-	{
-	  subtype = FTDI_FTDIJTAG;
-	  if (!cable)
-	    cable = "ftdi";
-	}
-      else if (strcasecmp(optarg, "olimex") == 0)
-	{
-	  subtype = FTDI_OLIMEX;
-	  if (!cable)
-	    cable = "ftdi";
-	}
-      else if (strcasecmp(optarg, "amontec") == 0)
-	{
-	  subtype = FTDI_AMONTEC;
-	  if (!cable)
-	    cable = "ftdi";
-	}
-      else if (strcasecmp(optarg, "int") == 0)
-	{
-	  subtype = XPC_INTERNAL;
-	  if (!cable)
-	    cable = "xpc";
-	}
-      else
-	{
-	  fprintf(stderr, "\bUnknown subtype \"%s\"\n", optarg);
+	  fprintf(stderr,"Unknow subtype %s\n", optarg);
 	  usage(false);
 	}
       break;
-      
+
     case 'd':
       dev = optarg;
       break;
@@ -521,7 +481,7 @@ int main(int argc, char **args)
 
   if (detectchain && !spiflash)
     {
-      detect_chain(jtag, db);
+      detect_chain(&jtag, &db);
       return 0;
     }
 
