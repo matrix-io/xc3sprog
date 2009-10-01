@@ -735,5 +735,5 @@ void ProgAlgSPIFlash::reconfig(void)
   io->cycleTCK(32);
   jtag->shiftIR(&BYPASS);
   io->cycleTCK(1);
-  io->setTapState(IOBase::TEST_LOGIC_RESET);
+  jtag->setTapState(IOBase::TEST_LOGIC_RESET);
 }
