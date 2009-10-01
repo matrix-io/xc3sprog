@@ -140,7 +140,8 @@ void Jtag::shiftDR(const byte *tdi, byte *tdo, int length,
   nextTapState(post==0&&exit); // If TMS is set the the state of the tap changes
   if(exit){
     io->shift(false,post);
-    nextTapState(true);
+    if (!(post==0&&exit))
+      nextTapState(true);
     setTapState(postDRState);
     shiftDRincomplete=false;
   }
