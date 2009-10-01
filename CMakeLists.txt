@@ -31,6 +31,7 @@ add_executable(debug debug.cpp iobase.cpp ioparport.cpp iodebug.cpp)
 add_executable(bitparse bitfile.cpp bitparse.cpp)
 add_executable(jedecparse  jedecparse.cpp jedecfile.cpp)
 add_executable(srecparse  srecparse.cpp srecfile.cpp)
+add_executable(avrfuseparse  avrfuseparse.cpp avrfusefile.cpp)
 
 ADD_CUSTOM_COMMAND(OUTPUT config.h
     COMMAND ${CMAKE_COMMAND} -DDEVLIST_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/devlist.cmk
