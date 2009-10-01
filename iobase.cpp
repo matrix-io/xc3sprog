@@ -37,7 +37,6 @@ using namespace std;
 IOBase::IOBase()
 {
     verbose = false;
-    current_state = UNKNOWN;
     memset( ones,0xff,CHUNK_SIZE);
     memset(zeros,   0,CHUNK_SIZE);
     memset(tms_buf,   0,CHUNK_SIZE);
@@ -51,6 +50,15 @@ void IOBase::flush_tms(int force)
   memset(tms_buf,   0,CHUNK_SIZE);
   tms_len = 0;
 }
+
+void IOBase::set_tms(bool val)
+{
+  if( tms_len + 1 > CHUNK_SIZE*8)
+    flush_tms(false);
+  if(val)
+    tms_buf[tms_len/8] |= (1 <<(tms_len &0x7));
+  tms_len++;
+}
     
 void IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo,
 			 int length, bool last)
@@ -58,7 +66,6 @@ void IOBase::shiftTDITDO(const unsigned char *tdi, unsigned char *tdo,
   if(length==0) return;
   flush_tms(false);
   txrx_block(tdi, tdo, length,last);
-  nextTapState(last); // If TMS is set the the state of the tap changes
   return;
 }
 
@@ -87,278 +94,4 @@ void IOBase::shift(bool tdi, int length, bool last)
     shiftTDITDO(block, NULL, len, last);
 }
 
-void IOBase::setTapState(tapState_t state, int pre)
-{
-  bool tms;
-  while(current_state!=state){
-    switch(current_state){
 
-    case TEST_LOGIC_RESET:
-      switch(state){
-      case TEST_LOGIC_RESET:
-	tms=true;
-	break;
-      default:
-	tms=false;
-	current_state=RUN_TEST_IDLE;
-      };
-      break;
-
-    case RUN_TEST_IDLE:
-      switch(state){
-      case RUN_TEST_IDLE:
-	tms=false;
-	break;
-      default:
-	tms=true;
-	current_state=SELECT_DR_SCAN;
-      };
-      break;
-
-    case SELECT_DR_SCAN:
-      switch(state){
-      case CAPTURE_DR:
-      case SHIFT_DR:
-      case EXIT1_DR:
-      case PAUSE_DR:
-      case EXIT2_DR:
-      case UPDATE_DR:
-	tms=false;
-	current_state=CAPTURE_DR;
-	break;
-      default:
-	tms=true;
-	current_state=SELECT_IR_SCAN;
-      };
-      break;
-
-    case CAPTURE_DR:
-      switch(state){
-      case SHIFT_DR:
-	tms=false;
-	current_state=SHIFT_DR;
-	break;
-      default:
-	tms=true;
-	current_state=EXIT1_DR;
-      };
-      break;
-
-    case SHIFT_DR:
-      switch(state){
-      case SHIFT_DR:
-	tms=false;
-	break;
-      default:
-	tms=true;
-	current_state=EXIT1_DR;
-      };
-      break;
-
-    case EXIT1_DR:
-      switch(state){
-      case PAUSE_DR:
-      case EXIT2_DR:
-      case SHIFT_DR:
-      case EXIT1_DR:
-	tms=false;
-	current_state=PAUSE_DR;
-	break;
-      default:
-	tms=true;
-	current_state=UPDATE_DR;
-      };
-      break;
-
-    case PAUSE_DR:
-      switch(state){
-      case PAUSE_DR:
-	tms=false;
-	break;
-      default:
-	tms=true;
-	current_state=EXIT2_DR;
-      };
-      break;
-
-    case EXIT2_DR:
-      switch(state){
-      case SHIFT_DR:
-      case EXIT1_DR:
-      case PAUSE_DR:
-	tms=false;
-	current_state=SHIFT_DR;
-	break;
-      default:
-	tms=true;
-	current_state=UPDATE_DR;
-      };
-      break;
-
-    case UPDATE_DR:
-      switch(state){
-      case RUN_TEST_IDLE:
-	tms=false;
-	current_state=RUN_TEST_IDLE;
-	break;
-      default:
-	tms=true;
-	current_state=SELECT_DR_SCAN;
-      };
-      break;
-
-    case SELECT_IR_SCAN:
-      switch(state){
-      case CAPTURE_IR:
-      case SHIFT_IR:
-      case EXIT1_IR:
-      case PAUSE_IR:
-      case EXIT2_IR:
-      case UPDATE_IR:
-	tms=false;
-	current_state=CAPTURE_IR;
-	break;
-      default:
-	tms=true;
-	current_state=TEST_LOGIC_RESET;
-      };
-      break;
-
-    case CAPTURE_IR:
-      switch(state){
-      case SHIFT_IR:
-	tms=false;
-	current_state=SHIFT_IR;
-	break;
-      default:
-	tms=true;
-	current_state=EXIT1_IR;
-      };
-      break;
-
-    case SHIFT_IR:
-      switch(state){
-      case SHIFT_IR:
-	tms=false;
-	break;
-      default:
-	tms=true;
-	current_state=EXIT1_IR;
-      };
-      break;
-
-    case EXIT1_IR:
-      switch(state){
-      case PAUSE_IR:
-      case EXIT2_IR:
-      case SHIFT_IR:
-      case EXIT1_IR:
-	tms=false;
-	current_state=PAUSE_IR;
-	break;
-      default:
-	tms=true;
-	current_state=UPDATE_IR;
-      };
-      break;
-
-    case PAUSE_IR:
-      switch(state){
-      case PAUSE_IR:
-	tms=false;
-	break;
-      default:
-	tms=true;
-	current_state=EXIT2_IR;
-      };
-      break;
-
-    case EXIT2_IR:
-      switch(state){
-      case SHIFT_IR:
-      case EXIT1_IR:
-      case PAUSE_IR:
-	tms=false;
-	current_state=SHIFT_IR;
-	break;
-      default:
-	tms=true;
-	current_state=UPDATE_IR;
-      };
-      break;
-
-    case UPDATE_IR:
-      switch(state){
-      case RUN_TEST_IDLE:
-	tms=false;
-	current_state=RUN_TEST_IDLE;
-	break;
-      default:
-	tms=true;
-	current_state=SELECT_DR_SCAN;
-      };
-      break;
-
-    default:
-      tapTestLogicReset();
-      tms=true;
-    };
-    if( tms_len >= CHUNK_SIZE*8) /* no more room for even one bit */
-      flush_tms(false);
-    tms_buf[tms_len/8] |= tms<<(tms_len & 0x7);
-    tms_len++;
-  };
-  if(pre)
-    {
-      if( tms_len + pre >= CHUNK_SIZE*8) /* no more room for even one bit */
-	flush_tms(false);
-      tms_len +=pre;
-    }
-}
-
-// After shift data into the DR or IR we goto the next state
-// This function should only be called from the end of a shift function
-void IOBase::nextTapState(bool tms)
-{
-  if(current_state==SHIFT_DR){
-    if(tms)current_state=EXIT1_DR; // If TMS was set then goto next state
-  }
-  else if(current_state==SHIFT_IR){
-    if(tms)current_state=EXIT1_IR; // If TMS was set then goto next state
-  }
-  else tapTestLogicReset(); // We were in an unexpected state
-}
-
-void IOBase::tapTestLogicReset()
-{
-  int i;
-  flush_tms(true);
-  for(i=0; i<5; i++)
-    {
-      tms_buf[tms_len/8] |= 1<<(tms_len & 0x7);
-      tms_len++;
-    }
-  current_state=TEST_LOGIC_RESET;
-}
-
-void IOBase::cycleTCK(int n, bool tdi)
-{
-  flush_tms(true);
- if(current_state==TEST_LOGIC_RESET)
-  {
-      fprintf(stderr, "cycleTCK in TEST_LOGIC_RESET\n");
-     for(int i=0; i<n; i++)
-         shift(tdi, 1, true);
-  }
-  else
-  {
-      int len = n;
-      unsigned char *block = (tdi)?ones:zeros;
-      while (len > CHUNK_SIZE*8)
-      {
-          txrx_block(block, NULL, CHUNK_SIZE*8, false);
-          len -= (CHUNK_SIZE*8);
-      }
-      txrx_block(block, NULL, len, false);
-  }  
-}

@@ -82,12 +82,12 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
   /* Read the IDCODE via the IDCODE command */
   for(i=0; i<num; i++)
     {
-      io->setTapState(IOBase::TEST_LOGIC_RESET);
+      jtag->setTapState(Jtag::TEST_LOGIC_RESET);
       jtag->selectDevice(i);
       for (j = 0; j < db.getIRLength(i); j = j+8)
 	ir_in[j>>3] =  (db.getIDCmd(i)>>j) & 0xff;
       jtag->shiftIR(ir_in, ir_out);
-      io->cycleTCK(1);
+      jtag->cycleTCK(1);
       jtag->shiftDR(NULL, &dout[i*4], 32);
       if (jtag->byteArrayToLong(dout+i*4) != jtag->getDeviceID(i))
 	{
@@ -106,9 +106,10 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 	  len += db.loadDevice(jtag->getDeviceID(i));
 	}
       fprintf(stderr, "IR len = %d\n", len);
-      io->setTapState(IOBase::TEST_LOGIC_RESET);
-      io->setTapState(IOBase::SHIFT_IR);
+      jtag->setTapState(Jtag::TEST_LOGIC_RESET);
+      jtag->setTapState(Jtag::SHIFT_IR);
       io->shiftTDITDO(din,dout,len,true);
+      jtag->nextTapState(true);
       for(i=0; i <len>>3;  i++)
 	fprintf(stderr, "%02x", dout[i]);
       fprintf(stderr, " ");
@@ -126,9 +127,10 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
       fflush(stderr);
       for(i=0; i<test_count; i++)
 	{
-	  io->setTapState(IOBase::SELECT_DR_SCAN);
-	  io->setTapState(IOBase::SHIFT_IR);
+	  jtag->setTapState(Jtag::SELECT_DR_SCAN);
+	  jtag->setTapState(Jtag::SHIFT_IR);
 	  io->shiftTDITDO(din,dcmp,len,true);
+	  jtag->nextTapState(true);
 	  if (memcmp(dout, dcmp, (len+1)>>3) !=0)
 	    {
 	      fprintf(stderr, "mismatch run %d\n", i);
@@ -178,14 +180,16 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
       for(i=num-1; i >= 0;  i--)
 	fprintf(stderr, " 0x%08lx", jtag->getDeviceID(i));
 
-      io->tapTestLogicReset();
+      jtag->tapTestLogicReset();
       for(i=0; i<test_count; i++)
 	{
-	  io->setTapState(IOBase::SHIFT_IR);
+	  jtag->setTapState(Jtag::SHIFT_IR);
 	  io->shiftTDI(ir_in,len,true);
-	  io->setTapState(IOBase::SHIFT_DR);
+	  jtag->nextTapState(true);
+	  jtag->setTapState(Jtag::SHIFT_DR);
 	  io->shiftTDITDO(NULL,dout,num*32,true);
-	  io->setTapState(IOBase::TEST_LOGIC_RESET);
+	  jtag->nextTapState(true);
+	  jtag->setTapState(Jtag::TEST_LOGIC_RESET);
 	  if(memcmp(dout, dcmp, num*4) !=0)
 	    {
 	      fprintf(stderr, "\nMismatch run %8d:", i+1);

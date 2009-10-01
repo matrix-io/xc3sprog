@@ -26,7 +26,7 @@ include_directories(${LIBUSRP_INCLUDE_DIR})
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-add_executable(debug debug.cpp iobase.cpp ioparport.cpp iodebug.cpp)
+#add_executable(debug debug.cpp iobase.cpp ioparport.cpp iodebug.cpp)
 
 add_executable(bitparse bitfile.cpp bitparse.cpp)
 add_executable(jedecparse  jedecparse.cpp jedecfile.cpp)

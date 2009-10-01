@@ -130,7 +130,7 @@ int ProgAlgXCF::program(BitFile &file)
   gettimeofday(tv, NULL);
   jtag->shiftIR(&ISC_DISABLE);
   jtag->Usleep(1000);
-  jtag->setTapState(IOBase::TEST_LOGIC_RESET);
+  jtag->setTapState(Jtag::TEST_LOGIC_RESET);
   byte data[4];
   jtag->shiftIR(&ISC_ENABLE);
   data[0]=0x37;
@@ -196,7 +196,7 @@ int ProgAlgXCF::verify(BitFile &file)
   byte data[4096/8];
   
   gettimeofday(tv, NULL);
-  jtag->setTapState(IOBase::TEST_LOGIC_RESET);
+  jtag->setTapState(Jtag::TEST_LOGIC_RESET);
   jtag->shiftIR(&ISC_ENABLE);
   data[0]=0x34;
   jtag->shiftDR(data,0,6);
@@ -251,7 +251,7 @@ int ProgAlgXCF::read(BitFile &file)
   
   file.setLength(size);
   gettimeofday(tv, NULL);
-  jtag->setTapState(IOBase::TEST_LOGIC_RESET);
+  jtag->setTapState(Jtag::TEST_LOGIC_RESET);
   jtag->shiftIR(&ISC_ENABLE);
   data[0]=0x34;
   jtag->shiftDR(data,0,6);

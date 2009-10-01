@@ -31,30 +31,9 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 class IOBase
 {
- public:
-  enum tapState_t{
-    TEST_LOGIC_RESET=0,
-    RUN_TEST_IDLE=1,
-    SELECT_DR_SCAN=2,
-    CAPTURE_DR=3,
-    SHIFT_DR=4,
-    EXIT1_DR=5,
-    PAUSE_DR=6,
-    EXIT2_DR=7,
-    UPDATE_DR=8,
-    SELECT_IR_SCAN=9,
-    CAPTURE_IR=10,
-    SHIFT_IR=11,
-    EXIT1_IR=12,
-    PAUSE_IR=13,
-    EXIT2_IR=14,
-    UPDATE_IR=15,
-    UNKNOWN=999
-  };
 
  protected:
   bool	      verbose;
-  tapState_t  current_state;
   unsigned char ones[CHUNK_SIZE], zeros[CHUNK_SIZE];
   unsigned char tms_buf[CHUNK_SIZE];
   unsigned int tms_len; /* in Bits*/
@@ -73,12 +52,7 @@ class IOBase
   void shiftTDI(const unsigned char *tdi, int length, bool last=true);
   void shiftTDO(unsigned char *tdo, int length, bool last=true);
   void shift(bool tdi, int length, bool last=true);
-
- public:
-  void setTapState(tapState_t state, int pre=0);
-  tapState_t getTapState(void){return current_state;};
-  void tapTestLogicReset();
-  void cycleTCK(int n, bool tdi=1);
+  void set_tms(bool value);
   void flush_tms(int force);
 
  protected:
