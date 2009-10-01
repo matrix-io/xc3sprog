@@ -66,9 +66,9 @@ int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
 
    This may result in an endless loop to facilitate debugging with a scope etc 
 */
-void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
+void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 {
-  int num=jtag.getChain();
+  int num=jtag->getChain();
   int len = 0;
   int i, j, k;
   unsigned char ir_in[256];
@@ -82,17 +82,17 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
   /* Read the IDCODE via the IDCODE command */
   for(i=0; i<num; i++)
     {
-      io.setTapState(IOBase::TEST_LOGIC_RESET);
-      jtag.selectDevice(i);
+      io->setTapState(IOBase::TEST_LOGIC_RESET);
+      jtag->selectDevice(i);
       for (j = 0; j < db.getIRLength(i); j = j+8)
 	ir_in[j>>3] =  (db.getIDCmd(i)>>j) & 0xff;
-      jtag.shiftIR(ir_in, ir_out);
-      io.cycleTCK(1);
-      jtag.shiftDR(NULL, &dout[i*4], 32);
-      if (jtag.byteArrayToLong(dout+i*4) != jtag.getDeviceID(i))
+      jtag->shiftIR(ir_in, ir_out);
+      io->cycleTCK(1);
+      jtag->shiftDR(NULL, &dout[i*4], 32);
+      if (jtag->byteArrayToLong(dout+i*4) != jtag->getDeviceID(i))
 	{
 	  fprintf(stderr, "IDCODE mismatch pos %d Read 0x%08lx vs 0x%08lx\n",
-		  i, jtag.byteArrayToLong(dout+i*4), jtag.getDeviceID(i));
+		  i, jtag->byteArrayToLong(dout+i*4), jtag->getDeviceID(i));
 	  run_irtest++;
 	}
     }
@@ -103,12 +103,12 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
       /* exercise the chain */
       for(i=0; i<num; i++)
 	{
-	  len += db.loadDevice(jtag.getDeviceID(i));
+	  len += db.loadDevice(jtag->getDeviceID(i));
 	}
       fprintf(stderr, "IR len = %d\n", len);
-      io.setTapState(IOBase::TEST_LOGIC_RESET);
-      io.setTapState(IOBase::SHIFT_IR);
-      io.shiftTDITDO(din,dout,len,true);
+      io->setTapState(IOBase::TEST_LOGIC_RESET);
+      io->setTapState(IOBase::SHIFT_IR);
+      io->shiftTDITDO(din,dout,len,true);
       for(i=0; i <len>>3;  i++)
 	fprintf(stderr, "%02x", dout[i]);
       fprintf(stderr, " ");
@@ -126,9 +126,9 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
       fflush(stderr);
       for(i=0; i<test_count; i++)
 	{
-	  io.setTapState(IOBase::SELECT_DR_SCAN);
-	  io.setTapState(IOBase::SHIFT_IR);
-	  io.shiftTDITDO(din,dcmp,len,true);
+	  io->setTapState(IOBase::SELECT_DR_SCAN);
+	  io->setTapState(IOBase::SHIFT_IR);
+	  io->shiftTDITDO(din,dcmp,len,true);
 	  if (memcmp(dout, dcmp, (len+1)>>3) !=0)
 	    {
 	      fprintf(stderr, "mismatch run %d\n", i);
@@ -167,7 +167,7 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
 	      char l = (db.getIDCmd(i) & (1<<j))?1:0;
 	      ir_in[len>>3] |= ((l)?(1<<(len & 0x7)):0);
 	      len++;
-	      jtag.longToByteArray(jtag.getDeviceID(i), dcmp+((num -1 -i)*4)); 
+	      jtag->longToByteArray(jtag->getDeviceID(i), dcmp+((num -1 -i)*4)); 
 	    }
 	}
       fprintf(stderr, "Sending %d bits IDCODE Commands: 0x", len);
@@ -176,24 +176,24 @@ void test_IRChain(Jtag &jtag, IOBase &io,DeviceDB &db , int test_count)
       fprintf(stderr, "\n");
       fprintf(stderr, "Expecting %d IDCODES  :", num);
       for(i=num-1; i >= 0;  i--)
-	fprintf(stderr, " 0x%08lx", jtag.getDeviceID(i));
+	fprintf(stderr, " 0x%08lx", jtag->getDeviceID(i));
 
-      io.tapTestLogicReset();
+      io->tapTestLogicReset();
       for(i=0; i<test_count; i++)
 	{
-	  io.setTapState(IOBase::SHIFT_IR);
-	  io.shiftTDI(ir_in,len,true);
-	  io.setTapState(IOBase::SHIFT_DR);
-	  io.shiftTDITDO(NULL,dout,num*32,true);
-	  io.setTapState(IOBase::TEST_LOGIC_RESET);
+	  io->setTapState(IOBase::SHIFT_IR);
+	  io->shiftTDI(ir_in,len,true);
+	  io->setTapState(IOBase::SHIFT_DR);
+	  io->shiftTDITDO(NULL,dout,num*32,true);
+	  io->setTapState(IOBase::TEST_LOGIC_RESET);
 	  if(memcmp(dout, dcmp, num*4) !=0)
 	    {
 	      fprintf(stderr, "\nMismatch run %8d:", i+1);
 	      for(j=num-1; j>=0; j--)
 		if(memcmp(dout+j*4, dcmp+j*4, 4) !=0)
-		  fprintf(stderr," 0x%08lx", jtag.byteArrayToLong(dout+j*4));
+		  fprintf(stderr," 0x%08lx", jtag->byteArrayToLong(dout+j*4));
 		else
-		  fprintf(stderr," 0x%08lx", jtag.byteArrayToLong(dout+j*4));
+		  fprintf(stderr," 0x%08lx", jtag->byteArrayToLong(dout+j*4));
 		  //		  fprintf(stderr,"           ");
 	      fflush(stderr);
 	    }
@@ -327,9 +327,11 @@ int main(int argc, char **args)
   int subtype = FTDI_NO_EN;
   char *devicedb = NULL;
   DeviceDB db(devicedb);
+  std::auto_ptr<IOBase>  io;
   long value;
   FILE *fpin =0;
   FILE *fpout = 0;
+  int res;
   // Produce release info from CVS tags
   fprintf(stderr, "Release $Rev$\n"
 	  "Please provide feedback on success/failure/enhancement requests!\n"
@@ -499,75 +501,15 @@ int main(int argc, char **args)
   if(argc < 0)  usage(true);
   if(argc < 1) detectchain = true;
 
-  if (!cable) 
-    cable ="pp";
-  std::auto_ptr<IOBase>  io;
-  try {  
-    if     (strcasecmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
-    else if(strcasecmp(cable, "ftdi") == 0)  
-      {
-	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA)
-	  || (subtype == FTDI_FTDIJTAG))
-	  {
-	    if (vendor == 0)
-	      vendor = VENDOR_FTDI;
-	    if(product == 0)
-	      product = DEVICE_DEF;
-	  }
-	else if (subtype ==  FTDI_OLIMEX)
-	  {
-	    if (vendor == 0)
-	      vendor = VENDOR_OLIMEX;
-	    if(product == 0)
-	      product = DEVICE_OLIMEX_ARM_USB_OCD;
-	  }
-	else if (subtype ==  FTDI_AMONTEC)
-	  {
-	    if (vendor == 0)
-	      vendor = VENDOR_FTDI;
-	    if(product == 0)
-	      product = DEVICE_AMONTEC_KEY;
-	  }
-	io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
-      }
-    else if(strcasecmp(cable,  "fx2") == 0)  
-      {
-	if (vendor == 0)
-	  vendor = USRP_VENDOR;
-	if(product == 0)
-	  product = USRP_DEVICE;
-	io.reset(new IOFX2(vendor, product, desc, serial));
-      }
-    else if(strcasecmp(cable,  "xpc") == 0)  
-      {
-	if (vendor == 0)
-	  vendor = XPC_VENDOR;
-	if(product == 0)
-	  product = XPC_DEVICE;
-	io.reset(new IOXPC(vendor, product, desc, serial, subtype));
-      }
-    else
-      {
-	fprintf(stderr, "\nUnknown cable \"%s\"\n", cable);
-	usage(false);
-      }
-    io->setVerbose(verbose);
-  }
-  catch(io_exception& e) 
+  res = getIO( &io, cable, subtype, vendor, product, dev, desc, serial);
+  if (res) /* some error happend*/
     {
-    if(strcmp(cable, "pp") != 0) 
-      {
-	fprintf(stderr, "Could not find %s dongle %04x:%04x", 
-		cable, vendor, product);
-	if (desc)
-	  fprintf(stderr, " with given description \"%s\"\n", desc);
-	if (serial)
-	  fprintf(stderr, " with given Serial Number \"%s\"\n", serial);
-      }
-    return 1;
+      if (res == 1) exit(1);
+      else usage(false);
     }
-
-  Jtag jtag = Jtag(io.operator->());
+  io.get()->setVerbose(verbose);
+  
+  Jtag jtag = Jtag(io.get());
   jtag.setVerbose(verbose);
   unsigned int family, manufacturer;  
   if (verbose)
@@ -575,7 +517,7 @@ int main(int argc, char **args)
 
   id = get_id (jtag, db, chainpos, verbose);
   if(chaintest && !spiflash)
-    test_IRChain(jtag, io.operator*(), db, test_count);
+    test_IRChain(&jtag, io.get(), db, test_count);
 
   if (detectchain && !spiflash)
     {

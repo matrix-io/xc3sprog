@@ -38,6 +38,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "iodebug.h"
 #include "jtag.h"
 #include "devicedb.h"
+#include "utilities.h"
 
 extern char *optarg;
 
@@ -117,8 +118,9 @@ int main(int argc, char **args)
     int chainpos =0;
     unsigned int id;
     char *devicedb = NULL;
+    std::auto_ptr<IOBase>  io;
     DeviceDB db(devicedb);
-    int i;
+    int i, res;
    
     // Start from parsing command line arguments
     while(true) {
@@ -207,71 +209,18 @@ args_done:
   args += optind;
   //printf("argc: %d\n", argc);
   if(argc != 0)  usage();
-
-  if (!cable) 
-    cable ="pp";
-  std::auto_ptr<IOBase>  io;
-  try {
-    if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
-    else if(strcmp(cable, "ftdi") == 0)  
-      {
-	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA)
-	    || (subtype == FTDI_FTDIJTAG))
-	  {
-	    if (vendor == 0)
-	      vendor = VENDOR_FTDI;
-	    if(product == 0)
-	      product = DEVICE_DEF;
-	  }
-	else if (subtype ==  FTDI_OLIMEX)
-	  {
-	    if (vendor == 0)
-	      vendor = VENDOR_OLIMEX;
-	    if(product == 0)
-	      product = DEVICE_OLIMEX_ARM_USB_OCD;
-	  }
-	else if (subtype ==  FTDI_AMONTEC)
-	  {
-	    if (vendor == 0)
-	      vendor = VENDOR_FTDI;
-	    if(product == 0)
-	      product = DEVICE_AMONTEC_KEY;
-	  }
-	io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
-      }
-    else if(strcmp(cable,  "fx2") == 0)  
-      {
-	if (vendor == 0)
-	  vendor = USRP_VENDOR;
-	if(product == 0)
-	  product = USRP_DEVICE;
-	io.reset(new IOFX2(vendor, product, desc, serial));
-      }
-    else if(strcmp(cable,  "xpc") == 0)  
-      {
-	if (vendor == 0)
-	  vendor = XPC_VENDOR;
-	if(product == 0)
-	  product = XPC_DEVICE;
-	io.reset(new IOXPC(vendor, product, desc, serial, subtype));
-      }
-    else  usage();
-
-    io->setVerbose(verbose);
-  }
-  catch(io_exception& e) 
-    {
-      if(strcmp(cable, "pp") != 0) 
-	{
-	  fprintf(stderr, "Could not access USB device %04x:%04x.\n", 
-		  vendor, product);
-	}
-      return 1;
-    }
-
   
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
+ 
+  res = getIO( &io, cable, subtype, vendor, product, dev, desc, serial);
+  if (res) /* some error happend*/
+    {
+      if (res == 1) exit(1);
+      else usage();
+    }
+  io.get()->setVerbose(verbose);
+  
   Jtag jtag(io.get());
   jtag.setVerbose(verbose);
   id = get_id (jtag, db, chainpos, verbose);
