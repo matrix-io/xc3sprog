@@ -568,6 +568,7 @@ int main(int argc, char **args)
     }
 
   Jtag jtag = Jtag(io.operator->());
+  jtag.setVerbose(verbose);
   unsigned int family, manufacturer;  
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());

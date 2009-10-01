@@ -228,6 +228,7 @@ args_done:
 
   
   Jtag jtag(io.get());
+  jtag.setVerbose(verbose);
 
   DeviceDB db(0);
   if (verbose)

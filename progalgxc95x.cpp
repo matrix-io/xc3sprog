@@ -90,7 +90,7 @@ int ProgAlgXC95X::flow_blank_check()
   jtag->shiftDR(i_data, 0,18);
   jtag->cycleTCK(500);
   jtag->shiftDR(0,o_data,18);
-  if(io->getVerbose())
+  if(jtag->getVerbose())
     {
       if ((o_data[0] & 0x03) == 0x01)
 	fprintf(stderr, "Device is blank\n");
@@ -131,7 +131,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
   gettimeofday(tv, NULL);
   for(sec=0;sec < MaxSector;sec++)
     {
-    if(io->getVerbose())
+    if(jtag->getVerbose())
       fprintf(stderr, "                            \r"
 	      "Programming Sector %3d", sec);
       preamble[0]= 0x01;
@@ -176,7 +176,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
 		  jtag->shiftDR(i_data, 0,(DRegLength+2)*8);
 		  jtag->Usleep(50000);
 		  jtag->shiftDR(0,o_data, ((DRegLength+2)*8)+2);
-		  if(io->getVerbose())
+		  if(jtag->getVerbose())
 		    {
 		      fprintf(stderr, ".");
 		      fflush(stderr);
@@ -194,7 +194,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
       }
     }
   gettimeofday(tv+1, NULL);
-  if(io->getVerbose())
+  if(jtag->getVerbose())
     fprintf(stderr, "\nProgramming  time %.1f ms\n",
 	    (double)deltaT(tv, tv + 1)/1.0e3);
   return 0;
@@ -216,7 +216,7 @@ void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
   gettimeofday(tv, NULL);
   for(sec=0;sec < MaxSector;sec++)
     {
-      if(io->getVerbose())
+      if(jtag->getVerbose())
 	{
 	  fprintf(stderr, "\rReading Sector %3d", sec);
 	  fflush(stderr);
@@ -265,7 +265,7 @@ void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
     }
   
   gettimeofday(tv+1, NULL);
-  if(io->getVerbose())
+  if(jtag->getVerbose())
     fprintf(stderr, "\nReadback time %.1f ms\n",
 	    (double)deltaT(tv, tv + 1)/1.0e3);
 }
@@ -286,7 +286,7 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
   gettimeofday(tv, NULL);
   for(sec=0;sec < MaxSector;sec++)
     {
-      if(io->getVerbose())
+      if(jtag->getVerbose())
 	{
 	  fprintf(stderr, "\rVerify Sector %3d", sec);
 	  fflush(stderr);
@@ -347,7 +347,7 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
     }
   
   gettimeofday(tv+1, NULL);
-  if(io->getVerbose())
+  if(jtag->getVerbose())
     fprintf(stderr, "\nSuccess! Verify time %.1f ms\n",
 	    (double)deltaT(tv, tv + 1)/1.0e3);
   return 0;

@@ -34,7 +34,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <string.h>
  
 using namespace std;
-IOBase::IOBase(void)
+IOBase::IOBase()
 {
     verbose = false;
     current_state = UNKNOWN;

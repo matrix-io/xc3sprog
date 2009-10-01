@@ -88,7 +88,7 @@ int ProgAlgXCF::erase()
   jtag->shiftDR(data,0,16);
   jtag->cycleTCK(2);
   
-  if(io->getVerbose())
+  if(jtag->getVerbose())
     {
       fprintf(stderr, "Erasing");
       fflush(stderr);
@@ -100,7 +100,7 @@ int ProgAlgXCF::erase()
       jtag->Usleep(500000);
       jtag->shiftIR(&ISCTESTSTATUS);
       jtag->shiftDR(0,xcstatus,8);
-      if(io->getVerbose())
+      if(jtag->getVerbose())
 	{
 	  fprintf(stderr, "."); 
 	  fflush(stderr);
@@ -111,7 +111,7 @@ int ProgAlgXCF::erase()
   gettimeofday(tv+1, NULL);
   if (i < 32)
   {
-    if(io->getVerbose())
+    if(jtag->getVerbose())
       fprintf(stderr, "done\nErase time %.1f ms\n",
 	      (double)deltaT(tv, tv + 1)/1.0e3);
     return 0;
@@ -141,7 +141,7 @@ int ProgAlgXCF::program(BitFile &file)
     int frame=i/(block_size/32);
     int j;
 
-    if(io->getVerbose())
+    if(jtag->getVerbose())
       fprintf(stderr, "                            \r"
 	      "Programming frames 0x%04x to 0x%04x",frame,frame+31); ;
     jtag->shiftIR(&ISC_DATA_SHIFT);
@@ -169,7 +169,7 @@ int ProgAlgXCF::program(BitFile &file)
       jtag->shiftDR(0,xcstatus,8);
       if (xcstatus[0] & 0x04)
           break;
-      else if(io->getVerbose())
+      else if(jtag->getVerbose())
 	{
 	  fprintf(stderr, ".");
 	  fflush(stderr);
@@ -182,7 +182,7 @@ int ProgAlgXCF::program(BitFile &file)
       }
   } 
   gettimeofday(tv+1, NULL);
-  if(io->getVerbose())
+  if(jtag->getVerbose())
     fprintf(stderr, "done\nProgramming time %.1f ms\n",
 	    (double)deltaT(tv, tv + 1)/1.0e3);
   jtag->shiftIR(&BYPASS);
@@ -207,7 +207,7 @@ int ProgAlgXCF::verify(BitFile &file)
       int frame=i/(block_size/32);
       int res;
 
-      if(io->getVerbose())
+      if(jtag->getVerbose())
 	{
 	  fprintf(stderr, "\rVerifying frames 0x%04x to 0x%04x",
 		  frame,frame+31); 
@@ -238,7 +238,7 @@ int ProgAlgXCF::verify(BitFile &file)
        
   } 
   gettimeofday(tv+1, NULL);
-  if(io->getVerbose())
+  if(jtag->getVerbose())
     fprintf(stderr, "\nSuccess! Verify time %.1f ms\n", 
 	   (double)deltaT(tv, tv + 1)/1.0e3);
   jtag->tapTestLogicReset();
@@ -261,7 +261,7 @@ int ProgAlgXCF::read(BitFile &file)
     {
       int frame=i/(block_size/32);
 
-      if(io->getVerbose())
+      if(jtag->getVerbose())
 	{
 	  fprintf(stderr, "\rReading frames 0x%04x to 0x%04x",frame,frame+31); 
 	  fflush(stderr);
@@ -284,7 +284,7 @@ int ProgAlgXCF::read(BitFile &file)
 	}
   } 
   gettimeofday(tv+1, NULL);
-  if(io->getVerbose())
+  if(jtag->getVerbose())
     fprintf(stderr, "\nSuccess! Read time %.1f ms\n", 
 	   (double)deltaT(tv, tv + 1)/1.0e3);
   jtag->tapTestLogicReset();

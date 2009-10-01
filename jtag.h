@@ -40,6 +40,7 @@ typedef unsigned char byte;
 class Jtag
 {
  private:
+  bool	      verbose;
   static const int MAXNUMDEVICES=1000;
 #ifdef __WIN32__
   typedef DWORD (__stdcall *pfZwDelayExecution)(BOOLEAN, __int64*);
@@ -70,6 +71,8 @@ class Jtag
  public:
   Jtag(IOBase *iob);
   ~Jtag();
+  void setVerbose(bool v) { verbose = v; }
+  bool getVerbose(void) { return verbose; }
   int getChain(); // Shift IDCODEs from devices
   inline void setPostDRState(IOBase::tapState_t s){postDRState=s;}
   inline void setPostIRState(IOBase::tapState_t s){postIRState=s;}
