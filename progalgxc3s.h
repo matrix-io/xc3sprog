@@ -28,7 +28,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include "bitfile.h"
 #include "jtag.h"
-#include "iobase.h"
 
 class ProgAlgXC3S
 {
@@ -43,7 +42,6 @@ class ProgAlgXC3S
   static const byte ISC_DISABLE;
   static const byte BYPASS;
   Jtag *jtag;
-  IOBase *io;
   int family;
   int tck_len;
   int array_transfer_len;
@@ -52,7 +50,7 @@ class ProgAlgXC3S
   void flow_array_program(BitFile &file);
   void flow_program_legacy(BitFile &file);
  public:
-  ProgAlgXC3S(Jtag &j, IOBase &i, int family);
+  ProgAlgXC3S(Jtag &j, int family);
   void array_program(BitFile &file);
 };
 

@@ -49,7 +49,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgspiflash.h"
 #include "utilities.h"
 
-int programXC3S(Jtag &g, IOBase &io, BitFile &file, bool verify,
+int programXC3S(Jtag &g, BitFile &file, bool verify,
 		int jstart_len);
 int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp,
 	       FILE_STYLE out_style, const char* device);
@@ -681,7 +681,7 @@ int main(int argc, char **args)
 	      if (family == 0x28)
 		{
 		  int size_ind = (id & 0x000ff000)>>12;
-		  ProgAlgXCF alg(jtag,io.operator*(),size_ind);
+		  ProgAlgXCF alg(jtag,size_ind);
 
 		  return programXCF(alg, file, verify, fpout, out_style, 
 				    db.getDeviceDescription(chainpos));
@@ -690,7 +690,7 @@ int main(int argc, char **args)
 		{
 		  if(spiflash)
 		    {
-		      ProgAlgSPIFlash alg(jtag, file, io.operator*());
+		      ProgAlgSPIFlash alg(jtag, file);
 		      if (alg.spi_flashinfo() != 1)
 			{
 			  fprintf(stderr,"ISF Bitfile probably not loaded\n");
@@ -705,7 +705,7 @@ int main(int argc, char **args)
 					db.getDeviceDescription(chainpos));
 		    }
 		    else
-		      return  programXC3S(jtag,io.operator*(),file,
+		      return  programXC3S(jtag, file,
 					  verify, family);
 		}
 	    }
@@ -718,7 +718,7 @@ int main(int argc, char **args)
 	{
 	  int size = (id & 0x000ff000)>>13;
 	  JedecFile  file;
-	  ProgAlgXC95X alg(jtag, io.operator*(), size);
+	  ProgAlgXC95X alg(jtag, size);
 	  if (!readback)
 	    {
 	      int res = file.readFile(fpin);
@@ -797,7 +797,7 @@ int main(int argc, char **args)
                   return 3;
                 }
 	    }
-	  ProgAlgXC2C alg(jtag, io.operator*(), size_ind);
+	  ProgAlgXC2C alg(jtag, size_ind);
 	  res = programXC2C(alg, file, verify, readback, db.getDeviceDescription(chainpos));
 	  if (res)
 	    return res;
@@ -831,7 +831,7 @@ int main(int argc, char **args)
   return 1;
 }
 
-int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
+int programXC3S(Jtag &jtag, BitFile &file, bool verify, int family)
 {
 
   if(verify)
@@ -839,7 +839,7 @@ int programXC3S(Jtag &jtag, IOBase &io, BitFile &file, bool verify, int family)
       fprintf(stderr, "Sorry, FPGA can't be verified (yet)\n");
       return 1;
     }
-  ProgAlgXC3S alg(jtag,io, family);
+  ProgAlgXC3S alg(jtag, family);
   alg.array_program(file);
   return 0;
 }

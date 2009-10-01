@@ -87,7 +87,7 @@ void init_bin2gray(void)
     }
  }
 
-ProgAlgXC2C::ProgAlgXC2C(Jtag &j, IOBase &i, int size_ind)
+ProgAlgXC2C::ProgAlgXC2C(Jtag &j, int size_ind)
 {
   init_bin2rev_gray();
   init_bin2gray();
@@ -129,7 +129,6 @@ ProgAlgXC2C::ProgAlgXC2C(Jtag &j, IOBase &i, int size_ind)
     }
 	
   jtag=&j;
-  io=&i;
 }
 
 void ProgAlgXC2C::flow_enable_highz()

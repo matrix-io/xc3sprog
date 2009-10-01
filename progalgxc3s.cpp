@@ -38,10 +38,9 @@ const byte ProgAlgXC3S::BYPASS=0x3f;
 #define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
                               (tvp2)->tv_usec - (tvp1)->tv_usec)
 
-ProgAlgXC3S::ProgAlgXC3S(Jtag &j, IOBase &i, int fam)
+ProgAlgXC3S::ProgAlgXC3S(Jtag &j, int fam)
 {
   jtag=&j;
-  io=&i;
   family = fam;
   switch(family)
     {

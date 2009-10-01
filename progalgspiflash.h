@@ -44,7 +44,6 @@ class ProgAlgSPIFlash
 
   Jtag *jtag;
   BitFile *file;
-  IOBase *io;
   int pgsize;
   int pages;
   int sector_size;
@@ -65,7 +64,7 @@ class ProgAlgSPIFlash
   int program_at45(BitFile &file);
   int sectorerase_and_program(BitFile &file);
  public:
-  ProgAlgSPIFlash(Jtag &j, BitFile &f, IOBase &i);
+  ProgAlgSPIFlash(Jtag &j, BitFile &f);
   ~ProgAlgSPIFlash(void);
   int spi_flashinfo(void);
   int erase(){return 0;};

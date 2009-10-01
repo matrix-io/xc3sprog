@@ -50,11 +50,10 @@ class ProgAlgXCF
   static const byte BIT4;
 
   Jtag *jtag;
-  IOBase *io;
   int block_size;  
   int size;
  public:
-  ProgAlgXCF(Jtag &j, IOBase &i, int si);
+  ProgAlgXCF(Jtag &j, int si);
   int erase();
   int program(BitFile &file);
   int verify(BitFile &file);
