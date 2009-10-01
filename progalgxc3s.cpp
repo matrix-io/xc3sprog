@@ -65,7 +65,7 @@ void ProgAlgXC3S::flow_enable()
   jtag->shiftIR(&ISC_ENABLE);
   data[0]=0x0;
   jtag->shiftDR(data,0,5);
-  io->cycleTCK(tck_len);
+  jtag->cycleTCK(tck_len);
 }
 
 void ProgAlgXC3S::flow_disable()
@@ -73,11 +73,11 @@ void ProgAlgXC3S::flow_disable()
   byte data[1];
 
   jtag->shiftIR(&ISC_DISABLE);
-  io->cycleTCK(tck_len);
+  jtag->cycleTCK(tck_len);
   jtag->shiftIR(&BYPASS);
   data[0]=0x0;
   jtag->shiftDR(data,0,1);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
 
 }
 
@@ -90,7 +90,7 @@ void ProgAlgXC3S::flow_array_program(BitFile &file)
     {
       jtag->shiftIR(&ISC_PROGRAM);
       jtag->shiftDR(&(file.getData())[i/8],0,array_transfer_len);
-      io->cycleTCK(1);
+      jtag->cycleTCK(1);
       if((i % (10000*array_transfer_len)) == 0)
 	{
 	  fprintf(stdout,".");
@@ -112,16 +112,16 @@ void ProgAlgXC3S::flow_program_legacy(BitFile &file)
   gettimeofday(tv, NULL);
 
   jtag->shiftIR(&JSHUTDOWN);
-  io->cycleTCK(tck_len);
+  jtag->cycleTCK(tck_len);
   jtag->shiftIR(&CFG_IN);
   jtag->shiftDR((file.getData()),0,file.getLength());
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
   jtag->shiftIR(&JSTART);
-  io->cycleTCK(2*tck_len);
+  jtag->cycleTCK(2*tck_len);
   jtag->shiftIR(&BYPASS);
   data[0]=0x0;
   jtag->shiftDR(data,0,1);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
   
   // Print the timing summary
   if (io->getVerbose())
@@ -156,7 +156,7 @@ void ProgAlgXC3S::array_program(BitFile &file)
 	jtag->shiftIR(&ISC_ENABLE);
 	jtag->shiftIR(&ISC_DNA);
 	jtag->shiftDR(0, data, 64);
-	io->cycleTCK(1);
+	jtag->cycleTCK(1);
 	if (*(long long*)data != -1LL)
 	  /* ISC_DNA only works on a unconfigured device, see AR #29977*/
 	  fprintf(stderr, "DNA is 0x%02x%02x%02x%02x%02x%02x%02x%02x\n", 

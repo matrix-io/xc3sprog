@@ -726,14 +726,14 @@ void ProgAlgSPIFlash::reconfig(void)
   for (i=0; i<12; i++)
     buf1[i]= file->reverse8(buf[i]);
   jtag->shiftIR(&JSHUTDOWN);
-  io->cycleTCK(16);
+  jtag->cycleTCK(16);
   jtag->shiftIR(&CFG_IN);
   if(io->getVerbose())
     fprintf(stderr, "Trying reconfigure\n"); 
   jtag->shiftDR(buf, NULL, 92 );
   jtag->shiftIR(&JSTART);
-  io->cycleTCK(32);
+  jtag->cycleTCK(32);
   jtag->shiftIR(&BYPASS);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
   jtag->setTapState(IOBase::TEST_LOGIC_RESET);
 }

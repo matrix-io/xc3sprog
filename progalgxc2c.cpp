@@ -135,23 +135,23 @@ ProgAlgXC2C::ProgAlgXC2C(Jtag &j, IOBase &i, int size_ind)
 void ProgAlgXC2C::flow_enable_highz()
 {
   jtag->shiftIR(&ISC_ENABLE_OTF);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
 }
 
 void ProgAlgXC2C::flow_disable()
 {
   jtag->shiftIR(&ISC_DISABLE);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
   jtag->Usleep(100);
  
 }
 void ProgAlgXC2C::flow_reinit()
 {
   jtag->shiftIR(&ISC_INIT);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
   jtag->Usleep(20);
   jtag->shiftIR(&ISC_INIT);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
   jtag->Usleep(100);
 }
 
@@ -179,7 +179,7 @@ int ProgAlgXC2C::blank_check(void)
   jtag->shiftDR(i_data, NULL, post);
   for (i=1; i<=block_num; i++)
     {
-      io->cycleTCK(20);
+      jtag->cycleTCK(20);
       i_data[0] = reverse_gray_code_table[i]>>(8-post);
       jtag->shiftDR(NULL, o_data, block_size, 0, false);
       jtag->shiftDR(i_data, preamble, post);

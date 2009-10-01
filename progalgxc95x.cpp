@@ -64,7 +64,7 @@ void ProgAlgXC95X::flow_enable()
   jtag->shiftIR(&ISC_ENABLE);
   data[0]=0x15;
   jtag->shiftDR(data,0,6);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
 }
 
 void ProgAlgXC95X::flow_disable()
@@ -72,14 +72,14 @@ void ProgAlgXC95X::flow_disable()
   jtag->shiftIR(&ISC_DISABLE);
   jtag->Usleep(100);
   jtag->shiftIR(&BYPASS);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
 }
 
 
 void ProgAlgXC95X::flow_error_exit()
 {
   jtag->shiftIR(&ISC_NOOP);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
 }
 
 int ProgAlgXC95X::flow_blank_check()
@@ -88,7 +88,7 @@ int ProgAlgXC95X::flow_blank_check()
   byte o_data[3];
   jtag->shiftIR(&XSC_BLANK_CHECK);
   jtag->shiftDR(i_data, 0,18);
-  io->cycleTCK(500);
+  jtag->cycleTCK(500);
   jtag->shiftDR(0,o_data,18);
   if(io->getVerbose())
     {
@@ -165,7 +165,7 @@ int ProgAlgXC95X::flow_array_program(JedecFile &file)
 	  if((l == 2) && (m == 4))
 	    jtag->Usleep(50000);
 	  else
-	    io->cycleTCK(1);
+	    jtag->cycleTCK(1);
 	  if ((l == 2) && (m == 4))
 	    {
 	      preamble[0]= 0x00;
@@ -229,7 +229,7 @@ void ProgAlgXC95X::flow_array_read(JedecFile &rbfile)
 	  jtag->shiftIR(&ISC_READ);
 	  jtag->shiftDR(preamble,0,2,0,false);
 	  jtag->shiftDR(i_data,o_data,(DRegLength+2)*8);
-	  io->cycleTCK(1);
+	  jtag->cycleTCK(1);
 	  if(sec | l | m )
 	    {
 	      for(int j=0;j<DRegLength;j++)
@@ -299,7 +299,7 @@ int ProgAlgXC95X::flow_array_verify(JedecFile &file)
 	  jtag->shiftIR(&ISC_READ);
 	  jtag->shiftDR(preamble,0,2,0,false);
 	  jtag->shiftDR(i_data,o_data,(DRegLength+2)*8);
-	  io->cycleTCK(1);
+	  jtag->cycleTCK(1);
 	  if(sec | l | m )
 	    {
 	      for(int j=0;j<DRegLength;j++)

@@ -86,7 +86,7 @@ int ProgAlgXCF::erase()
   jtag->shiftIR(&ISC_ADDRESS_SHIFT);
   jtag->longToByteArray(1,data);
   jtag->shiftDR(data,0,16);
-  io->cycleTCK(2);
+  jtag->cycleTCK(2);
   
   if(io->getVerbose())
     {
@@ -157,9 +157,9 @@ int ProgAlgXCF::program(BitFile &file)
     }
     jtag->longToByteArray(frame,data);
     jtag->shiftIR(&ISC_ADDRESS_SHIFT);
-    io->cycleTCK(1);
+    jtag->cycleTCK(1);
     jtag->shiftDR(data,0,16);
-    io->cycleTCK(1);
+    jtag->cycleTCK(1);
     jtag->shiftIR(&ISC_PROGRAM);
     for (j=0; j<28; j++)
       {
@@ -186,7 +186,7 @@ int ProgAlgXCF::program(BitFile &file)
     fprintf(stderr, "done\nProgramming time %.1f ms\n",
 	    (double)deltaT(tv, tv + 1)/1.0e3);
   jtag->shiftIR(&BYPASS);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
   jtag->tapTestLogicReset();
   return 0;
 }
@@ -216,7 +216,7 @@ int ProgAlgXCF::verify(BitFile &file)
       jtag->longToByteArray(frame,data);
       jtag->shiftIR(&ISC_ADDRESS_SHIFT);
       jtag->shiftDR(data,0,16);
-      io->cycleTCK(1);
+      jtag->cycleTCK(1);
       jtag->shiftIR(&ISC_READ);
       jtag->Usleep(50);
       jtag->shiftDR(0,data,block_size);
@@ -269,7 +269,7 @@ int ProgAlgXCF::read(BitFile &file)
       jtag->longToByteArray(frame,data);
       jtag->shiftIR(&ISC_ADDRESS_SHIFT);
       jtag->shiftDR(data,0,16);
-      io->cycleTCK(1);
+      jtag->cycleTCK(1);
       jtag->shiftIR(&ISC_READ);
       jtag->Usleep(50);
       jtag->shiftDR(0,data,block_size);
@@ -296,15 +296,15 @@ void ProgAlgXCF::disable()
   jtag->shiftIR(&ISC_DISABLE);
   jtag->Usleep(110000);
   jtag->shiftIR(&BYPASS);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
   jtag->tapTestLogicReset();
 }
 
 void ProgAlgXCF::reconfig(void)
 {
   jtag->shiftIR(&CONFIG);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
   jtag->shiftIR(&BYPASS);
-  io->cycleTCK(1);
+  jtag->cycleTCK(1);
   jtag->tapTestLogicReset();
 }
