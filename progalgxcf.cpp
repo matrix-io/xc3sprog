@@ -187,7 +187,7 @@ int ProgAlgXCF::program(BitFile &file)
 	    (double)deltaT(tv, tv + 1)/1.0e3);
   jtag->shiftIR(&BYPASS);
   io->cycleTCK(1);
-  io->tapTestLogicReset();
+  jtag->tapTestLogicReset();
   return 0;
 }
 
@@ -241,7 +241,7 @@ int ProgAlgXCF::verify(BitFile &file)
   if(io->getVerbose())
     fprintf(stderr, "\nSuccess! Verify time %.1f ms\n", 
 	   (double)deltaT(tv, tv + 1)/1.0e3);
-  io->tapTestLogicReset();
+  jtag->tapTestLogicReset();
   return 0;
 }
 
@@ -287,7 +287,7 @@ int ProgAlgXCF::read(BitFile &file)
   if(io->getVerbose())
     fprintf(stderr, "\nSuccess! Read time %.1f ms\n", 
 	   (double)deltaT(tv, tv + 1)/1.0e3);
-  io->tapTestLogicReset();
+  jtag->tapTestLogicReset();
   return 0;
 }
 
@@ -297,7 +297,7 @@ void ProgAlgXCF::disable()
   jtag->Usleep(110000);
   jtag->shiftIR(&BYPASS);
   io->cycleTCK(1);
-  io->tapTestLogicReset();
+  jtag->tapTestLogicReset();
 }
 
 void ProgAlgXCF::reconfig(void)
@@ -306,5 +306,5 @@ void ProgAlgXCF::reconfig(void)
   io->cycleTCK(1);
   jtag->shiftIR(&BYPASS);
   io->cycleTCK(1);
-  io->tapTestLogicReset();
+  jtag->tapTestLogicReset();
 }
