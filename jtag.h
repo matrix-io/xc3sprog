@@ -39,8 +39,30 @@ typedef unsigned char byte;
 
 class Jtag
 {
+ public:
+  enum tapState_t{
+    TEST_LOGIC_RESET=0,
+    RUN_TEST_IDLE=1,
+    SELECT_DR_SCAN=2,
+    CAPTURE_DR=3,
+    SHIFT_DR=4,
+    EXIT1_DR=5,
+    PAUSE_DR=6,
+    EXIT2_DR=7,
+    UPDATE_DR=8,
+    SELECT_IR_SCAN=9,
+    CAPTURE_IR=10,
+    SHIFT_IR=11,
+    EXIT1_IR=12,
+    PAUSE_IR=13,
+    EXIT2_IR=14,
+    UPDATE_IR=15,
+    UNKNOWN=999
+  };
+  
  private:
   bool	      verbose;
+  tapState_t  current_state;
   static const int MAXNUMDEVICES=1000;
 #ifdef __WIN32__
   typedef DWORD (__stdcall *pfZwDelayExecution)(BOOLEAN, __int64*);
@@ -63,8 +85,8 @@ class Jtag
   std::vector<chainParam_t> devices;
   IOBase *io;
   int numDevices;
-  IOBase::tapState_t postDRState;
-  IOBase::tapState_t postIRState;
+  tapState_t postDRState;
+  tapState_t postIRState;
   int deviceIndex;
   FILE *logfile;
   bool shiftDRincomplete;
@@ -74,12 +96,13 @@ class Jtag
   void setVerbose(bool v) { verbose = v; }
   bool getVerbose(void) { return verbose; }
   int getChain(); // Shift IDCODEs from devices
-  inline void setPostDRState(IOBase::tapState_t s){postDRState=s;}
-  inline void setPostIRState(IOBase::tapState_t s){postIRState=s;}
-  void setTapState(IOBase::tapState_t state, int pre=0){io->setTapState(state, pre);};
-  void tapTestLogicReset(void){io->tapTestLogicReset();};
-  void cycleTCK(int n, bool tdi=1){io->cycleTCK(n, tdi);};
-  IOBase::tapState_t getTapState(void){return io->getTapState();};
+  inline void setPostDRState(tapState_t s){postDRState=s;}
+  inline void setPostIRState(tapState_t s){postIRState=s;}
+  void setTapState(tapState_t state, int pre=0);
+  void tapTestLogicReset(void);
+  void nextTapState(bool tms);
+  void cycleTCK(int n, bool tdi=1);
+  tapState_t getTapState(void);
   void Usleep(unsigned int usec);
   int setDeviceIRLength(int dev, int len);
   unsigned long getDeviceID(unsigned int dev){
