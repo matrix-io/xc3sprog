@@ -88,7 +88,7 @@ class Jtag
   tapState_t postDRState;
   tapState_t postIRState;
   int deviceIndex;
-  FILE *logfile;
+  FILE *fp_svf;
   bool shiftDRincomplete;
  public:
   Jtag(IOBase *iob);
@@ -122,7 +122,7 @@ class Jtag
     b[0]=(byte)(l&0xff);
     b[1]=(byte)((l>>8)&0xff);
   }
-  inline unsigned long byteArrayToLong(byte *b){
+  inline unsigned long byteArrayToLong(const byte *b){
     return ((unsigned long)b[3]<<24)+((unsigned long)b[2]<<16)+
       ((unsigned long)b[1]<<8)+(unsigned long)b[0];
   }
