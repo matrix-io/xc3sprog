@@ -29,7 +29,6 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	 gDeviceData.eeprom, gDeviceData.ram);
   
   ProgAlgAVR alg (jtag, gDeviceData.fp_size);
-  alg.reset(true);
 
   
   if (fusefile)
@@ -171,9 +170,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	  
 	}
     }
-  alg.reset(false);
   return 0;
  bailout:
-  alg.reset(false);
   return 1;
 }

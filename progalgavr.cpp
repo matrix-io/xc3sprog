@@ -1,4 +1,4 @@
-/* AV programming algorithms
+/* AVR programming algorithms
 
 Copyright (C) 2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 Copyright (C) <2001>  <AJ Erasmus> antone@sentechsa.com
@@ -19,9 +19,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
 
-#include "progalgavr.h"
 #include <ctype.h>
 #include <string.h>
+#include <stdint.h>
+#include "progalgavr.h"
 
 const byte ProgAlgAVR::EXTEST         = 0x0;
 const byte ProgAlgAVR::IDCODE         = 0x1;
@@ -35,6 +36,9 @@ const byte ProgAlgAVR::BYPASS         = 0xf;
 
 #define DO_ENABLE          0xA370
 
+#define PROG_NOP1          0x2300
+#define PROG_NOP2          0x3300
+
 #define CHIP_ERASE_A       0x2380
 #define CHIP_ERASE_B       0x3180
 #define POLL_CHIP_ERASE    0x3380
@@ -44,6 +48,8 @@ const byte ProgAlgAVR::BYPASS         = 0xf;
 #define LOAD_ADDR_EXT_HIGH 0x0b
 #define LOAD_ADDR_HIGH     0x07
 #define LOAD_ADDR_LOW      0x03
+#define LOAD_ADDR_LOW      0x03
+#define REPEAT_ADDR_LOW    0x33
 #define EN_FLASH_READ      0x3200
 #define RD_FLASH_HIGH      0x3600
 #define RD_FLASH_LOW       0x3700
@@ -73,30 +79,51 @@ const byte ProgAlgAVR::BYPASS         = 0xf;
 #define WRITE_FUSE_LOW     0x3100
 #define POLL_FUSE_LOW      0x3300
 
+#define ENT_EEPROM_READ    0x2303
+#define READ_EEPROM_DUMMY  0x3200
+#define READ_EEPROM_BYTE   0x3300
+
+
 ProgAlgAVR::ProgAlgAVR(Jtag &j, unsigned int flashpagesize)
 {
   jtag=&j;
-  fp_size = flashpagesize  ;
+  fp_size = flashpagesize;
+  progmode(true);
 }
 
-void ProgAlgAVR::reset(bool reset)
+ProgAlgAVR::~ProgAlgAVR()
 {
-  byte rstval[1]={0}; 
-  if(reset)
-    rstval[0] = 1;
-
-  jtag->shiftIR(&AVR_RESET);
-  jtag->shiftDR(rstval, 0, 1);
+  progmode(false); /* in case we forgot*/
 }
 
-void ProgAlgAVR::Prog_enable(bool enable)
+void ProgAlgAVR::progmode(bool enter)
 {
-  byte enval[2]={0,0}; 
-  if(enable)
-    jtag->shortToByteArray(DO_ENABLE, enval);
-
-  jtag->shiftIR(&PROG_ENABLE);
-  jtag->shiftDR(enval, 0, 16);
+  byte rstval[2]={0, 0}; 
+  if(enter)
+    {/* Enter Programming */
+      rstval[0] = 1;
+      jtag->shiftIR(&AVR_RESET);
+      jtag->shiftDR(rstval, 0, 1);
+      
+      jtag->shortToByteArray(DO_ENABLE, rstval);
+      jtag->shiftIR(&PROG_ENABLE);
+      jtag->shiftDR(rstval, 0, 16);
+    }
+  else
+    {
+      jtag->shiftIR(&PROG_COMMANDS);
+      jtag->shortToByteArray(PROG_NOP1, rstval);
+      jtag->shiftDR(rstval, 0, 15);
+      jtag->shortToByteArray(PROG_NOP2, rstval);
+      jtag->shiftDR(rstval, 0, 15);
+      
+      jtag->shortToByteArray(0, rstval);
+      jtag->shiftIR(&PROG_ENABLE);
+      jtag->shiftDR(rstval, 0, 16);
+      
+      jtag->shiftIR(&AVR_RESET);
+      jtag->shiftDR(rstval, 0, 1);
+    }
 }
 
 int ProgAlgAVR::erase(void)
@@ -105,7 +132,6 @@ int ProgAlgAVR::erase(void)
   byte o_data[2];
   int i;
 
-  Prog_enable(true);
   jtag->shiftIR(&PROG_COMMANDS);
   jtag->shortToByteArray(CHIP_ERASE_A , cookies);
   jtag->shiftDR(cookies,0, 15);
@@ -136,7 +162,6 @@ void ProgAlgAVR::read_fuses(byte * fuses)
   byte cookies[2]; 
   byte o_data[2];
 
-  Prog_enable(true);
   
   jtag->shiftIR(&PROG_COMMANDS);
   jtag->shortToByteArray(ENT_FUSE_READ, cookies);
@@ -159,7 +184,6 @@ void ProgAlgAVR::read_fuses(byte * fuses)
   jtag->shiftDR(cookies,o_data, 15);
   fuses[FUSE_LOCK]= o_data[0];
 
-  Prog_enable(false);
 }
 
 int ProgAlgAVR::write_fuses(byte * fuses)
@@ -168,8 +192,6 @@ int ProgAlgAVR::write_fuses(byte * fuses)
   byte o_data[2];
   int i;
 
-  Prog_enable(true);
-  
   jtag->shiftIR(&PROG_COMMANDS);
   jtag->shortToByteArray(ENT_FUSE_WRITE, cookies);
   jtag->shiftDR(cookies,0, 15);
@@ -255,7 +277,6 @@ int ProgAlgAVR::write_fuses(byte * fuses)
 	}
     }
 
-  Prog_enable(false);
   return 0;
 }
 
@@ -264,8 +285,6 @@ void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer,
 {
   byte cookies[2];
 
-  Prog_enable(true);
-  
   jtag->shiftIR(&PROG_COMMANDS);
 
   jtag->shortToByteArray(ENT_FLASH_READ, buffer);
@@ -298,7 +317,6 @@ void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer,
 
   jtag->shiftIR(&PROG_COMMANDS);
   jtag->shiftIR(&PROG_COMMANDS);
-  Prog_enable(false);
 }
 
 int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer,
@@ -313,8 +331,6 @@ int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer,
   if(size != fp_size)
     fprintf(stderr, "Size is too small for a full page\n");
 
-  Prog_enable(true);
-  
   jtag->shiftIR(&PROG_COMMANDS);
 
   jtag->shortToByteArray(ENT_FLASH_WRITE, cookies);
@@ -362,10 +378,44 @@ int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer,
       return 1;
     }
   
-  Prog_enable(false);
   return 0;
 }
 
+void ProgAlgAVR::read_eeprom(unsigned int address, byte * buffer, unsigned int size)
+{
+  byte cookies[2];
+  byte readbits[2];
+  unsigned int i;
+  
+  jtag->shiftIR(&PROG_COMMANDS);
+  
+  jtag->shortToByteArray( ENT_EEPROM_READ, cookies);
+  jtag->shiftDR(cookies,0, 15);
+
+  for(i=0; i< size; i++)
+    {
+      cookies[0] = ((address+i) >> 16) & 0xff;
+      cookies[1] = LOAD_ADDR_HIGH;
+      jtag->shiftDR(cookies,0, 15);
+
+      cookies[0] = ((address+i)      ) & 0xff;
+      cookies[1] = LOAD_ADDR_LOW;
+      jtag->shiftDR(cookies,0, 15);
+
+      cookies[0] = ((address+i)      ) & 0xff;
+      cookies[1] = REPEAT_ADDR_LOW;
+      jtag->shiftDR(cookies,0, 15);
+
+      jtag->shortToByteArray( READ_EEPROM_DUMMY, cookies);
+      jtag->shiftDR(cookies,0, 15);
+
+      jtag->shortToByteArray( READ_EEPROM_BYTE, cookies);
+      jtag->shiftDR(cookies, readbits, 15);
+
+      buffer[i] = readbits[0];
+    }
+}
+  
   
   
   
