@@ -49,16 +49,17 @@ class ProgAlgAVR
   Jtag *jtag;
   unsigned int fp_size;
   
-  void Prog_enable(bool enable);
+  void progmode(bool enter);
 
  public:
   ProgAlgAVR(Jtag &j, unsigned int FlashpageSize);
-  void reset(bool do_reset);
+  ~ProgAlgAVR();
   void read_fuses(byte * fuses);
   int write_fuses(byte * fuses);
   int erase(void);
   int pagewrite_flash(unsigned int address, byte * buffer, unsigned int size);
   void pageread_flash(unsigned int address, byte * buffer, unsigned int size);
+  void read_eeprom(unsigned int address, byte * buffer, unsigned int size);
 };
 
 #endif //PROGALGAVR_H
