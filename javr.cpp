@@ -45,6 +45,20 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	     fuses[FUSE_LOW], fuses[FUSE_LOCK]);
 
     }
+  if (eepromfile)
+    {
+    }
+  else
+    {
+      byte eeprom[16];
+      int i;
+      alg.read_eeprom(0xff0, eeprom, 16);
+      fprintf(stderr, "Flash at 0xff0:");
+      for (i=0; i<16; i++)
+	fprintf(stderr, " %02x ", eeprom[i]);
+      fprintf(stderr, "\n");	
+    }
+
   if (flashfile)
     {
       SrecFile file;
