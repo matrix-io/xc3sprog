@@ -48,7 +48,6 @@ const byte ProgAlgAVR::BYPASS         = 0xf;
 #define LOAD_ADDR_EXT_HIGH 0x0b
 #define LOAD_ADDR_HIGH     0x07
 #define LOAD_ADDR_LOW      0x03
-#define LOAD_ADDR_LOW      0x03
 #define REPEAT_ADDR_LOW    0x33
 #define EN_FLASH_READ      0x3200
 #define RD_FLASH_HIGH      0x3600
@@ -287,8 +286,8 @@ void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer,
 
   jtag->shiftIR(&PROG_COMMANDS);
 
-  jtag->shortToByteArray(ENT_FLASH_READ, buffer);
-  jtag->shiftDR(buffer,0, 15);
+  jtag->shortToByteArray(ENT_FLASH_READ, cookies);
+  jtag->shiftDR(cookies,0, 15);
 
   if(address & (fp_size -1) )
     fprintf(stderr, "Unalied read access to address 0x%08x\n", address);
@@ -319,6 +318,7 @@ void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer,
   jtag->shiftIR(&PROG_COMMANDS);
 }
 
+/* Calles is responsible to write whole pages*/
 int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer,
 				unsigned int size)
 {
@@ -384,7 +384,7 @@ int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer,
 void ProgAlgAVR::read_eeprom(unsigned int address, byte * buffer, unsigned int size)
 {
   byte cookies[2];
-  byte readbits[2];
+  byte o_data[2];
   unsigned int i;
   
   jtag->shiftIR(&PROG_COMMANDS);
@@ -394,15 +394,15 @@ void ProgAlgAVR::read_eeprom(unsigned int address, byte * buffer, unsigned int s
 
   for(i=0; i< size; i++)
     {
-      cookies[0] = ((address+i) >> 16) & 0xff;
+      cookies[0] = ((address+i) >> 8) & 0xff;
       cookies[1] = LOAD_ADDR_HIGH;
       jtag->shiftDR(cookies,0, 15);
 
-      cookies[0] = ((address+i)      ) & 0xff;
+      cookies[0] = ((address+i)     ) & 0xff;
       cookies[1] = LOAD_ADDR_LOW;
       jtag->shiftDR(cookies,0, 15);
 
-      cookies[0] = ((address+i)      ) & 0xff;
+      cookies[0] = ((address+i)     ) & 0xff;
       cookies[1] = REPEAT_ADDR_LOW;
       jtag->shiftDR(cookies,0, 15);
 
@@ -410,9 +410,9 @@ void ProgAlgAVR::read_eeprom(unsigned int address, byte * buffer, unsigned int s
       jtag->shiftDR(cookies,0, 15);
 
       jtag->shortToByteArray( READ_EEPROM_BYTE, cookies);
-      jtag->shiftDR(cookies, readbits, 15);
+      jtag->shiftDR(cookies, o_data, 15);
 
-      buffer[i] = readbits[0];
+      buffer[i] = o_data[0];
     }
 }
   
