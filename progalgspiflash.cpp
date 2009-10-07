@@ -38,6 +38,7 @@ ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f)
 {
   jtag=&j;
   file = &f;
+  buf = 0;
   miso_buf = new byte[5010];
   mosi_buf = new byte[5010];
   sector_size =  65536; /* Many devices have 64 kiByte sectors*/
@@ -48,7 +49,7 @@ ProgAlgSPIFlash::~ProgAlgSPIFlash(void)
 {
   delete[] miso_buf;
   delete[] mosi_buf;
-  delete[] buf;
+  if(buf) delete[] buf;
 }
 
 int spi_cfg[] = {
@@ -210,7 +211,7 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf)
 	fprintf(stderr,"\n");
     }
  
-  return 0;
+  return 1;
 }
 
 int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf) 
