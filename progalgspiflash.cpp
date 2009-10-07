@@ -700,8 +700,6 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
 
 	  spi_xfer_user1(NULL, 0, 0, fbuf, 2, 1);
 	  spi_xfer_user1(fbuf+1, 2, 1, NULL, 0, 0);
-	  fbuf[1] = file->reverse8(fbuf[1]);
-	  fbuf[2] = file->reverse8(fbuf[2]);
 	  if (fbuf[2] & 1)
 	    break;
 	}
