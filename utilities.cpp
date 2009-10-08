@@ -12,6 +12,7 @@
 #include "ioxpc.h"
 #include "utilities.h"
 
+extern char *optarg;
 void detect_chain(Jtag *jtag, DeviceDB *db)
 {
   int dblast=0;
