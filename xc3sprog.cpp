@@ -338,6 +338,7 @@ int main(int argc, char **args)
   int res;
   // Produce release info from CVS tags
   fprintf(stderr, "Release $Rev$\n"
+	  "Free software: If you cContribute nothing, expect nothing!\n"
 	  "Please provide feedback on success/failure/enhancement requests!\n"
 	  "Check Sourceforge SVN for updates!\n");
 
