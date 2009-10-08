@@ -29,8 +29,6 @@ if (NOT LIBUSB_FOUND)
         PATHS
             /usr/include
             /usr/local/include
-            /usr/include/libftdi
-            /usr/local/include/libftdi
     )
 
     if(USE_STATIC_USB)
