@@ -80,6 +80,21 @@ $ ./xc3sprog -I -C <your_bitfile.bit>
 
 You can readout XCF/ISF flash and CPLD
 
+ISF flash probably mean Incircuit Serial Flash, as internal to XC3SAN or 
+external connected to XC3SA/XC3SA or XC6S
+
+First load an appropriate bitfile. Some bitfiles are in bscan_spi. Otherwise
+use the appropriate HDL file from bscan_spi and a fitting UCF file to create
+a ISE Project and run the Xilinx tools to generate the bitfile.
+
+Load the bitfile, like
+
+$ ./xc3sprog bscan_spi/xc6s_cs324.ucf
+
+After loading the ISF Bitfile, you can now talk to the ISF Flash. When 
+writing to the ISF, at the end the FPGA tries to reconfigure from flash
+and the ISF Bitfile is lost.
+
 $ ./xc3sprog -r (-I) <file to store>
 
 xc3sprog handles XC3, XCF0x and XC95xxxXx. XC4 should work but is untested.
