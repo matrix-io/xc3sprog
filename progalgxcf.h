@@ -54,6 +54,7 @@ class ProgAlgXCF
   int size;
  public:
   ProgAlgXCF(Jtag &j, int si);
+  int getSize() const { return size; }
   int erase();
   int program(BitFile &file);
   int verify(BitFile &file);

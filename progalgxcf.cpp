@@ -23,6 +23,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include <string.h>
 #include <sys/time.h>
+#include <stdexcept>
 #include "progalgxcf.h"
 
 const byte ProgAlgXCF::SERASE=0x0a;
@@ -58,6 +59,8 @@ ProgAlgXCF::ProgAlgXCF(Jtag &j, int size_ind)
     case 0x46:
       size = 4<<20;
       break;
+    default:
+      throw std::invalid_argument("Unknown XCF device size");
     }
 	
   jtag=&j;
