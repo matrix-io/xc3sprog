@@ -25,10 +25,13 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Installable device database location.
 */
 
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <list>
 #include <memory>
-#include "errno.h"
+#include <errno.h>
+#include <assert.h>
 
 #include "io_exception.h"
 #include "ioparport.h"
@@ -49,10 +52,16 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgspiflash.h"
 #include "utilities.h"
 
+#define MAXPOSITIONS    8
+
+#define IDCODE_TO_FAMILY(id)        ((id>>21) & 0x7f)
+#define IDCODE_TO_MANUFACTURER(id)  ((id>>1) & 0x3ff)
+
 int programXC3S(Jtag &g, BitFile &file, bool verify,
 		int jstart_len);
-int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp,
-	       FILE_STYLE out_style, const char* device);
+void programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
+                FILE *fpout, FILE_STYLE out_style, const char *device,
+                const int *chainpositions, int nchainpos);
 int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
 		 const char *device);
 int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback,
@@ -211,41 +220,47 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
     }
 }
 
-unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
+int init_chain(Jtag &jtag, DeviceDB &db)
 {
-  int num=jtag.getChain();
-  unsigned int id;
-
+  int num = jtag.getChain();
   if (num == 0)
     {
       fprintf(stderr,"No JTAG Chain found\n");
       return 0;
     }
   // Synchronise database with chain of devices.
-  for(int i=0; i<num; i++){
-    int length=db.loadDevice(jtag.getDeviceID(i));
-    if(length>0)jtag.setDeviceIRLength(i,length);
-    else{
-      id=jtag.getDeviceID(i);
-      fprintf(stderr,"Cannot find device having IDCODE=%08x\n",id);
+  for (int i=0; i<num; i++){
+    unsigned long id = jtag.getDeviceID(i);
+    int length=db.loadDevice(id);
+    if (length>0)
+      jtag.setDeviceIRLength(i,length);
+    else
+      {
+        fprintf(stderr,"Cannot find device having IDCODE=%08lx\n",id);
+        return 0;
+      }
+  }
+  return num;
+}
+
+unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
+{
+  bool verbose = jtag.getVerbose();
+  int num = jtag.getChain();
+  if (jtag.selectDevice(chainpos)<0)
+    {
+      fprintf(stderr, "Invalid chain position %d, must be >= 0 and < %d\n",
+              chainpos, num);
       return 0;
     }
-  }
-  
-  if(jtag.selectDevice(chainpos)<0){
-    fprintf(stderr,"Invalid chain position %d, must be >= 0 and < %d\n",
-	    chainpos,num);
-    return 0;
-  }
-
   const char *dd=db.getDeviceDescription(chainpos);
-  id = jtag.getDeviceID(chainpos);
+  unsigned long id = jtag.getDeviceID(chainpos);
   if (verbose)
-  {
-    fprintf(stderr, "JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\n"
-	    , chainpos,id, dd);
-    fflush(stderr);
-  }
+    {
+      fprintf(stderr, "JTAG chainpos: %d Device IDCODE = 0x%08lx\tDesc: %s\n",
+              chainpos, id, dd);
+      fflush(stderr);
+    }
   return id;
 }
   
@@ -291,7 +306,8 @@ void usage(bool all_options)
      "   \tOptional xpc arguments:\n"
      "   \t\t[-t subtype] (NONE or INT  (Internal Chain , not for DLC10))\n"
      "   chainpos\n"
-     "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
+     "\tPosition in JTAG chain: 0 - closest to TDI (default)\n"
+     "\tFor multi-PROM configurations, specify multiple positions: -p 1,2\n\n"
      "   AVR specific arguments\n"
      "\t[-L ] (Program Lockbits if defined in fusefile)\n"
      "\t[-e eepromfile]\n"
@@ -314,7 +330,7 @@ int main(int argc, char **args)
   bool     chaintest    = false;
   bool     readback     = false;
   bool     spiflash     = false;
-  unsigned int id;
+  unsigned long id;
   CABLES_TYPES cable    = CABLE_NONE;
   char const *dev       = 0;
   char const *eepromfile= 0;
@@ -322,7 +338,9 @@ int main(int argc, char **args)
   char const *mapdir    = 0;
   FILE_STYLE in_style  = STYLE_BIT;
   FILE_STYLE out_style = STYLE_BIT;
-  int         chainpos  = 0;
+  int      chainpos     = 0;
+  int      nchainpos    = 1;
+  int      chainpositions[MAXPOSITIONS];
   int vendor    = 0;
   int product   = 0;
   int test_count = 10000;
@@ -433,7 +451,27 @@ int main(int argc, char **args)
       break;
 
     case 'p':
-      chainpos = atoi(optarg);
+      {
+        char *p = optarg, *q;
+        for (nchainpos = 0; nchainpos <= MAXPOSITIONS; )
+          {
+            chainpositions[nchainpos] = strtoul(p, &q, 10);
+            if (p == q)
+              break;
+            p = q;
+            nchainpos++;
+            if (*p == ',')
+              p++;
+            else
+              break;
+          }
+        if (*p != '\0')
+          {
+            fprintf(stderr, "Invalid position specification \"%s\"\n", optarg);
+            usage(false);
+          }
+      }
+      chainpos = chainpositions[0];
       break;
 
     case 'V':
@@ -476,11 +514,13 @@ int main(int argc, char **args)
   
   Jtag jtag = Jtag(io.get());
   jtag.setVerbose(verbose);
-  unsigned int family, manufacturer;  
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
 
-  id = get_id (jtag, db, chainpos, verbose);
+  if (init_chain(jtag, db))
+    id = get_id (jtag, db, chainpos);
+  else
+    id = 0;
   if(chaintest && !spiflash)
     test_IRChain(&jtag, io.get(), db, test_count);
 
@@ -492,8 +532,15 @@ int main(int argc, char **args)
 
   if (id == 0)
     return 2;
-  family = (id>>21) & 0x7f;
-  manufacturer = (id>>1) & 0x3ff;
+
+  unsigned int family = IDCODE_TO_FAMILY(id);
+  unsigned int manufacturer = IDCODE_TO_MANUFACTURER(id);
+
+  if (nchainpos != 1 && (manufacturer != 0x049 || family != 0x28)) 
+    {
+      fprintf(stderr, "Multiple positions only supported in case of XCF\n");
+      usage(false);
+    }
 
   if (args[0])
     {
@@ -587,12 +634,10 @@ int main(int argc, char **args)
 		}
 	      if (family == 0x28)
 		{
-		  int size_ind = (id & 0x000ff000)>>12;
-		  ProgAlgXCF alg(jtag,size_ind);
-
-		  return programXCF(alg, file, verify, fpout, out_style, 
-				    db.getDeviceDescription(chainpos));
-		}
+                  programXCF(jtag, db, file, verify, fpout, out_style,
+                             db.getDeviceDescription(chainpos),
+                             chainpositions, nchainpos);
+                }
 	      else 
 		{
 		  if(spiflash)
@@ -751,27 +796,88 @@ int programXC3S(Jtag &jtag, BitFile &file, bool verify, int family)
   return 0;
 }
 
-int programXCF(ProgAlgXCF &alg, BitFile &file, bool verify, FILE *fp,
-	       FILE_STYLE out_style, const char *device)
+void programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
+                FILE *fpout, FILE_STYLE out_style, const char *device,
+                const int *chainpositions, int nchainpos)
 {
-  if(fp)
+  // identify all specified devices
+  unsigned int total_size = 0;
+  for (int i = 0; i < nchainpos; i++)
     {
-      int len;
-      alg.read(file);
-      len = file.saveAs(out_style, device, fp);
-      return 0;
+      unsigned long id = get_id(jtag, db, chainpositions[i]);
+      if (IDCODE_TO_MANUFACTURER(id) != 0x49 || IDCODE_TO_FAMILY(id) != 0x28)
+        {
+          fprintf(stderr, "Multiple positions only supported in case of XCF\n");
+          usage(false);
+        }
+      int size_ind = (id & 0x000ff000) >> 12;
+      ProgAlgXCF alg(jtag, size_ind);
+      total_size += alg.getSize();
     }
-  if(!verify)
+  if (file.getLength() > total_size)
     {
-      alg.erase();
-      alg.program(file);
-      alg.disable();
+      fprintf(stderr, "Length of bitfile (%lu bits) exceeds size of PROM devs (%u bits)\n", file.getLength(), total_size);
     }
-  alg.verify(file);
-  alg.disable();
-  if(!verify && !fp)
-    alg.reconfig();
-  return 0;
+
+  // process data
+  if (fpout)
+    file.setLength(total_size);
+  int cur_filepos = 0;
+  for (int i = 0; i < nchainpos; i++)
+    {
+      unsigned long id = get_id(jtag, db, chainpositions[i]);
+      int size_ind = (id & 0x000ff000) >> 12;
+      ProgAlgXCF alg(jtag, size_ind);
+      BitFile tmp_bitfile;
+      BitFile *cur_bitfile = (nchainpos == 1) ? &file : &tmp_bitfile;
+      if (fpout)
+        {
+          alg.read(*cur_bitfile);
+          if (nchainpos != 1)
+            {
+              // copy temp object to selected part of output file
+              assert(cur_filepos % 8 == 0);
+              assert(cur_bitfile->getLength() % 8 == 0);
+              memcpy(file.getData() + cur_filepos / 8, cur_bitfile->getData(), cur_bitfile->getLength() / 8);
+            }
+        }
+      else
+        {
+          if (nchainpos != 1)
+            {
+              // copy selected part of input file to temp object
+              int k = file.getLength() - cur_filepos;
+              if (k > alg.getSize())
+                k = alg.getSize();
+              assert(cur_filepos % 8 == 0);
+              assert(k % 8 == 0);
+              cur_bitfile->setLength(k);
+              memcpy(cur_bitfile->getData(), file.getData() + cur_filepos / 8, k / 8);
+            }
+          if (!verify)
+            {
+              alg.erase();
+              alg.program(*cur_bitfile);
+              alg.disable();
+            }
+          alg.verify(*cur_bitfile);
+          alg.disable();
+        }
+      cur_filepos += alg.getSize();
+    }
+
+  // write output file
+  if (fpout)
+    file.saveAs(out_style, device, fpout);
+
+  // send reconfiguration cmd to first device
+  if (!verify && !fpout)
+    {
+      unsigned long id = get_id(jtag, db, chainpositions[0]);
+      int size_ind = (id & 0x000ff000) >> 12;
+      ProgAlgXCF alg(jtag, size_ind);
+      alg.reconfig();
+    }
 }
 
 int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
