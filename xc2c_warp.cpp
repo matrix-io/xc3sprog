@@ -43,15 +43,7 @@ int main(int argc, char**args)
       break;
 
     case 'i':
-      if (!strcasecmp(optarg,"BIT"))
-	in_style = STYLE_BIT;
-      else if (!strcasecmp(optarg,"HEX"))
-	in_style = STYLE_HEX;
-      else if (!strcasecmp(optarg,"MCS"))
-	in_style = STYLE_MCS;
-      else if (!strcasecmp(optarg,"BIN"))
-	in_style = STYLE_BIN;
-      else 
+      if (BitFile::styleFromString(optarg, &in_style))
 	{
 	  fprintf(stderr, "Unknown format \"%s\"\n", optarg);
 	  usage();
@@ -59,15 +51,7 @@ int main(int argc, char**args)
       break;
       
     case 'o':
-      if (!strcasecmp(optarg,"BIT"))
-	out_style = STYLE_BIT;
-      else if (!strcasecmp(optarg,"HEX"))
-	out_style = STYLE_HEX;
-      else if (!strcasecmp(optarg,"MCS"))
-	out_style = STYLE_MCS;
-      else if (!strcasecmp(optarg,"BIN"))
-	out_style = STYLE_BIN;
-      else 
+      if (BitFile::styleFromString(optarg, &out_style))
 	{
 	  fprintf(stderr, "Unknown format \"%s\"\n", optarg);
 	  usage();

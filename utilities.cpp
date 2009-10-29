@@ -47,22 +47,6 @@ CABLES_TYPES getCable(const char *given_name)
   return CABLE_UNKNOWN;
 }
 
-int getFilestyle(const char *given_name, FILE_STYLE *style)
-{
-  int res = 0;
-  if (!strcasecmp(optarg,"BIT"))
-    *style = STYLE_BIT;
-  else if (!strcasecmp(optarg,"HEX"))
-    *style = STYLE_HEX;
-  else if (!strcasecmp(optarg,"MCS"))
-    *style = STYLE_MCS;
-  else if (!strcasecmp(optarg,"BIN"))
-    *style = STYLE_BIN;
-  else
-    res = 1;
-  return 0;
-}
-
 int getSubtype(const char *given_name, CABLES_TYPES *cable)
 {
   if (strcasecmp(given_name, "ikda") == 0)

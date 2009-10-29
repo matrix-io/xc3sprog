@@ -226,7 +226,8 @@ int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
     return 1;
   switch (in_style)
     {
-    case STYLE_BIT:return readBitfile(fp);
+    case STYLE_BIT:
+      return readBitfile(fp);
     case STYLE_MCS:
       {
 	int res = readMCSfile(fp);
@@ -238,6 +239,14 @@ int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
 	  }
 	return res;
       }
+    case STYLE_MCS_REV:
+/*
+ * MCS files written by Xilinx PROMGen are bit-reversed with respect
+ * to the original BIT files. So in this case, xc3sprog must not reverse
+ * the bits again, it has already been done by PROMGen.
+ * Specify the file type as -i MCSREV to activate this option.
+ */
+      return readMCSfile(fp);
     default: fprintf(stderr, " Handle handle style\n");
       return 1;
     }
@@ -459,13 +468,16 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
 	fprintf(fp,"\n");
       break;
     case STYLE_MCS:
+    case STYLE_MCS_REV:
       {
         unsigned int base = (unsigned int)-1;
         char buf[1024];
         int len = 0;
         for(i=0; i<clip; i++)
           {
-            byte b = bitRevTable[buffer[i]];
+            byte b = buffer[i];
+            if (style == STYLE_MCS)
+              b = bitRevTable[b];
             if (base != i>>16)
               {
                 base = i >> 16;
@@ -566,4 +578,34 @@ int BitFile::get_bit(unsigned int idx)
 BitFile::~BitFile()
 {
   if(buffer) delete [] buffer;
+}
+
+const char * BitFile::styleToString(FILE_STYLE style)
+{
+  switch (style)
+    {
+      case STYLE_BIT: return "BIT";
+      case STYLE_BIN: return "BIN";
+      case STYLE_HEX: return "HEX";
+      case STYLE_MCS: return "MCS";
+      case STYLE_MCS_REV: return "MCSREV";
+      default: return 0;
+    }
+}
+
+int BitFile::styleFromString(const char *stylestr, FILE_STYLE *style)
+{
+  if (!strcasecmp(stylestr, "BIT"))
+    *style = STYLE_BIT;
+  else if (!strcasecmp(stylestr, "BIN"))
+    *style = STYLE_BIN;
+  else if (!strcasecmp(stylestr, "HEX"))
+    *style = STYLE_HEX;
+  else if (!strcasecmp(stylestr, "MCS"))
+    *style = STYLE_MCS;
+  else if (!strcasecmp(stylestr, "MCSREV"))
+    *style = STYLE_MCS_REV;
+  else
+    return 1;
+  return 0;
 }

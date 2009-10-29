@@ -71,7 +71,7 @@ word. */
 
 typedef unsigned char byte;
 
-enum FILE_STYLE { STYLE_BIT, STYLE_BIN, STYLE_HEX, STYLE_MCS};
+enum FILE_STYLE { STYLE_BIT, STYLE_BIN, STYLE_HEX, STYLE_MCS, STYLE_MCS_REV };
 
 class BitFile
 {
@@ -124,6 +124,9 @@ class BitFile
   unsigned char reverse8(unsigned char b){return bitRevTable[b];};
   int get_bit(unsigned int idx);
   void set_bit(unsigned int idx, int blow);
+
+  static const char * styleToString(FILE_STYLE style);
+  static int styleFromString(const char *stylestr, FILE_STYLE *style);
 };
 
 #endif //BITFILE_H

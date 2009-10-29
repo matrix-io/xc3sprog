@@ -34,8 +34,8 @@ void usage() {
 	  "\nUsage:bitparse [-i input format] [-o output format ][-O outfile] infile\n"	  "   -h\t\tprint this help\n"
 	  "   -v\t\tverbose output\n"
 	  "   -O\t\toutput file (parse input file only if not given\n"
-	  "   -i\t\tinput  file format (BIT|BIN|HEX|MCS)\n"
-	  "   -o\t\toutput file format (BIT|BIN|HEX|MCS\n");
+	  "   -i\t\tinput  file format (BIT|BIN|HEX|MCS|MCSREV)\n"
+	  "   -o\t\toutput file format (BIT|BIN|HEX|MCS|MCSREV)\n");
   exit(255);
 }
 
@@ -51,15 +51,7 @@ int main(int argc, char**args)
 	{
 	case -1: goto args_done;
 	case 'i':
-	  if (!strcasecmp(optarg,"BIT"))
-	    in_style = STYLE_BIT;
-	  else if (!strcasecmp(optarg,"HEX"))
-	    in_style = STYLE_HEX;
-	  else if (!strcasecmp(optarg,"MCS"))
-	    in_style = STYLE_MCS;
-	  else if (!strcasecmp(optarg,"BIN"))
- 	    in_style = STYLE_BIN;
-	  else 
+          if (BitFile::styleFromString(optarg, &in_style))
 	    {
 	      fprintf(stderr, "Unknown format \"%s\"\n", optarg);
 	      usage();
@@ -67,15 +59,7 @@ int main(int argc, char**args)
 	  break;
 
 	case 'o':
-	  if (!strcasecmp(optarg,"BIT"))
-	    out_style = STYLE_BIT;
-	  else if (!strcasecmp(optarg,"HEX"))
-	    out_style = STYLE_HEX;
-	  else if (!strcasecmp(optarg,"MCS"))
-	    out_style = STYLE_MCS;
-	  else if (!strcasecmp(optarg,"BIN"))
- 	    out_style = STYLE_BIN;
-	  else 
+          if (BitFile::styleFromString(optarg, &out_style))
 	    {
 	      fprintf(stderr, "Unknown format \"%s\"\n", optarg);
 	      usage();
@@ -126,10 +110,7 @@ int main(int argc, char**args)
 	{
 	  file.saveAs(out_style,file.getPartName(), fp);
 	  fprintf(stderr, "Bitstream saved in format %s as file: %s\n",
-		 (out_style == STYLE_MCS)?"MCS":
-		 (out_style == STYLE_HEX)?"HEX":
-		 (out_style == STYLE_BIN)?"BIN":
-		 "HEX", outfile);
+                  BitFile::styleToString(out_style), outfile);
 	}
       else
 	  fprintf(stderr," Can't open %s: %s  \n", outfile, strerror(errno));

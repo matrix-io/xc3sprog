@@ -269,8 +269,8 @@ void usage(bool all_options)
      "   -I\t\tWork on connected SPI Flash (ISF Mode)\n"
      "     \t\t(after bscan_spi Bitfile for device has been loaded)\n"
      "   -r\t\tRead from device and write to file\n\n"
-     "   -i\t\tinput file format (BIT|BIN|MCS|HEX)\n"
-     "   -o\t\toutput file format (BIT|BIN|MCS|HEX)\n"
+     "   -i\t\tinput file format (BIT|BIN|MCS|MCSREV|HEX)\n"
+     "   -o\t\toutput file format (BIT|BIN|MCS|MCSREV|HEX)\n"
      "   -m directory\tDirectory with XC2C mapfiles\n"
      "   Supported cable types: pp, ftdi, fx2, xpc\n"
      "   \tOptional pp arguments:\n"
@@ -400,7 +400,7 @@ int main(int argc, char **args)
       break;
 
     case 'o':
-      if ((getFilestyle(optarg, &out_style) != 0))
+      if (BitFile::styleFromString(optarg, &out_style) != 0)
 	{
 	  fprintf(stderr, "\nUnknown format \"%s\"\n", optarg);
 	  usage(false);
@@ -408,7 +408,7 @@ int main(int argc, char **args)
       break;
       
     case 'i':
-      if ((getFilestyle(optarg, &in_style) != 0))
+      if (BitFile::styleFromString(optarg, &in_style) != 0)
 	{
 	  fprintf(stderr, "\nUnknown format \"%s\"\n", optarg);
 	  usage(false);

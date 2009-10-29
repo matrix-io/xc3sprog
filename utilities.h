@@ -13,5 +13,4 @@ enum CABLES_TYPES
 CABLES_TYPES getCable(const char *given_name);
 int getSubtype(const char *given_name, CABLES_TYPES *cable);
 void detect_chain(Jtag *jtag, DeviceDB *db);
-int getFilestyle(const char *given_name, FILE_STYLE *style);
 int getIO(std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, int  vendor, int  product, char const *dev, char const *desc, char const *serial);
