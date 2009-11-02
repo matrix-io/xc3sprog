@@ -36,7 +36,7 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
   unsigned char   buf1[5];
   unsigned char   buf[9] = { SET_BITS_LOW, 0x00, 0x0b,
 			     TCK_DIVISOR,  0x00, 0x00 ,
-			     SET_BITS_HIGH, ~0x84, 0x84};
+			     SET_BITS_HIGH, (unsigned char)~0x84, 0x84};
 
   char *fname = getenv("FTDI_DEBUG");
   if (fname)

@@ -26,6 +26,7 @@
 #include <xguff/usrp_interfaces.h>
 #include <xguff/usrp_commands.h>
 #include <string.h>
+#include <cstdio>
 
 #include "ioxpc.h"
 #include "io_exception.h"

@@ -30,6 +30,7 @@ Dmitry Teytelman [dimtey@gmail.com] 19 May 2006 [applied 13 Aug 2006]:
 
 #include <stdlib.h>
 #include <string.h>
+#include <cstdio>
 #include "devicedb.h"
 
 #include "config.h"

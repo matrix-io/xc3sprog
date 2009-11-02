@@ -24,7 +24,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include <string.h>
 #include <errno.h>
-
+#include <cstdio>
 
 #include "jedecfile.h"
 #include "io_exception.h"

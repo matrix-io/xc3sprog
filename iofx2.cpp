@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include <xguff/usrp_interfaces.h>
 #include <xguff/usrp_commands.h>
 #include <string.h>
+#include <cstdio>
 
 #include "iofx2.h"
 #include "io_exception.h"
