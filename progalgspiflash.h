@@ -25,6 +25,7 @@ Code based on http://code.google.com/p/xilprg-hunz/
 
 #include <stdio.h>
 #include <string>
+#include <stdint.h>
 
 #include "bitfile.h"
 #include "jtag.h"

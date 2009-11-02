@@ -29,6 +29,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <vector>
 #include <string>
 #include <sys/types.h>
+#include <stdint.h>
 
 typedef unsigned char byte;
 
