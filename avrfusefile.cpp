@@ -332,7 +332,7 @@ int AvrFuseFile::ReadAvrFuseFile(char * fname)
 
 int AvrFuseFile::WriteAvrFuseFile(char * fname)
 {
-  int res;
+  int res = 0;
   FILE * fp = fopen(fname, "wb" );
   if (fp == 0)
     return -1;
