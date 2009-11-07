@@ -318,7 +318,7 @@ void ProgAlgAVR::pageread_flash(unsigned int address, byte * buffer,
   jtag->shiftIR(&PROG_COMMANDS);
 }
 
-/* Calles is responsible to write whole pages*/
+/* Caller is responsible to write whole pages*/
 int ProgAlgAVR::pagewrite_flash(unsigned int address, byte * buffer,
 				unsigned int size)
 {
