@@ -32,6 +32,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <memory>
 #include <errno.h>
 #include <assert.h>
+#include <sys/stat.h>
 
 #include "io_exception.h"
 #include "ioparport.h"
@@ -59,6 +60,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 int programXC3S(Jtag &g, BitFile &file, bool verify,
 		int jstart_len);
+//int programXC18V(ProgAlgXC18V &alg, BitFile &file, bool verify, const char *fname, const char* device);
 void programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
                 FILE *fpout, FILE_STYLE out_style, const char *device,
                 const int *chainpositions, int nchainpos);
@@ -553,9 +555,15 @@ int main(int argc, char **args)
 	      fpout=fopen(args[0],"rb");
 	      if(fpout)
 		{
-		  fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
-		  fclose(fpout);
-		  return 1;
+		  struct stat  stats;
+		  stat(args[0], &stats);
+		  
+		  if (stats.st_size !=0)
+		    {
+		      fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
+		      fclose(fpout);
+		      return 1;
+		    }
 		}
 	      fpout=fopen(args[0],"wb");
 	      if(!fpout)
