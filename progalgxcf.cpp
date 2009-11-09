@@ -60,7 +60,8 @@ ProgAlgXCF::ProgAlgXCF(Jtag &j, int size_ind)
       size = 4<<20;
       break;
     default:
-      throw std::invalid_argument("Unknown XCF device size");
+      fprintf(stderr,"Unknown XCF device size code %x\n", size_ind);
+      throw std::invalid_argument("Unknown XCF device size code");
     }
 	
   jtag=&j;
