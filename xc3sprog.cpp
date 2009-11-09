@@ -686,7 +686,7 @@ int main(int argc, char **args)
 		  fprintf(stderr, "Short JEDEC File, aborting\n");
 		  return 3;
 		}
-	      if(strncmp(db.getDeviceDescription(chainpos), file.getDevice(), 
+	      if(strncasecmp(db.getDeviceDescription(chainpos), file.getDevice(), 
 			 sizeof(db.getDeviceDescription(chainpos))) !=0)
 		{
 		  fprintf(stderr, "Incompatible Jedec File for Device %s\n"
