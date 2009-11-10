@@ -1,6 +1,7 @@
 /* XCF Flash PROM JTAG programming algorithms
 
 Copyright (C) 2004 Andrew Rogers
+              2009 Uwe Bonnes
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -47,17 +48,40 @@ const byte ProgAlgXCF::BIT4=0x10;
 
 ProgAlgXCF::ProgAlgXCF(Jtag &j, int size_ind)
 {
-  block_size=(size_ind == 0x44) ? 2048 : 4096;
-  switch (size_ind)
+  use_optimized_algs = false;
+
+  switch (size_ind & 0xfffffef) /* part number of XC18V has X in bitmask */
     {
+    case 0x23:
+      size = 1<<19;
+      block_size = 2048;
+      break;
+    case 0x24:
+      size = 1<<20;
+      block_size = 2048;
+      break;
+    case 0x25:
+      size = 2<<20;
+      block_size = 4096;
+      break;
+    case 0x26:
+      size = 4<<20;
+      block_size = 4096;
+      break;
     case 0x44:
       size = 1<<20;
+      block_size = 2048;
+      use_optimized_algs = true;
       break;
     case 0x45:
       size = 2<<20;
+      block_size = 4096;
+      use_optimized_algs = true;
       break;
     case 0x46:
       size = 4<<20;
+      block_size = 4096;
+      use_optimized_algs = true;
       break;
     default:
       fprintf(stderr,"Unknown XCF device size code %x\n", size_ind);
@@ -66,8 +90,11 @@ ProgAlgXCF::ProgAlgXCF(Jtag &j, int size_ind)
 	
   jtag=&j;
 }
-/* Tries to implement "xflow_erase_optimized" for the serial devices 
- * from the XCF..1532.bsd" files */ 
+/* For XCF, implement "xflow_erase_optimized" for the serial devices 
+ * from the XCF..1532.bsd" files 
+ * and for XC18V flow_erase
+ */ 
+
 int ProgAlgXCF::erase()
 {
   struct timeval tv[2];
@@ -84,12 +111,15 @@ int ProgAlgXCF::erase()
     return 1;
   }
   jtag->shiftIR(&ISC_ENABLE);
-  data[0]=0x37;
+  if (! use_optimized_algs)
+    data[0]=0x34;
+  else
+    data[0]=0x37;
   jtag->shiftDR(data,0,6);
   jtag->shiftIR(&ISC_ADDRESS_SHIFT);
   jtag->longToByteArray(1,data);
   jtag->shiftDR(data,0,16);
-  jtag->cycleTCK(2);
+  jtag->cycleTCK(1);
   
   if(jtag->getVerbose())
     {
@@ -97,34 +127,39 @@ int ProgAlgXCF::erase()
       fflush(stderr);
     }
   jtag->shiftIR(&ISC_ERASE);
+
   for(i=0; i<32;i++)
-  {
+    {
       byte xcstatus[1];
-      jtag->Usleep(500000);
-      jtag->shiftIR(&ISCTESTSTATUS);
-      jtag->shiftDR(0,xcstatus,8);
       if(jtag->getVerbose())
 	{
 	  fprintf(stderr, "."); 
 	  fflush(stderr);
 	}
-      if (xcstatus[0] & 0x04)
-          break;
-  }
+      jtag->Usleep(500000);
+      if (! use_optimized_algs)
+	{
+	  if (i == 31)
+	    break;
+	}
+      else
+	{
+	  jtag->shiftIR(&ISCTESTSTATUS);
+	  jtag->shiftDR(0,xcstatus,8);
+	  if (xcstatus[0] & 0x04)
+	    break;
+	}
+    }
   gettimeofday(tv+1, NULL);
-  if (i < 32)
-  {
-    if(jtag->getVerbose())
-      fprintf(stderr, "done\nErase time %.1f ms\n",
-	      (double)deltaT(tv, tv + 1)/1.0e3);
-    return 0;
-  }
-  else
-  {
-    fprintf(stderr,"\nErased failed! Aborting\n");
-    return 1;
-  }
-      
+  if (i > 31)
+    {
+      fprintf(stderr,"\nErased failed! Aborting\n");
+      return 1;
+    }
+  if(jtag->getVerbose())
+    fprintf(stderr, "done\nErase time %.1f ms\n",
+	    (double)deltaT(tv, tv + 1)/1.0e3);
+  return 0;
 }
 
 int ProgAlgXCF::program(BitFile &file)
@@ -137,7 +172,10 @@ int ProgAlgXCF::program(BitFile &file)
   jtag->setTapState(Jtag::TEST_LOGIC_RESET);
   byte data[4];
   jtag->shiftIR(&ISC_ENABLE);
-  data[0]=0x37;
+  if (! use_optimized_algs)
+    data[0]=0x34;
+  else
+    data[0]=0x37;
   jtag->shiftDR(data,0,6);
 
   for(unsigned int i=0; i<file.getLength(); i+=block_size){
@@ -164,26 +202,43 @@ int ProgAlgXCF::program(BitFile &file)
     jtag->shiftDR(data,0,16);
     jtag->cycleTCK(1);
     jtag->shiftIR(&ISC_PROGRAM);
-    for (j=0; j<28; j++)
+    if (! use_optimized_algs)
       {
-      byte xcstatus[1];
-      jtag->Usleep(500);
-      jtag->shiftIR(&ISCTESTSTATUS);
-      jtag->shiftDR(0,xcstatus,8);
-      if (xcstatus[0] & 0x04)
-          break;
-      else if(jtag->getVerbose())
-	{
-	  fprintf(stderr, ".");
-	  fflush(stderr);
-	}
+	jtag->Usleep(14000);
       }
-    if(j == 28)
+    else
       {
-	fprintf(stderr,"\nProgramming frame %4d failed! Aborting\n", frame);
-	return 1;
-      }
-  } 
+	for (j=0; j<28; j++)
+	  {
+	    byte xcstatus[1];
+	    jtag->Usleep(500);
+	    jtag->shiftIR(&ISCTESTSTATUS);
+	    jtag->shiftDR(0,xcstatus,8);
+	    if (xcstatus[0] & 0x04)
+	      break;
+	    else if(jtag->getVerbose())
+	      {
+		fprintf(stderr, ".");
+		fflush(stderr);
+	      }
+	  }
+	if(j == 28)
+	  {
+	    fprintf(stderr,"\nProgramming frame %4d failed! Aborting\n", frame);
+	    return 1;
+	  }
+      } 
+  }
+  if (! use_optimized_algs) /* only on XC18V*/
+    {
+      jtag->shiftIR(&ISC_ADDRESS_SHIFT);
+      jtag->cycleTCK(1);
+      jtag->longToByteArray(1,data);
+      jtag->shiftDR(data, 0, 16);
+      jtag->cycleTCK(1);
+      jtag->shiftIR(&SERASE);
+      jtag->Usleep(37000);
+    }
   gettimeofday(tv+1, NULL);
   if(jtag->getVerbose())
     fprintf(stderr, "done\nProgramming time %.1f ms\n",

@@ -16,10 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
-
-
-
-
 #ifndef PROGALGXCF_H
 #define PROGALGXCF_H
 
@@ -52,6 +48,7 @@ class ProgAlgXCF
   Jtag *jtag;
   int block_size;  
   int size;
+  bool use_optimized_algs;
  public:
   ProgAlgXCF(Jtag &j, int si);
   int getSize() const { return size; }
