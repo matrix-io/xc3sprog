@@ -244,6 +244,8 @@ int init_chain(Jtag &jtag, DeviceDB &db)
   return num;
 }
 
+static int last_pos = -1;
+
 unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
 {
   bool verbose = jtag.getVerbose();
@@ -256,11 +258,12 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
     }
   const char *dd=db.getDeviceDescription(chainpos);
   unsigned long id = jtag.getDeviceID(chainpos);
-  if (verbose)
+  if (verbose && (last_pos != chainpos))
     {
       fprintf(stderr, "JTAG chainpos: %d Device IDCODE = 0x%08lx\tDesc: %s\n",
               chainpos, id, dd);
       fflush(stderr);
+      last_pos = chainpos;
     }
   return id;
 }
