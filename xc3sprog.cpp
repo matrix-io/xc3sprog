@@ -60,8 +60,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 int programXC3S(Jtag &g, BitFile &file, bool verify,
 		int jstart_len);
-//int programXC18V(ProgAlgXC18V &alg, BitFile &file, bool verify, const char *fname, const char* device);
-void programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
+int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
                 FILE *fpout, FILE_STYLE out_style, const char *device,
                 const int *chainpositions, int nchainpos);
 int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
@@ -642,7 +641,7 @@ int main(int argc, char **args)
 		}
 	      if (family == 0x28)
 		{
-                  programXCF(jtag, db, file, verify, fpout, out_style,
+                  return programXCF(jtag, db, file, verify, fpout, out_style,
                              db.getDeviceDescription(chainpos),
                              chainpositions, nchainpos);
                 }
@@ -804,7 +803,7 @@ int programXC3S(Jtag &jtag, BitFile &file, bool verify, int family)
   return 0;
 }
 
-void programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
+int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
                 FILE *fpout, FILE_STYLE out_style, const char *device,
                 const int *chainpositions, int nchainpos)
 {
@@ -864,9 +863,10 @@ void programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
             }
           if (!verify)
             {
-              alg.erase();
-              alg.program(*cur_bitfile);
-              alg.disable();
+              if ((alg.erase() == 0) && (alg.program(*cur_bitfile) == 0))
+		alg.disable();
+	      else
+		return 1;
             }
           alg.verify(*cur_bitfile);
           alg.disable();
@@ -886,6 +886,7 @@ void programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
       ProgAlgXCF alg(jtag, size_ind);
       alg.reconfig();
     }
+  return 0;
 }
 
 int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
