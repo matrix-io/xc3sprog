@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <sys/time.h>
+#include <stdint.h>
 
 #include <xguff/usrp_interfaces.h>
 #include <xguff/usrp_commands.h>
