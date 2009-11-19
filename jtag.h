@@ -64,17 +64,6 @@ class Jtag
   bool	      verbose;
   tapState_t  current_state;
   static const int MAXNUMDEVICES=1000;
-#ifdef __WIN32__
-  typedef DWORD (__stdcall *pfZwDelayExecution)(BOOLEAN, __int64*);
-  /*
-    http://www.codeguru.com/forum/archive/index.php/t-352498.html
-    The Interval, a pointer to a 64 bit integer, is somewhat 2 sided. 
-    If it is negative it specifies the relative time to sleep (in units of 100ns), 
-    if not is specifies the absolute time to wake up.
-  */
-  HINSTANCE hinstLib;
-  pfZwDelayExecution ZwDelayExecution;
-#endif
  protected:
   struct chainParam_t
   {

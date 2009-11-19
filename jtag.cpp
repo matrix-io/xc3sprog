@@ -29,20 +29,10 @@ Jtag::Jtag(IOBase *iob)
   deviceIndex = -1;
   numDevices  = -1;
   shiftDRincomplete=false;
-#ifdef __WIN32__
-  hinstLib = LoadLibrary(TEXT("ntdll"));
-  if(hinstLib)
-  // Get the pointer to the function
-    ZwDelayExecution = 
-      (pfZwDelayExecution)GetProcAddress(hinstLib, "ZwDelayExecution");
-#endif
 }
 
 Jtag::~Jtag(void)
 {
-#ifdef __WIN32__
-  FreeLibrary(hinstLib);
-#endif
 }
 
 /* Detect chain length on first start, return chain length else*/
@@ -98,14 +88,16 @@ void Jtag::Usleep(unsigned int usec)
   io->flush_tms(false);
   io->flush();
 #ifdef __WIN32__
-  if (ZwDelayExecution)
-    {
-      /* FIXME: Check Type usage __int64 versus LARGE_INTEGER */
-      __int64 delay = usec * -10; 
-      ZwDelayExecution(FALSE, &delay);
-    }
-  else
-    Sleep((usec+999)/1000);
+  /* from http://forums.devx.com/showthread.php?p=518756 without overheade calculation*/
+  HANDLE timer =   CreateWaitableTimer( 0, true, 0 ) ;
+
+  __int64 due_time =  - ( __int64)usec * 10 ;   // time in 100 nanosecond units 
+  SetWaitableTimer( timer, PLARGE_INTEGER(&due_time), 0, 0, 0, 0 )  ; 
+
+  DWORD result = WaitForSingleObject( timer, INFINITE ) ;
+  CloseHandle( timer ) ;
+  if(result !=WAIT_OBJECT_0)
+    fprintf(stderr,"Usleep failed\n");
 #else
   usleep(usec);
 #endif
