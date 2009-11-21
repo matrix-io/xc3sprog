@@ -273,7 +273,7 @@ void usage(bool all_options)
   fprintf
     (
      stderr,
-     "\nUsage:\txc3sprog [-v] [-p pos] [...] bitfile [+(val[*cnt]|binfile)]\n"
+     "\nUsage:\txc3sprog [-v] [-p pos] [...] bitfile [(val[*cnt]|binfile) ...]\n"
      "   -[?|h]\t\tprint this help\n"
      );
   if (!all_options) exit(255);
@@ -319,8 +319,8 @@ void usage(bool all_options)
      "\n"
      "   val[*cnt]|binfile\n"
      "\tAdditional data to append to bitfile when programming.\n"
-     "\tOnly sensible for programming platform flashes (PROMs).\n"
-	  "\t   val[*cnt]  pas with 32-bit val cnt times\n"
+     "\tOnly sensible for programming (platform) Flash/PROMs.\n"
+     "\t   val[*cnt]  pad with 32-bit val [cnt times]\n"
      "\t   binfile    binary file content to append\n\n");
   exit(255);
 }
@@ -625,7 +625,7 @@ int main(int argc, char **args)
 		    }      
 		  if (family == 0x28)
 		    {
-		      for(int i = 2; i < argc; i++) 
+		      for(int i = 1; i < argc; i++) 
 			{
 			  char *end;
 			  
@@ -639,6 +639,12 @@ int main(int argc, char **args)
 			  }
 			  if(*end == '\0')  file.append(val, cnt);
 			  else  file.append(args[i]);
+			}
+
+		      if(verbose) 
+			{
+			  printf("Bitstream length with appended data: %lu bits\n", 
+				 file.getLength());
 			}
 		    }
 		}
