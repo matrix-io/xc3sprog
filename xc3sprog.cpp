@@ -74,6 +74,8 @@ int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
    If we read a different pattern, print the pattern for for optical 
    comparision and read for at least 100000 times more
 
+   If we found no chain, simple rerun the chain detection
+
    This may result in an endless loop to facilitate debugging with a scope etc 
 */
 void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
@@ -88,6 +90,25 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
   unsigned char dcmp[256];
   memset(din, 0xff, 256);
   int run_irtest = 0;
+
+  if(num == 0)
+    {
+      fprintf(stderr, "Running getChain %d times\n", test_count);
+      k=0;
+      for(i=0; i<test_count; i++)
+	{
+	  if (jtag->getChain(true)> 0) 
+	    {
+	      if(k%1000 == 1)
+		{
+		  fprintf(stderr,".");
+		  fflush(stderr);
+		}
+	      k++;
+	    }
+	}
+      return;
+    }
   
   /* Read the IDCODE via the IDCODE command */
   for(i=0; i<num; i++)
