@@ -84,7 +84,7 @@ class Jtag
   ~Jtag();
   void setVerbose(bool v) { verbose = v; }
   bool getVerbose(void) { return verbose; }
-  int getChain(); // Shift IDCODEs from devices
+  int getChain(bool detect = false); // Shift IDCODEs from devices
   inline void setPostDRState(tapState_t s){postDRState=s;}
   inline void setPostIRState(tapState_t s){postIRState=s;}
   void setTapState(tapState_t state, int pre=0);
