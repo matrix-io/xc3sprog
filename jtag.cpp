@@ -36,9 +36,9 @@ Jtag::~Jtag(void)
 }
 
 /* Detect chain length on first start, return chain length else*/
-int Jtag::getChain()
+int Jtag::getChain(bool detect)
 {
-  if(numDevices  == -1)
+  if(numDevices  == -1 || detect)
     {
       tapTestLogicReset();
       setTapState(SHIFT_DR);
