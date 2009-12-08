@@ -324,11 +324,12 @@ int  IOFX2::write_cmd (struct usb_dev_handle *udh,
   int r = usb_control_msg (udh, requesttype, request, value, index,
                            (char *) bytes, len, 1000);
   if (r < 0){
+    if (errno  == ENXIO) 
+      throw  io_exception(std::string("Device probably disconnected, Aborting!"));
     // we get EPIPE if the firmware stalls the endpoint.
     if (errno != EPIPE)
       fprintf (stderr, "usb_control_msg failed: %s\n", usb_strerror ());
   }
-
   return r;
 }
   
