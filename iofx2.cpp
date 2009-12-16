@@ -328,7 +328,10 @@ int  IOFX2::write_cmd (struct usb_dev_handle *udh,
       throw  io_exception(std::string("Device probably disconnected, Aborting!"));
     // we get EPIPE if the firmware stalls the endpoint.
     if (errno != EPIPE)
-      fprintf (stderr, "usb_control_msg failed: %s\n", usb_strerror ());
+      {
+	fprintf (stderr, "usb_control_msg failed: %s\n", usb_strerror ());
+	fprintf (stderr, "Perhaps the cable is bad!\n");
+      }
   }
   return r;
 }
