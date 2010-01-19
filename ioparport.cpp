@@ -46,6 +46,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 // Default parport device
 #ifndef PPDEV
 #  define PPDEV "/dev/parport0"
+#include <errno.h>
 #endif
 
 #include <sys/ioctl.h>
