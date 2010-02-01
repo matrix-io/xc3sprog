@@ -1,10 +1,14 @@
 090605: 
 Tested with a DLC10 cable.
 
-The Xilinx cable setup has to be run before so that on detecting the FX2 chip
-when plugging the cable udev loads the cable specific hex file. lsusb must
-report a device "03fd:0008". This VID:PID is the same for DLC9/DLC9 embedded
-and DLC10. 
+The DLC9/10 cables need firmware to be uploaded. This firmware is installed
+with impact. On plugin, some mechanism is needed to upload this firmware. On
+windows, windows should care. On Linux udev should care. The firmware can
+also loaded with programs like "fxload". 
+
+To use the cable, the cable must report an ID "03fd:0008", which indicates
+successfull loaded firmware. This VID:PID is the same for DLC9/DLC9 embedded
+and DLC10.
 
 The buffer size could be increased substantial against Koljas observations
 on the DLC9, resulting in great speed increase. 
