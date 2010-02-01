@@ -378,6 +378,10 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
 
 void IOFtdi::deinit(void)
 {
+  unsigned char   buf[6] = { SET_BITS_LOW, 0xff, 0x00,
+                             SET_BITS_HIGH, 0xff, 0x00};
+  mpsse_add_cmd(buf, 6); /* Disable all Pins */
+  mpsse_send();
 #if defined (USE_FTD2XX)
   FT_Close(ftdi);
 #else
