@@ -123,7 +123,7 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
     mpsse_add_cmd(buf, 6);
   else if (subtype == FTDI_IKDA)
     mpsse_add_cmd(buf, 9);
-  else if ((subtype == FTDI_OLIMEX) || (subtype == FTDI_FTDIJTAG))
+  else if ((subtype == FTDI_OLIMEX) || (subtype == FTDI_FTDIJTAG) || (subtype == FTDI_AMONTEC))
     {
       buf[2] = 0x1b; /* Enable nOE on ADBUS4 */
       buf[7] = 0x0f; /* Disable and tristate TRST/SRST. Switch on LED*/
