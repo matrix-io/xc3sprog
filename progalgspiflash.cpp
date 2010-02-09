@@ -68,7 +68,7 @@ int ProgAlgSPIFlash::spi_flashinfo_s33(unsigned char *buf)
 	  buf[1], buf[2]);
   if (buf[1] != 0x89)
     {
-      fprintf(stderr,"Unexpected RDID  upper Device ID 0x%02x\n", buf[1]);
+      fprintf(stderr,"S33: Unexpected RDID upper Device ID 0x%02x\n", buf[1]);
       return -1;
     }
   switch (buf[2])
@@ -111,7 +111,7 @@ int ProgAlgSPIFlash::spi_flashinfo_w25(unsigned char *buf)
 	  buf[1], buf[2]);
   if ((buf[1] != 0x30) && (buf[1] != 0x40))
     {
-      fprintf(stderr,"Unexpected RDID  upper Device ID 0x%02x\n", buf[1]);
+      fprintf(stderr,"W25: Unexpected RDID upper Device ID 0x%02x\n", buf[1]);
       return -1;
     }
   switch (buf[2])
@@ -233,7 +233,7 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf)
 
   if (fbuf[1] != 0x20)
     {
-      fprintf(stderr,"Unexpected RDID  upper Device ID 0x%02x\n", fbuf[1]);
+      fprintf(stderr,"M25P: Unexpected RDID upper Device ID 0x%02x\n", fbuf[1]);
       return -1;
     }
   switch (fbuf[2])
