@@ -379,11 +379,11 @@ int main(int argc, char **args)
   FILE *fpin =0;
   FILE *fpout = 0;
   int res;
-  // Produce release info from CVS tags
-  fprintf(stderr, "Release $Rev$\n"
+  // Produce release info from SVN tags
+  fprintf(stderr, "XC3SPROG (c) 2004-2010 xc3sprog project $Rev$\n"
 	  "Free software: If you contribute nothing, expect nothing!\n"
-	  "Please provide feedback on success/failure/enhancement requests!\n"
-	  "Check Sourceforge SVN for updates!\n");
+	  "Feedback on success/failure/enhancement requests: http://sourceforge.net/mail/?group_id=170565 \n"
+	  "Check Sourceforge for updates: http://sourceforge.net/projects/xc3sprog/develop for updates!\n");
 
   // Start from parsing command line arguments
   while(true) {
