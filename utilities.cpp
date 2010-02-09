@@ -148,12 +148,13 @@ int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, int  ven
       }
     catch(io_exception& e)
       {
-	fprintf(stderr, "Could not find USB dongle %04x:%04x", 
+	fprintf(stderr, "Could not find USB dongle %04x:%04x\n", 
 		vendor, product);
 	if (desc)
 	  fprintf(stderr, " with given description \"%s\"\n", desc);
 	if (serial)
 	    fprintf(stderr, " with given Serial Number \"%s\"\n", serial);
+        fprintf(stderr, "Reason: %s\n",e.getMessage().c_str());
 	return 1;
       }
   return 0;

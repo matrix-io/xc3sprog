@@ -130,6 +130,8 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
       buf[8] = 0x0f; /* Disable and tristate TRST/SRST. Switch on LED*/
       mpsse_add_cmd(buf, 9);
     }
+  else
+    throw  io_exception(std::string("Unknown subtype"));
   mpsse_send();
 }
 
