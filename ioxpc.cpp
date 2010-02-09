@@ -185,7 +185,7 @@ int IOXPC::xpcu_read_hid(struct usb_dev_handle *xpcu)
   int i;
   char buf[8];
   hid = 0;
-  int rc = usb_control_msg(xpcu, 0xC0, 0xB0, 0x0042, 0x000, buf, 8, 1000);
+  int rc = usb_control_msg(xpcu, 0xC0, 0xB0, 0x0042, 0x001, buf, 8, 1000);
   if(rc<0)
     {
       return rc;
@@ -585,7 +585,6 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
   struct usb_bus *bus;
   struct usb_device *dev;
   char string[256];
-  int rc;
 
   usb_init();
   
@@ -637,7 +636,8 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
 		xpc_error_return(-11, 
 				       "unable to claim interface");
 	      }
-	      rc = xpcu_read_hid(xpcu);
+#if 0
+	      int rc = xpcu_read_hid(xpcu);
 	      if (rc < 0)
 		{
 		  if (rc == -EPIPE)
@@ -658,6 +658,9 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
 		    usb_close (xpcu);
 		    continue;
 		  }
+#else
+              hid = 0;
+#endif
 	      return 0;
 	    }
 	}
