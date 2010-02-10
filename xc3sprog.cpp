@@ -291,58 +291,49 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
   
 void usage(bool all_options)
 {
-  fprintf
-    (
-     stderr,
-     "\nUsage:\txc3sprog [-v] [-p pos] [...] bitfile [(val[*cnt]|binfile) ...]\n"
-     "   -[?|h]\t\tprint this help\n"
-     );
+  fprintf(stderr, "usage:\txc3sprog [options] <bitfile>\n\n");
   if (!all_options) exit(255);
-  fprintf
-    (
-     stderr,
-     "   -v\t\tverbose output\n"
-     "   -j\t\tDetect JTAG chain, nothing else\n"
-     "   -T[val]\tTest chain val times (0 = forever) or 10000 times default\n"
-     "    \t\tin ISF Mode, test the SPI connection\n"
-     "   -C\t\tVerify device against File (no programming)\n"
-     "   -I\t\tWork on connected SPI Flash (ISF Mode)\n"
-     "     \t\t(after bscan_spi Bitfile for device has been loaded)\n"
-     "   -r\t\tRead from device and write to file\n\n"
-     "   -i\t\tinput file format (BIT|BIN|MCS|MCSREV|HEX)\n"
-     "   -o\t\toutput file format (BIT|BIN|MCS|MCSREV|HEX)\n"
-     "   -m directory\tDirectory with XC2C mapfiles\n"
-     "   Supported cable types: pp, ftdi, fx2, xpc\n"
-     "   \tOptional pp arguments:\n"
-     "   \t\t[-d device] (e.g. /dev/parport0)\n"
-     "   \tOptional fx2/ftdi arguments:\n"
-     "   \t\t[-V vendor]      (idVendor)\n"
-     "   \t\t[-P product]     (idProduct)\n"
-     "   \t\t[-S description string] (Product string)\n"
-     "   \t\t[-s serial]      (SerialNumber string)\n"
-     "   \t\t\tFor DLCx: Unique hardware number\n"
-     "   \tOptional ftdi arguments:\n"
-     "   \t\t[-t subtype]\n"
-     "   \t\t\t(NONE\t(0x0403:0x0610) or\n"
-     "   \t\t\t IKDA\t(0x0403:0x0610, EN_N on ACBUS2) or\n"
-     "   \t\t\t OLIMEX\t(0x15b1:0x0003, EN on ADBUS4, LED on ACBUS3))\n"
-     "   \t\t\t FTDI_JTAG\t(0x0403:0x6010, EN on ADBUS4, LED on ACBUS3))\n"
-     "   \t\t\t AMONTEC\(0x0403:0xcff8, EN on ADBUS4)\n"
-     "   \tOptional xpc arguments:\n"
-     "   \t\t[-t subtype] (NONE or INT  (Internal Chain , not for DLC10))\n"
-     "   chainpos\n"
-     "\tPosition in JTAG chain: 0 - closest to TDI (default)\n"
-     "\tFor multi-PROM configurations, specify multiple positions: -p 1,2\n\n"
-     "   AVR specific arguments\n"
-     "\t[-L ] (Program Lockbits if defined in fusefile)\n"
-     "\t[-e eepromfile]\n"
-     "\t[-f fusefile] (def extension: .fus, don't touch fuses if not given)\n"
-     "\n"
-     "   val[*cnt]|binfile\n"
-     "\tAdditional data to append to bitfile when programming.\n"
-     "\tOnly sensible for programming (platform) Flash/PROMs.\n"
-     "\t   val[*cnt]  pad with 32-bit val [cnt times]\n"
-     "\t   binfile    binary file content to append\n\n");
+
+  fprintf(stderr, "Possible options:\n");
+#define OPT(arg, desc)	\
+  fprintf(stderr, "   %-8s  %s\n", (arg), (desc))
+  OPT("-c", "Choose programmer type [pp|ftdi|fx2|xpc].");
+  OPT("-C", "Verify device against file (no programming).");
+  OPT("-h", "Print this help.");
+  OPT("-i", "Input file format (BIT|BIN|MCS|MCSREV|HEX).");
+  OPT("-I", "Work on connected SPI Flash (ISF Mode).");
+  OPT(""  , "(after 'bscan_spi' bitfile for device has been loaded).");
+  OPT("-j", "Detect JTAG chain, nothing else (default action).");
+  OPT("-L", "Program lockbits if defined in fusefile.");
+  OPT("-m <dir>", "Directory with XC2C mapfiles.");
+  OPT("-o", "Output file format (BIT|BIN|MCS|MCSREV|HEX).");
+  OPT("-p", "Position in the JTAG chain.");
+  OPT("-r", "Read from device and write to file.");
+  OPT("-T val", "Test chain 'val' times (0 = forever) or 10000 times"
+      " default.");
+  OPT(""      , "In ISF Mode, test the SPI connection.");
+  OPT("-v", "Verbose output.");
+
+  fprintf(stderr, "\nProgrammer specific options:\n");
+  /* Parallel cable */
+  OPT("-d", "(pp only     ) Parallel port device.");
+  /* USB devices */
+  OPT("-V vid" , "(usb devices only) Vendor ID.");
+  OPT("-P pid" , "(usb devices only) Product ID.");
+  OPT("-S desc", "(usb devices only) Product ID string.");
+  OPT("-s num" , "(usb devices only) Serial number string.");
+  /* FTDI/FX cables */
+  OPT("-t type", "(ftdi only       ) Type can be "
+      "[NONE|IKDA|OLIMEX|FTDI_JTAG|AMONTEC].");
+  /* Xilinx USB JTAG cable */
+  OPT("-t",      "(xpc only        ) NONE or INT  (Internal Chain , not for DLC10))");
+
+  fprintf(stderr, "\nDevice specific options:\n");
+  OPT("-e file", "(AVR only) EEPROM file.");
+  OPT("-f file", "(AVR only) File with fuse bits.");
+
+#undef OPT
+
   exit(255);
 }
 
@@ -371,6 +362,7 @@ int main(int argc, char **args)
   int test_count = 10000;
   char const *desc    = 0;
   char const *serial  = 0;
+  char osname[OSNAME_LEN];
   int subtype = FTDI_NO_EN;
   char *devicedb = NULL;
   DeviceDB db(devicedb);
@@ -379,15 +371,20 @@ int main(int argc, char **args)
   FILE *fpin =0;
   FILE *fpout = 0;
   int res;
+
+  get_os_name(osname, sizeof(osname));
   // Produce release info from SVN tags
-  fprintf(stderr, "XC3SPROG (c) 2004-2010 xc3sprog project $Rev$\n"
+  fprintf(stderr, "XC3SPROG (c) 2004-2010 xc3sprog project $Rev$ OS: %s\n"
 	  "Free software: If you contribute nothing, expect nothing!\n"
-	  "Feedback on success/failure/enhancement requests: http://sourceforge.net/mail/?group_id=170565 \n"
-	  "Check Sourceforge for updates: http://sourceforge.net/projects/xc3sprog/develop for updates!\n");
+	  "Feedback on success/failure/enhancement requests:\n"
+          "\thttp://sourceforge.net/mail/?group_id=170565 \n"
+	  "Check Sourceforge for updates:\n"
+          "\thttp://sourceforge.net/projects/xc3sprog/develop\n\n",
+	  osname);
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hCLc:d:D:e:f:i:Ijm:o:p:P:rs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hCLc:d:e:f:i:Ijm:o:p:P:rs:S:t:T:vV:")) {
     case -1:
       goto args_done;
 

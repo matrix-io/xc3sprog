@@ -1,3 +1,7 @@
+#ifndef WIN32
+#include <sys/utsname.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
@@ -159,4 +163,23 @@ int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, int  ven
 	return 1;
       }
   return 0;
+}
+
+void
+get_os_name(char *buf, int buflen)
+{
+  memset(buf, 0, buflen);
+#ifdef WIN32
+  snprintf(buf, buflen - 1, "Windows");
+#else
+  struct utsname uts;
+  int ret;
+
+  // Obtain information about current system.
+  memset(&uts, 0, sizeof(uts));
+  ret = uname(&uts);
+  if (ret < 0)
+    snprintf(buf, buflen - 1, "<UNKNOWN>");
+  snprintf(buf, buflen - 1, "%s", uts.sysname);
+#endif
 }
