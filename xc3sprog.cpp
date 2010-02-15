@@ -324,7 +324,7 @@ void usage(bool all_options)
   OPT("-s num" , "(usb devices only) Serial number string.");
   /* FTDI/FX cables */
   OPT("-t type", "(ftdi only       ) Type can be "
-      "[NONE|IKDA|OLIMEX|FTDI_JTAG|AMONTEC].");
+      "[NONE|IKDA|OLIMEX|FTDIJTAG|AMONTEC].");
   /* Xilinx USB JTAG cable */
   OPT("-t",      "(xpc only        ) NONE or INT  (Internal Chain , not for DLC10))");
 
