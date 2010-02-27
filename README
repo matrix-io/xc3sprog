@@ -44,6 +44,8 @@ Get a description with
 
 $ ./xc3sprog -h
 
+This will also list the supported cables.
+
 Get a chain description:
 
 $ ./xcs3prog -j

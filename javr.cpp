@@ -53,7 +53,7 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
       byte eeprom[16];
       int i;
       alg.read_eeprom(0xff0, eeprom, 16);
-      fprintf(stderr, "Flash at 0xff0:");
+      fprintf(stderr, "EEPROM at 0xff0:");
       for (i=0; i<16; i++)
 	fprintf(stderr, " %02x ", eeprom[i]);
       fprintf(stderr, "\n");	
