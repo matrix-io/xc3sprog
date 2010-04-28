@@ -121,6 +121,7 @@ install(TARGETS readdna DESTINATION bin)
 install(TARGETS bitparse DESTINATION bin)
 install(TARGETS jedecparse DESTINATION bin)
 install(TARGETS srecparse DESTINATION bin)
+install(TARGETS detectchain DESTINATION bin)
 add_subdirectory(packages)
 include(CPack)
 
