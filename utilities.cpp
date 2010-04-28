@@ -86,7 +86,7 @@ int getSubtype(const char *given_name, CABLES_TYPES *cable)
   return -1;
 }
 
-int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, int  vendor, int  product, char const *dev, char const *desc, char const *serial)
+int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, int channel, int  vendor, int  product, char const *dev, char const *desc, char const *serial)
 {
   if (!cable || (cable == CABLE_PP))
     {
@@ -130,7 +130,7 @@ int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, int  ven
 		if(product == 0)
 		  product = DEVICE_AMONTEC_KEY;
 	      }
-	    io->reset(new IOFtdi(vendor, product, desc, serial, subtype));
+	    io->reset(new IOFtdi(vendor, product, desc, serial, subtype, channel));
 	  }
 	else if(cable == CABLE_FX2)  
 	  {

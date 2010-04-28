@@ -115,6 +115,7 @@ int main(int argc, char **args)
   int         chainpos  = 0;
   int vendor    = 0;
   int product   = 0;
+  int channel   = 0;
   char const *desc    = 0;
   char const *serial  = 0;
   int subtype = FTDI_NO_EN;
@@ -142,6 +143,10 @@ int main(int argc, char **args)
 
     case 'c':
       cable = optarg;
+      break;
+
+    case 'D':
+      channel = atoi(optarg);
       break;
 
     case 'e':
@@ -331,7 +336,7 @@ int main(int argc, char **args)
 	    if(product == 0)
 	      product = DEVICE_AMONTEC_KEY;
 	  }
-	io.reset(new IOFtdi(vendor, product, desc, serial, subtype));
+	io.reset(new IOFtdi(vendor, product, desc, serial, subtype, channel));
       }
     else if(strcmp(cable,  "fx2") == 0)  
       {
