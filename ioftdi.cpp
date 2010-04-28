@@ -106,13 +106,6 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
 			+ ftdi_get_error_string(&ftdi));
   }
 
-  // Purge buffers
-  if(ftdi_usb_purge_buffers(&ftdi) < 0) {
-    throw  io_exception(std::string("ftdi_usb_purge_buffers: ")
-			+ ftdi_get_error_string(&ftdi));
-  }
-  
-  // Clear the MPSSE buffers
 #endif
 
   // Prepare for JTAG operation
