@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 using namespace std;
 
 IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
-	       int subtype)
+	       int subtype, int channel)
   : IOBase(), bptr(0), calls_rd(0), calls_wr(0), retries(0){
     
   unsigned char   buf1[5];
@@ -84,7 +84,9 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
     ftdi_init(&ftdi);
     
     // Set interface
-    if(ftdi_set_interface(&ftdi, INTERFACE_A) < 0) {
+    if (channel > 2)
+      throw  io_exception(std::string("invalid MPSSE channel"));  
+    if(ftdi_set_interface(&ftdi, (ftdi_interface)channel) < 0) {
       throw  io_exception(std::string("ftdi_set_interface: ") 
 			  + ftdi_get_error_string(&ftdi));
     }

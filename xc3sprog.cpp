@@ -325,6 +325,8 @@ void usage(bool all_options)
   /* FTDI/FX cables */
   OPT("-t type", "(ftdi only       ) Type can be "
       "[NONE|IKDA|OLIMEX|FTDIJTAG|AMONTEC].");
+  OPT("-D if  ", "(ftdi only       ) MPSSE Interface can be"
+      "[0|1|2] for any|INTERFACE_A|INTERFACE_B.");
   /* Xilinx USB JTAG cable */
   OPT("-t",      "(xpc only        ) NONE or INT  (Internal Chain , not for DLC10))");
 
@@ -359,6 +361,7 @@ int main(int argc, char **args)
   int      chainpositions[MAXPOSITIONS];
   int vendor    = 0;
   int product   = 0;
+  int channel   = 0; /* FT2232 MPSSE Channel */
   int test_count = 10000;
   char const *desc    = 0;
   char const *serial  = 0;
@@ -384,7 +387,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hCLc:d:e:f:i:Ijm:o:p:P:rs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hCLc:d:D:e:f:i:Ijm:o:p:P:rs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
@@ -433,6 +436,10 @@ int main(int argc, char **args)
 
     case 'e':
       eepromfile = optarg;
+      break;
+
+    case 'D':
+      channel = atoi(optarg);
       break;
 
     case 'f':
@@ -526,7 +533,7 @@ int main(int argc, char **args)
   if(argc < 0)  usage(true);
   if(argc < 1) detectchain = true;
 
-  res = getIO( &io, cable, subtype, vendor, product, dev, desc, serial);
+  res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);

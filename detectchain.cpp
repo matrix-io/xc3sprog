@@ -53,7 +53,7 @@ void usage(void)
 	  "   \tOptional fx2/ftdi/xpc arguments:\n"
 	  "   \t\t[-V vendor]      (idVendor)\n"
 	  "   \t\t[-P product]     (idProduct)\n"
-	  "   \t\t[-D description] (Product string)\n"
+	  "   \t\t[-S description] (Product string)\n"
 	  "   \t\t[-s serial]      (SerialNumber string)\n"
 	  "   \tOptional ftdi arguments:\n"
 	  "   \t\t[-t subtype]\n"
@@ -73,6 +73,7 @@ int main(int argc, char **args)
     char const *dev     = 0;
     int vendor    = 0;
     int product   = 0;
+    int channel   = 0;
     char const *desc    = 0;
     char const *serial  = 0;
     int subtype = FTDI_NO_EN;
@@ -82,7 +83,7 @@ int main(int argc, char **args)
     
     // Start from parsing command line arguments
     while(true) {
-      switch(getopt(argc, args, "?hvc:d:V:P:D:S:t:")) {
+      switch(getopt(argc, args, "?hvc:d:D:V:P:S:t:")) {
       case -1:
 	goto args_done;
 	
@@ -112,6 +113,10 @@ int main(int argc, char **args)
 	dev = optarg;
 	break;
 		
+      case 'D':
+	channel = atoi(optarg);
+	break;
+		
       case 'V':
 	value = strtol(optarg, NULL, 0);
 	vendor = value;
@@ -122,11 +127,11 @@ int main(int argc, char **args)
 	product = value;
 	break;
 		
-      case 'D':
+      case 'S':
 	desc = optarg;
 	break;
 		
-      case 'S':
+      case 's':
 	serial = optarg;
 	break;
 		
@@ -144,7 +149,7 @@ args_done:
   //fprintf(stderr, "argc: %d\n", argc);
   if(argc != 0)  usage();
 
-  res = getIO( &io, cable, subtype, vendor, product, dev, desc, serial);
+  res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);
