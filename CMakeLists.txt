@@ -4,7 +4,10 @@ SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 set(CMAKE_CXX_FLAGS "-g -Wall")
 cmake_minimum_required(VERSION 2.6)
 
+if(${WIN32})
 set(USE_STATIC_FTDI ON)
+endif(${WIN32})
+
 find_package(libftdi)
 include_directories(${LIBFTDI_INCLUDE_DIR})
 
