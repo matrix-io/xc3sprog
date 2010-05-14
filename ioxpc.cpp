@@ -45,7 +45,7 @@ IOXPC::IOXPC(int const vendor, int const product, char const *desc,
   if(serial)
     sscanf(serial,"%Lx", &lserial);
   if (xpc_usb_open_desc(vendor, product, desc, lserial) < 0)
-    throw  io_exception(std::string("ftdi_usb_open_desc: ") );
+    throw  io_exception(std::string("No dongle found") );
   if (xpcu_request_28(xpcu, 0x11) < 0)
     throw  io_exception(std::string("xpcu_request_28: ") );
   if (xpcu_write_gpio(xpcu, XPC_PROG) < 0)
