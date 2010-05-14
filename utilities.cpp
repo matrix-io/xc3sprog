@@ -88,7 +88,14 @@ int getSubtype(const char *given_name, CABLES_TYPES *cable)
 
 int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, int channel, int  vendor, int  product, char const *dev, char const *desc, char const *serial)
 {
-  if (!cable || (cable == CABLE_PP))
+    if (!cable)
+    {
+        fprintf(stderr, "No cable selected. You must use -c option."
+                " See xc3sprog -h for more help\n");
+        return 1;
+    }
+
+  if (cable == CABLE_PP)
     {
       try
 	{
@@ -96,11 +103,8 @@ int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, int chan
 	}
       catch(io_exception& e)
 	{
-          if (!cable)
-            fprintf(stderr, "No cable selected. You must use -c option. See xc3sprog -h for more help\n");
-          else
             fprintf(stderr, "Could not open parallel port %s\n", dev);
-	  return 1;
+            return 1;
 	}
     }
   else 
