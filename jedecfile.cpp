@@ -407,7 +407,31 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
 
   if (!fp)
     return;
-  if (strnicmp("XC9536X",device, sizeof("XC9536X")-1) == 0)
+  if (strnicmp("XC9536",device, sizeof("XC9536X")-1) == 0)
+    {
+      type = JED_XC95;
+    }
+  else if (strnicmp("XC9572",device, sizeof("XC9572X")-1) == 0)
+    {
+      type = JED_XC95;
+    }
+  else if (strnicmp("XC95108",device, sizeof("XC95144X")-1) == 0)
+    {
+      type = JED_XC95;
+    }
+  else if (strnicmp("XC95144",device, sizeof("XC95288X")-1) == 0)
+    {
+      type = JED_XC95;
+   } 
+  else if (strnicmp("XC95216",device, sizeof("XC95288X")-1) == 0)
+    {
+      type = JED_XC95;
+    } 
+  else if (strnicmp("XC95288",device, sizeof("XC95288X")-1) == 0)
+    {
+      type = JED_XC95;
+    } 
+  else if (strnicmp("XC9536X",device, sizeof("XC9536X")-1) == 0)
     {
       type = JED_XC95X;
       DRegLength=2;
@@ -496,6 +520,26 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
 	    }
 	  if (l==15)
 	    l =0;
+	}
+    }
+   else if(type == JED_XC95)
+    {
+      for (i=0; i<jed.fuse_count; i++)
+	{
+	  if(!b && w%5 == 0)
+	    fprintf(fp, "L%07d",i);
+	  if (!b)
+	      fprintf(fp, " ");
+	  fprintf(fp, "%d", get_fuse(i));
+	  if( b == (((i%9072)<7776) ? ((w %15 < 9)?7:5):((w%5== 0)?7:6)))
+	    {
+	      b=0;
+	      w++;
+	    }
+	  else
+	    b++;
+	  if(!b && (w %5 == 0 ))
+	    fprintf(fp, "*\n");
 	}
     }
    else if (type == JED_XC2C)
