@@ -101,7 +101,7 @@ int main(int argc, char **args)
 	break;
 	
       case 't':
-	subtype = getSubtype(optarg, &cable);
+	subtype = getSubtype(optarg, &cable, &channel);
 	if (subtype == -1)
 	  {
 	    fprintf(stderr,"Unknow subtype %s\n", optarg);
