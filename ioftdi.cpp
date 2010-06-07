@@ -41,6 +41,8 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
   char *fname = getenv("FTDI_DEBUG");
   if (fname)
     fp_dbg = fopen(fname,"wb");
+  else
+      fp_dbg = NULL;
  
 #if defined (USE_FTD2XX)
     FT_STATUS res;
