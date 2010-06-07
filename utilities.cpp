@@ -51,30 +51,38 @@ CABLES_TYPES getCable(const char *given_name)
   return CABLE_UNKNOWN;
 }
 
-int getSubtype(const char *given_name, CABLES_TYPES *cable)
+int getSubtype(const char *given_name, CABLES_TYPES *cable, int *channel)
 {
   if (strcasecmp(given_name, "ikda") == 0)
     {
       if (*cable == CABLE_NONE)
 	*cable = CABLE_FTDI;
+      if(*channel == 0)
+          *channel = 1;
       return FTDI_IKDA;
     }
   else if (strcasecmp(given_name, "ftdijtag") == 0)
     {
       if (*cable == CABLE_NONE)
 	*cable = CABLE_FTDI;
+      if(*channel == 0)
+          *channel = 1;
       return FTDI_FTDIJTAG;
     }
   else if (strcasecmp(given_name, "olimex") == 0)
     {
       if (*cable == CABLE_NONE)
 	*cable = CABLE_FTDI;
+      if(*channel == 0)
+          *channel = 1;
       return FTDI_OLIMEX;
     }
   else if (strcasecmp(given_name, "amontec") == 0)
     {
        if (*cable == CABLE_NONE)
 	*cable = CABLE_FTDI;
+       if(*channel == 0)
+           *channel = 1;
      return FTDI_AMONTEC;
     }
   else if (strcasecmp(given_name, "int") == 0)
@@ -82,6 +90,14 @@ int getSubtype(const char *given_name, CABLES_TYPES *cable)
       if (*cable == CABLE_NONE)
 	*cable = CABLE_XPC;
       return XPC_INTERNAL;
+    }
+  else if (strcasecmp(given_name, "llbbc10") == 0)
+    {
+      if (*cable == CABLE_NONE)
+	*cable = CABLE_FTDI;
+      if(*channel == 0)
+          *channel = 2;
+      return FTDI_IKDA;
     }
   return -1;
 }
