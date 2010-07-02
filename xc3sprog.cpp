@@ -58,17 +58,17 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define IDCODE_TO_FAMILY(id)        ((id>>21) & 0x7f)
 #define IDCODE_TO_MANUFACTURER(id)  ((id>>1) & 0x3ff)
 
-int programXC3S(Jtag &g, BitFile &file, bool verify,
+int programXC3S(Jtag &g, BitFile &file, bool verify, bool reconfig,
 		int jstart_len);
-int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
+int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
                 FILE *fpout, FILE_STYLE out_style, const char *device,
                 const int *chainpositions, int nchainpos);
 int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
 		 const char *device);
 int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback,
 		const char *device);
-int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
-	       FILE_STYLE out_style, const char *device);
+int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, bool reconfig,
+               FILE *fp, FILE_STYLE out_style, const char *device);
 
 /* Excercise the IR Chain for at least 10000 Times
    If we read a different pattern, print the pattern for for optical 
@@ -309,6 +309,7 @@ void usage(bool all_options)
   OPT("-o", "Output file format (BIT|BIN|MCS|MCSREV|HEX).");
   OPT("-p", "Position in the JTAG chain.");
   OPT("-r", "Read from device and write to file.");
+  OPT("-R", "Try to reconfigure device(No other action!).");
   OPT("-T val", "Test chain 'val' times (0 = forever) or 10000 times"
       " default.");
   OPT(""      , "In ISF Mode, test the SPI connection.");
@@ -348,6 +349,7 @@ int main(int argc, char **args)
   bool     chaintest    = false;
   bool     readback     = false;
   bool     spiflash     = false;
+  bool     reconfigure  = false;
   unsigned long id;
   CABLES_TYPES cable    = CABLE_NONE;
   char const *dev       = 0;
@@ -387,7 +389,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hCLc:d:D:e:f:i:Ijm:o:p:P:rs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hCLc:d:D:e:f:i:Ijm:o:p:P:rRs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
@@ -405,6 +407,10 @@ int main(int argc, char **args)
 
     case 'j':
       detectchain = true;
+      break;
+
+    case 'R':
+      reconfigure = true;
       break;
 
     case 'T':
@@ -675,7 +681,8 @@ int main(int argc, char **args)
 		}
 	      if (family == 0x28)
 		{
-                  return programXCF(jtag, db, file, verify, fpout, out_style,
+                    return programXCF(jtag, db, file, verify, reconfigure,
+                             fpout, out_style,
                              db.getDeviceDescription(chainpos),
                              chainpositions, nchainpos);
                 }
@@ -694,12 +701,13 @@ int main(int argc, char **args)
 			  alg.test(test_count);
 			  return 0;
 			}
-		      return programSPI(alg, file, verify, fpout, out_style, 
+		      return programSPI(alg, file, verify, reconfigure,
+					fpout, out_style,
 					db.getDeviceDescription(chainpos));
 		    }
 		    else
 		      return  programXC3S(jtag, file,
-					  verify, family);
+					  verify, reconfigure, family);
 		}
 	    }
 	  catch(io_exception& e) {
@@ -824,7 +832,7 @@ int main(int argc, char **args)
   return 1;
 }
 
-int programXC3S(Jtag &jtag, BitFile &file, bool verify, int family)
+int programXC3S(Jtag &jtag, BitFile &file, bool verify, bool reconfig, int family)
 {
 
   if(verify)
@@ -837,12 +845,22 @@ int programXC3S(Jtag &jtag, BitFile &file, bool verify, int family)
   return 0;
 }
 
-int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
+int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
                 FILE *fpout, FILE_STYLE out_style, const char *device,
                 const int *chainpositions, int nchainpos)
 {
   // identify all specified devices
   unsigned int total_size = 0;
+
+  if(reconfig)
+  {
+      unsigned long id = get_id(jtag, db, chainpositions[0]);
+      int size_ind = (id & 0x000ff000) >> 12;
+      ProgAlgXCF alg(jtag, size_ind);
+      alg.reconfig();
+  return 0;
+  }
+
   for (int i = 0; i < nchainpos; i++)
     {
       unsigned long id = get_id(jtag, db, chainpositions[i]);
@@ -923,25 +941,28 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify,
   return 0;
 }
 
-int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, FILE *fp,
-	       FILE_STYLE out_style, const char *device)
+int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, bool
+	       reconfig, FILE *fp, FILE_STYLE out_style, const char *device)
 {
-  if(fp)
+  if(!reconfig && fp)
     {
       int len;
       alg.read(file);
       len = file.saveAs(out_style, device, fp);
       return 0;
     }
-  if(!verify)
+  if(!reconfig && !verify)
     {
       alg.erase();
       if (alg.program(file) <0 )
 	return 1;
       alg.disable();
     }
-  alg.verify(file);
-  alg.disable();
+  if (!reconfig)
+  {
+      alg.verify(file);
+      alg.disable();
+  }
   if(!verify && !fp)
     alg.reconfig();
   return 0;
