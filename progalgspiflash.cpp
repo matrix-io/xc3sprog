@@ -714,24 +714,3 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
   return 0;
 }
 
-void ProgAlgSPIFlash::reconfig(void)
-{
-  /* Sequence is from AR #31913*/
-  byte buf[12]= {0xff, 0xff, 0x55, 0x99, 0x0c,
-		 0x85, 0x00, 0x70, 0x04, 0x00, 0x04, 0x00};
-  byte buf1[12];
-  int i;
-  for (i=0; i<12; i++)
-    buf1[i]= file->reverse8(buf[i]);
-  jtag->shiftIR(&JSHUTDOWN);
-  jtag->cycleTCK(16);
-  jtag->shiftIR(&CFG_IN);
-  if(jtag->getVerbose())
-    fprintf(stderr, "Trying reconfigure\n"); 
-  jtag->shiftDR(buf, NULL, 92 );
-  jtag->shiftIR(&JSTART);
-  jtag->cycleTCK(32);
-  jtag->shiftIR(&BYPASS);
-  jtag->cycleTCK(1);
-  jtag->setTapState(Jtag::TEST_LOGIC_RESET);
-}

@@ -74,6 +74,5 @@ class ProgAlgSPIFlash
   int read(BitFile &file);
   void disable(){};
   void test(int test_count);
-  void reconfig();
 };
 #endif /*PROGALGSPIFLASH_H */

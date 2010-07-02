@@ -181,3 +181,42 @@ void ProgAlgXC3S::array_program(BitFile &file)
 	    "Device failed to configure, INSTRUCTION_CAPTURE is 0x%02x\n",
 	    buf[0]);
 }
+
+void ProgAlgXC3S::reconfig(void)
+{
+    /* Sequence is from AR #31913
+       FFFF Dummy Word
+       9955 SYNC
+       850c Type 1 Write to CMD
+       7000 REBOOT command
+       0004 NOOP
+       0004 NOOP
+    */
+    byte xc3sbuf[12]= {0xff, 0xff, 0x55, 0x99, 0x0c,
+                       0x85, 0x00, 0x70, 0x04, 0x00, 0x04, 0x00};
+    /* xtp038.pdf
+       FFFF Dummy Word
+       AA99 Sync Word
+       5566 Sync Word
+       30A1 Type 1 Write 1 Word to CMD
+       000E IPROG Command
+       2000 Type 1 NO OP
+    */
+    byte xc6sbuf[12]= {0xff, 0xff, 0x55, 0x99, 0xaa, 0x66, 0x0c,
+                       0x85, 0x00, 0x70, 0x04, 0x00};
+
+  jtag->shiftIR(&JSHUTDOWN);
+  jtag->cycleTCK(16);
+  jtag->shiftIR(&CFG_IN);
+  if(jtag->getVerbose())
+      fprintf(stderr, "Trying reconfigure\n");
+  if(family == 0x20) /*XC6S*/
+     jtag->shiftDR(xc6sbuf, NULL, 12*8 );
+  else
+     jtag->shiftDR(xc3sbuf, NULL, 12*8 );
+  jtag->shiftIR(&JSTART);
+  jtag->cycleTCK(32);
+  jtag->shiftIR(&BYPASS);
+  jtag->cycleTCK(1);
+  jtag->setTapState(Jtag::TEST_LOGIC_RESET);
+}
