@@ -59,7 +59,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define IDCODE_TO_MANUFACTURER(id)  ((id>>1) & 0x3ff)
 
 int programXC3S(Jtag &g, BitFile &file, bool verify, bool reconfig,
-		int jstart_len);
+		int family);
 int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
                 FILE *fpout, FILE_STYLE out_style, const char *device,
                 const int *chainpositions, int nchainpos);
@@ -67,8 +67,9 @@ int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
 		 const char *device);
 int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback,
 		const char *device);
-int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, bool reconfig,
-               FILE *fp, FILE_STYLE out_style, const char *device);
+int programSPI(ProgAlgSPIFlash &alg, Jtag &j, BitFile &file, bool verify,
+               bool reconfig, FILE *fp, FILE_STYLE out_style, int family,
+               const char *device);
 
 /* Excercise the IR Chain for at least 10000 Times
    If we read a different pattern, print the pattern for for optical 
@@ -537,7 +538,7 @@ int main(int argc, char **args)
   argc -= optind;
   args += optind;
   if(argc < 0)  usage(true);
-  if(argc < 1) detectchain = true;
+  if(argc < 1 && !reconfigure) detectchain = true;
 
   res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial);
   if (res) /* some error happend*/
@@ -691,7 +692,7 @@ int main(int argc, char **args)
 		  if(spiflash)
 		    {
 		      ProgAlgSPIFlash alg(jtag, file);
-		      if (alg.spi_flashinfo() != 1)
+		      if (alg.spi_flashinfo() != 1 && !reconfigure)
 			{
 			  fprintf(stderr,"ISF Bitfile probably not loaded\n");
 			  return 2;
@@ -701,8 +702,8 @@ int main(int argc, char **args)
 			  alg.test(test_count);
 			  return 0;
 			}
-		      return programSPI(alg, file, verify, reconfigure,
-					fpout, out_style,
+		      return programSPI(alg, jtag, file, verify, reconfigure,
+					fpout, out_style, family,
 					db.getDeviceDescription(chainpos));
 		    }
 		    else
@@ -841,7 +842,10 @@ int programXC3S(Jtag &jtag, BitFile &file, bool verify, bool reconfig, int famil
       return 1;
     }
   ProgAlgXC3S alg(jtag, family);
-  alg.array_program(file);
+  if(reconfig)
+      alg.reconfig();
+  else
+      alg.array_program(file);
   return 0;
 }
 
@@ -941,8 +945,8 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
   return 0;
 }
 
-int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, bool
-	       reconfig, FILE *fp, FILE_STYLE out_style, const char *device)
+int programSPI(ProgAlgSPIFlash &alg, Jtag &jtag, BitFile &file, bool verify, bool
+	       reconfig, FILE *fp, FILE_STYLE out_style, int family, const char *device)
 {
   if(!reconfig && fp)
     {
@@ -964,7 +968,10 @@ int programSPI(ProgAlgSPIFlash &alg, BitFile &file, bool verify, bool
       alg.disable();
   }
   if(!verify && !fp)
-    alg.reconfig();
+  {
+      ProgAlgXC3S fpga(jtag, family);
+      fpga.reconfig();
+  }
   return 0;
 }
 

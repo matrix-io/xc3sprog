@@ -52,6 +52,7 @@ class ProgAlgXC3S
  public:
   ProgAlgXC3S(Jtag &j, int family);
   void array_program(BitFile &file);
+  void reconfig();
 };
 
 
