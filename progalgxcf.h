@@ -22,8 +22,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include "bitfile.h"
 #include "jtag.h"
 #include "iobase.h"
+#include "progalg.h"
 
-class ProgAlgXCF
+class ProgAlgXCF : public ProgAlg
 {
  private:
   static const byte SERASE;
@@ -51,15 +52,14 @@ class ProgAlgXCF
   bool use_optimized_algs;
  public:
   ProgAlgXCF(Jtag &j, int si);
-  int getSize() const { return size; }
-  int erase();
-  int program(BitFile &file);
-  int verify(BitFile &file);
-  int read(BitFile &file);
-  void disable();
-  void reconfig();
+  virtual ~ProgAlgXCF() { }
+  virtual int getSize() const { return size; }
+  virtual int erase();
+  virtual int program(BitFile &file);
+  virtual int verify(BitFile &file);
+  virtual int read(BitFile &file);
+  virtual void disable();
+  virtual void reconfig();
 };
-
-
 
 #endif //PROGALGXCF_H

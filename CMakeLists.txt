@@ -99,8 +99,8 @@ INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 add_library(xc3sproglib  STATIC ioparport.cpp ioftdi.cpp iofx2.cpp 
                       devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp  progalgxc95x.cpp utilities.cpp
-			progalgxcf.cpp progalgxc3s.cpp progalgavr.cpp 
-			progalgxc2c.cpp  mapfile_xc2c.cpp
+			progalgxcf.cpp progalgxcfp.cpp progalgxc3s.cpp
+			progalgavr.cpp progalgxc2c.cpp  mapfile_xc2c.cpp
 			ioxpc.cpp progalgspiflash.cpp ${CONDITIONAL_FILES} config.h)
 
 add_executable(xc2c_warp xc2c_warp.cpp)
