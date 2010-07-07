@@ -43,6 +43,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "jtag.h"
 #include "devicedb.h"
 #include "progalgxcf.h"
+#include "progalgxcfp.h"
 #include "javr.h"
 #include "progalgxc3s.h"
 #include "jedecfile.h"
@@ -833,6 +834,20 @@ int main(int argc, char **args)
   return 1;
 }
 
+ProgAlg * makeProgAlg(Jtag &jtag, unsigned long id)
+{
+  if ((id & 0x000f0000) == 0x00050000)
+    {
+      // XCFxxP
+      return new ProgAlgXCFP(jtag, id);
+    }
+  else
+    {
+      // XCFxxS
+      return new ProgAlgXCF(jtag, (id & 0x000ff000) >> 12);
+    }
+}
+
 int programXC3S(Jtag &jtag, BitFile &file, bool verify, bool reconfig, int family)
 {
 
@@ -857,13 +872,12 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
   unsigned int total_size = 0;
 
   if(reconfig)
-  {
+    {
       unsigned long id = get_id(jtag, db, chainpositions[0]);
-      int size_ind = (id & 0x000ff000) >> 12;
-      ProgAlgXCF alg(jtag, size_ind);
-      alg.reconfig();
-  return 0;
-  }
+      std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
+      alg->reconfig();
+      return 0;
+    }
 
   for (int i = 0; i < nchainpos; i++)
     {
@@ -873,9 +887,8 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
           fprintf(stderr, "Multiple positions only supported in case of XCF\n");
           usage(false);
         }
-      int size_ind = (id & 0x000ff000) >> 12;
-      ProgAlgXCF alg(jtag, size_ind);
-      total_size += alg.getSize();
+      std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
+      total_size += alg->getSize();
     }
   if (file.getLength() > total_size)
     {
@@ -889,13 +902,12 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
   for (int i = 0; i < nchainpos; i++)
     {
       unsigned long id = get_id(jtag, db, chainpositions[i]);
-      int size_ind = (id & 0x000ff000) >> 12;
-      ProgAlgXCF alg(jtag, size_ind);
+      std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
       BitFile tmp_bitfile;
       BitFile *cur_bitfile = (nchainpos == 1) ? &file : &tmp_bitfile;
       if (fpout)
         {
-          alg.read(*cur_bitfile);
+          alg->read(*cur_bitfile);
           if (nchainpos != 1)
             {
               // copy temp object to selected part of output file
@@ -910,8 +922,8 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
             {
               // copy selected part of input file to temp object
               int k = file.getLength() - cur_filepos;
-              if (k > alg.getSize())
-                k = alg.getSize();
+              if (k > alg->getSize())
+                k = alg->getSize();
               assert(cur_filepos % 8 == 0);
               assert(k % 8 == 0);
               cur_bitfile->setLength(k);
@@ -919,15 +931,15 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
             }
           if (!verify)
             {
-              if ((alg.erase() == 0) && (alg.program(*cur_bitfile) == 0))
-		alg.disable();
+              if ((alg->erase() == 0) && (alg->program(*cur_bitfile) == 0))
+		alg->disable();
 	      else
 		return 1;
             }
-          alg.verify(*cur_bitfile);
-          alg.disable();
+          alg->verify(*cur_bitfile);
+          alg->disable();
         }
-      cur_filepos += alg.getSize();
+      cur_filepos += alg->getSize();
     }
 
   // write output file
@@ -938,9 +950,8 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
   if (!verify && !fpout)
     {
       unsigned long id = get_id(jtag, db, chainpositions[0]);
-      int size_ind = (id & 0x000ff000) >> 12;
-      ProgAlgXCF alg(jtag, size_ind);
-      alg.reconfig();
+      std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
+      alg->reconfig();
     }
   return 0;
 }

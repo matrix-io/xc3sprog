@@ -104,7 +104,11 @@
 05044093      8   0xfe XCF01S
 05045093      8	  0xfe XCF02S
 05046093      8	  0xfe XCF04S
-	      
+
+05057093     16   0xfe XCF08P
+05058093     16   0xfe XCF16P
+05059093     16   0xfe XCF32P
+
 00608093      5	  0xfe XC2S15
 0060c093      5	  0xfe XC2S30
 00610093      5	  0xfe XC2S50
