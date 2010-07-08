@@ -1,7 +1,16 @@
 /*
  * XCFxxP Flash PROM JTAG programming algorithms
  *
- * Note: Specific XCFP features  are currently not supported
+ * Copyright (C) 2010 Joris van Rantwijk
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Programming sequences are based on the Xilinx 1532 BSDL files.
+ *
+ * Note: Specific XCFP features are currently not supported
  *       (e.g. parallel configuration, multiple revisions).
  *       This code writes defaults to the PROM special registers,
  *       putting it in slave serial mode for revision 00.
