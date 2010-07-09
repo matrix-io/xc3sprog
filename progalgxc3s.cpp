@@ -22,21 +22,26 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Added programming time measurements.
 */
 
-#include <sys/time.h>
 #include "progalgxc3s.h"
+#include "utilities.h"
 
-const byte ProgAlgXC3S::JPROGRAM=0x0b;
-const byte ProgAlgXC3S::CFG_IN=0x05;
-const byte ProgAlgXC3S::JSHUTDOWN=0x0d;
-const byte ProgAlgXC3S::JSTART=0x0c;
-const byte ProgAlgXC3S::ISC_PROGRAM=0x11;
-const byte ProgAlgXC3S::ISC_DNA=0x31;
-const byte ProgAlgXC3S::ISC_ENABLE=0x10;
-const byte ProgAlgXC3S::ISC_DISABLE=0x16;
-const byte ProgAlgXC3S::BYPASS=0x3f;
 
-#define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
-                              (tvp2)->tv_usec - (tvp1)->tv_usec)
+/*
+ * Note: instruction lengths differ:
+ *   Spartan-3 has length 5;
+ *   Virtex-5 has length 10 or 14.
+ * The LSB parts of the codes are identical, so one set fits all.
+ */
+static const byte JPROGRAM[2]    = { 0xcb, 0xff };
+static const byte CFG_IN[2]      = { 0xc5, 0xff };
+static const byte JSHUTDOWN[2]   = { 0xcd, 0xff };
+static const byte JSTART[2]      = { 0xcc, 0xff };
+static const byte ISC_PROGRAM[2] = { 0xd1, 0xff };
+static const byte ISC_ENABLE[2]  = { 0xd0, 0xff };
+static const byte ISC_DISABLE[2] = { 0xd6, 0xff };
+static const byte BYPASS[2]      = { 0xff, 0xff };
+static const byte ISC_DNA[1]     = { 0x31 };
+
 
 ProgAlgXC3S::ProgAlgXC3S(Jtag &j, int fam)
 {
@@ -44,12 +49,20 @@ ProgAlgXC3S::ProgAlgXC3S(Jtag &j, int fam)
   family = fam;
   switch(family)
     {
-    case 0x0e: /* XC3SE*/
-    case 0x11: /* XC3SA*/
-    case 0x13: /* XC3SAN*/
-    case 0x1c: /* SC3SADSP*/
+    case FAMILY_XC3SE:
+    case FAMILY_XC3SA:
+    case FAMILY_XC3SAN:
+    case FAMILY_XC3SD:
       tck_len = 16;
       array_transfer_len = 16;
+      break;
+    case FAMILY_XC5VLX:
+    case FAMILY_XC5VLXT:
+    case FAMILY_XC5VSXT:
+    case FAMILY_XC5VFXT:
+    case FAMILY_XC5VTXT:
+      tck_len = 12;
+      array_transfer_len = 32;
       break;
     default:
       tck_len = 12;
@@ -61,7 +74,7 @@ void ProgAlgXC3S::flow_enable()
 {
   byte data[1];
 
-  jtag->shiftIR(&ISC_ENABLE);
+  jtag->shiftIR(ISC_ENABLE);
   data[0]=0x0;
   jtag->shiftDR(data,0,5);
   jtag->cycleTCK(tck_len);
@@ -71,9 +84,9 @@ void ProgAlgXC3S::flow_disable()
 {
   byte data[1];
 
-  jtag->shiftIR(&ISC_DISABLE);
+  jtag->shiftIR(ISC_DISABLE);
   jtag->cycleTCK(tck_len);
-  jtag->shiftIR(&BYPASS);
+  jtag->shiftIR(BYPASS);
   data[0]=0x0;
   jtag->shiftDR(data,0,1);
   jtag->cycleTCK(1);
@@ -82,12 +95,11 @@ void ProgAlgXC3S::flow_disable()
 
 void ProgAlgXC3S::flow_array_program(BitFile &file)
 {
-  struct timeval tv[2];
+  Timer timer;
   unsigned int i;
-  gettimeofday(tv, NULL);
   for(i=0; i<file.getLength(); i= i+ array_transfer_len)
     {
-      jtag->shiftIR(&ISC_PROGRAM);
+      jtag->shiftIR(ISC_PROGRAM);
       jtag->shiftDR(&(file.getData())[i/8],0,array_transfer_len);
       jtag->cycleTCK(1);
       if((i % (10000*array_transfer_len)) == 0)
@@ -96,28 +108,26 @@ void ProgAlgXC3S::flow_array_program(BitFile &file)
 	  fflush(stderr);
 	}
     }
-  gettimeofday(tv+1, NULL);
   
   // Print the timing summary
   if (jtag->getVerbose())
     fprintf(stderr, " done. Programming time %.1f ms\n",
-	    (double)deltaT(tv, tv + 1)/1.0e3);
+	    timer.elapsed() * 1000);
 }
 
 void ProgAlgXC3S::flow_program_legacy(BitFile &file)
 {
+  Timer timer;
   byte data[2];
-  struct timeval tv[2];
-  gettimeofday(tv, NULL);
 
-  jtag->shiftIR(&JSHUTDOWN);
+  jtag->shiftIR(JSHUTDOWN);
   jtag->cycleTCK(tck_len);
-  jtag->shiftIR(&CFG_IN);
+  jtag->shiftIR(CFG_IN);
   jtag->shiftDR((file.getData()),0,file.getLength());
   jtag->cycleTCK(1);
-  jtag->shiftIR(&JSTART);
+  jtag->shiftIR(JSTART);
   jtag->cycleTCK(2*tck_len);
-  jtag->shiftIR(&BYPASS);
+  jtag->shiftIR(BYPASS);
   data[0]=0x0;
   jtag->shiftDR(data,0,1);
   jtag->cycleTCK(1);
@@ -125,9 +135,8 @@ void ProgAlgXC3S::flow_program_legacy(BitFile &file)
   // Print the timing summary
   if (jtag->getVerbose())
     {
-      gettimeofday(tv+1, NULL);
       fprintf(stderr, "done. Programming time %.1f ms\n",
-	      (double)deltaT(tv, tv + 1)/1.0e3);
+	      timer.elapsed() * 1000);
     }
  
 }
@@ -135,15 +144,17 @@ void ProgAlgXC3S::array_program(BitFile &file)
 {
   unsigned char buf[1] = {0};
   int i = 0;
+
   flow_enable();
+
   /* JPROGAM: Triger reconfiguration, not explained in ug332, but
      DS099 Figure 28:  Boundary-Scan Configuration Flow Diagram (p.49) */
-  jtag->shiftIR(&JPROGRAM);
+  jtag->shiftIR(JPROGRAM);
   do
-    jtag->shiftIR(&CFG_IN, buf);
+    jtag->shiftIR(CFG_IN, buf);
   while (! (buf[0] & 0x10)); /* wait until configuration cleared */
-  /* As ISC_DNA only works on a unconfigured device, see AR #29977*/
 
+  /* As ISC_DNA only works on a unconfigured device, see AR #29977*/
   switch(family)
     {
     case 0x11: /* XC3SA*/
@@ -152,8 +163,8 @@ void ProgAlgXC3S::array_program(BitFile &file)
     case 0x20: /* SC3SADSP*/
       {
 	byte data[8];
-	jtag->shiftIR(&ISC_ENABLE);
-	jtag->shiftIR(&ISC_DNA);
+	jtag->shiftIR(ISC_ENABLE);
+	jtag->shiftIR(ISC_DNA);
 	jtag->shiftDR(0, data, 64);
 	jtag->cycleTCK(1);
 	if (*(long long*)data != -1LL)
@@ -169,10 +180,11 @@ void ProgAlgXC3S::array_program(BitFile &file)
   flow_program_legacy(file);
   /*flow_array_program(file);*/
   flow_disable();
-  /* Wait until device comes up */  /* Wait until device comes up */
+
+  /* Wait until device comes up */
   while ((( buf[0] & 0x23) != 0x21) && (i <50))
     {
-      jtag->shiftIR(&BYPASS, buf);
+      jtag->shiftIR(BYPASS, buf);
       jtag->Usleep(1000);
       i++;
     }
@@ -184,6 +196,22 @@ void ProgAlgXC3S::array_program(BitFile &file)
 
 void ProgAlgXC3S::reconfig(void)
 {
+  switch(family)
+    {
+    case FAMILY_XC2V:
+    case FAMILY_XC3S:
+    case FAMILY_XC3SE:
+    case FAMILY_XC3SA:
+    case FAMILY_XC3SAN:
+    case FAMILY_XC3SD:
+    case FAMILY_XC6S:
+      break;
+    default:
+      fprintf(stderr, "Device does not support reconfiguration.\n");
+// TODO : return error code
+      return;
+    }
+
     /* Sequence is from AR #31913
        FFFF Dummy Word
        9955 SYNC
@@ -205,18 +233,19 @@ void ProgAlgXC3S::reconfig(void)
     byte xc6sbuf[12]= {0xff, 0xff, 0x55, 0x99, 0xaa, 0x66, 0x0c,
                        0x85, 0x00, 0x70, 0x04, 0x00};
 
-  jtag->shiftIR(&JSHUTDOWN);
+  jtag->shiftIR(JSHUTDOWN);
   jtag->cycleTCK(16);
-  jtag->shiftIR(&CFG_IN);
+  jtag->shiftIR(CFG_IN);
   if(jtag->getVerbose())
       fprintf(stderr, "Trying reconfigure\n");
   if(family == 0x20) /*XC6S*/
      jtag->shiftDR(xc6sbuf, NULL, 12*8 );
   else
      jtag->shiftDR(xc3sbuf, NULL, 12*8 );
-  jtag->shiftIR(&JSTART);
+  jtag->shiftIR(JSTART);
   jtag->cycleTCK(32);
-  jtag->shiftIR(&BYPASS);
+  jtag->shiftIR(BYPASS);
   jtag->cycleTCK(1);
   jtag->setTapState(Jtag::TEST_LOGIC_RESET);
 }
+

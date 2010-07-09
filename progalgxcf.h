@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include "iobase.h"
 #include "progalg.h"
 
+#define FAMILY_XCF      0x28
+
 class ProgAlgXCF : public ProgAlg
 {
  private:

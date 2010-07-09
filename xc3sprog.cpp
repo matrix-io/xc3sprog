@@ -59,6 +59,9 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define IDCODE_TO_FAMILY(id)        ((id>>21) & 0x7f)
 #define IDCODE_TO_MANUFACTURER(id)  ((id>>1) & 0x3ff)
 
+#define MANUFACTURER_ATMEL          0x01f
+#define MANUFACTURER_XILINX         0x049
+
 int programXC3S(Jtag &g, BitFile &file, bool verify, bool reconfig,
 		int family);
 int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
@@ -573,7 +576,8 @@ int main(int argc, char **args)
   unsigned int family = IDCODE_TO_FAMILY(id);
   unsigned int manufacturer = IDCODE_TO_MANUFACTURER(id);
 
-  if (nchainpos != 1 && (manufacturer != 0x049 || family != 0x28)) 
+  if (nchainpos != 1 &&
+      (manufacturer != MANUFACTURER_XILINX || family != FAMILY_XCF)) 
     {
       fprintf(stderr, "Multiple positions only supported in case of XCF\n");
       usage(false);
@@ -625,17 +629,22 @@ int main(int argc, char **args)
 	}
     }
 
-  if ( manufacturer == 0x049) /* XILINX*/
+  if (manufacturer == MANUFACTURER_XILINX)
     {
-      /* Probably XC4V and  XC5V should work too. No devices to test at IKDA */
-      if( (family == 0x0a) || /*XC3S*/
-	  (family == 0x0e) || /*XC3SE*/
-	  (family == 0x11) || /*XC3SA*/
-	  (family == 0x13) || /*XC3SAN*/
-	  (family == 0x1c) || /*XC3SD*/
-	  (family == 0x20) || /*XC6S*/
-	  (family == 0x28) || /*XCF*/
-	  (family == 0x08)    /*XC2V*/
+      /* Probably XC4V and XC5V should work too. No devices to test at IKDA */
+      if( (family == FAMILY_XC3S) ||
+	  (family == FAMILY_XC3SE) ||
+	  (family == FAMILY_XC3SA) ||
+	  (family == FAMILY_XC3SAN) ||
+	  (family == FAMILY_XC3SD) ||
+	  (family == FAMILY_XC6S) ||
+	  (family == FAMILY_XCF) ||
+	  (family == FAMILY_XC2V) ||
+          (family == FAMILY_XC5VLX) ||
+          (family == FAMILY_XC5VLXT) ||
+          (family == FAMILY_XC5VSXT) ||
+          (family == FAMILY_XC5VFXT) ||
+          (family == FAMILY_XC5VTXT)
 	  )
 	{
 	  try 
@@ -656,7 +665,7 @@ int main(int argc, char **args)
 		      fprintf(stderr, "Bitstream length: %lu bits\n",
 			      file.getLength());
 		    }      
-		  if (family == 0x28)
+		  if (family == FAMILY_XCF)
 		    {
 		      for(int i = 1; i < argc; i++) 
 			{
@@ -681,7 +690,7 @@ int main(int argc, char **args)
 			}
 		    }
 		}
-	      if (family == 0x28)
+	      if (family == FAMILY_XCF)
 		{
                     return programXCF(jtag, db, file, verify, reconfigure,
                              fpout, out_style,
@@ -822,7 +831,7 @@ int main(int argc, char **args)
 	  return 1;
 	}
     }
-  else if  ( manufacturer == 0x01f) /* Atmel */
+  else if  ( manufacturer == MANUFACTURER_ATMEL)
     {
       return jAVR (jtag, id, args[0],verify, lock, eepromfile, fusefile);
     }
@@ -882,7 +891,8 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
   for (int i = 0; i < nchainpos; i++)
     {
       unsigned long id = get_id(jtag, db, chainpositions[i]);
-      if (IDCODE_TO_MANUFACTURER(id) != 0x49 || IDCODE_TO_FAMILY(id) != 0x28)
+      if (IDCODE_TO_MANUFACTURER(id) != MANUFACTURER_XILINX ||
+          IDCODE_TO_FAMILY(id) != FAMILY_XCF)
         {
           fprintf(stderr, "Multiple positions only supported in case of XCF\n");
           usage(false);

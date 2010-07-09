@@ -29,18 +29,22 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "bitfile.h"
 #include "jtag.h"
 
+#define FAMILY_XC2V     0x08
+#define FAMILY_XC3S     0x0a
+#define FAMILY_XC3SE    0x0e
+#define FAMILY_XC3SA    0x11
+#define FAMILY_XC3SAN   0x13
+#define FAMILY_XC5VLX   0x14
+#define FAMILY_XC5VLXT  0x15
+#define FAMILY_XC5VSXT  0x17
+#define FAMILY_XC5VFXT  0x19
+#define FAMILY_XC3SD    0x1c
+#define FAMILY_XC6S     0x20
+#define FAMILY_XC5VTXT  0x22
+
 class ProgAlgXC3S
 {
  private:
-  static const byte JPROGRAM;
-  static const byte CFG_IN;
-  static const byte JSHUTDOWN;
-  static const byte JSTART;
-  static const byte ISC_PROGRAM;
-  static const byte ISC_DNA;
-  static const byte ISC_ENABLE;
-  static const byte ISC_DISABLE;
-  static const byte BYPASS;
   Jtag *jtag;
   int family;
   int tck_len;
