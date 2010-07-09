@@ -199,17 +199,22 @@ int ProgAlgXCFP::program(BitFile &file)
             }
 
           jtag->shiftIR(ISC_PROGRAM);
-          jtag->Usleep(100);
-        }
+          jtag->Usleep((i == 0) ? 1000 : 25);
 
-      jtag->shiftIR(XSC_OP_STATUS);
-      jtag->Usleep(10000);
-      jtag->shiftDR(0, xcstatus, 8);
-      if (xcstatus[0] != 0x36)
-        {
-          ret = 1;
-          fprintf(stderr,"\nProgramming failed! Aborting\n");
-          break;
+          for (int t = 0; t < 100; t++)
+            {
+              jtag->shiftIR(XSC_OP_STATUS);
+              jtag->shiftDR(0, xcstatus, 8);
+              if (xcstatus[0] & 0x04)
+                break;
+            }
+          if (xcstatus[0] != 0x36)
+            {
+              ret = 1;
+              fprintf(stderr,"\nProgramming failed! Aborting\n");
+              break;
+            }
+
         }
 
       // no need to program more arrays after end of bitfile
@@ -363,7 +368,7 @@ int ProgAlgXCFP::verify(BitFile &file)
                     k*0x100000+i*32, k*0x100000+i*32+n/8-1);
 
           jtag->shiftIR(ISC_READ);
-          jtag->Usleep(100);
+          jtag->Usleep(25);
 
           jtag->shiftIR(ISC_DATA_SHIFT);
           jtag->cycleTCK(1);
@@ -497,7 +502,7 @@ int ProgAlgXCFP::read(BitFile &file)
                     k*0x100000+i*32,k*0x100000+i*32+31);
 
           jtag->shiftIR(ISC_READ);
-          jtag->Usleep(100);
+          jtag->Usleep(25);
 
           unsigned long p = ((k - first_block) * 32768 + i) * 256;
           jtag->shiftIR(ISC_DATA_SHIFT);
