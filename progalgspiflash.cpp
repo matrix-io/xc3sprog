@@ -553,8 +553,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	  spi_xfer_user1(NULL,0,0,fbuf, 0, 4);
 	  fbuf[0] = READ_STATUS_REGISTER;
 	  if(jtag->getVerbose())
-	    fprintf(stderr,"                                              \r"
-		    "Erasing sector %2d", sector_nr);
+	    fprintf(stderr,"\rErasing sector %2d", sector_nr);
 	  j = 0;
 	  spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
 	  gettimeofday(tv, NULL);
@@ -564,8 +563,9 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	      jtag->Usleep(1000);       
 	      spi_xfer_user1(rbuf,1,1,fbuf, 1, 1);
 	      j++;
-	      if ((jtag->getVerbose()) &&((j & 0xf) == 0xf))
+	      if ((jtag->getVerbose()) &&((j%100) == 99))
 		{
+                    /* one tick every 100 mS Erase wait time */
 		  fprintf(stderr,".");
 		  fflush(stderr);
 		}
@@ -586,10 +586,8 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
        }
       if(jtag->getVerbose())
        {
-         fprintf(stderr, "                                               "
-		 "                  \r"
-                 "Sector %3d, Writing page %5d/%5d", 
-		 sector_nr,i >>8, len>>8); 
+         fprintf(stderr, "\r\t\t\t\t\tWriting page %5d/%5d", 
+		 i >>8, len>>8); 
          fflush(stderr);
        }
       /* Enable Write */
@@ -672,7 +670,7 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
       
       if(jtag->getVerbose())
 	{
-	  fprintf(stderr, "                                              \r"
+	  fprintf(stderr, "\r                                                       \r"
 		  "Writing page %4d",page-1); 
 	  fflush(stderr);
 	}
