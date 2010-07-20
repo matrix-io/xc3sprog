@@ -57,11 +57,19 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #  define PARPORT_CONTROL_AUTOFD    AUTOFEED
 #  define PARPORT_CONTROL_INIT      INIT
 #  define PARPORT_CONTROL_SELECT    SELECTIN
-  
+                     /* DLC 5 Schematics:
+            http://www.xilinx.com/itp/xilinx4/data/docs/pac/appendixb.html
+                        Pin Connectes for a 25 pin parallel port connector
+                        http://www.kabelfaq.de/-> parallel
+                        Pin 15 is nERR*/
 #  define PARPORT_STATUS_ERROR      nFAULT
+                     /* PIN 13 is SELECT (Printer is online)*/
 #  define PARPORT_STATUS_SELECT     SELECT
+                     /* PIN 12 is PE */
 #  define PARPORT_STATUS_PAPEROUT   PERROR
+                     /* PIN 10 is nACK */
 #  define PARPORT_STATUS_ACK        nACK
+                     /* PIN 11 is nBusy */
 #  define PARPORT_STATUS_BUSY       nBUSY
 
 #elif defined (__WIN32__)
@@ -246,11 +254,19 @@ int  IOParport::detectcable(void)
 	return NO_CABLE;
       }
 
+/* 20100708: This check will only work with U1 on the DLC(clone) 
+ * from a high drive family like LVC and a not so strong driver at the end
+ * of the JTAG chain, like an XCF0x.
+ * E.G. Digilent S3 drives TDO-A with an LVC, while the
+ * original DLC5 only has an HC125, and so the HC125 can not drive the line
+ * low consitstantly
+ *
+ * So disable this check
+
     if ((status & PCIII_TDO_MASK) && (!(data & PCIII_PROG_EN_N))) {
 	fprintf(stderr,"Missing power for Parallel Cable III\n");
-	return NO_CABLE;
-    }
-
+	return NO_CABLE;}
+*/
     data = (data & PCIII_CHECK_OUT) ? (data & ~PCIII_CHECK_OUT) :
       (data |PCIII_CHECK_OUT);
     write_data(fd, data);
