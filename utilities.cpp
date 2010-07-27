@@ -97,7 +97,7 @@ int getSubtype(const char *given_name, CABLES_TYPES *cable, int *channel)
 	*cable = CABLE_FTDI;
       if(*channel == 0)
           *channel = 2;
-      return FTDI_IKDA;
+      return FTDI_FTDIJTAG;
     }
   return -1;
 }
