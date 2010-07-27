@@ -45,6 +45,7 @@
 #include "ioxpc.h"
 #include "jtag_javr.h"
 #include "devicedb.h"
+#include "utilities.h"
 
 #include "jtag.h"
 
@@ -108,7 +109,7 @@ int main(int argc, char **args)
   bool    gProgramFlash = false;
   bool    gProgramEeprom = false;
   bool    gProgramFuseBits = false;
-  char const *cable     = 0;
+  CABLES_TYPES cable    = CABLE_NONE;
   char const *dev       = 0;
   char const *eepromfile= 0;
   static char DefName[256];
@@ -121,7 +122,9 @@ int main(int argc, char **args)
   int subtype = FTDI_NO_EN;
   char *devicedb = NULL;
   DeviceDB db(devicedb);
+  std::auto_ptr<IOBase>  io;
   long value;
+  int res;
 
   // Start from parsing command line arguments
   while(true) {
@@ -142,10 +145,15 @@ int main(int argc, char **args)
       break;
 
     case 'c':
-      cable = optarg;
+      cable =  getCable(optarg);
+      if(cable == CABLE_UNKNOWN)
+	{
+	  fprintf(stderr,"Unknown cable %s\n", optarg);
+	  usage();
+	}
       break;
 
-    case 'D':
+     case 'D':
       channel = atoi(optarg);
       break;
 
@@ -158,39 +166,10 @@ int main(int argc, char **args)
       break;
 
     case 't':
-      if (strcasecmp(optarg, "ikda") == 0)
+      subtype = getSubtype(optarg, &cable, &channel);
+      if (subtype == -1)
 	{
-	  subtype = FTDI_IKDA;
-	  if (!cable)
-	    cable = "ftdi";
-	}
-      else if (strcasecmp(optarg, "ftdijtag") == 0)
-	{
-	  subtype = FTDI_FTDIJTAG;
-	   if (!cable)
-	     cable = "ftdi";
-	}
-      else if (strcasecmp(optarg, "olimex") == 0)
-	{
-	  subtype = FTDI_OLIMEX;
-	  if (!cable)
-	    cable = "ftdi";
-	}
-      else if (strcasecmp(optarg, "amontec") == 0)
-	{
-	  subtype = FTDI_AMONTEC;
-	  if (!cable)
-	    cable = "ftdi";
-	}
-      else if (strcasecmp(optarg, "int") == 0)
-	{
-	  subtype = XPC_INTERNAL;
-	  if (!cable)
-	    cable = "xpc";
-	}
-      else
-	{
-	  fprintf(stderr, "\bUnknown subtype \"%s\"\n", optarg);
+	  fprintf(stderr,"Unknow subtype %s\n", optarg);
 	  usage();
 	}
       break;
@@ -307,67 +286,23 @@ int main(int argc, char **args)
   // Produce release info from CVS tags
   printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests! Check Sourceforge SVN!\n");
 
-  if(!cable)
-    cable = "pp";
-  std::auto_ptr<IOBase>  io;
-  try {  
-    if     (strcmp(cable, "pp"  ) == 0)  io.reset(new IOParport(dev));
-    else if(strcmp(cable, "ftdi") == 0)  
-      {
-	if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA)
-	    || (subtype == FTDI_FTDIJTAG))
-	  {
-	    if (vendor == 0)
-	      vendor = VENDOR_FTDI;
-	    if(product == 0)
-	      product = DEVICE_DEF;
-	  }
-	else if (subtype ==  FTDI_OLIMEX)
-	  {
-	    if (vendor == 0)
-	      vendor = VENDOR_OLIMEX;
-	    if(product == 0)
-	      product = DEVICE_OLIMEX_ARM_USB_OCD;
-	  }
-	else if (subtype ==  FTDI_AMONTEC)
-	  {
-	    if (vendor == 0)
-	      vendor = VENDOR_FTDI;
-	    if(product == 0)
-	      product = DEVICE_AMONTEC_KEY;
-	  }
-	io.reset(new IOFtdi(vendor, product, desc, serial, subtype, channel));
-      }
-    else if(strcmp(cable,  "fx2") == 0)  
-      {
-	if (vendor == 0)
-	  vendor = USRP_VENDOR;
-	if(product == 0)
-	  product = USRP_DEVICE;
-	io.reset(new IOFX2(vendor, product, desc, serial));
-      }
-    else if(strcmp(cable,  "xpc") == 0)  
-      {
-	if (vendor == 0)
-	  vendor = XPC_VENDOR;
-	if(product == 0)
-	  product = XPC_DEVICE;
-	io.reset(new IOXPC(vendor, product, desc, serial, subtype));
-      }
-    else  usage();
+  if (verbose)
+      fprintf(stderr, "Using Cable %s Subtype %s %s%c VID 0x%04x PID 0x%04x %s%s %s%s\n",
+              getCableName(cable),
+              getSubtypeName(subtype),
+              (channel)?"Channel ":"",(channel)? (channel+'0'):0,
+              vendor, product,
+              (desc)?"Product: ":"", (desc)?desc:"",
+              (serial)?"Serial: ":"", (serial)?serial:"");
 
-    io->setVerbose(verbose);
-  }
-  catch(io_exception& e) 
+  res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial);
+  if (res) /* some error happend*/
     {
-    if(strcmp(cable, "pp") != 0) 
-      {
-	fprintf(stderr, "Could not access USB device %04x:%04x.\n", 
-		vendor, product);
-      }
-    return 1;
+      if (res == 1) exit(1);
+      else usage();
     }
-
+  io.get()->setVerbose(verbose);
+  
   Jtag jtag = Jtag(io.operator->());
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
