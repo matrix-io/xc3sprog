@@ -544,6 +544,15 @@ int main(int argc, char **args)
   if(argc < 0)  usage(true);
   if(argc < 1 && !reconfigure) detectchain = true;
 
+  if (verbose)
+      fprintf(stderr, "Using Cable %s Subtype %s %s%c VID 0x%04x PID 0x%04x %s%s %s%s\n",
+              getCableName(cable),
+              getSubtypeName(subtype),
+              (channel)?"Channel ":"",(channel)? (channel+'0'):0,
+              vendor, product,
+              (desc)?"Product: ":"", (desc)?desc:"",
+              (serial)?"Serial: ":"", (serial)?serial:"");
+
   res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial);
   if (res) /* some error happend*/
     {

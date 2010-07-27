@@ -51,6 +51,32 @@ CABLES_TYPES getCable(const char *given_name)
   return CABLE_UNKNOWN;
 }
 
+const char * getCableName(CABLES_TYPES type)
+{
+    switch (type)
+    {
+    case CABLE_PP: return "pp"; break;
+    case CABLE_FTDI: return "ftdi"; break;
+    case CABLE_FX2: return "fx2"; break;
+    case CABLE_XPC: return "xpc"; break;
+    default:
+        return "Unknown";
+    }
+}
+const char * getSubtypeName(int subtype)
+{
+    switch (subtype)
+    {
+    case FTDI_NO_EN: return "No enable"; break;
+    case FTDI_IKDA: return "IKDA"; break;
+    case FTDI_OLIMEX: return "OLIMEX"; break;
+    case FTDI_AMONTEC: return "AMONTEC"; break;
+    case FTDI_FTDIJTAG: return "FTDIJTAG"; break;
+    default:
+        return "Unknown";
+    }
+}
+
 int getSubtype(const char *given_name, CABLES_TYPES *cable, int *channel)
 {
   if (strcasecmp(given_name, "ikda") == 0)
