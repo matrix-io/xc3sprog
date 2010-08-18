@@ -450,7 +450,13 @@ int main(int argc, char **args)
       break;
 
     case 'D':
-      channel = atoi(optarg);
+      char *endptr;  
+      channel = strtol(optarg, &endptr, 10);
+      if(channel < 0 || channel > 2 || endptr == optarg)
+      {
+	  fprintf(stderr,"Unknown interface %s\n", optarg);
+	  usage(false);
+      }
       break;
 
     case 'f':
