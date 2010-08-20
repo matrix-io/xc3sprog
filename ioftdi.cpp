@@ -480,7 +480,6 @@ void IOFtdi::mpsse_send() {
     {
       fprintf(stderr,"mpsse_send: Short write %d vs %d at run %d, Err: %s\n", 
 	      written, bptr, calls_wr, ftdi_get_error_string(&ftdi));
-      deinit();
       throw  io_exception();
   }
 #endif
