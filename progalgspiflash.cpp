@@ -607,8 +607,11 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	{
 	  spi_xfer_user1(rbuf,1,1,fbuf, 1, 1);
 	  j++;
-	  fprintf(stderr,".");
-	  fflush(stderr);
+          if(jtag->getVerbose())
+          {
+              fprintf(stderr,".");
+              fflush(stderr);
+          }
 	}
       while ((rbuf[0] & WRITE_BUSY) && (j <50));
       gettimeofday(tv+1, NULL);
