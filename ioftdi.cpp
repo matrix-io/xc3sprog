@@ -384,13 +384,28 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
 
 void IOFtdi::deinit(void)
 {
-  unsigned char   buf[6] = { SET_BITS_LOW, 0xff, 0x00,
-                             SET_BITS_HIGH, 0xff, 0x00};
-  mpsse_add_cmd(buf, 6); /* Disable all Pins */
-  mpsse_send();
+  int read;
+  /* Before shutdown, we must wait until everything is shifted out
+     Do this by temporary enabling loopback mode, write something 
+     and wait until we can read it back */
+  static unsigned char   tbuf[16] = { SET_BITS_LOW, 0xff, 0x00,
+                                      SET_BITS_HIGH, 0xff, 0x00,
+                                      LOOPBACK_START,
+				      MPSSE_DO_READ|MPSSE_READ_NEG|
+				      MPSSE_DO_WRITE|MPSSE_WRITE_NEG|MPSSE_LSB, 
+				      0x04, 0x00,
+				      0xaa, 0x55, 0x00, 0xff, 0xaa, 
+				      LOOPBACK_END};
+  mpsse_add_cmd(tbuf, 16);
+  read = readusb( tbuf,5);
+  if  (read != 5) 
+      fprintf(stderr,"Loopback failed, expect problems on later runs\n");
+  
 #if defined (USE_FTD2XX)
   FT_Close(ftdi);
 #else
+  ftdi_set_bitmode(&ftdi, 0, BITMODE_RESET);
+  ftdi_usb_reset(&ftdi);
   ftdi_usb_close(&ftdi);
   ftdi_deinit(&ftdi);
 #endif
@@ -401,22 +416,6 @@ void IOFtdi::deinit(void)
   
 IOFtdi::~IOFtdi()
 {
-  int read;
-  /* Before shutdown, we must wait until everything is shifted out
-     Do this by temporary enabling loopback mode, write something 
-     and wait until we can read it back */
-  static unsigned char   tbuf[10] = { LOOPBACK_START,
-				      MPSSE_DO_READ|MPSSE_READ_NEG|
-				      MPSSE_DO_WRITE|MPSSE_WRITE_NEG|MPSSE_LSB, 
-				      0x04, 0x00,
-				      0xaa, 0x55, 0x00, 0xff, 0xaa, 
-				      LOOPBACK_END};
-  mpsse_add_cmd(tbuf, 10);
-  read = readusb( tbuf,5);
-  if  (read != 5) 
-    {
-      fprintf(stderr,"Loopback: Failed to read 5 bytes, read %d\n", read);
-    };
   deinit();
   if(fp_dbg)
     fclose(fp_dbg);
