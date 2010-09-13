@@ -84,7 +84,6 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
 #else
     // initialize FTDI structure
     ftdi_init(&ftdi);
-    
     // Set interface
     if (channel > 2)
       throw  io_exception(std::string("invalid MPSSE channel"));  
@@ -120,8 +119,14 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
     mpsse_add_cmd(buf, 6);
   else if (subtype == FTDI_IKDA)
     mpsse_add_cmd(buf, 9);
-  else if ((subtype == FTDI_OLIMEX) || (subtype == FTDI_FTDIJTAG) || (subtype == FTDI_AMONTEC))
+  else if ((subtype == FTDI_OLIMEX  ) || (subtype == FTDI_FTDIJTAG) || 
+           (subtype == FTDI_AMONTEC ) || (subtype == FTDI_LLBBC   ) ||
+           (subtype == FTDI_LLIF))
     {
+      if (subtype == FTDI_LLBBC)  
+          buf[1] = 0x10; /* Switch off forwarding of JTAG to backplane */
+      if (subtype == FTDI_LLIF)  
+          buf[4] = 0x00/*1*/; /* Slower speed when driving backplane*/
       buf[2] = 0x1b; /* Enable nOE on ADBUS4 */
       buf[7] = 0x0f; /* Disable and tristate TRST/SRST. Switch on LED*/
       buf[8] = 0x0f; /* Disable and tristate TRST/SRST. Switch on LED*/
@@ -130,6 +135,8 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
   else
     throw  io_exception(std::string("Unknown subtype"));
   mpsse_send();
+  if(buf[5] || buf[4]) /* verbose Variable not yet accessible */
+      fprintf(stderr, "Using FTDI Clock divisor 0x%02x%02x\n",buf[5],buf[4]);
 }
 
 void IOFtdi::settype(int sub_type)
