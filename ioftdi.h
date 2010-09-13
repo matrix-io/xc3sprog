@@ -39,11 +39,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #define DEVICE_OLIMEX_ARM_USB_OCD 0x0003
 #define DEVICE_AMONTEC_KEY 0xcff8
 
-#define FTDI_NO_EN 0
-#define FTDI_IKDA  1
-#define FTDI_OLIMEX  2
+#define FTDI_NO_EN    0
+#define FTDI_IKDA     1
+#define FTDI_OLIMEX   2
 #define FTDI_AMONTEC  3
 #define FTDI_FTDIJTAG 4  
+#define FTDI_LLBBC    5   
+#define FTDI_LLIF     6   
 
 #define TX_BUF (4096)
 

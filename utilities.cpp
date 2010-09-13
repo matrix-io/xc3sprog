@@ -72,6 +72,8 @@ const char * getSubtypeName(int subtype)
     case FTDI_OLIMEX: return "OLIMEX"; break;
     case FTDI_AMONTEC: return "AMONTEC"; break;
     case FTDI_FTDIJTAG: return "FTDIJTAG"; break;
+    case FTDI_LLBBC: return "LLBBC"; break;
+    case FTDI_LLIF: return "LLIF"; break;
     default:
         return "Unknown";
     }
@@ -117,13 +119,21 @@ int getSubtype(const char *given_name, CABLES_TYPES *cable, int *channel)
 	*cable = CABLE_XPC;
       return XPC_INTERNAL;
     }
-  else if (strcasecmp(given_name, "llbbc10") == 0)
+  else if (strcasecmp(given_name, "llbbc") == 0)
     {
       if (*cable == CABLE_NONE)
 	*cable = CABLE_FTDI;
       if(*channel == 0)
           *channel = 2;
-      return FTDI_FTDIJTAG;
+      return FTDI_LLBBC;
+    }
+  else if (strcasecmp(given_name, "llif") == 0)
+    {
+      if (*cable == CABLE_NONE)
+	*cable = CABLE_FTDI;
+      if(*channel == 0)
+          *channel = 2;
+      return FTDI_LLIF;
     }
   return -1;
 }
@@ -155,7 +165,8 @@ int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, int chan
 	if(cable == CABLE_FTDI)  
 	  {
 	    if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA)
-		|| (subtype == FTDI_FTDIJTAG))
+		|| (subtype == FTDI_FTDIJTAG) || (subtype == FTDI_LLBBC)
+                || (subtype == FTDI_LLIF))
 	      {
 		if (vendor == 0)
 		  vendor = VENDOR_FTDI;

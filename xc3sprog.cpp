@@ -33,6 +33,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <errno.h>
 #include <assert.h>
 #include <sys/stat.h>
+#include <signal.h>
 
 #include "io_exception.h"
 #include "ioparport.h"
@@ -62,6 +63,12 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define MANUFACTURER_ATMEL          0x01f
 #define MANUFACTURER_XILINX         0x049
 
+    int do_exit = 0;
+void ctrl_c(int sig)
+{
+  do_exit = 1;
+}
+
 int programXC3S(Jtag &g, BitFile &file, bool verify, bool reconfig,
 		int family);
 int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
@@ -86,6 +93,7 @@ int programSPI(ProgAlgSPIFlash &alg, Jtag &j, BitFile &file, bool verify,
 void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 {
   int num=jtag->getChain();
+  int failed = 0;
   int len = 0;
   int i, j, k;
   unsigned char ir_in[256];
@@ -114,8 +122,12 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 	}
       return;
     }
+  if(num >8)
+      fprintf(stderr, "Found %d devices\n", num);
   
   /* Read the IDCODE via the IDCODE command */
+  (void) signal (SIGINT, ctrl_c);
+
   for(i=0; i<num; i++)
     {
       jtag->setTapState(Jtag::TEST_LOGIC_RESET);
@@ -161,7 +173,7 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 	  fprintf(stderr, " ");
 	}
       fflush(stderr);
-      for(i=0; i<test_count; i++)
+      for(i=0; i<test_count&& !do_exit; i++)
 	{
 	  jtag->setTapState(Jtag::SELECT_DR_SCAN);
 	  jtag->setTapState(Jtag::SHIFT_IR);
@@ -170,6 +182,7 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 	  if (memcmp(dout, dcmp, (len+1)>>3) !=0)
 	    {
 	      fprintf(stderr, "mismatch run %d\n", i);
+              failed++;
 	      for(j=0; j <len>>3;  j++)
 		fprintf(stderr, "%02x", dcmp[j]);
 	      fprintf(stderr, " ");	      k=len-1;
@@ -198,7 +211,7 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
       fprintf(stderr, "Reading ID_CODE %d  times\n", test_count);
       memset(ir_in, 0, 256);
       /* exercise the chain */
-      for(i=num-1; i>=0; i--)
+      for(i=num-1; i>=0 && !do_exit; i--)
 	{
 	  for(j=0; j< db.getIRLength(i); j++)
 	    {
@@ -217,7 +230,7 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 	fprintf(stderr, " 0x%08lx", jtag->getDeviceID(i));
 
       jtag->tapTestLogicReset();
-      for(i=0; i<test_count; i++)
+      for(i=0; i<test_count&& !do_exit; i++)
 	{
 	  jtag->setTapState(Jtag::SHIFT_IR);
 	  io->shiftTDI(ir_in,len,true);
@@ -229,11 +242,12 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 	  if(memcmp(dout, dcmp, num*4) !=0)
 	    {
 	      fprintf(stderr, "\nMismatch run %8d:", i+1);
+              failed++;
 	      for(j=num-1; j>=0; j--)
 		if(memcmp(dout+j*4, dcmp+j*4, 4) !=0)
 		  fprintf(stderr," 0x%08lx", jtag->byteArrayToLong(dout+j*4));
 		else
-		  fprintf(stderr," 0x%08lx", jtag->byteArrayToLong(dout+j*4));
+		  fprintf(stderr," XXXXXXXXXXX");
 		  //		  fprintf(stderr,"           ");
 	      fflush(stderr);
 	    }
@@ -245,6 +259,9 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 	} 
       fprintf(stderr, "\n");
     }
+  if (failed)
+      fprintf(stderr, "Failed %8d/%8d\n", failed, i);
+  signal (SIGINT, SIG_DFL);
 }
 
 int init_chain(Jtag &jtag, DeviceDB &db)
@@ -330,7 +347,7 @@ void usage(bool all_options)
   OPT("-s num" , "(usb devices only) Serial number string.");
   /* FTDI/FX cables */
   OPT("-t type", "(ftdi only       ) Type can be "
-      "[NONE|IKDA|OLIMEX|FTDIJTAG|AMONTEC].");
+      "[NONE|IKDA|OLIMEX|FTDIJTAG|AMONTEC|LLBBC|LLIF].");
   OPT("-D if  ", "(ftdi only       ) MPSSE Interface can be"
       "[0|1|2] for any|INTERFACE_A|INTERFACE_B.");
   /* Xilinx USB JTAG cable */
