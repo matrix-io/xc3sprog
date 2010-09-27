@@ -105,6 +105,62 @@ int ProgAlgSPIFlash::spi_flashinfo_s33(unsigned char *buf)
   return 1;
 }
 
+int ProgAlgSPIFlash::spi_flashinfo_amic(unsigned char *buf) 
+{
+  fprintf(stderr, "Found AMIC Device, Device ID 0x%02x%02x\n",
+	  buf[1], buf[2]);
+  switch (buf[2])
+    {
+    case 0x10:
+      pages = 256;
+      break;
+    case 0x11:
+      pages = 512;
+      break;
+    case 0x12:
+      pages = 1024;
+      break;
+    case 0x13:
+      pages = 2048;
+      break;
+    case 0x14:
+      pages = 4096;
+      break;
+    case 0x15:
+      pages = 8192;
+      break;
+    case 0x16:
+      pages = 16384;
+      break;
+    default:
+      fprintf(stderr,"Unexpected AMIC size ID 0x%02x\n", buf[2]);
+      return -1;
+    }
+  pgsize = 256;
+  fprintf(stderr, " \n");
+
+  return 1;
+}
+
+int ProgAlgSPIFlash::spi_flashinfo_amic_quad(unsigned char *buf) 
+{
+  fprintf(stderr, "Found AMIC Quad Device, Device ID 0x%02x%02x\n",
+	  buf[1], buf[2]);
+  switch (buf[2])
+    {
+    case 0x16:
+      pages = 16384;
+      break;
+    default:
+      fprintf(stderr,"Unexpected AMIC Quad size ID 0x%02x\n", buf[2]);
+      return -1;
+    }
+  pgsize = 256;
+  fprintf(stderr, " \n");
+
+  return 1;
+}
+
 int ProgAlgSPIFlash::spi_flashinfo_w25(unsigned char *buf) 
 {
   fprintf(stderr, "Found Winbond Device, Device ID 0x%02x%02x\n",
@@ -316,6 +372,12 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
     {
     case 0x1f:
       res = spi_flashinfo_at45(fbuf);
+      break;
+    case 0x30:
+      res = spi_flashinfo_amic(fbuf);
+      break;
+    case 0x40:
+      res = spi_flashinfo_amic_quad(fbuf);
       break;
     case 0x20:
       res = spi_flashinfo_m25p(fbuf);
@@ -647,6 +709,8 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
   case 0x1f: /* Atmel */
     return program_at45(pfile);
   case 0x20: /* Numonyx */
+  case 0x30: /* AMIC */
+  case 0x40: /* AMIC Quad */
   case 0xef: /* Winbond */
     return sectorerase_and_program(pfile);
   default:
