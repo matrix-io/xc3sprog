@@ -321,6 +321,7 @@ void usage(bool all_options)
   fprintf(stderr, "   %-8s  %s\n", (arg), (desc))
   OPT("-c", "Choose programmer type [pp|ftdi|fx2|xpc].");
   OPT("-C", "Verify device against file (no programming).");
+  OPT("-e", "Erase(XC95C only).");
   OPT("-h", "Print this help.");
   OPT("-i", "Input file format (BIT|BIN|MCS|MCSREV|HEX).");
   OPT("-I", "Work on connected SPI Flash (ISF Mode).");
@@ -354,7 +355,7 @@ void usage(bool all_options)
   OPT("-t",      "(xpc only        ) NONE or INT  (Internal Chain , not for DLC10))");
 
   fprintf(stderr, "\nDevice specific options:\n");
-  OPT("-e file", "(AVR only) EEPROM file.");
+  OPT("-E file", "(AVR only) EEPROM file.");
   OPT("-f file", "(AVR only) File with fuse bits.");
 
 #undef OPT
@@ -372,6 +373,7 @@ int main(int argc, char **args)
   bool     readback     = false;
   bool     spiflash     = false;
   bool     reconfigure  = false;
+  bool     erase        = false;
   unsigned long id;
   CABLES_TYPES cable    = CABLE_NONE;
   char const *dev       = 0;
@@ -411,7 +413,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hCLc:d:D:e:f:i:Ijm:o:p:P:rRs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hCLc:d:D:eE:f:i:Ijm:o:p:P:rRs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
@@ -463,6 +465,10 @@ int main(int argc, char **args)
       break;
 
     case 'e':
+      erase = true;;
+      break;
+
+    case 'E':
       eepromfile = optarg;
       break;
 
@@ -565,7 +571,7 @@ int main(int argc, char **args)
   argc -= optind;
   args += optind;
   if(argc < 0)  usage(true);
-  if(argc < 1 && !reconfigure) detectchain = true;
+  if(argc < 1 && !reconfigure && !erase) detectchain = true;
 
   if (verbose)
       fprintf(stderr, "Using Cable %s Subtype %s %s%c VID 0x%04x PID 0x%04x %s%s %s%s\n",
@@ -763,6 +769,8 @@ int main(int argc, char **args)
 	  int size = (id & 0x000ff000)>>13;
 	  JedecFile  file;
 	  ProgAlgXC95X alg(jtag, size);
+          if (erase)
+              return alg.erase();
 	  if (!readback)
 	    {
 	      int res = file.readFile(fpin);
