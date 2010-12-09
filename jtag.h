@@ -79,6 +79,7 @@ class Jtag
   int deviceIndex;
   FILE *fp_svf;
   bool shiftDRincomplete;
+  FILE *fp_dbg;
  public:
   Jtag(IOBase *iob);
   ~Jtag();
