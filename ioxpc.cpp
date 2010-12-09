@@ -39,6 +39,12 @@ IOXPC::IOXPC(int const vendor, int const product, char const *desc,
   unsigned char buf[2];
   unsigned long long lserial=0;
   int r;
+  char *fname = getenv("XPC_DEBUG");
+  if (fname)
+    fp_dbg = fopen(fname,"wb");
+  else
+      fp_dbg = NULL;
+ 
   
   subtype = stype;
   // Open device
@@ -98,6 +104,8 @@ IOXPC::~IOXPC()
 {
   xpcu_output_enable(xpcu, 0);
   xpc_close_interface (xpcu);
+  if(fp_dbg)
+    fclose(fp_dbg);
 }
 
 int IOXPC::xpcu_output_enable(struct usb_dev_handle *xpcu, int enable)
@@ -136,10 +144,8 @@ int IOXPC::xpcu_write_gpio(struct usb_dev_handle *xpcu, unsigned char bits)
       return -1;
     }
   call_ctrl++; 
-  //#define VERBOSE
-#ifdef VERBOSE
-  fprintf(stderr, "w%02x ", bits);
-#endif
+  if (fp_dbg)
+      fprintf(fp_dbg, "w%02x ", bits);
   return 0;
 }
 
@@ -154,10 +160,9 @@ int IOXPC::xpcu_read_gpio(struct usb_dev_handle *xpcu, unsigned char *bits)
       return -1;
     }
   call_ctrl++; 
-#ifdef VERBOSE
-  fprintf(stderr, "r%02x ", bits[0]);
-#endif
-  
+  if (fp_dbg)
+      fprintf(fp_dbg, "r%02x ", bits[0]);
+
   return 0;
 }
 
@@ -287,25 +292,24 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits,
       return -1;
     }
   call_ctrl++; 
-#ifdef VERBOSE
+  if(fp_dbg)
   {
     int i;
-    fprintf(stderr, "###\n");
-    fprintf(stderr, "reqno = %02X\n", reqno);
-    fprintf(stderr, "bits    = %d\n", bits);
-    fprintf(stderr, "in_len  = %d, in_len*2  = %d\n", in_len, in_len * 2);
-    fprintf(stderr, "out_len = %d, out_len*8 = %d\n", out_len, out_len * 8);
+    fprintf(fp_dbg, "###\n");
+    fprintf(fp_dbg, "reqno = %02X\n", reqno);
+    fprintf(fp_dbg, "bits    = %d\n", bits);
+    fprintf(fp_dbg, "in_len  = %d, in_len*2  = %d\n", in_len, in_len * 2);
+    fprintf(fp_dbg, "out_len = %d, out_len*8 = %d\n", out_len, out_len * 8);
     
-    fprintf(stderr, "a6_display(\"%02X\", \"", bits);
-    for(i=0;i<in_len;i++) fprintf(stderr, "%02X%s", in[i],
+    fprintf(fp_dbg, "a6_display(\"%02X\", \"", bits);
+    for(i=0;i<in_len;i++) fprintf(fp_dbg, "%02X%s", in[i],
 				  (i+1<in_len)?",":"");
-    fprintf(stderr, "\", ");
+    fprintf(fp_dbg, "\", ");
   }
-#endif
   
   if(usb_bulk_write(xpcu, 0x02, (char*)in, in_len, 1000)<0)
     {
-      fprintf(stderr, "\nusb_bulk_write error(shift): %s\n", usb_strerror());
+      fprintf(fp_dbg, "\nusb_bulk_write error(shift): %s\n", usb_strerror());
       return -1;
     }
   calls_wr++;
@@ -320,15 +324,14 @@ IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits,
       calls_rd++;
     }
   
-#ifdef VERBOSE
+  if(fp_dbg)
   {
     int i;
-    fprintf(stderr, "\"");
+    fprintf(fp_dbg, "\"");
     for(i=0;i<out_len;i++)
-      fprintf(stderr, "%02X%s", out[i], (i+1<out_len)?",":"");
-    fprintf(stderr, "\")\n");
+      fprintf(fp_dbg, "%02X%s", out[i], (i+1<out_len)?",":"");
+    fprintf(fp_dbg, "\")\n");
   }
-#endif
   
   return 0;
 }
@@ -432,15 +435,16 @@ void IOXPC::txrx_block(const unsigned char *in, unsigned char *out, int len,
 		       bool last)
 {
   int i;
-#ifdef VERBOSE
-  fprintf(stderr, "---\n");
-  fprintf(stderr, "transfer size %d, %s output\n", len, 
-	  (out!=NULL) ? "with" : "without");
-  fprintf(stderr, "tdi: ");
-  for(i=0;i<len;i++) 
-    fprintf(stderr, "%c", (in)?((in[i>>3] & (1<<i%8))?'1':'0'):'0');
-  fprintf(stderr, "%s\n",(last)?"last":"");
-#endif
+  if (fp_dbg)
+  {
+      fprintf(fp_dbg, "---\n");
+      fprintf(fp_dbg, "transfer size %d, %s output\n", len, 
+              (out!=NULL) ? "with" : "without");
+      fprintf(fp_dbg, "tdi: ");
+      for(i=0;i<len;i++) 
+          fprintf(fp_dbg, "%c", (in)?((in[i>>3] & (1<<i%8))?'1':'0'):'0');
+      fprintf(fp_dbg, "%s\n",(last)?"last":"");
+  }
   
   if (subtype == XPC_INTERNAL)
     {
@@ -514,13 +518,14 @@ void IOXPC::tx_tms(unsigned char *in, int len, int force)
 {
   int i;
 
-#ifdef VERBOSE
-  fprintf(stderr, "---\n");
-  fprintf(stderr, "transfer size %d\n", len);
-  fprintf(stderr, "TMS: ");
-  for(i=0;i<len;i++) fprintf(stderr, "%c", (in[i>>3] & 1<<(i%8))?'1':'0');
-  fprintf(stderr, "\n");
-#endif
+  if (fp_dbg)
+  {
+      fprintf(fp_dbg, "---\n");
+      fprintf(fp_dbg, "transfer size %d\n", len);
+      fprintf(fp_dbg, "TMS: ");
+      for(i=0;i<len;i++) fprintf(fp_dbg, "%c", (in[i>>3] & 1<<(i%8))?'1':'0');
+      fprintf(fp_dbg, "\n");
+  }
       
   if (subtype == XPC_INTERNAL)
     {
