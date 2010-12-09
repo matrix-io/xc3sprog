@@ -60,6 +60,7 @@ class IOXPC : public IOBase
   int bptr, calls_rd, calls_wr, call_ctrl;
   int subtype;
   unsigned long long hid;
+  FILE *fp_dbg;
   
  public:
   IOXPC(int const vendor, int const product, char const *desc, char const *serial, int subtype);
