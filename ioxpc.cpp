@@ -279,6 +279,8 @@ int IOXPC::xpcu_select_gpio(struct usb_dev_handle *xpcu, int int_or_ext )
  *   earliest one reached bit 0. The earliest of 15 bits however would 
  *   be bit 0, and if there's only one TDO bit, it arrives as the MSB
  *   of the word.
+ *
+ *   For transfers > 31 bits this doesn't seem to happen
  */
 int
 IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits,
@@ -360,33 +362,37 @@ IOXPC::xpcu_do_ext_transfer( xpc_ext_transfer_state_t *xts )
     }
   if(r >= 0 && xts->out_bits > 0)
     {
-      int out_idx = 0;
-      int out_rem = xts->out_bits;
+        int shift =  xts->out_bits & 0xf;
+        int i, j;
+ 
+        if (shift)
+            shift = 16 -shift;
+        if (xts->out_bits >31)
+            shift = 0;
+        fprintf(fp_dbg, "out_done %d shift %d\n", xts->out_done, shift);
+        for (i= 0; i <xts->out_bits; i++)
+        {
+            int bit_num = i + shift;
+            int bit_val = xts->buf[bit_num >>3] & (1 << (bit_num & 0x7));
+            if(!(xts->out_done & 0x7))
+                xts->out[xts->out_done>>3] = 0;
+            if (bit_val)
+                xts->out[xts->out_done>>3] |= (1<<(xts->out_done & 0x7));
+            xts->out_done++;
+        }
+       
       
-      while (out_rem > 0)
-	{
-	  uint32_t mask, rxw;
-	  
-	  rxw = (xts->buf[out_idx+1]<<8) | xts->buf[out_idx];
-	  
-	  /* In the last (incomplete) word, 
-	     the data isn't shifted completely to LSB */
-	  
-	  mask = (out_rem >= 16) ? 1 : (1<<(16 - out_rem));
-	  
-	  while(mask <= 32768 && out_rem > 0)
-	    {
-	      last_tdo = (rxw & mask) ? 1 : 0;
-	      if ((xts->out_done & 0x7 ) == 0)
-		xts->out[xts->out_done>>3] = 0;
-	      xts->out[xts->out_done>>3] |= (last_tdo<<(xts->out_done & 0x7 ));
-	      xts->out_done++;
-	      mask <<= 1;
-	      out_rem--;
-	    }
-	  
-	  out_idx += 2;
-	}
+      if (fp_dbg)
+      {
+          int i; 
+          fprintf(fp_dbg, "Shifted data");
+          for( i = 0; i < out_len; i++)
+          {
+              fprintf(fp_dbg, " %02x", xts->out[i]);
+          }
+          fprintf(fp_dbg, "\n");
+      }
+          
     }
   
   xts->in_bits = 0;
