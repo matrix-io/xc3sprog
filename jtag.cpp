@@ -17,6 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "jtag.h"
 #include <unistd.h>
 Jtag::Jtag(IOBase *iob)
@@ -29,10 +32,17 @@ Jtag::Jtag(IOBase *iob)
   deviceIndex = -1;
   numDevices  = -1;
   shiftDRincomplete=false;
+  char *fname = getenv("JTAG_DEBUG");
+  if (fname)
+    fp_dbg = fopen(fname,"wb");
+  else
+      fp_dbg = NULL;
 }
 
 Jtag::~Jtag(void)
 {
+  if(fp_dbg)
+    fclose(fp_dbg);
 }
 
 /* Detect chain length on first start, return chain length else*/
@@ -80,7 +90,9 @@ void Jtag::cycleTCK(int n, bool tdi)
 {
   if(current_state==TEST_LOGIC_RESET)
     fprintf(stderr, "cycleTCK in TEST_LOGIC_RESET\n");
-  io->shift(tdi, n, false);
+  if(fp_dbg)
+      fprintf(fp_dbg, "cycleTCK %d %s\n", n, (tdi)?"TDI":"");
+   io->shift(tdi, n, false);
 }
 
 void Jtag::Usleep(unsigned int usec)
@@ -140,6 +152,23 @@ void Jtag::shiftDR(const byte *tdi, byte *tdo, int length,
 {
   if(deviceIndex<0)return;
   int post=deviceIndex;
+
+  if(fp_dbg)
+  {
+      fprintf(fp_dbg, "shiftDR len %d\n", length);
+      if (tdi)
+      {
+          int i;
+          fprintf(fp_dbg, "In:\n" );
+          for (i=0; i< length>>3; i++)
+          {
+              fprintf(fp_dbg, " %02x", tdi[i]);
+              if (i % 80 == 70)
+                  fprintf(fp_dbg, "\n");
+          }
+          fprintf(fp_dbg, "\n");
+      }
+  }
   if(!shiftDRincomplete){
     int pre=numDevices-deviceIndex-1;
     if(align){
@@ -163,11 +192,32 @@ void Jtag::shiftDR(const byte *tdi, byte *tdo, int length,
     shiftDRincomplete=false;
   }
   else shiftDRincomplete=true;
+  if(fp_dbg)
+  {
+      if (tdo)
+      {
+          int i;
+          fprintf(fp_dbg, "Out:\n" );
+          for (i=0; i< length>>3; i++)
+          {
+              fprintf(fp_dbg, " %02x", tdo[i]);
+              if (i % 80 == 70)
+                  fprintf(fp_dbg, "\n");
+          }
+          fprintf(fp_dbg, "\n");
+      }
+  }
 }
 
 void Jtag::shiftIR(const byte *tdi, byte *tdo)
 {
   if(deviceIndex<0)return;
+  if(fp_dbg)
+  {
+      fprintf(fp_dbg, "shiftIR ");
+      if (tdi)
+          fprintf(fp_dbg, "In: %02x", *tdi );
+  }
   setTapState(SHIFT_IR);
   int pre=0;
   for(int dev=deviceIndex+1; dev<numDevices; dev++)
@@ -181,6 +231,15 @@ void Jtag::shiftIR(const byte *tdi, byte *tdo)
   io->shift(true,post);
   nextTapState(true);
   setTapState(postIRState);
+  if(fp_dbg)
+  {
+      if (tdo)
+      {
+          int i;
+          fprintf(fp_dbg, "Out: %02x", *tdo);
+      }
+      fprintf(fp_dbg, "\n");
+  }
 }
 
 void Jtag::setTapState(tapState_t state, int pre)
