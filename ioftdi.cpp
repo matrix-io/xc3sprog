@@ -53,31 +53,31 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
 #endif
 
     if(serial)
-	res = FT_OpenEx((void*)serial, FT_OPEN_BY_SERIAL_NUMBER, &ftdi);
+	res = FT_OpenEx((void*)serial, FT_OPEN_BY_SERIAL_NUMBER, &ftd2xx_handle);
     else if(desc)
-	res = FT_OpenEx((void*)desc, FT_OPEN_BY_DESCRIPTION, &ftdi);
+	res = FT_OpenEx((void*)desc, FT_OPEN_BY_DESCRIPTION, &ftd2xx_handle);
     else
-	res = FT_Open (0, &ftdi);
+	res = FT_Open (0, &ftd2xx_handle);
     if (res != FT_OK)
 	throw  io_exception(std::string("Open FTDI failed"));
     
-    res = FT_ResetDevice(ftdi);
+    res = FT_ResetDevice(ftd2xx_handle);
     if (res != FT_OK)
 	throw  io_exception(std::string("Reset FTDI failed"));
     
-    res = FT_SetBitMode(ftdi, 0x0b, 0x02);
+    res = FT_SetBitMode(ftd2xx_handle, 0x0b, 0x02);
     if (res != FT_OK)
 	throw  io_exception(std::string("Set Bitmode failed"));
     
-    res = FT_Purge(ftdi, FT_PURGE_RX | FT_PURGE_TX);
+    res = FT_Purge(ftd2xx_handle, FT_PURGE_RX | FT_PURGE_TX);
     if (res != FT_OK)
 	throw  io_exception(std::string("FT_Purge failed"));
     
-    res = FT_SetLatencyTimer(ftdi, 2);
+    res = FT_SetLatencyTimer(ftd2xx_handle, 2);
     if (res != FT_OK)
 	throw  io_exception(std::string("FT_SetLatencyTimer failed"));
     
-    res = FT_SetTimeouts(ftdi, 1000, 1000);
+    res = FT_SetTimeouts(ftd2xx_handle, 1000, 1000);
     if (res != FT_OK)
 	throw  io_exception(std::string("FT_SetTimeouts failed"));
     
@@ -305,7 +305,7 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
     FT_STATUS res;
  
     calls_rd++;
-    res = FT_Read(ftdi, rbuf, length, &read);
+    res = FT_Read(ftd2xx_handle, rbuf, length, &read);
     if(res != FT_OK)
     {
 	fprintf(stderr,"readusb: Initial read failed\n");
@@ -314,7 +314,7 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
     while ((read <length) && ( timeout <100 )) 
     {
         retries++;
-	res = FT_Read(ftdi, rbuf+read, length-read, &last_read);
+	res = FT_Read(ftd2xx_handle, rbuf+read, length-read, &last_read);
 	if(res != FT_OK)
 	{
 	    fprintf(stderr,"readusb: Read failed\n");
@@ -402,7 +402,7 @@ void IOFtdi::deinit(void)
       fprintf(stderr,"Loopback failed, expect problems on later runs\n");
   
 #if defined (USE_FTD2XX)
-  FT_Close(ftdi);
+  FT_Close(ftd2xx_handle);
 #else
   ftdi_set_bitmode(&ftdi, 0, BITMODE_RESET);
   ftdi_usb_reset(&ftdi);
@@ -450,7 +450,7 @@ void IOFtdi::mpsse_send() {
   DWORD written, last_written;
   int res, timeout = 0;
   calls_wr++;
-  res = FT_Write(ftdi, usbuf, bptr, &written);
+  res = FT_Write(ftd2xx_handle, usbuf, bptr, &written);
   if(res != FT_OK)
   {
       fprintf(stderr, "mpsse_send: Initial write failed\n");
@@ -459,7 +459,7 @@ void IOFtdi::mpsse_send() {
   while ((written < bptr) && ( timeout <100 )) 
   {
       calls_wr++;
-      res = FT_Write(ftdi, usbuf+written, bptr - written, &last_written);
+      res = FT_Write(ftd2xx_handle, usbuf+written, bptr - written, &last_written);
       if(res != FT_OK)
       {
 	  fprintf(stderr, "mpsse_send: Write failed\n");
