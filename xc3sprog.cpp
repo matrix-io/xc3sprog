@@ -327,7 +327,7 @@ void usage(bool all_options)
   OPT("-I", "Work on connected SPI Flash (ISF Mode).");
   OPT(""  , "(after 'bscan_spi' bitfile for device has been loaded).");
   OPT("-j", "Detect JTAG chain, nothing else (default action).");
-  OPT("-L", "Program lockbits if defined in fusefile.");
+  OPT("-l", "Program lockbits if defined in fusefile.");
   OPT("-m <dir>", "Directory with XC2C mapfiles.");
   OPT("-o", "Output file format (BIT|BIN|MCS|MCSREV|HEX).");
   OPT("-p", "Position in the JTAG chain.");
@@ -435,7 +435,7 @@ int main(int argc, char **args)
       detectchain = true;
       break;
 
-    case 'l':
+    case 'L':
       use_ftd2xx = true;
       break;
 
@@ -453,7 +453,7 @@ int main(int argc, char **args)
 	test_count = INT_MAX;
       break;
 
-    case 'L':
+    case 'l':
       lock = true;
       break;
 
@@ -580,14 +580,19 @@ int main(int argc, char **args)
   if(argc < 1 && !reconfigure && !erase) detectchain = true;
 
   if (verbose)
-      fprintf(stderr, "Using Cable %s Subtype %s %s%c VID 0x%04x PID 0x%04x %s%s %s%s\n",
+  {
+      fprintf(stderr, "Using Cable %s Subtype %s %s%c",
               getCableName(cable),
               getSubtypeName(subtype),
-              (channel)?"Channel ":"",(channel)? (channel+'0'):0,
-              vendor, product,
-              (desc)?"Product: ":"", (desc)?desc:"",
+              (channel)?"Channel ":"",(channel)? (channel+'0'):0);
+      if (vendor) 
+          fprintf(stderr, " VID %x04x", vendor);
+      if (product)
+          fprintf(stderr, " PID %x04x", product);
+       fprintf(stderr, " %s%s %s%s\n",
+              (desc)?"Product: ":"\"\"", (desc)?desc:"",
               (serial)?"Serial: ":"", (serial)?serial:"");
-
+  }
   res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial, use_ftd2xx);
   if (res) /* some error happend*/
     {
