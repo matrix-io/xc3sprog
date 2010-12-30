@@ -84,7 +84,7 @@ void usage() {
 	  "   \t\t[-t subtype] (NONE or INT  (Internal Chain on XPC, doesn't work for now on DLC10))\n"
 	  "   chainpos\n"
 	  "\tPosition in JTAG chain: 0 - closest to TDI (default)\n\n"
-	  "\t[-L ] (Program Lockbits if defined in fusefile)\n"
+	  "\t[-l ] (Program Lockbits if defined in fusefile)\n"
 	  "\t[-e eepromfile]\n"
 	  "\t[-f fusefile] (default extension: .fus; leave fuses untouched if no file found)\n"
 	  "Enter menu if no ROM file given\n"
@@ -137,8 +137,12 @@ int main(int argc, char **args)
       verbose = true;
       break;
 
-    case 'L':
+    case 'l':
       gLockOption = true;
+      break;
+
+    case 'L':
+      use_ftd2xx = true;
       break;
 
     case 'C':
