@@ -103,6 +103,7 @@ int main(int argc, char **args)
 {
   unsigned long tmp;
   bool        verbose   = false;
+  bool     use_ftd2xx   = false;
   bool    gLockOption = false;
   bool    gDisplayMenu = false;
   bool    gVerifyOption = false;
@@ -295,7 +296,8 @@ int main(int argc, char **args)
               (desc)?"Product: ":"", (desc)?desc:"",
               (serial)?"Serial: ":"", (serial)?serial:"");
 
-  res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial);
+  res = getIO( &io, cable, subtype, channel, vendor, product, dev, 
+               desc, serial, use_ftd2xx);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);

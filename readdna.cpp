@@ -105,6 +105,7 @@ unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
 int main(int argc, char **args)
 {
     bool        verbose = false;
+    bool     use_ftd2xx = false;
     CABLES_TYPES cable  = CABLE_NONE;
     char const *dev     = 0;
     int vendor    = 0;
@@ -125,12 +126,16 @@ int main(int argc, char **args)
    
     // Start from parsing command line arguments
     while(true) {
-      switch(getopt(argc, args, "?hvc:d:V:P:D:S:t:")) {
+      switch(getopt(argc, args, "?hvc:d:V:P:D:LS:t:")) {
       case -1:
 	goto args_done;
 		
       case 'v':
 	verbose = true;
+	break;
+      
+      case 'L':
+	use_ftd2xx = true;
 	break;
       
       case 'c':
@@ -194,7 +199,8 @@ args_done:
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
  
-  res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial);
+  res = getIO( &io, cable, subtype, channel, vendor, product, dev, 
+               desc, serial, use_ftd2xx);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);

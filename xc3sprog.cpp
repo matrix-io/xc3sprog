@@ -351,6 +351,7 @@ void usage(bool all_options)
       "[NONE|IKDA|OLIMEX|FTDIJTAG|AMONTEC|LLBBC|LLIF].");
   OPT("-D if  ", "(ftdi only       ) MPSSE Interface can be"
       "[0|1|2] for any|INTERFACE_A|INTERFACE_B.");
+  OPT("-L     ", "(ftdi only       ) Don't use LibUSB.");
   /* Xilinx USB JTAG cable */
   OPT("-t",      "(xpc only        ) NONE or INT  (Internal Chain , not for DLC10))");
 
@@ -374,6 +375,7 @@ int main(int argc, char **args)
   bool     spiflash     = false;
   bool     reconfigure  = false;
   bool     erase        = false;
+  bool     use_ftd2xx   = false;
   unsigned long id;
   CABLES_TYPES cable    = CABLE_NONE;
   char const *dev       = 0;
@@ -413,7 +415,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hCLc:d:D:eE:f:i:Ijm:o:p:P:rRs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hCLc:d:D:eE:f:i:IjLm:o:p:P:rRs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
@@ -431,6 +433,10 @@ int main(int argc, char **args)
 
     case 'j':
       detectchain = true;
+      break;
+
+    case 'l':
+      use_ftd2xx = true;
       break;
 
     case 'R':
@@ -582,7 +588,7 @@ int main(int argc, char **args)
               (desc)?"Product: ":"", (desc)?desc:"",
               (serial)?"Serial: ":"", (serial)?serial:"");
 
-  res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial);
+  res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial, use_ftd2xx);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);

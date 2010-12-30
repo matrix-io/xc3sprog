@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 using namespace std;
 
 IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
-	       int subtype, int channel)
+	       int subtype, int channel, bool use_ftd2xx)
   : IOBase(), bptr(0), calls_rd(0), calls_wr(0), retries(0){
     
   unsigned char   buf1[5];

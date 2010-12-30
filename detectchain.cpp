@@ -69,6 +69,7 @@ void usage(void)
 int main(int argc, char **args)
 {
     bool        verbose = false;
+    bool        use_ftd2xx = false;
     CABLES_TYPES cable    = CABLE_NONE;
     char const *dev     = 0;
     int vendor    = 0;
@@ -83,12 +84,16 @@ int main(int argc, char **args)
     
     // Start from parsing command line arguments
     while(true) {
-      switch(getopt(argc, args, "?hvc:d:D:V:P:S:t:")) {
+      switch(getopt(argc, args, "?hvc:d:D:LV:P:S:t:")) {
       case -1:
 	goto args_done;
 	
       case 'v':
 	verbose = true;
+	break;
+	
+      case 'L':
+	use_ftd2xx = true;
 	break;
 	
       case 'c':
@@ -149,7 +154,8 @@ args_done:
   //fprintf(stderr, "argc: %d\n", argc);
   if(argc != 0)  usage();
 
-  res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial);
+  res = getIO( &io, cable, subtype, channel, vendor, product, dev, 
+               desc, serial, use_ftd2xx);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);
