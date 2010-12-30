@@ -68,7 +68,8 @@ class IOFtdi : public IOBase
   FILE *fp_dbg;
 
  public:
-  IOFtdi(int vendor, int product, char const *desc, char const *serial, int subtype, int channel);
+  IOFtdi(int vendor, int product, char const *desc, char const *serial, 
+         int subtype, int channel, bool use_ftd2xx);
   ~IOFtdi();
 
  public:
