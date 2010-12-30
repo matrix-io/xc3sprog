@@ -134,7 +134,7 @@ void usb_init(void)
   
   if(!libusb_dll)
     {
-      fprintf(stderr, "Libusb no found, expect failure\n");
+      fprintf(stderr, "Libusb not found, expect failure\n");
       return;
     }
 
