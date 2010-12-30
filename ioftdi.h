@@ -27,9 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include <windows.h>
 #endif
 
-#if defined USE_FTD2XX
 #include <ftd2xx.h>
-#endif
 
 #include "iobase.h"
 
@@ -52,11 +50,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 class IOFtdi : public IOBase
 {
  protected:
-#if defined (USE_FTD2XX)
-  FT_HANDLE ftdi;   
-#else
+  FT_HANDLE ftd2xx_handle;   
   struct ftdi_context ftdi;
-#endif
   unsigned char usbuf[TX_BUF];
   int buflen;
 #if defined(USE_FTD2XX)
