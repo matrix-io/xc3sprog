@@ -82,38 +82,38 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
 	throw  io_exception(std::string("FT_SetTimeouts failed"));
     
 #else
-    // initialize FTDI structure
-    ftdi_init(&ftdi);
+    // allocate and initialize FTDI structure
+    ftdi_handle = ftdi_new();
     // Set interface
     if (channel > 2)
       throw  io_exception(std::string("invalid MPSSE channel"));  
-    if(ftdi_set_interface(&ftdi, (ftdi_interface)channel) < 0) {
+    if(ftdi_set_interface(ftdi_handle, (ftdi_interface)channel) < 0) {
       throw  io_exception(std::string("ftdi_set_interface: ") 
-			  + ftdi_get_error_string(&ftdi));
+			  + ftdi_get_error_string(ftdi_handle));
     }
 	
     // Open device
-    if (ftdi_usb_open_desc(&ftdi, vendor, product, desc, serial) < 0)
+    if (ftdi_usb_open_desc(ftdi_handle, vendor, product, desc, serial) < 0)
       throw  io_exception(std::string("ftdi_usb_open_desc: ") + 
-			  ftdi_get_error_string(&ftdi));
+			  ftdi_get_error_string(ftdi_handle));
     
   //Set the lacentcy time to a low value
-  if(ftdi_set_latency_timer(&ftdi, 1) <0) {
+  if(ftdi_set_latency_timer(ftdi_handle, 1) <0) {
     throw  io_exception(std::string("ftdi_set_latency_timer: ")
-			+ ftdi_get_error_string(&ftdi));
+			+ ftdi_get_error_string(ftdi_handle));
   }
 
   // Set mode to MPSSE
-  if(ftdi_set_bitmode(&ftdi, 0xfb, BITMODE_MPSSE) < 0) {
+  if(ftdi_set_bitmode(ftdi_handle, 0xfb, BITMODE_MPSSE) < 0) {
     throw  io_exception(std::string("ftdi_set_bitmode: ")
-			+ ftdi_get_error_string(&ftdi));
+			+ ftdi_get_error_string(ftdi_handle));
   }
 
 #endif
 
   // Prepare for JTAG operation
   /* FIXME: Without this read, consecutive runs on the FT2232H may hang */
-  ftdi_read_data(&ftdi, buf1,5);
+  ftdi_read_data(ftdi_handle, buf1,5);
 
   if (subtype == FTDI_NO_EN)
     mpsse_add_cmd(buf, 6);
@@ -338,14 +338,14 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
   int length = (int) len, read = 0;
   int timeout=0, last_errno, last_read;
   calls_rd++;
-  last_read = ftdi_read_data(&ftdi, rbuf, length );
+  last_read = ftdi_read_data(ftdi_handle, rbuf, length );
   if (last_read > 0)
     read += last_read;
   while ((read <length) && ( timeout <1000)) 
     {
       last_errno = 0;
       retries++;
-      last_read = ftdi_read_data(&ftdi, rbuf+read, length -read);
+      last_read = ftdi_read_data(ftdi_handle, rbuf+read, length -read);
       if (last_read > 0)
 	read += last_read;
       else
@@ -404,10 +404,10 @@ void IOFtdi::deinit(void)
 #if defined (USE_FTD2XX)
   FT_Close(ftd2xx_handle);
 #else
-  ftdi_set_bitmode(&ftdi, 0, BITMODE_RESET);
-  ftdi_usb_reset(&ftdi);
-  ftdi_usb_close(&ftdi);
-  ftdi_deinit(&ftdi);
+  ftdi_set_bitmode(ftdi_handle, 0, BITMODE_RESET);
+  ftdi_usb_reset(ftdi_handle);
+  ftdi_usb_close(ftdi_handle);
+  ftdi_deinit(ftdi_handle);
 #endif
   if(verbose)
     fprintf(stderr, "USB transactions: Write %d read %d retries %d\n",
@@ -481,11 +481,11 @@ void IOFtdi::mpsse_send() {
 
 #else
   calls_wr++;
-  int written = ftdi_write_data(&ftdi, usbuf, bptr);
+  int written = ftdi_write_data(ftdi_handle, usbuf, bptr);
   if(written != bptr) 
     {
       fprintf(stderr,"mpsse_send: Short write %d vs %d at run %d, Err: %s\n", 
-	      written, bptr, calls_wr, ftdi_get_error_string(&ftdi));
+	      written, bptr, calls_wr, ftdi_get_error_string(ftdi_handle));
       throw  io_exception();
   }
 #endif

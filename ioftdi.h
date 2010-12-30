@@ -51,14 +51,10 @@ class IOFtdi : public IOBase
 {
  protected:
   FT_HANDLE ftd2xx_handle;   
-  struct ftdi_context ftdi;
+  struct ftdi_context *ftdi_handle;
   unsigned char usbuf[TX_BUF];
   int buflen;
-#if defined(USE_FTD2XX)
   DWORD bptr;
-#else
-  int bptr;
-#endif
   int calls_rd, calls_wr, subtype, retries;
   FILE *fp_dbg;
 
