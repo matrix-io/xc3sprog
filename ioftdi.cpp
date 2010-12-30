@@ -60,12 +60,8 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
       
       // Open device
       res = ftdi_usb_open_desc(ftdi_handle, vendor, product, desc, serial);
-      if ( res != -11)
+      if ( res == 0)
       {
-          if (res <0 )
-              throw  io_exception(std::string("ftdi_usb_open_desc: ") + 
-                              ftdi_get_error_string(ftdi_handle));
-          
           //Set the lacentcy time to a low value
           if(ftdi_set_latency_timer(ftdi_handle, 1) <0) {
               throw  io_exception(std::string("ftdi_set_latency_timer: ")
@@ -77,17 +73,17 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
               throw  io_exception(std::string("ftdi_set_bitmode: ")
                                   + ftdi_get_error_string(ftdi_handle));
           }
-          /* FIXME: Without this read, consecutive runs on the FT2232H may hang */
+          /* FIXME: Without this read, consecutive runs on the 
+             FT2232H may hang */
           ftdi_read_data(ftdi_handle, buf1,5);
 
       }
-      else
+      else /* Unconditionally try ftd2xx on error*/
       {
           ftdi_free(ftdi_handle);
           ftdi_handle = 0;
       }
   }
-
   if (ftdi_handle == 0)
   {
       FT_STATUS res;
