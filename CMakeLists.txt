@@ -11,6 +11,9 @@ endif(${WIN32})
 find_package(libftdi)
 include_directories(${LIBFTDI_INCLUDE_DIR})
 
+find_package(libFTD2XX)
+include_directories(${LIBFTD2XX_INCLUDE_DIR})
+
 FIND_PACKAGE(Subversion)
 IF(Subversion_FOUND)
   Subversion_WC_INFO(${PROJECT_SOURCE_DIR} Project)
@@ -107,14 +110,14 @@ add_executable(xc2c_warp xc2c_warp.cpp)
 target_link_libraries(xc2c_warp xc3sproglib ${CONDITIONAL_LIBS})
 
 add_executable(detectchain detectchain.cpp  config.h)
-target_link_libraries(detectchain xc3sproglib ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS})
+target_link_libraries(detectchain xc3sproglib ${LIBFTDI_LIBRARIES} ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS})
 
 add_executable(xc3sprog xc3sprog.cpp javr.cpp srecfile.cpp progalgavr.cpp 
 			config.h)
-target_link_libraries(xc3sprog xc3sproglib ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS}  )
+target_link_libraries(xc3sprog xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS}  )
 
 add_executable(readdna readdna.cpp config.h)
-target_link_libraries(readdna xc3sproglib ${LIBFTDI_LIBRARIES} ${CONDITIONAL_LIBS}  )
+target_link_libraries(readdna xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS}  )
 
 add_subdirectory(javr)
 
