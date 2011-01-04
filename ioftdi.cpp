@@ -111,7 +111,7 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
       if (res != FT_OK)
           throw  io_exception(std::string("Reset FTDI failed"));
       
-      res = FT_SetBitMode(ftd2xx_handle, 0x0b, 0x02);
+      res = FT_SetBitMode(ftd2xx_handle, 0xfb, BITMODE_MPSSE);
       if (res != FT_OK)
           throw  io_exception(std::string("Set Bitmode failed"));
       
