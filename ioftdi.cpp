@@ -103,7 +103,12 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
       else if(desc)
           res = FT_OpenEx((void*)desc, FT_OPEN_BY_DESCRIPTION, &ftd2xx_handle);
       else
-          res = FT_Open (0, &ftd2xx_handle);
+      {
+          if (channel == 2)
+              res = FT_Open (1, &ftd2xx_handle);
+          else
+              res = FT_Open (0, &ftd2xx_handle);
+      }
       if (res != FT_OK)
           throw  io_exception(std::string("Open FTDI failed"));
       
