@@ -87,10 +87,20 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
   if (ftdi_handle == 0)
   {
       FT_STATUS res;
+      DWORD dwNumDevs;
+      res = FT_CreateDeviceInfoList(&dwNumDevs);
+      if (res != FT_OK) 
+          throw  io_exception(std::string("FT_CreateDeviceInfoList failed"));
+      if (dwNumDevs <1)
+          throw  io_exception(std::string("No FTDI devices attached"));
+          
 #if defined (__linux)
       res = FT_SetVIDPID(vendor, product);
       if (res != FT_OK)
           throw  io_exception(std::string("SetVIDPID failed"));
+      if(serial && desc && (dwNumDevs>1))
+          fprintf(stderr,
+                  "On linux device selection may fail due to missing LOCID\n");
 #else
       if ((vendor != 0x0403) || 
           ((product != 0x6001) && (product != 0x6010) && (product != 0x6006)))
