@@ -1020,26 +1020,29 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
 int programSPI(ProgAlgSPIFlash &alg, Jtag &jtag, BitFile &file, bool verify, bool
 	       reconfig, FILE *fp, FILE_STYLE out_style, int family, const char *device)
 {
-  if(!reconfig && fp)
+  if(fp)
     {
       int len;
       alg.read(file);
       len = file.saveAs(out_style, device, fp);
+      if(reconfig)
+      {
+          ProgAlgXC3S fpga(jtag, family);
+          fpga.reconfig();
+      }
       return 0;
     }
-  if(!reconfig && !verify)
+  else if(!verify)
     {
       alg.erase();
       if (alg.program(file) <0 )
 	return 1;
       alg.disable();
     }
-  if (!reconfig)
-  {
-      alg.verify(file);
-      alg.disable();
-  }
-  if(!verify && !fp)
+  if (alg.verify(file) != 0)
+      return 2;
+  alg.disable();
+  if(reconfig)
   {
       ProgAlgXC3S fpga(jtag, family);
       fpga.reconfig();
