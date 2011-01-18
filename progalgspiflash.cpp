@@ -520,9 +520,11 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
   return rc;
 }
 
+/* return 0 on success, anything else on failure */
+
 int ProgAlgSPIFlash::verify(BitFile &vfile) 
 {
-  unsigned int page, res,rc=0, k=0;
+  unsigned int page, res, k=0;
   byte *data = new byte[pgsize];
   byte buf[4];
         
@@ -573,10 +575,15 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
   // get last page
   res=spi_xfer_user1(data,pgsize,4,NULL,0, 0);
   res=memcmp(data, &(vfile.getData())[(page-1)*pgsize], pgsize);
+  if (res)
+  {
+      k++;
+      return k;
+  }
   
   fprintf(stderr, "\rVerify: Success!                               \n");
   
-  return rc;
+  return 0;
 }
 
 #define PAGE_PROGRAM         0x02
