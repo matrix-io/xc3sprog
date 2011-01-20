@@ -24,6 +24,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <stdint.h>
 #include <unistd.h>
 
 #include "bitfile.h"
@@ -44,6 +45,9 @@ int main(int argc, char**args)
 
   FILE_STYLE in_style  = STYLE_BIT;
   FILE_STYLE out_style = STYLE_BIT;
+  uint64_t sum = 0L;
+  unsigned int i;
+
   const char * outfile = NULL;
   while(true)
     {
@@ -100,6 +104,13 @@ int main(int argc, char**args)
     fprintf(stderr, "Target device: %s\n",file.getPartName());
     fprintf(stderr, "Created: %s %s\n",file.getDate(),file.getTime());
     fprintf(stderr, "Bitstream length: %lu bits\n", file.getLength());
+
+    for (i = 0; i+8 < file.getLength(); i++)
+    {
+        uint64_t data = *(uint64_t*)file.getData() + i;
+        sum += data;
+    }
+    fprintf(stderr, "64-bit sum: %lu\n", sum);
     
     if(outfile) {
       if(outfile[0] == '-')
