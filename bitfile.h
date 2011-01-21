@@ -87,6 +87,8 @@ class BitFile
   bool Error;
   std::string errorStr;
   FILE *logfile;
+  unsigned int offset;
+  unsigned int rlength; /* if != 0 length of data to read/verify*/
 
  private:
   void initFlip();
@@ -107,6 +109,10 @@ class BitFile
   int readFile(FILE *fp, FILE_STYLE in_style);
   
  public:
+  inline void setOffset(int of){offset = of;}
+  inline unsigned int getOffset(void){ return offset;}
+  inline void setRLength(int lt){rlength = lt;}
+  inline unsigned int getRLength(void){ return rlength;}
   inline byte *getData(){return buffer;}
   inline unsigned long getLength(){return length*8;} // Returns length of bitstream
   inline const char *getError(){
