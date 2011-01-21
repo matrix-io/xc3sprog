@@ -320,7 +320,9 @@ void usage(bool all_options)
 #define OPT(arg, desc)	\
   fprintf(stderr, "   %-8s  %s\n", (arg), (desc))
   OPT("-c", "Choose programmer type [pp|ftdi|fx2|xpc].");
-  OPT("-C", "Verify device against file (no programming).");
+  OPT("-C [len]", "Verify device against file (no programming).");
+  OPT("-r [len]", "Read from device and write to file.");
+  OPT("",         "Optional: [len] in Bytes.");
   OPT("-e", "Erase(XC95C only).");
   OPT("-h", "Print this help.");
   OPT("-i", "Input file format (BIT|BIN|MCS|MCSREV|HEX).");
@@ -330,13 +332,16 @@ void usage(bool all_options)
   OPT("-l", "Program lockbits if defined in fusefile.");
   OPT("-m <dir>", "Directory with XC2C mapfiles.");
   OPT("-o", "Output file format (BIT|BIN|MCS|MCSREV|HEX).");
+  OPT("-O val", "Offset in PROM in Bytes, alligned to page");
   OPT("-p", "Position in the JTAG chain.");
-  OPT("-r", "Read from device and write to file.");
   OPT("-R", "Try to reconfigure device(No other action!).");
   OPT("-T val", "Test chain 'val' times (0 = forever) or 10000 times"
       " default.");
   OPT(""      , "In ISF Mode, test the SPI connection.");
   OPT("-v", "Verbose output.");
+  OPT("", "");
+  OPT(""      , "Offset is clipped to the start of the page containing offset");
+  OPT(""      , "Length is extended to cover full page of last address");
 
   fprintf(stderr, "\nProgrammer specific options:\n");
   /* Parallel cable */
@@ -376,6 +381,8 @@ int main(int argc, char **args)
   bool     reconfigure  = false;
   bool     erase        = false;
   bool     use_ftd2xx   = false;
+  unsigned int offset   = 0;
+  unsigned int length   = 0;
   unsigned long id;
   CABLES_TYPES cable    = CABLE_NONE;
   char const *dev       = 0;
@@ -415,7 +422,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hCLc:d:D:eE:f:i:IjLm:o:p:P:rRs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hC::Lc:d:D:eE:f:i:IjLm:o:O:p:P:r::Rs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
@@ -425,6 +432,8 @@ int main(int argc, char **args)
 
     case 'C':
       verify = true;
+      if (optarg)
+          length = strtol(optarg, NULL, 0);
       break;
 
     case 'I':
@@ -499,7 +508,11 @@ int main(int argc, char **args)
 	  usage(false);
 	}
       break;
-      
+
+    case 'O':
+        offset = strtol(optarg, NULL, 0);
+        break;
+
     case 'i':
       if (BitFile::styleFromString(optarg, &in_style) != 0)
 	{
@@ -510,6 +523,8 @@ int main(int argc, char **args)
       
     case 'r':
       readback = true;
+      if (optarg)
+          length = strtol(optarg, NULL, 0);
       break;
 
     case 't':
@@ -699,6 +714,8 @@ int main(int argc, char **args)
 	  try 
 	    {
 	      BitFile  file;
+              file.setOffset(offset);
+              file.setRLength(length);
 	      if (fpin)
 		{
 		  file.readFile(fpin, in_style);
