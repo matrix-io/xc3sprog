@@ -29,6 +29,8 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "bitfile.h"
 #include "jtag.h"
 
+#define FAMILY_XC2S     0x03
+#define FAMILY_XC2SE    0x05
 #define FAMILY_XC2V     0x08
 #define FAMILY_XC3S     0x0a
 #define FAMILY_XC3SE    0x0e
