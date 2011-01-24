@@ -393,7 +393,7 @@ int main(int argc, char **args)
   FILE_STYLE out_style = STYLE_BIT;
   int      chainpos     = 0;
   int      nchainpos    = 1;
-  int      chainpositions[MAXPOSITIONS];
+  int      chainpositions[MAXPOSITIONS] = {0};
   int vendor    = 0;
   int product   = 0;
   int channel   = 0; /* FT2232 MPSSE Channel */
