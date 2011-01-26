@@ -323,7 +323,7 @@ void usage(bool all_options)
   OPT("-C [len]", "Verify device against file (no programming).");
   OPT("-r [len]", "Read from device and write to file.");
   OPT("",         "Optional: [len] in Bytes.");
-  OPT("-e", "Erase(XC95C only).");
+  OPT("-e", "Erase(XC95C/SPI only).");
   OPT("-h", "Print this help.");
   OPT("-i", "Input file format (BIT|BIN|MCS|MCSREV|HEX).");
   OPT("-I", "Work on connected SPI Flash (ISF Mode).");
@@ -480,7 +480,7 @@ int main(int argc, char **args)
       break;
 
     case 'e':
-      erase = true;;
+      erase = true;
       break;
 
     case 'E':
@@ -779,6 +779,8 @@ int main(int argc, char **args)
 			  alg.test(test_count);
 			  return 0;
 			}
+                      if (erase)
+                          return alg.erase();
 		      return programSPI(alg, jtag, file, verify, reconfigure,
 					fpout, out_style, family,
 					db.getDeviceDescription(chainpos));
@@ -1052,7 +1054,6 @@ int programSPI(ProgAlgSPIFlash &alg, Jtag &jtag, BitFile &file, bool verify, boo
     }
   else if(!verify)
     {
-      alg.erase();
       if (alg.program(file) <0 )
 	return 1;
       alg.disable();
