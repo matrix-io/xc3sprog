@@ -105,10 +105,12 @@ int main(int argc, char**args)
     fprintf(stderr, "Created: %s %s\n",file.getDate(),file.getTime());
     fprintf(stderr, "Bitstream length: %lu bits\n", file.getLength());
 
-    for (i = 0; i+8 < file.getLength(); i++)
+    for (i = 0; i < file.getLength()/8; i++)
     {
-        uint64_t data = *(uint64_t*)file.getData() + i;
-        sum += data;
+        /* Umprogrammed Bytes are 0xff, so invert
+           to not count them
+        */
+        sum += (file.getData()[i]) ^0xff;
     }
     fprintf(stderr, "64-bit sum: %lu\n", sum);
     
