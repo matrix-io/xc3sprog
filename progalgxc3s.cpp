@@ -115,6 +115,63 @@ void ProgAlgXC3S::flow_array_program(BitFile &file)
 	    timer.elapsed() * 1000);
 }
 
+void ProgAlgXC3S::flow_program_xc2s(BitFile &file)
+{
+    byte data[2];
+    byte xc2sbuf0[] =
+        {
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x55, 0x99, 0xaa, 0x66,
+            0x0c, 0x80, 0x04, 0x80, /*Header: Write to COR*/
+            0x00, 0x05, 0xfd, 0xbc, /* OR data sets SHUTDOWN = 1 */
+            0x0c, 0x00, 0x01, 0x80, /*-> Header: Write to CMD*/
+            0x00, 0x00, 0x00, 0xa0, /*Start Shutdown*/
+            0x0c, 0x00, 0x01, 0x80, /* Header: Write to CMD*/
+            0x00, 0x00, 0x00, 0xe0, /*RCRC command*/
+            0x00, 0x00, 0x00, 0x00
+        };
+    byte xc2sbuf1[] =
+        {
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x55, 0x99, 0xaa, 0x66,
+            0x0c, 0x00, 0x01, 0x80, /* Header: Write to CMD*/
+            0x00, 0x00, 0x00, 0x10, /* Assert GHIGH */
+            0x0c, 0x80, 0x04, 0x80, /*Header: Write to COR*/
+            0x00, 0x05, 0xfc, 0xff, /* OR data sets SHUTDOWN = 0 */
+            0x0c, 0x00, 0x01, 0x80, /* Header: Write to CMD*/
+            0x00, 0x00, 0x00, 0xa0, /*Start command*/
+            0x0c, 0x00, 0x01, 0x80, /* Header: Write to CMD*/
+            0x00, 0x00, 0x00, 0xe0, /*RCRC command*/
+            0x00, 0x00, 0x00, 0x00
+        };
+    jtag->shiftIR(CFG_IN);
+    jtag->shiftDR(xc2sbuf0,0, sizeof(xc2sbuf0) *8);
+    jtag->shiftIR(JSTART);
+    jtag->cycleTCK(13);
+    
+    jtag->shiftIR(CFG_IN);
+    jtag->shiftDR(xc2sbuf1,0, sizeof(xc2sbuf1) *8);
+    jtag->shiftIR(JSTART);
+    jtag->cycleTCK(13);
+    
+    jtag->shiftIR(CFG_IN);
+    jtag->shiftDR(xc2sbuf0,0, sizeof(xc2sbuf0) *8);
+    jtag->shiftIR(JSTART);
+    jtag->cycleTCK(13);
+    
+    jtag->shiftIR(CFG_IN);
+    jtag->shiftDR((file.getData()),0,file.getLength());
+    jtag->cycleTCK(1);
+    jtag->shiftIR(JSTART);
+    jtag->cycleTCK(13);
+    jtag->shiftIR(BYPASS);
+    jtag->shiftDR(data,0,1);
+    jtag->cycleTCK(1);
+    return;
+  }
+
 void ProgAlgXC3S::flow_program_legacy(BitFile &file)
 {
   Timer timer;
@@ -145,6 +202,9 @@ void ProgAlgXC3S::array_program(BitFile &file)
   unsigned char buf[1] = {0};
   int i = 0;
 
+  if (family == FAMILY_XC2S || family == FAMILY_XC2SE)
+      return flow_program_xc2s(file);
+  
   flow_enable();
 
   /* JPROGAM: Triger reconfiguration, not explained in ug332, but
