@@ -514,7 +514,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
     }
     rfile.setLength(len * 8);
     fprintf(stderr," Start page %d len %d length %ld\n",
-            page, len, rfile.getLength());
+            page, len, rfile.getLength()/8);
   
     page2padd(buf, page, pgsize);
     // send: read 1st page
@@ -552,7 +552,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
 
 int ProgAlgSPIFlash::verify(BitFile &vfile) 
 {
-    unsigned int page, len = 0, verify_page = 0, res, k=0;
+    unsigned int page, len, pos, verify_page = 0, res, k=0;
     byte *data = new byte[pgsize];
     byte buf[4] = {0x03, 0,0,0};
     
@@ -567,16 +567,22 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     }
 
     if (vfile.getRLength() != 0)
-        len = vfile.getOffset() + vfile.getRLength();
+    {
+        pos = vfile.getOffset() + vfile.getRLength();
+        len = vfile.getRLength();
+    }
     else
-        len = vfile.getOffset() + vfile.getLength()/8;
-    if( len > pages * pgsize)
+    {
+        pos = vfile.getOffset() + vfile.getLength()/8;
+        len = vfile.getLength()/8;
+    }
+    if( pos > pages * pgsize)
     {
         fprintf(stderr,"Verify outside PROM areas requested, clipping\n");
-        len = pages * pgsize;
+        pos = pages * pgsize;
     }
-    fprintf(stderr," Start page %d len %d length %ld\n",
-            page, len, vfile.getLength());
+    fprintf(stderr," Start page %d pos %d length %ld\n",
+            page, pos, vfile.getLength());
   
     page2padd(buf, page, pgsize);
     // send: read 1st page
@@ -584,7 +590,7 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
   
    
     res=spi_xfer_user1(NULL,0,0,buf,pgsize, 4);
-    for(page+=1 ; page * pgsize < len; page++)
+    for(page+=1 ; page * pgsize < pos; page++)
     {
         if(jtag->getVerbose())
         {
@@ -595,10 +601,10 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
         // get: page n-1, send: read page n             
         page2padd(buf, page, pgsize);
         res=spi_xfer_user1(data, pgsize, 4, buf, pgsize, 4);
-        res=memcmp(data, vfile.getData()+(verify_page*pgsize), pgsize);
+        res=memcmp(data, vfile.getData()+(verify_page*pgsize), (len > pgsize)?pgsize:len);
         if (res)
         {
-            int i;
+            unsigned int i;
             fprintf(stderr, "\nVerify failed  at page %4d\nread:",page-1);
             k++;
             for(i =0; i<pgsize; i++)
@@ -612,14 +618,15 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
                 return k;
         }
         verify_page++;
+        len -= pgsize;
     }
     
     // get last page
     res=spi_xfer_user1(data,pgsize,4,NULL,0, 0);
-    res=memcmp(data, vfile.getData()+(verify_page*pgsize), pgsize);
+    res=memcmp(data, vfile.getData()+(verify_page*pgsize), (len > pgsize)?pgsize:len);
     if (res )
     {
-        int i;
+        unsigned int i;
         k++;
         fprintf(stderr, "\nVerify failed  at page %4d\nread:",page-1);
          for(i =0; i<pgsize; i++)
