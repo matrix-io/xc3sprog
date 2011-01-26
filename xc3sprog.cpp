@@ -696,7 +696,8 @@ int main(int argc, char **args)
   if (manufacturer == MANUFACTURER_XILINX)
     {
       /* Probably XC4V and XC5V should work too. No devices to test at IKDA */
-      if( (family == FAMILY_XC3S) ||
+      if( (family == FAMILY_XC2S) ||
+	  (family == FAMILY_XC2SE) ||
 	  (family == FAMILY_XC3SE) ||
 	  (family == FAMILY_XC3SA) ||
 	  (family == FAMILY_XC3SAN) ||
