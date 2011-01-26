@@ -673,6 +673,8 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
  * Milliseconds and report used time as "delta" by issuing a
  * READ_STATUS_REGISTER command every Millisecond while waiting for
  * WRITE_BUSY to deassert
+ * retval = 0 : All fine
+ * else Error
  */
 int ProgAlgSPIFlash::wait(byte command, int report, int limit, double *delta)
 {
@@ -683,6 +685,7 @@ int ProgAlgSPIFlash::wait(byte command, int report, int limit, double *delta)
     struct timeval tv[2];
 
     fbuf[0] = command;
+    spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
     gettimeofday(tv, NULL);
     /* wait for erase complete */
     do
@@ -704,7 +707,7 @@ int ProgAlgSPIFlash::wait(byte command, int report, int limit, double *delta)
     while (!done && (j < limit));
     gettimeofday(tv+1, NULL);
     *delta = deltaT(tv, tv + 1);
-    return j;
+    return (j<limit)?0:1;
 }
 
 int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile) 
@@ -734,9 +737,8 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	  fbuf[0] = READ_STATUS_REGISTER;
 	  if(jtag->getVerbose())
 	    fprintf(stderr,"\rErasing sector %2d", sector_nr);
-	  spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
           j = wait(READ_STATUS_REGISTER, 100, 3000, &delta);
-	  if(j >= 3000)
+	  if(j != 0)
            {
              fprintf(stderr,"\nErase failed for sector %2d\n", sector_nr);
              return -1;
@@ -764,9 +766,8 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
       buf[3]=0;
       memcpy(buf+4,&pfile.getData()[i],((len-i)>pgsize) ? pgsize : (len-i));
       spi_xfer_user1(NULL,0,0,buf, ((len-i)>pgsize) ? pgsize : (len-i), 4);
-      spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
       j = wait(READ_STATUS_REGISTER, 1, 50, &delta);
-      if(j >= 50)
+      if(j != 0)
        {
          fprintf(stderr,"\nPage Program failed for page %4d\n", i>>8);
          return -1;
@@ -810,8 +811,6 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
     
 int ProgAlgSPIFlash::program_at45(BitFile &pfile)
 {
-    byte fbuf[3] = {AT45_READ_STATUS, 0, 0};   /* Read Status*/
-    
     int len = pfile.getLength()/8;
     int i;
     unsigned int page, read_page = 0;
@@ -848,9 +847,8 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
         res=spi_xfer_user1(NULL, 0, 0, buf, rlen, 4);
         
         /* Page Erase/Program takes up to 35 ms (t_pep, UG333.pdf page 43)*/
-        spi_xfer_user1(NULL,1,1,fbuf, 1, 1);
         i = wait(AT45_READ_STATUS, 1, 35, &delta);
-        if (i >= 35)
+        if (i != 0)
         {
             fprintf(stderr, "                               \r"
                     "Failed to programm page %d\n", page); 
@@ -878,7 +876,6 @@ int ProgAlgSPIFlash::erase_bulk(void)
     spi_xfer_user1(fbuf,2,1, NULL, 0, 0);
     fbuf[0] = file->reverse8(fbuf[0]);
     fbuf[1] = file->reverse8(fbuf[1]);
-    fprintf(stderr, "status: %02x\n",fbuf[1]);
     if (fbuf[1] & (BP0 | BP1 | BP2))
     { 
         fprintf(stderr, "Can't erase, device has block protection%s%s%s\n",
@@ -887,14 +884,16 @@ int ProgAlgSPIFlash::erase_bulk(void)
                 (fbuf[1]& BP2)? " BP2":"");
         return -1;
     }
+    if(jtag->getVerbose())
+    {
+        fprintf(stderr,"Bulk erase ");
+    }
     fbuf[0] = WRITE_ENABLE;
     spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
     fbuf[0] = BULK_ERASE;
     spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
-    fbuf[0] = READ_STATUS_REGISTER;
-    spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
     i = wait(READ_STATUS_REGISTER, 1000, 80000, &delta);
-    if (i >= 80000)
+    if (i != 0)
     {
         fprintf(stderr,"\nBulk erase failed\n");
         return -1;
@@ -902,7 +901,7 @@ int ProgAlgSPIFlash::erase_bulk(void)
     
     if(jtag->getVerbose())
     {
-        fprintf(stderr,"\nBulk erase time %.3f s\n", delta/1000);
+        fprintf(stderr," took %.3f s\n", delta/1.0e6);
     }
     return 0;
 }
@@ -941,10 +940,9 @@ int ProgAlgSPIFlash::erase_at45(void)
                 );
         spi_xfer_user1(NULL,0,0, fbuf, 0, 4);
         fbuf[0] = AT45_READ_STATUS;
-        spi_xfer_user1(NULL,1,1,fbuf, 1, 1);
         /*Treat  50AN with limit 2.5s as other devices*/
         i = wait(AT45_READ_STATUS, 100, 5000, &delta);
-        if (i >= 5000)
+        if (i != 0)
         {
             fprintf(stderr,"\nSector 0x%06x erase failed\n",
                 page);
