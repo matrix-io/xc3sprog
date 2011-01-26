@@ -1,6 +1,6 @@
 /* SPI Flash PROM JTAG programming algorithms
 
-Copyright (C) 2009 Uwe Bonnes
+Copyright (C) 2009,2010, 2011 Uwe Bonnes
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -517,7 +517,8 @@ void page2padd(byte *buf, int page, int pgsize)
 
 int ProgAlgSPIFlash::read(BitFile &rfile) 
 {
-    unsigned int page, len = 0, write_page = 0, res, rc=0;
+    unsigned int page, rem ,len = 0, write_page = 0, res, rc=0;
+    int next_len;
     byte buf[4]= {0x03, 0, 0, 0};
 
     page = rfile.getOffset()/pgsize;
@@ -537,13 +538,16 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
     }
     rfile.setLength(len * 8);
     page2padd(buf, page, pgsize);
+    rem = len;
+    next_len = (rem > pgsize)? pgsize: rem;
     // send: read 1st page
-    res=spi_xfer_user1(NULL, 0, 0, buf, pgsize, 4);
-  
+    res=spi_xfer_user1(NULL, 0, 0, buf, next_len, 4);
+    rem -=  next_len;
     for(page+=1; page*pgsize<len; page++)
     {
         int res;
         
+        next_len = (rem > pgsize)? pgsize: rem;
         if(jtag->getVerbose())
         {
             fprintf(stderr, "\rReading page %4d",page-1); 
@@ -553,15 +557,16 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
         // get: page n-1, send: read page n             
         page2padd(buf, page, pgsize);
         res=spi_xfer_user1(&rfile.getData()[write_page*pgsize], pgsize, 4,
-                           buf,pgsize, 4);
+                           buf, next_len, 4);
         //TODO: check res
         
         rc+=pgsize;
         write_page++;
+        rem -=  next_len;
     }
   
     // get last page
-    res=spi_xfer_user1((rfile.getData())+((write_page)*pgsize),pgsize,4,
+    res=spi_xfer_user1((rfile.getData())+((write_page)*pgsize),next_len,4,
                        NULL,0, 0);
 
     fprintf(stderr, "\n");
