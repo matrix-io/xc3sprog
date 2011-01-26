@@ -39,7 +39,21 @@ const byte ProgAlgSPIFlash::BYPASS=0xff;
 #define WRITE_ENABLE         0x06
 #define SECTOR_ERASE         0xD8
 #define READ_IDENTIFICATION  0x9F
+#define BULK_ERASE           0xC7
+
 #define WRITE_BUSY           0x80
+
+/* AT45 specific*/
+#define AT45_SECTOR_ERASE    0x7C
+#define SECTOR_LOCKDOWN_READ 0x35
+#define AT45_READ_STATUS     0xD7
+
+#define AT45_READY            0x01
+
+/* Block protect bits */
+#define BP0 0x04
+#define BP1 0x08
+#define BP2 0x10
 
 ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f)
 {
@@ -60,13 +74,13 @@ ProgAlgSPIFlash::~ProgAlgSPIFlash(void)
 }
 
 int spi_cfg[] = {
-        // sreg[5..2], pagesize, pages
-        3, 264, 512, // XC3S50AN
-        7, 264, 2048, // XC3S200AN / XC3S400AN
-        9, 264, 4096, // XC3S700AN
-        11, 528, 4096, // XC3S1400AN
-	13, 528, 8192, /* AT45DB321*/
-        -1, 0, 0
+    // sreg[5..2], pagesize, pages, pages/sectors
+    3, 264, 512, 128, // XC3S50AN
+    7, 264, 2048, 256, // XC3S200AN / XC3S400AN
+    9, 264, 4096, 256,// XC3S700AN
+    11, 528, 4096, 256, // XC3S1400AN
+    13, 528, 8192, 256, /* AT45DB321*/
+    -1, 0, 0, 0
 };
 
 int ProgAlgSPIFlash::spi_flashinfo_s33(unsigned char *buf) 
@@ -239,7 +253,7 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf)
   fprintf(stderr, "Found Atmel Device, Device ID 0x%02x%02x\n",
 	  buf[1], buf[2]);
   // read result
-  fbuf[0]=0xd7;
+  fbuf[0]= AT45_READ_STATUS;
   spi_xfer_user1(NULL,0,0,fbuf, 2, 1);
   
   // get status
@@ -260,6 +274,8 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf)
   
   pgsize=spi_cfg[idx+1];
   pages=spi_cfg[idx+2];
+  pages_per_sector = spi_cfg[idx+3];
+  pages_per_block = 8;
   
   /* try to read the OTP Number */ 
   fbuf[0]=0x77;
@@ -661,13 +677,15 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
  * READ_STATUS_REGISTER command every Millisecond while waiting for
  * WRITE_BUSY to deassert
  */
-int ProgAlgSPIFlash::wait(int report, int limit, double *delta)
+int ProgAlgSPIFlash::wait(byte command, int report, int limit, double *delta)
 {
     int j = 0;
-    byte fbuf[4] = {READ_STATUS_REGISTER};
+    int done = 0;
+    byte fbuf[4];
     byte rbuf[1];
     struct timeval tv[2];
 
+    fbuf[0] = command;
     gettimeofday(tv, NULL);
     /* wait for erase complete */
     do
@@ -681,8 +699,12 @@ int ProgAlgSPIFlash::wait(int report, int limit, double *delta)
             fprintf(stderr,".");
             fflush(stderr);
         }
+        if (command == AT45_READ_STATUS)
+            done = (rbuf[0] & AT45_READY)?1:0;
+        else
+            done = (rbuf[0] & WRITE_BUSY)?0:1;
     }
-    while ((rbuf[0] & WRITE_BUSY)&& (j < limit));
+    while (!done && (j < limit));
     gettimeofday(tv+1, NULL);
     *delta = deltaT(tv, tv + 1);
     return j;
@@ -716,7 +738,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	  if(jtag->getVerbose())
 	    fprintf(stderr,"\rErasing sector %2d", sector_nr);
 	  spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
-          j = wait(100, 3000, &delta);
+          j = wait(READ_STATUS_REGISTER, 100, 3000, &delta);
 	  if(j >= 3000)
            {
              fprintf(stderr,"\nErase failed for sector %2d\n", sector_nr);
@@ -746,7 +768,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
       memcpy(buf+4,&pfile.getData()[i],((len-i)>pgsize) ? pgsize : (len-i));
       spi_xfer_user1(NULL,0,0,buf, ((len-i)>pgsize) ? pgsize : (len-i), 4);
       spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
-      j = wait(1, 50, &delta);
+      j = wait(READ_STATUS_REGISTER, 1, 50, &delta);
       if(j >= 50)
        {
          fprintf(stderr,"\nPage Program failed for page %4d\n", i>>8);
@@ -791,7 +813,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
     
 int ProgAlgSPIFlash::program_at45(BitFile &pfile)
 {
-    byte fbuf[3] = {0xd7, 0, 0};   /* Read Status*/
+    byte fbuf[3] = {AT45_READ_STATUS, 0, 0};   /* Read Status*/
     
     int len = pfile.getLength()/8;
     int i;
@@ -850,4 +872,122 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
         read_page++;
     }
     return 0;
+}
+
+int ProgAlgSPIFlash::erase_bulk(void)
+{
+    byte fbuf[3] = {READ_STATUS_REGISTER, 0, 0};   /* Read Status*/
+    int i;
+    double delta;
+
+    // get status
+    spi_xfer_user1(fbuf,2,1, NULL, 0, 0);
+    fbuf[0] = file->reverse8(fbuf[0]);
+    fbuf[1] = file->reverse8(fbuf[1]);
+    fprintf(stderr, "status: %02x\n",fbuf[1]);
+    if (fbuf[1] & (BP0 | BP1 | BP2))
+    { 
+        fprintf(stderr, "Can't erase, device has block protection%s%s%s\n",
+                (fbuf[1]& BP0)? " BP0":"",
+                (fbuf[1]& BP1)? " BP1":"",
+                (fbuf[1]& BP2)? " BP2":"");
+        return -1;
+    }
+    fbuf[0] = WRITE_ENABLE;
+    spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
+    fbuf[0] = BULK_ERASE;
+    spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
+    fbuf[0] = READ_STATUS_REGISTER;
+    spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
+    i = wait(READ_STATUS_REGISTER, 1000, 80000, &delta);
+    if (i >= 80000)
+    {
+        fprintf(stderr,"\nBulk erase failed\n");
+        return -1;
+    }
+    else
+        fprintf(stderr,"\nBulk erase time %.3f s\n", delta/1000);
+    return 0;
+
+}
+
+int ProgAlgSPIFlash::erase_at45(void)
+{
+    byte fbuf[24] = {SECTOR_LOCKDOWN_READ};
+    byte rbuf[20];
+    unsigned int page;
+    double max_sector_erase = 0.0;
+    double delta = 0;
+    unsigned int i;
+
+    spi_xfer_user1(NULL,0,0, fbuf, 0, 32);
+    spi_xfer_user1(rbuf,4,28, NULL, 0, 0);
+    for (i = 0; i < pages/pages_per_sector; i++)
+    {
+        if (rbuf[i] != 0x00)
+        {
+            fprintf(stderr,"Sector %d is locked (0x%02x)\n",
+                   i, rbuf[i]);
+            return -1;
+        }
+    }
+    for(page = 0; page < pages;)
+    {
+        byte fbuf[4];
+
+        fbuf[0] = AT45_SECTOR_ERASE;
+        fbuf[3] = 0;
+        page2padd(fbuf, page, pgsize);
+        if(jtag->getVerbose())
+	    fprintf(stderr,"\rErasing sector %2d%c", 
+                    page/pages_per_sector,
+                    (page == 0)?'a':(page ==pages_per_block)?'b':' '
+                );
+        spi_xfer_user1(NULL,0,0, fbuf, 0, 4);
+        fbuf[0] = AT45_READ_STATUS;
+        spi_xfer_user1(NULL,1,1,fbuf, 1, 1);
+        /*Treat  50AN with limit 2.5s as other devices*/
+        i = wait(AT45_READ_STATUS, 100, 5000, &delta);
+        if (i >= 5000)
+        {
+            fprintf(stderr,"\nSector 0x%06x erase failed\n",
+                page);
+            return -1;
+        }
+        if (delta > max_sector_erase)
+            max_sector_erase = delta;
+        if (page == 0)
+            page = pages_per_block;
+        else if (page  == pages_per_block)
+            page = pages_per_sector;
+        else
+            page += pages_per_sector;
+    }
+    fprintf(stderr, "\nMaximum Sector erase time %.3f s\n",
+	      max_sector_erase/1.0e6);
+    return 0;
+
+   
+      // get status
+//  spi_xfer_user1(fbuf,2,1, NULL, 0, 0);
+//  fbuf[0] = file->reverse8(fbuf[0]);
+//  fbuf[1] = file->reverse8(fbuf[1]);
+//  fprintf(stderr, "status: %02x\n",fbuf[1]);
+  return -1;
+}
+
+int ProgAlgSPIFlash::erase(void) 
+{
+  switch (manf_id) {
+  case 0x1f: /* Atmel */
+    return erase_at45();
+  case 0x20: /* Numonyx */
+  case 0x30: /* AMIC */
+  case 0x40: /* AMIC Quad */
+  case 0xef: /* Winbond */
+    return erase_bulk();
+  default:
+    fprintf(stderr,"Programming not yet implemented\n");
+  }
+  return -1;
 }
