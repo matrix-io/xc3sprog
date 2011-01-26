@@ -45,7 +45,7 @@ class ProgAlgSPIFlash
 
   Jtag *jtag;
   BitFile *file;
-  int pgsize;
+  unsigned int pgsize;
   unsigned int pages;
   int sector_size;
   int sector_erase_cmd;
