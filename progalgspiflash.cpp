@@ -57,6 +57,11 @@ const byte ProgAlgSPIFlash::BYPASS=0xff;
 
 ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f)
 {
+  char *fname = getenv("SPI_DEBUG");
+  if (fname)
+    fp_dbg = fopen(fname,"wb");
+  else
+      fp_dbg = NULL;
   jtag=&j;
   file = &f;
   buf = 0;
@@ -71,6 +76,8 @@ ProgAlgSPIFlash::~ProgAlgSPIFlash(void)
   delete[] miso_buf;
   delete[] mosi_buf;
   if(buf) delete[] buf;
+  if(fp_dbg)
+    fclose(fp_dbg);
 }
 
 int spi_cfg[] = {
@@ -488,7 +495,40 @@ int ProgAlgSPIFlash::spi_xfer_user1
       memcpy(last_miso, miso_buf+miso_skip, miso_len);
     }
   
-  //fprintf(stderr, "-\n");
+  if(fp_dbg)
+  {
+      if (mosi && (preamble || mosi_len))
+      {
+          int i;
+
+          fprintf(fp_dbg,"In ");
+          for (i=0; i< preamble; i++)
+              fprintf(fp_dbg," %02x", mosi[i]);
+          if ( mosi_len)
+          {
+              fprintf(fp_dbg,":");
+              for (i=preamble; i<(preamble +mosi_len) && i< 32; i++)
+                  fprintf(fp_dbg," %02x", mosi[i]);
+              if((preamble +mosi_len)> 32)
+                fprintf(fp_dbg,"...");  
+          }
+          fprintf(fp_dbg,"\n");
+      }
+      if(last_miso && miso_len)
+      {
+          int i;
+
+          fprintf(fp_dbg,"OUT:");
+          if ( miso_len)
+          {
+              for (i=0; i<miso_len && i<32; i++)
+              fprintf(fp_dbg," %02x", last_miso[i]);
+              if (miso_len > 32)
+                  fprintf(fp_dbg,"...");
+          }
+          fprintf(fp_dbg,"\n");
+      }
+  }
   return rc;
 }
 

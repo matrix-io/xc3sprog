@@ -45,6 +45,7 @@ class ProgAlgSPIFlash
 
   Jtag *jtag;
   BitFile *file;
+  FILE *fp_dbg;
   unsigned int pgsize;
   unsigned int pages;
   unsigned int pages_per_sector;
