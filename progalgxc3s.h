@@ -53,6 +53,7 @@ class ProgAlgXC3S
   int array_transfer_len;
   void flow_enable();
   void flow_disable();
+  void flow_program_xc2s(BitFile &file);
   void flow_array_program(BitFile &file);
   void flow_program_legacy(BitFile &file);
  public:
