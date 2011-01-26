@@ -34,6 +34,13 @@ const byte ProgAlgSPIFlash::CFG_IN=0x05;
 const byte ProgAlgSPIFlash::CONFIG=0xee;
 const byte ProgAlgSPIFlash::BYPASS=0xff;
 
+#define PAGE_PROGRAM         0x02
+#define READ_STATUS_REGISTER 0x05
+#define WRITE_ENABLE         0x06
+#define SECTOR_ERASE         0xD8
+#define READ_IDENTIFICATION  0x9F
+#define WRITE_BUSY           0x80
+
 ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f)
 {
   jtag=&j;
@@ -273,7 +280,7 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf)
 int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf) 
  
 {
-  byte fbuf[21]= {0x9f};
+  byte fbuf[21]= {READ_IDENTIFICATION};
   int i, j = 0;
 
   fprintf(stderr, "Found Numonyx Device, Device ID 0x%02x%02x\n",
@@ -345,7 +352,7 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf)
 
 int ProgAlgSPIFlash::spi_flashinfo(void) 
 {
-  byte fbuf[8]={0x9f, 0, 0, 0, 0, 0, 0, 0};
+  byte fbuf[8]={READ_IDENTIFICATION, 0, 0, 0, 0, 0, 0, 0};
   int res;
   
   // send JEDEC info
@@ -410,7 +417,7 @@ void ProgAlgSPIFlash::test(int test_count)
   fprintf(stderr, "Running %d  times\n", test_count);
   for(i=0; i<test_count; i++)
     {
-      byte fbuf[4]= {0x9f, 0, 0, 0};
+      byte fbuf[4]= {READ_IDENTIFICATION, 0, 0, 0};
      
       // send JEDEC info
       spi_xfer_user1(NULL,0,0,fbuf,4,1);
@@ -645,13 +652,6 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     
     return 0;
 }
-
-#define PAGE_PROGRAM         0x02
-#define READ_STATUS_REGISTER 0x05
-#define WRITE_ENABLE         0x06
-#define SECTOR_ERASE         0xD8
-
-#define WRITE_BUSY           0x80
 
 #define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
 			    (tvp2)->tv_usec - (tvp1)->tv_usec)
