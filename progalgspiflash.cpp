@@ -536,9 +536,6 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
         len = pages* pgsize;
     }
     rfile.setLength(len * 8);
-    fprintf(stderr," Start page %d len %d length %ld\n",
-            page, len, rfile.getLength()/8);
-  
     page2padd(buf, page, pgsize);
     // send: read 1st page
     res=spi_xfer_user1(NULL, 0, 0, buf, pgsize, 4);
@@ -818,6 +815,8 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
     int len = pfile.getLength()/8;
     int i;
     unsigned int page, read_page = 0;
+    double max_page_program = 0.0;
+    double delta;
     
     page = pfile.getOffset()/pgsize;
     if (page > pages)
@@ -849,27 +848,22 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
         res=spi_xfer_user1(NULL, 0, 0, buf, rlen, 4);
         
         /* Page Erase/Program takes up to 35 ms (t_pep, UG333.pdf page 43)*/
-        for (i = 0; i< 9; i++)
+        spi_xfer_user1(NULL,1,1,fbuf, 1, 1);
+        i = wait(AT45_READ_STATUS, 1, 35, &delta);
+        if (i >= 35)
         {
-            if(jtag->getVerbose())
-            {
-                fprintf(stderr, "."); 
-                fflush(stderr);
-            }
-            jtag->Usleep(5000);       
-            
-            spi_xfer_user1(NULL, 0, 0, fbuf, 2, 1);
-            spi_xfer_user1(fbuf+1, 2, 1, NULL, 0, 0);
-            if (fbuf[2] & 1)
-                break;
-            if (i >7)
-            {
-                fprintf(stderr, "                               \r"
-                        "Failed to programm page %d\n", page); 
-                return -1;
-            }
+            fprintf(stderr, "                               \r"
+                    "Failed to programm page %d\n", page); 
+            return -1;
         }
+        if (delta > max_page_program)
+	    max_page_program= delta;
         read_page++;
+    }
+    if(jtag->getVerbose())
+    {
+        fprintf(stderr, "\nMaximum Page erase/program time %.1f ms\n",
+	      max_page_program/1.0e3);
     }
     return 0;
 }
@@ -905,10 +899,12 @@ int ProgAlgSPIFlash::erase_bulk(void)
         fprintf(stderr,"\nBulk erase failed\n");
         return -1;
     }
-    else
+    
+    if(jtag->getVerbose())
+    {
         fprintf(stderr,"\nBulk erase time %.3f s\n", delta/1000);
+    }
     return 0;
-
 }
 
 int ProgAlgSPIFlash::erase_at45(void)
