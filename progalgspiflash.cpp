@@ -1,6 +1,6 @@
 /* SPI Flash PROM JTAG programming algorithms
 
-Copyright (C) 2009,2010, 2011 Uwe Bonnes
+Copyright (C) 2009, 2010, 2011 Uwe Bonnes
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ const byte ProgAlgSPIFlash::CONFIG=0xee;
 const byte ProgAlgSPIFlash::BYPASS=0xff;
 
 #define PAGE_PROGRAM         0x02
+#define PAGE_READ            0x03
 #define READ_STATUS_REGISTER 0x05
 #define WRITE_ENABLE         0x06
 #define SECTOR_ERASE         0xD8
@@ -555,58 +556,63 @@ void page2padd(byte *buf, int page, int pgsize)
     buf[3] = 0;
 }
 
+/* read full pages
+ * Writing of bitfile will delete trailing 0xff's
+ */
+
 int ProgAlgSPIFlash::read(BitFile &rfile) 
 {
-    unsigned int page, rem ,len = 0, write_page = 0, res, rc=0;
-    unsigned int next_len;
-    byte buf[4]= {0x03, 0, 0, 0};
+    unsigned int flash_page, len , pos, write_page = 0, rc=0;
+    unsigned int last_flashpage;
+    byte buf[4]= {PAGE_READ, 0, 0, 0};
 
-    page = rfile.getOffset()/pgsize;
-    if (page > pages)
+    flash_page = rfile.getOffset()/pgsize;
+    if (flash_page > pages)
     {
         fprintf(stderr,"Offset greater than PROM\n");
         return -1;
     }
     if (rfile.getRLength() != 0)
-        len  =  rfile.getOffset() + rfile.getRLength();
-    else
-        len  = pages * pgsize;
-    if (len  > pages * pgsize)
     {
-        fprintf(stderr,"More data than PROM Size requested, clipping\n");
-        len = pages* pgsize;
+        pos = flash_page*pgsize + rfile.getRLength();
+        len  =  rfile.getRLength();
     }
-    rfile.setLength(len * 8);
-    page2padd(buf, page, pgsize);
-    rem = len;
-    next_len = (rem > pgsize)? pgsize: rem;
-    // send: read 1st page
-    res=spi_xfer_user1(NULL, 0, 0, buf, next_len, 4);
-    rem -=  next_len;
-    for(page+=1; page*pgsize<len; page++)
+    else
     {
-        int res;
-        
-        next_len = (rem > pgsize)? pgsize: rem;
+        pos = pages * pgsize;
+        len  = (pages -flash_page)* pgsize;
+    }
+    if (pos  > pages * pgsize)
+    {
+        fprintf(stderr,"Read outside PROM arearequested, clipping\n");
+        pos = pages* pgsize;
+    }
+    rfile.setLength((len+pgsize) * 8);
+    page2padd(buf, flash_page, pgsize);
+    // send: read 1st flash_page
+    spi_xfer_user1(NULL, 0, 0, buf, pgsize, 4);
+    flash_page++;
+   last_flashpage = pos/pgsize;
+   for(; flash_page < last_flashpage; flash_page++)
+    {
         if(jtag->getVerbose())
         {
-            fprintf(stderr, "\rReading page %4d",page-1); 
+            fprintf(stderr, "\rReading flash_page %5d",flash_page-1); 
             fflush(stderr);
         }
         
-        // get: page n-1, send: read page n             
-        page2padd(buf, page, pgsize);
-        res=spi_xfer_user1(&rfile.getData()[write_page*pgsize], pgsize, 4,
-                           buf, next_len, 4);
+        // get: flash_page n-1, send: read flash_page n             
+        page2padd(buf, flash_page, pgsize);
+        spi_xfer_user1(&rfile.getData()[write_page*pgsize], pgsize, 4,
+                           buf, pgsize, 4);
         //TODO: check res
         
         rc+=pgsize;
         write_page++;
-        rem -=  next_len;
     }
   
     // get last page
-    res=spi_xfer_user1((rfile.getData())+((write_page)*pgsize),next_len,4,
+    spi_xfer_user1((rfile.getData())+((write_page)*pgsize), pgsize,4,
                        NULL,0, 0);
 
     fprintf(stderr, "\n");
@@ -617,16 +623,16 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
 
 int ProgAlgSPIFlash::verify(BitFile &vfile) 
 {
-    unsigned int page, len, pos, verify_page = 0, res, k=0;
-    unsigned int next_len, rem;
+    unsigned int flash_page, len, pos, verify_page = 0, res, k=0;
+    unsigned last_flashpage, rlen;
     byte *data = new byte[pgsize];
-    byte buf[4] = {0x03, 0,0,0};
+    byte buf[4] = {PAGE_READ, 0,0,0};
     
     if (data == 0)
         return -1;
     
-    page = vfile.getOffset()/pgsize;
-    if (page > pages)
+    flash_page = vfile.getOffset()/pgsize;
+    if (flash_page > pages)
     {
         fprintf(stderr,"Verify start outside PROM area, aborting\n");
         return -1;
@@ -634,12 +640,12 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
 
     if (vfile.getRLength() != 0)
     {
-        pos = vfile.getOffset() + vfile.getRLength();
+        pos = flash_page*pgsize + vfile.getRLength();
         len = vfile.getRLength();
     }
     else
     {
-        pos = vfile.getOffset() + vfile.getLength()/8;
+        pos = flash_page*pgsize + vfile.getLength()/8;
         len = vfile.getLength()/8;
     }
     if( pos > pages * pgsize)
@@ -647,31 +653,34 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
         fprintf(stderr,"Verify outside PROM areas requested, clipping\n");
         pos = pages * pgsize;
     }
-  
-    page2padd(buf, page, pgsize);
-    rem = len;
-    next_len = (rem > pgsize)? pgsize: rem;
-    // send: read 1st page
-    res=spi_xfer_user1(NULL, 0, 0, buf, pgsize, 4);
-    rem -=  next_len;
-    for(page+=1 ; page * pgsize < pos; page++)
+    last_flashpage = pos/pgsize;
+    page2padd(buf, flash_page, pgsize);
+    rlen = ((len - pgsize *verify_page) > pgsize)? pgsize:
+        len - pgsize *verify_page;
+     // send: read 1st flash_page
+    res=spi_xfer_user1(NULL, 0, 0, buf, rlen, 4);
+    flash_page++;
+    for(; flash_page < last_flashpage; flash_page++)
     {
-        next_len = (rem > pgsize)? pgsize: rem;
+        rlen = ((len - pgsize *verify_page) > pgsize)? pgsize:
+            len - pgsize *verify_page;
+        
         if(jtag->getVerbose())
         {
-            fprintf(stderr, "\rVerifying page %4d",page-1); 
+            fprintf(stderr, "\rVerifying page %5d/%5d at flash page %5d",
+                    verify_page-1, len/pgsize, flash_page); 
             fflush(stderr);
         }
         
-        // get: page n-1, send: read page n             
-        page2padd(buf, page, pgsize);
-        res=spi_xfer_user1(data, pgsize, 4, buf, next_len, 4);
+        // get: flash_page n-1, send: read flash_page n             
+        page2padd(buf, flash_page, pgsize);
+        res=spi_xfer_user1(data, pgsize, 4, buf, rlen, 4);
         res=memcmp(data, vfile.getData()+(verify_page*pgsize), 
                    pgsize);
         if (res)
         {
             unsigned int i;
-            fprintf(stderr, "\nVerify failed  at page %4d\nread:",page-1);
+            fprintf(stderr, "\nVerify failed  at flash_page %5d\nread:",flash_page-1);
             k++;
             for(i =0; i<pgsize; i++)
                 fprintf(stderr, "%02x", data[i]);
@@ -684,22 +693,20 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
                 return k;
         }
         verify_page++;
-        len -= pgsize;
-        rem -=  next_len;
     }
     
     // get last page
-    res=spi_xfer_user1(data, next_len,4,NULL,0, 0);
-    res=memcmp(data, vfile.getData()+(verify_page*pgsize), next_len);
+    res=spi_xfer_user1(data, rlen,4,NULL,0, 0);
+    res=memcmp(data, vfile.getData()+(verify_page*pgsize), rlen);
     if (res )
     {
         unsigned int i;
         k++;
-        fprintf(stderr, "\nVerify failed  at page %4d\nread:",page-1);
-         for(i =0; i< next_len; i++)
+        fprintf(stderr, "\nVerify failed  at flash_page %5d\nread:",flash_page-1);
+         for(i =0; i< rlen; i++)
             fprintf(stderr, "%02x", data[i]);
         fprintf(stderr, "\nfile:");
-        for(i =0; i<next_len; i++)
+        for(i =0; i<rlen; i++)
             fprintf(stderr, "%02x", vfile.getData()[verify_page*pgsize+i]);
         fprintf(stderr, "\n");
     }
@@ -761,31 +768,57 @@ int ProgAlgSPIFlash::wait(byte command, int report, int limit, double *delta)
 
 int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile) 
 {
+  unsigned int flash_page, pos, data_page = 0, last_flashpage;
   byte fbuf[4];
-  int sector_nr = 0;
-  int i, j;
+  unsigned int sector_nr = 0;
+  int j;
   int len = pfile.getLength()/8;
   double max_sector_erase = 0.0;
   double max_page_program = 0.0;
   double delta;
 
-  for(i = 0; i < len; i += pgsize)
+  flash_page = pfile.getOffset()/pgsize;
+  if (flash_page > pages)
+  {
+      fprintf(stderr,"Verify start outside PROM area, aborting\n");
+      return -1;
+  }
+  
+  if (pfile.getRLength() != 0)
+  {
+      pos = flash_page*pgsize + pfile.getRLength();
+      len = pfile.getRLength();
+  }
+  else
+  {
+      pos = flash_page*pgsize + pfile.getLength()/8;
+      len = pfile.getLength()/8;
+  }
+  if( pos > pages * pgsize)
+  {
+      fprintf(stderr,"Verify outside PROM areas requested, clipping\n");
+      pos = pages * pgsize;
+  }
+  last_flashpage = pos/pgsize;
+  for(; flash_page <= last_flashpage; flash_page++)
     {
+      unsigned int rlen = ((len- data_page*pgsize)>pgsize) ? pgsize : 
+          (len- data_page*pgsize);
       /* Find out if sector needs to be erased*/
-      if (sector_nr * sector_size  <= i)
+      if (sector_nr   <= flash_page*pgsize/sector_size)
 	{
+          sector_nr = flash_page*pgsize/sector_size +1;
 	  /* Enable Write */
 	  fbuf[0] = WRITE_ENABLE;
 	  spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
 	  /* Erase selected page */
 	  fbuf[0] = sector_erase_cmd;
-	  fbuf[1]=i>>16;
-	  fbuf[2]=(i>>8) & 0xff;
-	  fbuf[3]=i & 0xff;
-	  spi_xfer_user1(NULL,0,0,fbuf, 0, 4);
-	  fbuf[0] = READ_STATUS_REGISTER;
+          page2padd(fbuf, flash_page, pgsize);
+          spi_xfer_user1(NULL,0,0,fbuf, 0, 4);
 	  if(jtag->getVerbose())
-	    fprintf(stderr,"\rErasing sector %2d", sector_nr);
+              fprintf(stderr,"\rErasing sector %2d/%2d", 
+                      sector_nr, 
+                      last_flashpage*pgsize/sector_size);
           j = wait(READ_STATUS_REGISTER, 100, 3000, &delta);
 	  if(j != 0)
            {
@@ -794,31 +827,30 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
            }
          else
            {
-             sector_nr ++;
 	     if (delta > max_sector_erase)
 	       max_sector_erase= delta;
            }
        }
       if(jtag->getVerbose())
        {
-         fprintf(stderr, "\r\t\t\t\t\tWriting page %5d/%5d", 
-		 i >>8, len>>8); 
+           fprintf(stderr, "\r\t\t\t\t\tWriting data page %5d/%5d",
+                   data_page, len/pgsize);
+           fprintf(stderr, " at flash page %5d", flash_page); 
          fflush(stderr);
        }
+
       /* Enable Write */
       fbuf[0] = WRITE_ENABLE;
       spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
-      fbuf[0] = READ_STATUS_REGISTER;
       buf[0] = PAGE_PROGRAM;
-      buf[1]=i>>16;
-      buf[2]=(i>>8) & 0xff;
-      buf[3]=0;
-      memcpy(buf+4,&pfile.getData()[i],((len-i)>pgsize) ? pgsize : (len-i));
-      spi_xfer_user1(NULL,0,0,buf, ((len-i)>pgsize) ? pgsize : (len-i), 4);
+      page2padd(buf, flash_page, pgsize);
+      memcpy(buf+4,&pfile.getData()[data_page * pgsize], rlen);
+      spi_xfer_user1(NULL,0,0,buf, rlen, 4);
       j = wait(READ_STATUS_REGISTER, 1, 50, &delta);
       if(j != 0)
        {
-         fprintf(stderr,"\nPage Program failed for page %4d\n", i>>8);
+         fprintf(stderr,"\nPage Program failed for flashpage %5d\n", 
+                 flash_page);
          return -1;
        }
       else
@@ -827,6 +859,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	    max_page_program= delta;
 	  
 	}
+      data_page++;
     }
   if(jtag->getVerbose())
     {
@@ -887,7 +920,7 @@ int ProgAlgSPIFlash::program_at45(BitFile &pfile)
         if(jtag->getVerbose())
         {
             fprintf(stderr, "\r                                                       \r"
-                    "Writing page %4d",page-1); 
+                    "Writing page %5d",page-1); 
             fflush(stderr);
         }
         
