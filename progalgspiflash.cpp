@@ -655,17 +655,49 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
 
 #define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
 			    (tvp2)->tv_usec - (tvp1)->tv_usec)
+
+/* Wait at maximum "limit" Milliseconds and report a '.' every "report"
+ * Milliseconds and report used time as "delta" by issuing a
+ * READ_STATUS_REGISTER command every Millisecond while waiting for
+ * WRITE_BUSY to deassert
+ */
+int ProgAlgSPIFlash::wait(int report, int limit, double *delta)
+{
+    int j = 0;
+    byte fbuf[4] = {READ_STATUS_REGISTER};
+    byte rbuf[1];
+    struct timeval tv[2];
+
+    gettimeofday(tv, NULL);
+    /* wait for erase complete */
+    do
+    {
+        jtag->Usleep(1000);       
+        spi_xfer_user1(rbuf,1,1,fbuf, 1, 1);
+        j++;
+        if ((jtag->getVerbose()) &&((j%report) == (report -1)))
+        {
+            /* one tick every report mS Erase wait time */
+            fprintf(stderr,".");
+            fflush(stderr);
+        }
+    }
+    while ((rbuf[0] & WRITE_BUSY)&& (j < limit));
+    gettimeofday(tv+1, NULL);
+    *delta = deltaT(tv, tv + 1);
+    return j;
+}
+
 int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile) 
 {
   byte fbuf[4];
-  byte rbuf[1];;
   int sector_nr = 0;
   int i, j;
   int len = pfile.getLength()/8;
-  struct timeval tv[2];
   double max_sector_erase = 0.0;
   double max_page_program = 0.0;
-  
+  double delta;
+
   for(i = 0; i < len; i += pgsize)
     {
       /* Find out if sector needs to be erased*/
@@ -683,24 +715,8 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 	  fbuf[0] = READ_STATUS_REGISTER;
 	  if(jtag->getVerbose())
 	    fprintf(stderr,"\rErasing sector %2d", sector_nr);
-	  j = 0;
 	  spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
-	  gettimeofday(tv, NULL);
-	  /* wait for erase complete */
-	  do
-	    {
-	      jtag->Usleep(1000);       
-	      spi_xfer_user1(rbuf,1,1,fbuf, 1, 1);
-	      j++;
-	      if ((jtag->getVerbose()) &&((j%100) == 99))
-		{
-                    /* one tick every 100 mS Erase wait time */
-		  fprintf(stderr,".");
-		  fflush(stderr);
-		}
-	    }
-	  while ((rbuf[0] & WRITE_BUSY)&& (j <3000));
-	  gettimeofday(tv+1, NULL);
+          j = wait(100, 3000, &delta);
 	  if(j >= 3000)
            {
              fprintf(stderr,"\nErase failed for sector %2d\n", sector_nr);
@@ -709,8 +725,8 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
          else
            {
              sector_nr ++;
-	     if ((double)deltaT(tv, tv + 1) > max_sector_erase)
-	       max_sector_erase= (double)deltaT(tv, tv + 1);
+	     if (delta > max_sector_erase)
+	       max_sector_erase= delta;
            }
        }
       if(jtag->getVerbose())
@@ -723,7 +739,6 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
       fbuf[0] = WRITE_ENABLE;
       spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
       fbuf[0] = READ_STATUS_REGISTER;
-      j = 0;
       buf[0] = PAGE_PROGRAM;
       buf[1]=i>>16;
       buf[2]=(i>>8) & 0xff;
@@ -731,19 +746,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
       memcpy(buf+4,&pfile.getData()[i],((len-i)>pgsize) ? pgsize : (len-i));
       spi_xfer_user1(NULL,0,0,buf, ((len-i)>pgsize) ? pgsize : (len-i), 4);
       spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
-      gettimeofday(tv, NULL);
-      do
-	{
-	  spi_xfer_user1(rbuf,1,1,fbuf, 1, 1);
-	  j++;
-          if(jtag->getVerbose())
-          {
-              fprintf(stderr,".");
-              fflush(stderr);
-          }
-	}
-      while ((rbuf[0] & WRITE_BUSY) && (j <50));
-      gettimeofday(tv+1, NULL);
+      j = wait(1, 50, &delta);
       if(j >= 50)
        {
          fprintf(stderr,"\nPage Program failed for page %4d\n", i>>8);
@@ -751,8 +754,8 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
        }
       else
 	{
-	  if ((double)deltaT(tv, tv + 1) > max_page_program)
-	    max_page_program= (double)deltaT(tv, tv + 1);
+	  if (delta > max_page_program)
+	    max_page_program= delta;
 	  
 	}
     }
