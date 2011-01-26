@@ -47,6 +47,8 @@ class ProgAlgSPIFlash
   BitFile *file;
   unsigned int pgsize;
   unsigned int pages;
+  unsigned int pages_per_sector;
+  unsigned int pages_per_block;
   int sector_size;
   int sector_erase_cmd;
   int manf_id;
@@ -64,14 +66,16 @@ class ProgAlgSPIFlash
   int spi_flashinfo_w25 (unsigned char * fbuf);
   int spi_flashinfo_at45(unsigned char * fbuf);
   int spi_flashinfo_m25p(unsigned char * fbuf);
-  int wait(int report, int limit, double *delta);
+  int wait(byte command, int report, int limit, double *delta);
   int program_at45(BitFile &file);
   int sectorerase_and_program(BitFile &file);
+  int erase_at45();
+  int erase_bulk();
  public:
   ProgAlgSPIFlash(Jtag &j, BitFile &f);
   ~ProgAlgSPIFlash(void);
   int spi_flashinfo(void);
-  int erase(){return 0;};
+  int erase(void);
   int program(BitFile &file);
   int verify(BitFile &file);
   int read(BitFile &file);
