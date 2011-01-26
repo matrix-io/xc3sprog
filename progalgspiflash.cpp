@@ -518,7 +518,7 @@ void page2padd(byte *buf, int page, int pgsize)
 int ProgAlgSPIFlash::read(BitFile &rfile) 
 {
     unsigned int page, rem ,len = 0, write_page = 0, res, rc=0;
-    int next_len;
+    unsigned int next_len;
     byte buf[4]= {0x03, 0, 0, 0};
 
     page = rfile.getOffset()/pgsize;
@@ -578,6 +578,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
 int ProgAlgSPIFlash::verify(BitFile &vfile) 
 {
     unsigned int page, len, pos, verify_page = 0, res, k=0;
+    unsigned int next_len, rem;
     byte *data = new byte[pgsize];
     byte buf[4] = {0x03, 0,0,0};
     
@@ -606,17 +607,16 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
         fprintf(stderr,"Verify outside PROM areas requested, clipping\n");
         pos = pages * pgsize;
     }
-    fprintf(stderr," Start page %d pos %d length %ld\n",
-            page, pos, vfile.getLength());
   
     page2padd(buf, page, pgsize);
+    rem = len;
+    next_len = (rem > pgsize)? pgsize: rem;
     // send: read 1st page
     res=spi_xfer_user1(NULL, 0, 0, buf, pgsize, 4);
-  
-   
-    res=spi_xfer_user1(NULL,0,0,buf,pgsize, 4);
+    rem -=  next_len;
     for(page+=1 ; page * pgsize < pos; page++)
     {
+        next_len = (rem > pgsize)? pgsize: rem;
         if(jtag->getVerbose())
         {
             fprintf(stderr, "\rVerifying page %4d",page-1); 
@@ -625,8 +625,9 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
         
         // get: page n-1, send: read page n             
         page2padd(buf, page, pgsize);
-        res=spi_xfer_user1(data, pgsize, 4, buf, pgsize, 4);
-        res=memcmp(data, vfile.getData()+(verify_page*pgsize), (len > pgsize)?pgsize:len);
+        res=spi_xfer_user1(data, pgsize, 4, buf, next_len, 4);
+        res=memcmp(data, vfile.getData()+(verify_page*pgsize), 
+                   pgsize);
         if (res)
         {
             unsigned int i;
@@ -644,29 +645,32 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
         }
         verify_page++;
         len -= pgsize;
+        rem -=  next_len;
     }
     
     // get last page
-    res=spi_xfer_user1(data,pgsize,4,NULL,0, 0);
-    res=memcmp(data, vfile.getData()+(verify_page*pgsize), (len > pgsize)?pgsize:len);
+    res=spi_xfer_user1(data, next_len,4,NULL,0, 0);
+    res=memcmp(data, vfile.getData()+(verify_page*pgsize), next_len);
     if (res )
     {
         unsigned int i;
         k++;
         fprintf(stderr, "\nVerify failed  at page %4d\nread:",page-1);
-         for(i =0; i<pgsize; i++)
+         for(i =0; i< next_len; i++)
             fprintf(stderr, "%02x", data[i]);
         fprintf(stderr, "\nfile:");
-        for(i =0; i<pgsize; i++)
+        for(i =0; i<next_len; i++)
             fprintf(stderr, "%02x", vfile.getData()[verify_page*pgsize+i]);
         fprintf(stderr, "\n");
     }
+    if(jtag->getVerbose())
+        fprintf(stderr, "\n");
     if (k)
     {
-        fprintf(stderr, "\rVerify: Failure!                               \n");
+        fprintf(stderr, "Verify: Failure!\n");
         return k;
     }
-    fprintf(stderr, "\rVerify: Success!                               \n");
+    fprintf(stderr, "Verify: Success!\n");
     
     return 0;
 }
