@@ -81,6 +81,41 @@ int BitFile::readBitfile(FILE *fp)
   return 0;
 }
 
+/* Read HEX values without preamble */
+int BitFile::readHEXRAW(FILE *fp)
+{
+    char buf[1024];
+    unsigned int byte_count = 0;
+    int count;
+    
+    fseek(fp, 0, SEEK_END);
+    length = (ftell(fp)  >> 1); /* Fix at end */
+    fseek(fp, 0, SEEK_SET);
+    if(buffer) delete [] buffer;
+    buffer= new byte[length];
+
+    /* FIXME: generate a dummy header*/
+    if (buffer == 0)
+        return 1;
+    while ((fgets(buf, 1024, fp)) != 0)
+    {
+        int bytes_read = 0;
+        unsigned char value;
+        count = strlen(buf);
+        if (buf[count-1] == 0x0a || buf[count-1] == 0x0d)
+            count -= 2;
+        while (count - bytes_read > 0)
+        {
+            sscanf(&buf[bytes_read], "%2hhx", &value);
+            bytes_read += 2;
+            if (value != 0x0a && value != 0x0d)
+                buffer[byte_count++] = bitRevTable[value];
+        }
+    }
+    length = byte_count;
+    return 0;
+}
+
 /* Adapted from openocd : src/target/image.c : image_ihex_buffer_complete()
  *   Copyright (C) 2007 by Dominic Rath                                    *
  *   Dominic.Rath@gmx.de                                                   *
@@ -247,6 +282,8 @@ int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
  * Specify the file type as -i MCSREV to activate this option.
  */
       return readMCSfile(fp);
+    case STYLE_HEX_RAW:
+        return readHEXRAW(fp);
     default: fprintf(stderr, " Unhandled style\n");
       return 1;
     }
@@ -464,9 +501,11 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
 	  if ( i%16 == 15)
 	    fprintf(fp,"\n");
 	}
-      if ( (i-1)%16 != 15)
-	fprintf(fp,"\n");
-      break;
+      /* Fall Through*/
+    case STYLE_HEX_RAW:
+        if ( (i-1)%16 != 15)
+            fprintf(fp,"\n");
+        break;
     case STYLE_MCS:
     case STYLE_MCS_REV:
       {
@@ -587,6 +626,7 @@ const char * BitFile::styleToString(FILE_STYLE style)
       case STYLE_BIT: return "BIT";
       case STYLE_BIN: return "BIN";
       case STYLE_HEX: return "HEX";
+      case STYLE_HEX_RAW: return "HEXRAW";
       case STYLE_MCS: return "MCS";
       case STYLE_MCS_REV: return "MCSREV";
       default: return 0;
@@ -601,6 +641,8 @@ int BitFile::styleFromString(const char *stylestr, FILE_STYLE *style)
     *style = STYLE_BIN;
   else if (!strcasecmp(stylestr, "HEX"))
     *style = STYLE_HEX;
+  else if (!strcasecmp(stylestr, "HEXRAW"))
+      *style = STYLE_HEX_RAW;
   else if (!strcasecmp(stylestr, "MCS"))
     *style = STYLE_MCS;
   else if (!strcasecmp(stylestr, "MCSREV"))
