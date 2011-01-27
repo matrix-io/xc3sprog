@@ -102,14 +102,16 @@ int BitFile::readHEXRAW(FILE *fp)
         int bytes_read = 0;
         unsigned char value;
         count = strlen(buf);
-        if (buf[count-1] == 0x0a || buf[count-1] == 0x0d)
-            count -= 2;
-        while (count - bytes_read > 0)
+       while (1)
         {
+            if (buf[bytes_read] == 0x0a || 
+                buf[bytes_read] == 0x0d ||
+                buf[bytes_read] == 0x20 ||
+                buf[bytes_read] == '/')
+                break;
             sscanf(&buf[bytes_read], "%2hhx", &value);
             bytes_read += 2;
-            if (value != 0x0a && value != 0x0d)
-                buffer[byte_count++] = bitRevTable[value];
+            buffer[byte_count++] = bitRevTable[value];
         }
     }
     length = byte_count;
