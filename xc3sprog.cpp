@@ -325,7 +325,7 @@ void usage(bool all_options)
   OPT("",         "Optional: [len] in Bytes.");
   OPT("-e", "Erase(XC95C/SPI only).");
   OPT("-h", "Print this help.");
-  OPT("-i", "Input file format (BIT|BIN|MCS|MCSREV|HEX).");
+  OPT("-i", "Input file format (BIT|BIN|MCS|MCSREV|HEX|HEXRAW).");
   OPT("-I", "Work on connected SPI Flash (ISF Mode).");
   OPT(""  , "(after 'bscan_spi' bitfile for device has been loaded).");
   OPT("-j", "Detect JTAG chain, nothing else (default action).");
