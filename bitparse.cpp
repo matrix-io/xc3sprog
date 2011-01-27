@@ -103,7 +103,8 @@ int main(int argc, char**args)
     fprintf(stderr, "Created from NCD file: %s\n",file.getNCDFilename());
     fprintf(stderr, "Target device: %s\n",file.getPartName());
     fprintf(stderr, "Created: %s %s\n",file.getDate(),file.getTime());
-    fprintf(stderr, "Bitstream length: %lu bits\n", file.getLength());
+    fprintf(stderr, "Bitstream length: %lu bits %lu bytes(0x%06lx)\n", 
+            file.getLength(),file.getLength()/8,file.getLength()/8);
 
     for (i = 0; i < file.getLength()/8; i++)
     {
