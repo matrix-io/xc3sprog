@@ -833,7 +833,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
        }
       if(jtag->getVerbose())
        {
-           fprintf(stderr, "\r\t\t\t\t\tWriting data page %5d/%5d",
+           fprintf(stderr, "\r\t\t\t\tWriting data page %5d/%5d",
                    data_page, len/pgsize);
            fprintf(stderr, " at flash page %5d", flash_page); 
          fflush(stderr);
