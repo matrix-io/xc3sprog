@@ -110,6 +110,33 @@ Jedecfiles for CPLD programming can be parsed with
 
 $ ./jedecparse <jedecfile.jed>
 
-When using a FT2232 programmer, speed is noticebly enhance with a USB-2.0 
+When using a FT2232D|L programmer, speed is noticely enhance with a USB-2.0 
 Hub between the adapter and the PC. Some effort has been made to concatenate 
 as many JTAG actions as possible.
+
+Example fallback multi boot setup on XC6S
+
+Load intermediate BSCAN_SPI bitfile
+$ ./xc3sprog -I <package specific bscan_spi bitfile>
+
+Eventually erase (not really needed)
+$ ./xc3sprog -I -e
+
+Prepare the Multiboot header from the Template. Adapt GENERAL2 and GENERAL4 for
+your setup. Here a 32 MiBit Flash and a XC6SLX45 is used. The Bitstream length
+is about 1484404 = 0x16a674 bytes, so with placing the golden image at 0x10000 
+the golden image ends at 0x17a674 and with placing the normal image at 0x190000,
+there should be enough spacing between both. Double check that GENERAL2 and 
+GENERAL4 match th offsets.
+
+Write the header
+$ ./xc3sprog -I <boot_header_only_SPI_x1.hex>
+
+Write golden image
+$ ./xc3sprog -I -O 0x10000 <golden image>
+ 
+Write normal image
+$ ./xc3sprog -I -O 0x190000 <normal image>
+
+Reboot
+$ ./xc3sprog -r
