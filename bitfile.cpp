@@ -247,7 +247,7 @@ int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
  * Specify the file type as -i MCSREV to activate this option.
  */
       return readMCSfile(fp);
-    default: fprintf(stderr, " Handle handle style\n");
+    default: fprintf(stderr, " Unhandled style\n");
       return 1;
     }
 	
