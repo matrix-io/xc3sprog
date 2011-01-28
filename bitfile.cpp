@@ -503,11 +503,16 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
 	  if ( i%16 == 15)
 	    fprintf(fp,"\n");
 	}
-      /* Fall Through*/
+      break;
     case STYLE_HEX_RAW:
-        if ( (i-1)%16 != 15)
-            fprintf(fp,"\n");
-        break;
+      for(i=0; i<clip; i++)
+	{
+	  byte b=bitRevTable[buffer[i]]; // Reverse bit order
+	  fprintf(fp,"%02x", b);
+	  if ( i%4 == 3)
+	    fprintf(fp,"\n");
+	}
+      break;
     case STYLE_MCS:
     case STYLE_MCS_REV:
       {
