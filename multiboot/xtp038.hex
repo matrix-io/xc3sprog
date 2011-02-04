@@ -1,0 +1,14 @@
+FFFFFFFF // DUMMYWORD,  DUMMYWORD
+AA995566 // SYNCWORD
+31E1FFFF
+32610000 // 32A1=GENERAL1 0x0000=address[15:0] MultiBoot image location
+32810340 // 3281=GENERAL2 0x03=SPIx1 read command, 0x40=address[23:16] MultiBoot image address
+32A10000 // 32A1=GENERAL3 0x0000=address[15:0] Golden image address location
+32C10301 // 32C1=GENERAL4 0x03=SPIx1 read command, 0x01=address[23:16] of Golden image address
+32E10000
+30A10000
+33012100
+3201001F
+30A1000E
+20002000 // NOOP, NOOP
+20002000 // NOOP, NOOP
