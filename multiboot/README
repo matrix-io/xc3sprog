@@ -1,0 +1,5 @@
+Adapt the example from Xilinx SP601 XTP038.pdf for your setup.
+Generate BIT File:
+../build/bitparse -i hexraw <your File>.bit
+Generate BIN File:
+../build/bitparse -i hexraw -o bin -O <your File>.bin <your File>
