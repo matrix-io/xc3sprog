@@ -871,7 +871,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
 
 int ProgAlgSPIFlash::program(BitFile &pfile) 
 {
-  int len = pfile.getLength()/8;
+  unsigned int len = pfile.getLength()/8;
   if( len >(pgsize*pages))
     {
       fprintf(stderr, "dude, that file is larger than the flash!\n");
