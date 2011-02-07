@@ -322,6 +322,7 @@ void usage(bool all_options)
   OPT("-c", "Choose programmer type [pp|ftdi|fx2|xpc].");
   OPT("-C [len]", "Verify device against file (no programming).");
   OPT("-r [len]", "Read from device and write to file.");
+  OPT("-f", "When reading from device, overwrite exiting file, abort without -f");
   OPT("",         "Optional: [len] in Bytes.");
   OPT("-e", "Erase(XC95C/SPI only).");
   OPT("-h", "Print this help.");
@@ -372,6 +373,7 @@ void usage(bool all_options)
 int main(int argc, char **args)
 {
   bool        verbose   = false;
+  bool        force     = false;
   bool        verify    = false;
   bool        lock      = false;
   bool     detectchain  = false;
@@ -422,12 +424,16 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hC::Lc:d:D:eE:F:i:IjLm:o:O:p:P:r::Rs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hC::Lc:d:D:eE:fF:i:IjLm:o:O:p:P:r::Rs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
     case 'v':
       verbose = true;
+      break;
+
+    case 'f':
+      force = true;
       break;
 
     case 'C':
@@ -661,7 +667,7 @@ int main(int argc, char **args)
 		  struct stat  stats;
 		  stat(args[0], &stats);
 		  
-		  if (stats.st_size !=0)
+		  if (!force && stats.st_size !=0)
 		    {
 		      fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
 		      fclose(fpout);
