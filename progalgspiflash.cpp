@@ -768,7 +768,7 @@ int ProgAlgSPIFlash::wait(byte command, int report, int limit, double *delta)
 
 int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile) 
 {
-  unsigned int flash_page, pos, data_page = 0, last_flashpage;
+  unsigned int i, offset, data_end, data_page = 0;
   byte fbuf[4];
   unsigned int sector_nr = 0;
   int j;
@@ -777,8 +777,8 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
   double max_page_program = 0.0;
   double delta;
 
-  flash_page = pfile.getOffset()/pgsize;
-  if (flash_page > pages)
+  offset = (pfile.getOffset()/pgsize)*pgsize;
+  if (offset > pages *pgsize)
   {
       fprintf(stderr,"Verify start outside PROM area, aborting\n");
       return -1;
@@ -786,39 +786,38 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
   
   if (pfile.getRLength() != 0)
   {
-      pos = flash_page*pgsize + pfile.getRLength();
+      data_end = offset + pfile.getRLength();
       len = pfile.getRLength();
   }
   else
   {
-      pos = flash_page*pgsize + pfile.getLength()/8;
+      data_end = offset + pfile.getLength()/8;
       len = pfile.getLength()/8;
   }
-  if( pos > pages * pgsize)
+  if( data_end > pages * pgsize)
   {
       fprintf(stderr,"Verify outside PROM areas requested, clipping\n");
-      pos = pages * pgsize;
+      data_end = pages * pgsize;
   }
-  last_flashpage = pos/pgsize;
-  for(; flash_page <= last_flashpage; flash_page++)
+  for(i = offset ; i < data_end; i+= pgsize)
     {
-      unsigned int rlen = ((len- data_page*pgsize)>pgsize) ? pgsize : 
-          (len- data_page*pgsize);
+      unsigned int rlen = ((data_end -i) > pgsize) ? pgsize : 
+          (data_end -i);
       /* Find out if sector needs to be erased*/
-      if (sector_nr   <= flash_page*pgsize/sector_size)
+      if (sector_nr   <= i/sector_size)
 	{
-          sector_nr = flash_page*pgsize/sector_size +1;
+          sector_nr = i/sector_size +1;
 	  /* Enable Write */
 	  fbuf[0] = WRITE_ENABLE;
 	  spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
 	  /* Erase selected page */
 	  fbuf[0] = sector_erase_cmd;
-          page2padd(fbuf, flash_page, pgsize);
+          page2padd(fbuf, i/pgsize, pgsize);
           spi_xfer_user1(NULL,0,0,fbuf, 0, 4);
 	  if(jtag->getVerbose())
               fprintf(stderr,"\rErasing sector %2d/%2d", 
                       sector_nr, 
-                      last_flashpage*pgsize/sector_size);
+                      (data_end + sector_size + 1)/sector_size);
           j = wait(READ_STATUS_REGISTER, 100, 3000, &delta);
 	  if(j != 0)
            {
@@ -833,9 +832,9 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
        }
       if(jtag->getVerbose())
        {
-           fprintf(stderr, "\r\t\t\t\tWriting data page %5d/%5d",
-                   data_page, len/pgsize);
-           fprintf(stderr, " at flash page %5d", flash_page); 
+           fprintf(stderr, "\r\t\t\tWriting data page %5d/%5d",
+                   (i - offset)/pgsize +1, len/pgsize +1);
+           fprintf(stderr, " at flash page %5d", i/pgsize +1); 
          fflush(stderr);
        }
 
@@ -843,14 +842,14 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
       fbuf[0] = WRITE_ENABLE;
       spi_xfer_user1(NULL,0,0,fbuf, 0, 1);
       buf[0] = PAGE_PROGRAM;
-      page2padd(buf, flash_page, pgsize);
-      memcpy(buf+4,&pfile.getData()[data_page * pgsize], rlen);
+      page2padd(buf, i/pgsize, pgsize);
+      memcpy(buf+4,&pfile.getData()[i-offset], rlen);
       spi_xfer_user1(NULL,0,0,buf, rlen, 4);
       j = wait(READ_STATUS_REGISTER, 1, 50, &delta);
       if(j != 0)
        {
          fprintf(stderr,"\nPage Program failed for flashpage %5d\n", 
-                 flash_page);
+                 i/pgsize +1);
          return -1;
        }
       else
