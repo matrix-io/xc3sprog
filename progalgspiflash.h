@@ -44,7 +44,6 @@ class ProgAlgSPIFlash
   static const byte BYPASS;
 
   Jtag *jtag;
-  BitFile *file;
   FILE *fp_dbg;
   unsigned int pgsize;
   unsigned int pages;
@@ -73,7 +72,7 @@ class ProgAlgSPIFlash
   int erase_at45();
   int erase_bulk();
  public:
-  ProgAlgSPIFlash(Jtag &j, BitFile &f);
+  ProgAlgSPIFlash(Jtag &j);
   ~ProgAlgSPIFlash(void);
   int spi_flashinfo(void);
   int erase(void);

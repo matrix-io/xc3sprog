@@ -84,7 +84,6 @@ class BitFile
   unsigned long length; // The length of the byte data that follows, multiply by 8 to get bitstream length.
   byte *buffer; // Each byte is reversed, Xilinx does things MSB first and JTAG does things LSB first!
   std::string filename;
-  byte bitRevTable[256]; // Bit reverse lookup table
   bool Error;
   std::string errorStr;
   FILE *logfile;
@@ -92,7 +91,6 @@ class BitFile
   unsigned int rlength; /* if != 0 length of data to read/verify*/
 
  private:
-  void initFlip();
   void error(const std::string &str);
   void readField(std::string &field, FILE *fp);
   void processData(FILE *fp);
@@ -130,7 +128,6 @@ class BitFile
   void setNCDFields(const char * partname);
   void setLength(unsigned int bit_count);
   unsigned long saveAs(FILE_STYLE style, const char  *device, FILE *fp);
-  unsigned char reverse8(unsigned char b){return bitRevTable[b];};
   int get_bit(unsigned int idx);
   void set_bit(unsigned int idx, int blow);
 
