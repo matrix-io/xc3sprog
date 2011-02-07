@@ -362,7 +362,7 @@ void usage(bool all_options)
 
   fprintf(stderr, "\nDevice specific options:\n");
   OPT("-E file", "(AVR only) EEPROM file.");
-  OPT("-f file", "(AVR only) File with fuse bits.");
+  OPT("-F file", "(AVR only) File with fuse bits.");
 
 #undef OPT
 
@@ -422,7 +422,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hC::Lc:d:D:eE:f:i:IjLm:o:O:p:P:r::Rs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hC::Lc:d:D:eE:F:i:IjLm:o:O:p:P:r::Rs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
@@ -497,7 +497,7 @@ int main(int argc, char **args)
       }
       break;
 
-    case 'f':
+    case 'F':
       fusefile = optarg;
       break;
 
