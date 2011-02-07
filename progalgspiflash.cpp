@@ -605,6 +605,8 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
         page2padd(buf, i/pgsize, pgsize);
         if (l < 0) /* don't write when sending first page*/
             spi_xfer_user1(NULL, 0, 4, buf, rlen, 4);
+        else if (i >= data_end)
+            spi_xfer_user1(rfile.getData()+l, rlen, 4, buf, 0, 4);
         else
             spi_xfer_user1(rfile.getData()+l, pgsize, 4, buf, rlen, 4);
         l+= pgsize;
