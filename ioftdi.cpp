@@ -458,6 +458,7 @@ void IOFtdi::deinit(void)
 IOFtdi::~IOFtdi()
 {
   deinit();
+  free(ftdi_handle);
   if(fp_dbg)
     fclose(fp_dbg);
 }
