@@ -599,7 +599,7 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
         if(jtag->getVerbose())
         {
             fprintf(stderr, "\rReading page %6d/%6d at flash page %6d",
-                    (i - offset)/pgsize +1, len/pgsize + 1, i/pgsize + 1); 
+                    (l+ 2*pgsize -1)/pgsize , (len+pgsize -1)/pgsize, (i+pgsize -1)/pgsize); 
             fflush(stderr);
         }
         page2padd(buf, i/pgsize, pgsize);
@@ -664,7 +664,8 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
             if(jtag->getVerbose())
             {
                 fprintf(stderr, "\rVerifying page %6d/%6d at flash page %6d",
-                        (i - offset)/pgsize +1, len/pgsize + 1, i/pgsize + 1); 
+                        (i - offset +pgsize-1)/pgsize, (len +pgsize -1)/pgsize,
+                        (i + pgsize -1)/pgsize ); 
                 fflush(stderr);
             }
             res=memcmp(data, vfile.getData()+ l, rlen); 
@@ -809,8 +810,9 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
       if(jtag->getVerbose())
        {
            fprintf(stderr, "\r\t\t\tWriting data page %6d/%6d",
-                   (i - offset)/pgsize +1, len/pgsize +1);
-           fprintf(stderr, " at flash page %6d", i/pgsize +1); 
+                   (i - offset + pgsize -1)/pgsize, (len + pgsize -1)/pgsize);
+                   fprintf(stderr, " at flash page %6d", 
+                           (i + pgsize -1)/pgsize); 
          fflush(stderr);
        }
 
