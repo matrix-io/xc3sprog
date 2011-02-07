@@ -1136,8 +1136,7 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
                char *bscanfile, int family, const char *device)
 {
     int i;
-    BitFile spifile;
-    ProgAlgSPIFlash alg(jtag, spifile);
+    ProgAlgSPIFlash alg(jtag);
     
     if (bscanfile)
     {
@@ -1182,6 +1181,7 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
     {
         int spifile_offset;
         int spifile_length;
+        BitFile spifile;
         FILE_STYLE  spifile_style;
         FILE *spifile_fp = 
             getFile_and_Attribute_from_name(args[i], readback, force ,&spifile_offset,

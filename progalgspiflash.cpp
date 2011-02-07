@@ -26,6 +26,8 @@ Code based on http://code.google.com/p/xilprg-hunz/
 #include <assert.h>
 #include <string.h>
 
+#include "bitrev.h"
+
 const byte ProgAlgSPIFlash::USER1=0x02;
 const byte ProgAlgSPIFlash::USER2=0x03;
 const byte ProgAlgSPIFlash::JSTART=0x0c;
@@ -56,7 +58,7 @@ const byte ProgAlgSPIFlash::BYPASS=0xff;
 #define BP1 0x08
 #define BP2 0x10
 
-ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f)
+ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j)
 {
   char *fname = getenv("SPI_DEBUG");
   if (fname)
@@ -64,7 +66,6 @@ ProgAlgSPIFlash::ProgAlgSPIFlash(Jtag &j, BitFile &f)
   else
       fp_dbg = NULL;
   jtag=&j;
-  file = &f;
   buf = 0;
   miso_buf = new byte[5010];
   mosi_buf = new byte[5010];
@@ -266,8 +267,8 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf)
   
   // get status
   spi_xfer_user1(fbuf,2,1, NULL, 0, 0);
-  fbuf[0] = file->reverse8(fbuf[0]);
-  fbuf[1] = file->reverse8(fbuf[1]);
+  fbuf[0] = bitRevTable[fbuf[0]];
+  fbuf[1] = bitRevTable[fbuf[1]];
   fprintf(stderr, "status: %02x\n",fbuf[1]);
         
   for(idx=0;spi_cfg[idx] != -1;idx+=3) {
@@ -313,10 +314,10 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf)
   spi_xfer_user1(NULL,0,0,fbuf,20,1);
   spi_xfer_user1(fbuf, 20, 1, NULL,0, 0);
 
-  fbuf[0] = file->reverse8(fbuf[0]);
-  fbuf[1] = file->reverse8(fbuf[1]);
-  fbuf[2] = file->reverse8(fbuf[2]);
-  fbuf[3] = file->reverse8(fbuf[3]);
+  fbuf[0] = bitRevTable[fbuf[0]];
+  fbuf[1] = bitRevTable[fbuf[1]];
+  fbuf[2] = bitRevTable[fbuf[2]];
+  fbuf[3] = bitRevTable[fbuf[3]];
 
   if (fbuf[1] != 0x20)
     {
@@ -389,10 +390,10 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
   // read result
   spi_xfer_user1(fbuf,4,1,NULL, 0, 1);
   
-  fbuf[0] = file->reverse8(fbuf[0]);
-  fbuf[1] = file->reverse8(fbuf[1]);
-  fbuf[2] = file->reverse8(fbuf[2]);
-  fbuf[3] = file->reverse8(fbuf[3]);
+  fbuf[0] = bitRevTable[fbuf[0]];
+  fbuf[1] = bitRevTable[fbuf[1]];
+  fbuf[2] = bitRevTable[fbuf[2]];
+  fbuf[3] = bitRevTable[fbuf[3]];
   fprintf(stderr, "JEDEC: %02x %02x 0x%02x 0x%02x\n",
 	  fbuf[0],fbuf[1], fbuf[2], fbuf[3]);
   
@@ -479,11 +480,11 @@ int ProgAlgSPIFlash::spi_xfer_user1
     
     // bit-reverse header
     for(cnt=0;cnt<6;cnt++)
-      mosi_buf[cnt]=file->reverse8(mosi_buf[cnt]);
+      mosi_buf[cnt]=bitRevTable[mosi_buf[cnt]];
     
     // bit-reverse preamble
     for(cnt=6;cnt<6+preamble;cnt++)
-      mosi_buf[cnt]=file->reverse8(mosi[cnt-6]);
+      mosi_buf[cnt]=bitRevTable[mosi[cnt-6]];
     
     memcpy(mosi_buf+6+preamble, mosi+preamble, mosi_len);
   }
@@ -928,8 +929,8 @@ int ProgAlgSPIFlash::erase_bulk(void)
 
     // get status
     spi_xfer_user1(fbuf,2,1, NULL, 0, 0);
-    fbuf[0] = file->reverse8(fbuf[0]);
-    fbuf[1] = file->reverse8(fbuf[1]);
+    fbuf[0] = bitRevTable[fbuf[0]];
+    fbuf[1] = bitRevTable[fbuf[1]];
     if (fbuf[1] & (BP0 | BP1 | BP2))
     { 
         fprintf(stderr, "Can't erase, device has block protection%s%s%s\n",
@@ -1018,8 +1019,8 @@ int ProgAlgSPIFlash::erase_at45(void)
    
       // get status
 //  spi_xfer_user1(fbuf,2,1, NULL, 0, 0);
-//  fbuf[0] = file->reverse8(fbuf[0]);
-//  fbuf[1] = file->reverse8(fbuf[1]);
+//  fbuf[0] = bitRevTable[fbuf[0]);
+//  fbuf[1] = bitRevTable[fbuf[1]);
 //  fprintf(stderr, "status: %02x\n",fbuf[1]);
   return -1;
 }

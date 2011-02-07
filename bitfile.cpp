@@ -32,14 +32,13 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <errno.h>
 #include <string.h>
 #include <time.h>
+#include "bitrev.h"
 
 using namespace std;
 
 BitFile::BitFile()
   : length(0), buffer(0), Error(false), logfile(stderr) {
 
-  // Initialize bit flip table
-  initFlip();
 }
 
 int BitFile::readBitfile(FILE *fp)
@@ -600,20 +599,6 @@ void BitFile::readField(string &field, FILE *fp)
     byte b;
     fread(&b,1,1,fp);
     field+=(char)b;
-  }
-}
-
-void BitFile::initFlip()
-{
-  for(int i=0; i<256; i++){
-    int num=i;
-    int fnum=0;
-    for(int k=0; k<8; k++){
-      int bit=num&1;
-      num=num>>1;
-      fnum=(fnum<<1)+bit;
-    }
-    bitRevTable[i]=fnum;
   }
 }
 
