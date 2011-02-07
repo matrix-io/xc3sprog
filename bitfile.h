@@ -97,6 +97,7 @@ class BitFile
   void readField(std::string &field, FILE *fp);
   void processData(FILE *fp);
   int  readBitfile(FILE *fp);
+  int  readBIN(FILE *fp);
   int  readHEXRAW(FILE *fp);
   int  readMCSfile(FILE *fp);
   unsigned char checksum(char * buf);

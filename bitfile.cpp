@@ -81,6 +81,28 @@ int BitFile::readBitfile(FILE *fp)
   return 0;
 }
 
+/* Read in whole file with bitflip */
+
+int  BitFile::readBIN(FILE *fp)
+{
+    unsigned int i;
+
+    fseek(fp, 0, SEEK_END);
+    length = ftell(fp); /* Fix at end */
+    fseek(fp, 0, SEEK_SET);
+    if(buffer) delete [] buffer;
+    buffer= new byte[length];
+    if (buffer == 0)
+        return 1;
+    fread(buffer,1, length, fp);
+    for(i=0; i<length; i++)
+    {
+        unsigned char data = buffer[i];
+        buffer[i] = bitRevTable[data];
+    }
+    return 0;
+} 
+
 /* Read HEX values without preamble */
 int BitFile::readHEXRAW(FILE *fp)
 {
@@ -286,6 +308,8 @@ int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
       return readMCSfile(fp);
     case STYLE_HEX_RAW:
         return readHEXRAW(fp);
+    case STYLE_BIN:
+        return readBIN(fp);
     default: fprintf(stderr, " Unhandled style\n");
       return 1;
     }
