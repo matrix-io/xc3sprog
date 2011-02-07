@@ -439,20 +439,16 @@ FILE *getFile_and_Attribute_from_name(const char *name, bool readback, int force
 	    ret= stdout;
         else
         {
-            ret = fopen(buf,"rb");
-            if (ret)
-                fclose(ret);
-            if(ret && !force)
-            {
-                fprintf(stderr, "File %s already exists. Aborting\n", buf);
-                ret = NULL;
-            }
-            else
-            {
-                ret=fopen(buf,"wb");
-                if(!ret)
-                    fprintf(stderr, "Unable to open File %s. Aborting\n", buf);
-            }
+            struct stat  stats;
+            stat(buf, &stats);
+            if (!force && stats.st_size !=0)
+                {
+                    fprintf(stderr, "File %s already exists. Aborting\n", buf);
+                    return NULL;
+                }
+            ret=fopen(buf,"wb");
+            if(!ret)
+                fprintf(stderr, "Unable to open File %s. Aborting\n", buf);
         }
     }
     else
@@ -764,21 +760,15 @@ int main(int argc, char **args)
 	    fpout = stdout;
 	  else
 	    {
-	      fpout=fopen(args[0],"rb");
-	      if(fpout)
-		{
-		  struct stat  stats;
-		  stat(args[0], &stats);
-		  
-		      fclose(fpout);
-		  if (!force && stats.st_size !=0)
-		    {
-		      fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
-		      return 1;
-		    }
-		}
-	      fpout=fopen(args[0],"wb");
-	      if(!fpout)
+                struct stat  stats;
+                stat(args[0], &stats);
+                if (!force && stats.st_size !=0)
+                {
+                    fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
+                    return 1;
+                }
+                fpout=fopen(args[0],"wb");
+                if(!fpout)
 		{
 		  fprintf(stderr, "Unable to open File %s. Aborting\n", args[0]);
 		  return 1;
@@ -1184,8 +1174,9 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
         BitFile spifile;
         FILE_STYLE  spifile_style;
         FILE *spifile_fp = 
-            getFile_and_Attribute_from_name(args[i], readback, force ,&spifile_offset,
-                                            &spifile_length, &spifile_style);
+            getFile_and_Attribute_from_name
+            (args[i], readback, force ,&spifile_offset,
+             &spifile_length, &spifile_style);
         if(!spifile_fp)
             continue;
         spifile.setOffset(spifile_offset);
