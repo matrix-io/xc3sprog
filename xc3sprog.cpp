@@ -73,14 +73,14 @@ int programXC3S(Jtag &g, BitFile &file, bool verify, bool reconfig,
 		int family);
 int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
                 FILE *fpout, FILE_STYLE out_style, const char *device,
-                const int *chainpositions, int nchainpos);
+                int *chainpositions, int nchainpos);
 int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
 		 const char *device);
 int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback,
 		const char *device);
-int programSPI(ProgAlgSPIFlash &alg, Jtag &j, BitFile &file, bool verify,
-               bool reconfig, FILE *fp, FILE_STYLE out_style, int family,
-               const char *device);
+int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
+               bool reconfig,  bool readback, bool force, int test_count,
+               char *bscanfile,int family, const char *device);
 
 /* Excercise the IR Chain for at least 10000 Times
    If we read a different pattern, print the pattern for for optical 
@@ -313,7 +313,10 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
   
 void usage(bool all_options)
 {
-  fprintf(stderr, "usage:\txc3sprog [options] <bitfile>\n\n");
+  fprintf(stderr, "usage:\txc3sprog [options] <file0> <file1> ...\n");
+  fprintf(stderr, "\tfile may specify a style after %%\n");
+  fprintf(stderr, "\tFlash programming honors offset after @ and length after #\n");
+  fprintf(stderr, "\tE.g. file.bin@0x10000%%bin\n");
   if (!all_options) exit(255);
 
   fprintf(stderr, "Possible options:\n");
@@ -322,27 +325,24 @@ void usage(bool all_options)
   OPT("-c", "Choose programmer type [pp|ftdi|fx2|xpc].");
   OPT("-C [len]", "Verify device against file (no programming).");
   OPT("-r [len]", "Read from device and write to file.");
-  OPT("-f", "When reading from device, overwrite exiting file, abort without -f");
   OPT("",         "Optional: [len] in Bytes.");
+  OPT("-f", "When reading from device, overwrite exiting file, abort without -f");
   OPT("-e", "Erase(XC95C/SPI only).");
   OPT("-h", "Print this help.");
   OPT("-i", "Input file format (BIT|BIN|MCS|MCSREV|HEX|HEXRAW).");
-  OPT("-I", "Work on connected SPI Flash (ISF Mode).");
-  OPT(""  , "(after 'bscan_spi' bitfile for device has been loaded).");
+  OPT("-I[file]", "Work on connected SPI Flash (ISF Mode),");
+  OPT(""  , "after loading 'bscan_spi' bitfile if given.");
   OPT("-j", "Detect JTAG chain, nothing else (default action).");
   OPT("-l", "Program lockbits if defined in fusefile.");
   OPT("-m <dir>", "Directory with XC2C mapfiles.");
   OPT("-o", "Output file format (BIT|BIN|MCS|MCSREV|HEX).");
-  OPT("-O val", "Offset in PROM in Bytes, alligned to page");
+  OPT("-O val", "Offset in PROM in Bytes, clipped to start of page");
   OPT("-p", "Position in the JTAG chain.");
   OPT("-R", "Try to reconfigure device(No other action!).");
   OPT("-T val", "Test chain 'val' times (0 = forever) or 10000 times"
       " default.");
   OPT(""      , "In ISF Mode, test the SPI connection.");
   OPT("-v", "Verbose output.");
-  OPT("", "");
-  OPT(""      , "Offset is clipped to the start of the page containing offset");
-  OPT(""      , "Length is extended to cover full page of last address");
 
   fprintf(stderr, "\nProgrammer specific options:\n");
   /* Parallel cable */
@@ -368,6 +368,107 @@ void usage(bool all_options)
 #undef OPT
 
   exit(255);
+}
+
+/* Parse a filename in the type aaaa.bb@0x10000#0x10000%rawhex
+ * for offset(@), length(#)  and style(%)
+ * 
+ * return the Open File
+ */
+FILE *getFile_and_Attribute_from_name(const char *name, bool readback, int force, 
+                                      int *offset, int *length, FILE_STYLE * style)
+{
+    FILE *ret;
+    int i, len = 0, off = 0, res;
+    FILE_STYLE st =STYLE_BIT;
+    char *p, *q, *r, *buf;
+    
+    if(!name)
+        return NULL;
+
+    buf = (char*) malloc(strlen(name) +1);
+    if (!buf)
+    {
+        fprintf(stderr,"Malloc failed\n");
+        return NULL;
+    }
+    strcpy(buf, name);
+    
+    p = strchr(buf,'@');
+    q = strchr(buf, '%');
+    r = strchr(buf, '#');
+    
+    if (p )
+        *p = 0;
+    if (q )
+        *q = 0;
+    if (r)
+        *r = 0;
+ 
+    if (p)
+    {
+        res = sscanf(p+1,"%i", &i);
+        if (res == 1)
+            off = i;
+    }
+         
+    if(q && (BitFile::styleFromString(q+1, &st) != 0))
+    {
+        fprintf(stderr, "\nUnknown format \"%s\"\n", q+1);
+        free(buf);
+        usage(false);
+    }
+    
+    if (r)
+    {
+        res = sscanf(r+1,"%i", &i);
+        if (res == 1)
+            len = i;
+    }
+
+    if(length)
+        *length = len;
+    if(offset)
+        *offset = off;
+    if(style)
+        *style = st;
+         
+    if (readback)
+    {
+        if (buf[0] == '-')
+	    ret= stdout;
+        else
+        {
+            ret = fopen(buf,"rb");
+            if (ret)
+                fclose(ret);
+            if(ret && !force)
+            {
+                fprintf(stderr, "File %s already exists. Aborting\n", buf);
+                ret = NULL;
+            }
+            else
+            {
+                ret=fopen(buf,"wb");
+                if(!ret)
+                    fprintf(stderr, "Unable to open File %s. Aborting\n", buf);
+            }
+        }
+    }
+    else
+    {
+        if (buf[0] == '-')
+            ret = stdout;
+        else
+        {
+            ret = fopen(buf,"rb");
+            if(!ret)
+                fprintf(stderr, "Can't open datafile %s: %s\n", buf, 
+                        strerror(errno));
+        }
+    }
+    free(buf);
+    return ret;
 }
 
 int main(int argc, char **args)
@@ -399,9 +500,10 @@ int main(int argc, char **args)
   int vendor    = 0;
   int product   = 0;
   int channel   = 0; /* FT2232 MPSSE Channel */
-  int test_count = 10000;
+  int test_count = 0;
   char const *desc    = 0;
   char const *serial  = 0;
+  char *bscanfile = 0;
   char osname[OSNAME_LEN];
   int subtype = FTDI_NO_EN;
   char *devicedb = NULL;
@@ -424,7 +526,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hC::Lc:d:D:eE:fF:i:IjLm:o:O:p:P:r::Rs:S:t:T::vV:")) {
+    switch(getopt(argc, args, "?hC::Lc:d:D:eE:fF:i:I::jLm:o:O:p:P:r::Rs:S:t:T::vV:")) {
     case -1:
       goto args_done;
 
@@ -444,6 +546,7 @@ int main(int argc, char **args)
 
     case 'I':
       spiflash = true;
+      bscanfile = optarg;
       break;
 
     case 'j':
@@ -653,7 +756,7 @@ int main(int argc, char **args)
       usage(false);
     }
 
-  if (args[0])
+  if (args[0] && !spiflash)
     {
       if (readback)
 	{
@@ -667,10 +770,10 @@ int main(int argc, char **args)
 		  struct stat  stats;
 		  stat(args[0], &stats);
 		  
+		      fclose(fpout);
 		  if (!force && stats.st_size !=0)
 		    {
 		      fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
-		      fclose(fpout);
 		      return 1;
 		    }
 		}
@@ -699,7 +802,11 @@ int main(int argc, char **args)
 	}
     }
 
-  if (manufacturer == MANUFACTURER_XILINX)
+  if(spiflash)
+      return programSPI(jtag, argc, args, verbose, verify, reconfigure, 
+                        readback, force, test_count, bscanfile, family, 
+                        db.getDeviceDescription(chainpos));
+  else if (manufacturer == MANUFACTURER_XILINX)
     {
       /* Probably XC4V and XC5V should work too. No devices to test at IKDA */
       if( (family == FAMILY_XC2S) ||
@@ -764,37 +871,17 @@ int main(int argc, char **args)
 		    }
 		}
 	      if (family == FAMILY_XCF)
-		{
-                    return programXCF(jtag, db, file, verify, reconfigure,
-                             fpout, out_style,
-                             db.getDeviceDescription(chainpos),
-                             chainpositions, nchainpos);
-                }
+              {
+                  return programXCF(jtag, db, file, verify, reconfigure,
+                                    fpout, out_style,
+                                    db.getDeviceDescription(chainpos),
+                                    chainpositions, nchainpos);
+              }
 	      else 
-		{
-		  if(spiflash)
-		    {
-		      ProgAlgSPIFlash alg(jtag, file);
-		      if (alg.spi_flashinfo() != 1 && !reconfigure)
-			{
-			  fprintf(stderr,"ISF Bitfile probably not loaded\n");
-			  return 2;
-			}
-		      if (chaintest)
-			{
-			  alg.test(test_count);
-			  return 0;
-			}
-                      if (erase)
-                          return alg.erase();
-		      return programSPI(alg, jtag, file, verify, reconfigure,
-					fpout, out_style, family,
-					db.getDeviceDescription(chainpos));
-		    }
-		    else
-		      return  programXC3S(jtag, file,
-					  verify, reconfigure, family);
-		}
+              {
+                  return  programXC3S(jtag, file,
+                                      verify, reconfigure, family);
+              }
 	    }
 	  catch(io_exception& e) {
 	    fprintf(stderr, "IOException: %s\n", e.getMessage().c_str());
@@ -951,8 +1038,8 @@ int programXC3S(Jtag &jtag, BitFile &file, bool verify, bool reconfig, int famil
 }
 
 int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
-                FILE *fpout, FILE_STYLE out_style, const char *device,
-                const int *chainpositions, int nchainpos)
+               FILE *fpout, FILE_STYLE out_style, const char *device,
+               int *chainpositions, int nchainpos)
 {
   // identify all specified devices
   unsigned int total_size = 0;
@@ -1043,36 +1130,99 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
   return 0;
 }
 
-int programSPI(ProgAlgSPIFlash &alg, Jtag &jtag, BitFile &file, bool verify, bool
-	       reconfig, FILE *fp, FILE_STYLE out_style, int family, const char *device)
+
+int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
+               bool reconfig,  bool readback, bool force, int test_count,
+               char *bscanfile, int family, const char *device)
 {
-  if(fp)
+    int i;
+    BitFile spifile;
+    ProgAlgSPIFlash alg(jtag, spifile);
+    
+    if (bscanfile)
     {
-      int len;
-      alg.read(file);
-      len = file.saveAs(out_style, device, fp);
-      if(reconfig)
-      {
-          ProgAlgXC3S fpga(jtag, family);
-          fpga.reconfig();
-      }
-      return 0;
+        FILE_STYLE bscan_style;
+        FILE *fp ;
+        BitFile  bscan_file;
+        
+        fp = getFile_and_Attribute_from_name
+            (bscanfile, 0, 0, NULL, NULL, &bscan_style);
+        if(fp)
+        {
+            bscan_file.readFile(fp, bscan_style);
+            programXC3S(jtag, bscan_file, verify, 0, family);
+            fclose(fp);
+        }
     }
-  else if(!verify)
+
+    if (test_count)
     {
-      if (alg.program(file) <0 )
-	return 1;
-      alg.disable();
+        alg.test(test_count);
+        goto test_reconf;
     }
-  if (alg.verify(file) != 0)
-      return 2;
-  alg.disable();
-  if(reconfig)
-  {
-      ProgAlgXC3S fpga(jtag, family);
-      fpga.reconfig();
-  }
-  return 0;
+/*validate all arguments */
+    for(i=0; i< argc; i++)
+    {
+        FILE *fp = 
+            getFile_and_Attribute_from_name(args[i], readback, force , NULL,
+                                            NULL, NULL);
+        if(!fp)
+            return 1;
+        else
+            fclose(fp);
+    }    
+        
+    if (alg.spi_flashinfo() != 1 && !reconfig)
+    {
+        fprintf(stderr,"ISF Bitfile probably not loaded\n");
+        return 2;
+    }
+
+    for(i=0; i< argc; i++)
+    {
+        int spifile_offset;
+        int spifile_length;
+        FILE_STYLE  spifile_style;
+        FILE *spifile_fp = 
+            getFile_and_Attribute_from_name(args[i], readback, force ,&spifile_offset,
+                                            &spifile_length, &spifile_style);
+        if(!spifile_fp)
+            continue;
+        spifile.setOffset(spifile_offset);
+        spifile.setRLength(spifile_length);
+        if (readback)
+        {
+            alg.read(spifile);
+            spifile.saveAs(spifile_style, device, spifile_fp);
+        }
+        else
+        {
+            spifile.readFile(spifile_fp, spifile_style);
+            fclose(spifile_fp);
+            if(verbose)
+            {
+                fprintf(stderr, "Created from NCD file: %s\n",
+                        spifile.getNCDFilename());
+                fprintf(stderr, "Target device: %s\n",
+                        spifile.getPartName());
+                fprintf(stderr, "Created: %s %s\n",
+                        spifile.getDate(),spifile.getTime());
+                fprintf(stderr, "Bitstream length: %lu bits\n",
+                        spifile.getLength());
+            }
+            if (!verify && alg.program(spifile) <0 )
+                return 1;
+            if (alg.verify(spifile) != 0)
+                return 2;
+        }
+    }
+test_reconf:
+    if(reconfig)
+    {
+        ProgAlgXC3S fpga(jtag, family);
+        fpga.reconfig();
+    }
+    return 0;
 }
 
 int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
