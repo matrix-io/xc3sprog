@@ -167,7 +167,7 @@ void Jtag::shiftDR(const byte *tdi, byte *tdo, int length,
           for (i=0; i< (length+7)>>3; i++)
           {
               fprintf(fp_dbg, " %02x", tdi[i]);
-              if (i % 80 == 70)
+              if (i % 26== 25)
                   fprintf(fp_dbg, "\n");
           }
           fprintf(fp_dbg, "\n");
@@ -205,7 +205,7 @@ void Jtag::shiftDR(const byte *tdi, byte *tdo, int length,
           for (i=0; i< (length+7)>>3; i++)
           {
               fprintf(fp_dbg, " %02x", tdo[i]);
-              if (i % 80 == 70)
+              if (i % 26 == 25)
                   fprintf(fp_dbg, "\n");
           }
           fprintf(fp_dbg, "\n");
