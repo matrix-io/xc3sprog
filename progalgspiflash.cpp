@@ -388,7 +388,7 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
   spi_xfer_user1(NULL,0,0,fbuf,4,1);
   
   // read result
-  spi_xfer_user1(fbuf,4,1,NULL, 0, 1);
+  spi_xfer_user1(fbuf,4,1,NULL, 0, 0);
   
   fbuf[0] = bitRevTable[fbuf[0]];
   fbuf[1] = bitRevTable[fbuf[1]];
@@ -448,7 +448,7 @@ void ProgAlgSPIFlash::test(int test_count)
       spi_xfer_user1(NULL,0,0,fbuf,4,1);
       
       // read result
-      spi_xfer_user1(fbuf,4,1,NULL, 0, 1);
+      spi_xfer_user1(fbuf,4,1,NULL, 0, 0);
       
       fflush(stderr);
       if(i%1000 == 999)
@@ -490,9 +490,9 @@ int ProgAlgSPIFlash::spi_xfer_user1
   }
   
   
-  rc=xc_user((mosi)?mosi_buf:NULL,miso_buf,maxlen*8);
+  rc=xc_user((mosi)?mosi_buf:NULL,(last_miso)?miso_buf:NULL, maxlen*8);
   
-  if(last_miso) 
+  if(last_miso && miso_len) 
     {
       memcpy(last_miso, miso_buf+miso_skip, miso_len);
     }
@@ -599,14 +599,15 @@ int ProgAlgSPIFlash::read(BitFile &rfile)
         if(jtag->getVerbose())
         {
             fprintf(stderr, "\rReading page %6d/%6d at flash page %6d",
-                    (l+ 2*pgsize -1)/pgsize , (len+pgsize -1)/pgsize, (i+pgsize -1)/pgsize); 
+                    (l+ 2*pgsize -1)/pgsize , (len+pgsize -1)/pgsize, 
+                    (i+pgsize -1)/pgsize); 
             fflush(stderr);
         }
         page2padd(buf, i/pgsize, pgsize);
         if (l < 0) /* don't write when sending first page*/
-            spi_xfer_user1(NULL, 0, 4, buf, rlen, 4);
+            spi_xfer_user1(NULL, 0, 0, buf, rlen, 4);
         else if (i >= data_end)
-            spi_xfer_user1(rfile.getData()+l, rlen, 4, buf, 0, 4);
+            spi_xfer_user1(rfile.getData()+l, rlen, 4, NULL, 0, 0);
         else
             spi_xfer_user1(rfile.getData()+l, pgsize, 4, buf, rlen, 4);
         l+= pgsize;
