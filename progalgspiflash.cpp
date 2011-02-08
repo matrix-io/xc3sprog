@@ -634,7 +634,8 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     if (offset > pages* pgsize)
     {
         fprintf(stderr,"Verify start outside PROM area, aborting\n");
-        return -1;
+        k = 1;
+        goto v_cleanup;
     }
 
     if (vfile.getRLength() != 0 && (vfile.getRLength() < vfile.getLength()/8))
@@ -683,7 +684,9 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
                 fprintf(stderr, "\n");
                 
                 if(k>5)
-                    return k;
+                {
+                    goto v_cleanup;
+                }
             }
         }
         l+= pgsize;
@@ -693,11 +696,12 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     if (k)
     {
         fprintf(stderr, "Verify: Failure!\n");
-        return k;
     }
-    fprintf(stderr, "Verify: Success!\n");
-    
-    return 0;
+    else
+        fprintf(stderr, "Verify: Success!\n");
+v_cleanup:
+    delete[] data;
+    return k;
 }
 
 #define deltaT(tvp1, tvp2) (((tvp2)->tv_sec-(tvp1)->tv_sec)*1000000 + \
