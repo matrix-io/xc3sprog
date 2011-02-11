@@ -28,8 +28,9 @@ void detect_chain(Jtag *jtag, DeviceDB *db)
       fprintf(stderr,"JTAG loc.: %d\tIDCODE: 0x%08lx\t", i, id);
       if(length>0){
 	jtag->setDeviceIRLength(i,length);
-	fprintf(stderr,"Desc: %15s\tIR length: %d\n",
-		db->getDeviceDescription(dblast),length);
+	fprintf(stderr,"Desc: %15s\tRev: %c  IR length: %d\n",
+		db->getDeviceDescription(dblast),
+                (int)(id >> 28) | 'A', length);
 	dblast++;
       } 
       else{
