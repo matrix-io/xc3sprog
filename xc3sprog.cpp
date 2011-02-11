@@ -280,7 +280,8 @@ int init_chain(Jtag &jtag, DeviceDB &db)
       jtag.setDeviceIRLength(i,length);
     else
       {
-        fprintf(stderr,"Cannot find device having IDCODE=%08lx\n",id);
+        fprintf(stderr,"Cannot find device having IDCODE=%07lx Revision %c\n",
+                id & 0x0fffffff,  (int)(id  >>28) + 'A');
         return 0;
       }
   }
