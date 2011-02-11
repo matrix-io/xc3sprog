@@ -199,6 +199,9 @@
 
 05b1703f      3     0 AT91SAM7X256
 
+#AVR32
+21e8203f     5   0x1 AT32AP7000  
+
 #Manufacturer list
 00000093        99  0 Xilinx_Unknown
 0000003f	99  0 Atmel_Unknown
