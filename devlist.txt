@@ -200,7 +200,18 @@
 05b1703f      3     0 AT91SAM7X256
 
 #AVR32
-21e8203f     5   0x1 AT32AP7000  
+01e8203f     5   0x1 AT32AP7000
+
+#STM (STM32 seems to haveno IDCODE command
+06412041     4   0x0 STM32F10XX_low-density
+06410041     4   0x0 STM32F10XX_medium-density
+06414041     4   0x0 STM32F10XX_high-density
+06430041     4   0x0 STM32F10XX_XL-density
+06418041     4   0x0 STM32F10XX_connectivity_line
+
+#ARM Debuh
+3BA00477     4   0xe ARM_Cortex-M3_r1p1-01rel0
+
 
 #Manufacturer list
 00000093        99  0 Xilinx_Unknown
