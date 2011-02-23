@@ -35,7 +35,7 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
     
   unsigned char   buf1[5];
   unsigned char   buf[9] = { SET_BITS_LOW, 0x00, 0x0b,
-			     TCK_DIVISOR,  0x01, 0x00 ,
+			     TCK_DIVISOR,  0x03, 0x00 ,
 			     SET_BITS_HIGH, (unsigned char)~0x84, 0x84};
 
   char *fname = getenv("FTDI_DEBUG");
@@ -62,6 +62,14 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
       res = ftdi_usb_open_desc(ftdi_handle, vendor, product, desc, serial);
       if ( res == 0)
       {
+          if(ftdi_set_bitmode(ftdi_handle, 0x00, BITMODE_RESET) < 0) {
+              throw  io_exception(std::string("ftdi_set_bitmode: ")
+                                  + ftdi_get_error_string(ftdi_handle));
+          }
+          if(ftdi_usb_purge_buffers(ftdi_handle) < 0) {
+              throw  io_exception(std::string("ftdi_set_bitmode: ")
+                                  + ftdi_get_error_string(ftdi_handle));
+          }
           //Set the lacentcy time to a low value
           if(ftdi_set_latency_timer(ftdi_handle, 1) <0) {
               throw  io_exception(std::string("ftdi_set_latency_timer: ")
