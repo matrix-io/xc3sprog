@@ -197,8 +197,18 @@
 0940403f      4	  0x1 ATmega162
 0940503f      4	  0x1 ATmega169
 
-05b1703f      3     0 AT91SAM7X256
+0964e03f      4   0x3 ATxmega64A1
+0964203f      4   0x3 ATxmega64A3
+0964c03f      4   0x3 ATxmega64A3R
+0965003f      4   0x3 ATxmega96A1
+0964403f      4   0x3 ATxmega96A3
+0964d03f      4   0x3 ATxmega96A3R
+0974a03f      4   0x3 ATxmega128AR
+0974c03f      4   0x3 ATxmega128A
+0984203f      4   0x3 ATxmega256A3
+0984303f      4   0x3 ATxmega256A3B
 
+05b1703f      3     0 AT91SAM7X256
 #AVR32
 01e8203f     5   0x1 AT32AP7000
 
@@ -209,7 +219,7 @@
 06430041     4   0x0 STM32F10XX_XL-density
 06418041     4   0x0 STM32F10XX_connectivity_line
 
-#ARM Debuh
+#ARM Debug
 3BA00477     4   0xe ARM_Cortex-M3_r1p1-01rel0
 
 
