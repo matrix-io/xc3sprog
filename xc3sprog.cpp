@@ -130,8 +130,15 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 
   for(i=0; i<num; i++)
     {
+      int k;
       jtag->setTapState(Jtag::TEST_LOGIC_RESET);
       jtag->selectDevice(i);
+      k = db.getIRLength(i);
+      if (k == 0)
+      {
+          run_irtest++;
+          break;
+      }
       for (j = 0; j < db.getIRLength(i); j = j+8)
 	ir_in[j>>3] =  (db.getIDCmd(i)>>j) & 0xff;
       jtag->shiftIR(ir_in, ir_out);
