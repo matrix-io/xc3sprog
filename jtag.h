@@ -30,6 +30,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <vector>
 
 #include "iobase.h"
+#include "bitrev.h"
 
 #ifdef __WIN32__
 #include <windows.h>
@@ -59,7 +60,7 @@ class Jtag
     UPDATE_IR=15,
     UNKNOWN=999
   };
-  
+ 
  private:
   bool	      verbose;
   tapState_t  current_state;
@@ -80,6 +81,7 @@ class Jtag
   FILE *fp_svf;
   bool shiftDRincomplete;
   FILE *fp_dbg;
+  const char* getStateName(tapState_t s);
  public:
   Jtag(IOBase *iob);
   ~Jtag();
@@ -107,6 +109,12 @@ class Jtag
     b[1]=(byte)((l>>8)&0xff);
     b[2]=(byte)((l>>16)&0xff);
     b[3]=(byte)((l>>24)&0xff);
+  }
+  inline void longToByteArrayRev(unsigned long l, byte *b){
+    b[0]=bitRevTable[ l      & 0xff];
+    b[1]=bitRevTable[(l>> 8) & 0xff];
+    b[2]=bitRevTable[(l>>16) & 0xff];
+    b[3]=bitRevTable[(l>>24) & 0xff];
   }
   inline void shortToByteArray(const unsigned short l, byte *b){
     b[0]=(byte)(l&0xff);

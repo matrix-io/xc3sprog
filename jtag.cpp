@@ -81,6 +81,31 @@ int Jtag::getChain(bool detect)
   return numDevices;
 }
 
+const char* Jtag::getStateName(tapState_t s)
+{
+    switch(s)
+    {
+    case TEST_LOGIC_RESET: return "TEST_LOGIC_RESET";
+    case RUN_TEST_IDLE: return "RUN_TEST_IDLE";
+    case SELECT_DR_SCAN: return "SELECT_DR_SCAN";
+    case CAPTURE_DR: return "CAPTURE_DR";
+    case SHIFT_DR: return "SHIFT_DR";
+    case EXIT1_DR: return "EXIT1_DR";
+    case PAUSE_DR: return "PAUSE_DR";
+    case EXIT2_DR: return "EXIT2_DR";
+    case UPDATE_DR: return "UPDATE_DR";
+    case SELECT_IR_SCAN: return "SELECT_IR_SCAN";
+    case CAPTURE_IR: return "CAPTURE_IR";
+    case SHIFT_IR: return "SHIFT_IR";
+    case EXIT1_IR: return "EXIT1_IR";
+    case PAUSE_IR: return "PAUSE_IR";
+    case EXIT2_IR: return "EXIT2_IR";
+    case UPDATE_IR: return "UPDATE_IR";
+    default:
+        return "Unknown";
+    }
+}
+
 int Jtag::selectDevice(int dev)
 {
   if(dev>=numDevices)deviceIndex=-1;
@@ -157,6 +182,16 @@ void Jtag::shiftDR(const byte *tdi, byte *tdo, int length,
   if(deviceIndex<0)return;
   int post=deviceIndex;
 
+  if(!shiftDRincomplete){
+    int pre=numDevices-deviceIndex-1;
+    if(align){
+      pre=-post;
+      while(pre<=0)pre+=align;
+    }
+    /* We can combine the pre bits to reach the target device with
+     the TMS bits to reach the SHIFT-DR state, as the pre bit can be '0'*/
+    setTapState(SHIFT_DR,pre);
+  }
   if(fp_dbg)
   {
       fprintf(fp_dbg, "shiftDR len %d\n", length);
@@ -173,29 +208,10 @@ void Jtag::shiftDR(const byte *tdi, byte *tdo, int length,
           fprintf(fp_dbg, "\n");
       }
   }
-  if(!shiftDRincomplete){
-    int pre=numDevices-deviceIndex-1;
-    if(align){
-      pre=-post;
-      while(pre<=0)pre+=align;
-    }
-    /* We can combine the pre bits to reach the target device with
-     the TMS bits to reach the SHIFT-DR state, as the pre bit can be '0'*/
-    setTapState(SHIFT_DR,pre);
-  }
   if(tdi!=0&&tdo!=0)io->shiftTDITDO(tdi,tdo,length,post==0&&exit);
   else if(tdi!=0&&tdo==0)io->shiftTDI(tdi,length,post==0&&exit);
   else if(tdi==0&&tdo!=0)io->shiftTDO(tdo,length,post==0&&exit);
   else io->shift(false,length,post==0&&exit);
-  nextTapState(post==0&&exit); // If TMS is set the the state of the tap changes
-  if(exit){
-    io->shift(false,post);
-    if (!(post==0&&exit))
-      nextTapState(true);
-    setTapState(postDRState);
-    shiftDRincomplete=false;
-  }
-  else shiftDRincomplete=true;
   if(fp_dbg)
   {
       if (tdo)
@@ -211,18 +227,27 @@ void Jtag::shiftDR(const byte *tdi, byte *tdo, int length,
           fprintf(fp_dbg, "\n");
       }
   }
+  nextTapState(post==0&&exit); // If TMS is set the the state of the tap changes
+  if(exit){
+    io->shift(false,post);
+    if (!(post==0&&exit))
+      nextTapState(true);
+    setTapState(postDRState);
+    shiftDRincomplete=false;
+  }
+  else shiftDRincomplete=true;
 }
 
 void Jtag::shiftIR(const byte *tdi, byte *tdo)
 {
   if(deviceIndex<0)return;
+  setTapState(SHIFT_IR);
   if(fp_dbg)
   {
       fprintf(fp_dbg, "shiftIR ");
       if (tdi)
           fprintf(fp_dbg, "In: %02x", *tdi );
   }
-  setTapState(SHIFT_IR);
   int pre=0;
   for(int dev=deviceIndex+1; dev<numDevices; dev++)
     pre+=devices[dev].irlen; // Calculate number of pre BYPASS bits.
@@ -233,14 +258,14 @@ void Jtag::shiftIR(const byte *tdi, byte *tdo)
   if(tdo!=0)io->shiftTDITDO(tdi,tdo,devices[deviceIndex].irlen,post==0);
   else if(tdo==0)io->shiftTDI(tdi,devices[deviceIndex].irlen,post==0);
   io->shift(true,post);
-  nextTapState(true);
-  setTapState(postIRState);
   if(fp_dbg)
   {
       if (tdo)
           fprintf(fp_dbg, "Out: %02x", *tdo);
       fprintf(fp_dbg, "\n");
   }
+  nextTapState(true);
+  setTapState(postIRState);
 }
 
 void Jtag::setTapState(tapState_t state, int pre)
@@ -459,6 +484,8 @@ void Jtag::setTapState(tapState_t state, int pre)
       tapTestLogicReset();
       tms=true;
     };
+    if(fp_dbg)
+        fprintf(fp_dbg,"TMS %d: %s\n", tms, getStateName(current_state));
     io->set_tms(tms);
   }
   for(int i=0; i<pre; i++)
