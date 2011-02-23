@@ -104,7 +104,8 @@ add_library(xc3sproglib  STATIC ioparport.cpp ioftdi.cpp iofx2.cpp
 			iobase.cpp  progalgxc95x.cpp utilities.cpp
 			progalgxcf.cpp progalgxcfp.cpp progalgxc3s.cpp
 			progalgavr.cpp progalgxc2c.cpp  mapfile_xc2c.cpp
-			ioxpc.cpp progalgspiflash.cpp ${CONDITIONAL_FILES} config.h)
+			ioxpc.cpp progalgspiflash.cpp bitrev.cpp
+                        ${CONDITIONAL_FILES} config.h)
 
 add_executable(xc2c_warp xc2c_warp.cpp)
 target_link_libraries(xc2c_warp xc3sproglib ${CONDITIONAL_LIBS})
