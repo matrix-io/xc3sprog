@@ -36,7 +36,7 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
   unsigned char   buf1[5];
   unsigned char   buf[9] = { SET_BITS_LOW, 0x00, 0x0b,
 			     TCK_DIVISOR,  0x03, 0x00 ,
-			     SET_BITS_HIGH, (unsigned char)~0x84, 0x84};
+			     SET_BITS_HIGH, (unsigned char)~0xc4, 0xc4};
 
   char *fname = getenv("FTDI_DEBUG");
   if (fname)
@@ -298,7 +298,7 @@ void IOFtdi::txrx_block(const unsigned char *tdi, unsigned char *tdo,
 		 read into an extra buffer than to issue two USB reads */
 	  readusb(rbuf, buflen); 
 	  if(!rembits) 
-	    rbuf[buflen-1] = (rbuf[buflen - 1]&80)?1:0;
+	    rbuf[buflen-1] = (rbuf[buflen - 1]& 0x80)?1:0;
 	  else 
 	    {
 	      /* TDO Bits are shifted downwards, so align them 
