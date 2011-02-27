@@ -87,7 +87,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 #add_executable(debug debug.cpp iobase.cpp ioparport.cpp iodebug.cpp)
 
-add_executable(bitparse bitfile.cpp bitparse.cpp)
+add_executable(bitparse bitrev.cpp bitfile.cpp bitparse.cpp)
 add_executable(jedecparse  jedecparse.cpp jedecfile.cpp)
 add_executable(srecparse  srecparse.cpp srecfile.cpp)
 add_executable(avrfuseparse  avrfuseparse.cpp avrfusefile.cpp)
