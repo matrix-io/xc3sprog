@@ -363,6 +363,12 @@ void usage(bool all_options)
   /* FTDI/FX cables */
   OPT("-t type", "(ftdi only       ) Type can be "
       "[NONE|IKDA|OLIMEX|FTDIJTAG|AMONTEC|LLBBC|LLIF].");
+  OPT("", "(NONE\t(0x0403:0x0610) or");
+  OPT("", "IKDA\t(0x0403:0x0610, EN_N on ACBUS2/ACBUS7/ACBUS8) or");
+  OPT("", "OLIMEX\t(0x15b1:0x0003, JTAG_EN_N on ADBUS4, LED on ACBUS3)) or");
+  OPT("", "AMONTEC\t(0x0403:0xcff8, JTAG_EN_N on ADBUS4) or");
+  OPT("", "LLBBC\t(0x0403:0x0610), IF 2 or");
+  OPT("", "LLIF\t(0x0403:0x0610), IF 2 enabling JTAG on Backplane");
   OPT("-D if  ", "(ftdi only       ) MPSSE Interface can be"
       "[0|1|2] for any|INTERFACE_A|INTERFACE_B.");
   OPT("-L     ", "(ftdi only       ) Don't use LibUSB.");
