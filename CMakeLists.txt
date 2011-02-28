@@ -115,14 +115,14 @@ add_library(xc3sproglib  STATIC ioparport.cpp ioftdi.cpp iofx2.cpp
 add_executable(xc2c_warp xc2c_warp.cpp)
 target_link_libraries(xc2c_warp xc3sproglib ${CONDITIONAL_LIBS})
 
-add_executable(detectchain detectchain.cpp  config.h)
+add_executable(detectchain detectchain.cpp  devices.h)
 target_link_libraries(detectchain xc3sproglib ${LIBFTDI_LIBRARIES} ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS})
 
 add_executable(xc3sprog xc3sprog.cpp javr.cpp srecfile.cpp progalgavr.cpp 
-			config.h)
+			devices.h)
 target_link_libraries(xc3sprog xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS}  )
 
-add_executable(readdna readdna.cpp config.h)
+add_executable(readdna readdna.cpp devices.h)
 target_link_libraries(readdna xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS}  )
 
 add_subdirectory(javr)
