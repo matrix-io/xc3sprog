@@ -92,7 +92,7 @@ add_executable(jedecparse  jedecparse.cpp jedecfile.cpp)
 add_executable(srecparse  srecparse.cpp srecfile.cpp)
 add_executable(avrfuseparse  avrfuseparse.cpp avrfusefile.cpp)
 
-ADD_CUSTOM_COMMAND(OUTPUT config.h
+ADD_CUSTOM_COMMAND(OUTPUT devices.h
     COMMAND ${CMAKE_COMMAND} -DDEVLIST_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/devlist.cmk
     DEPENDS devlist.txt
 )
@@ -105,7 +105,7 @@ add_library(xc3sproglib  STATIC ioparport.cpp ioftdi.cpp iofx2.cpp
 			progalgxcf.cpp progalgxcfp.cpp progalgxc3s.cpp
 			progalgavr.cpp progalgxc2c.cpp  mapfile_xc2c.cpp
 			ioxpc.cpp progalgspiflash.cpp bitrev.cpp
-                        ${CONDITIONAL_FILES} config.h)
+                        ${CONDITIONAL_FILES} devices.h)
 
 add_executable(xc2c_warp xc2c_warp.cpp)
 target_link_libraries(xc2c_warp xc3sproglib ${CONDITIONAL_LIBS})
