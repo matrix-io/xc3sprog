@@ -2,6 +2,9 @@
 #include <memory>
 #include "bitfile.h"
 
+#include "devicedb.h"
+#include "jtag.h"
+
 class DeviceDB;
 
 enum CABLES_TYPES 
