@@ -1,0 +1,3 @@
+#Bring cablelist.txt in a form that we can compile as fallback
+file(STRINGS ${CABLELIST_DIR}/cablelist.txt cabledb_string)
+configure_file(${CABLELIST_DIR}/cables.h.in cables.h)
