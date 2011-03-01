@@ -106,15 +106,10 @@ int main(int argc, char **args)
 {
     bool        verbose = false;
     bool     use_ftd2xx = false;
-    CABLES_TYPES cable  = CABLE_NONE;
+    struct cable_t cable;
     char const *dev     = 0;
-    int vendor    = 0;
-    int product   = 0;
-    int channel   = 0;
-    char const *desc    = 0;
     char const *serial  = 0;
-    int subtype = FTDI_NO_EN;
-    long value;
+    char const *cablename = 0;
     byte idata[8];
     byte odata[8];
     int chainpos =0;
@@ -126,7 +121,7 @@ int main(int argc, char **args)
    
     // Start from parsing command line arguments
     while(true) {
-      switch(getopt(argc, args, "?hvc:d:V:P:D:LS:t:")) {
+      switch(getopt(argc, args, "?hvc:d:L")) {
       case -1:
 	goto args_done;
 		
@@ -139,43 +134,11 @@ int main(int argc, char **args)
 	break;
       
       case 'c':
-	cable =  getCable(optarg);
-	if(cable == CABLE_UNKNOWN)
-	  {
-	    fprintf(stderr,"Unknown cable %s\n", optarg);
-	    usage();
-	  }
+	cablename =  optarg;
 	break;
 		
-      case 't':
-	subtype = getSubtype(optarg, &cable, &channel);
-	if (subtype == -1)
-	  {
-	    fprintf(stderr,"Unknow subtype %s\n", optarg);
-	    usage();
-	  }
-	break;
-      
       case 'd':
 	dev = optarg;
-	break;
-		
-      case 'D':
-	channel = atoi(optarg);
-	break;
-		
-      case 'V':
-	value = strtol(optarg, NULL, 0);
-	vendor = value;
-	break;
-		
-      case 'P':
-	value = strtol(optarg, NULL, 0);
-	product = value;
-	break;
-		
-      case 'S':
-	desc = optarg;
 	break;
 		
       case 's':
@@ -194,13 +157,14 @@ args_done:
   argc -= optind;
   args += optind;
   //printf("argc: %d\n", argc);
-  if(argc != 0)  usage();
+  if((argc != 0) || (cablename == 0)) usage();
   
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
  
-  res = getIO( &io, cable, subtype, channel, vendor, product, dev, 
-               desc, serial, use_ftd2xx);
+  CableDB cabledb(0);
+  res = cabledb.getCable(cablename, &cable);
+  res = getIO( &io, &cable, dev, serial, verbose, use_ftd2xx);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);

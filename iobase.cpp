@@ -43,6 +43,11 @@ IOBase::IOBase()
     tms_len = 0;
 }    
 
+int IOBase::Init(struct cable_t *cable, const char *serial, const char *dev)
+{
+    return 0;
+}    
+
 void IOBase::flush_tms(int force)
 {
   if (tms_len)

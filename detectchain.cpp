@@ -38,6 +38,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "iodebug.h"
 #include "jtag.h"
 #include "devicedb.h"
+#include "cabledb.h"
 #include "utilities.h"
 
 extern char *optarg;
@@ -56,13 +57,11 @@ void usage(void)
 	  "   \t\t[-S description] (Product string)\n"
 	  "   \t\t[-s serial]      (SerialNumber string)\n"
 	  "   \tOptional ftdi arguments:\n"
-	  "   \t\t[-t subtype]\n"
 	  "   \t\t\t(NONE\t\t(0x0403:0x0610) or\n"
 	  "   \t\t\t IKDA\t\t(0x0403:0x0610, EN_N on ACBUS2) or\n"
 	  "   \t\t\t OLIMEX\t\t(0x15b1:0x0003, EN on ADBUS4, LED on ACBUS3))\n"
 	  "   \t\t\t AMONTEC\t(0x0403:0xcff8, EN on ADBUS4)\n"
-	  "   \tOptional xpc arguments:\n"
-	  "   \t\t[-t subtype] (NONE or INT (Internal Chain, not on DLC10))\n");
+	  "   \tOptional xpc arguments:\n");
   exit(255);
 }
 
@@ -70,21 +69,16 @@ int main(int argc, char **args)
 {
     bool        verbose = false;
     bool        use_ftd2xx = false;
-    CABLES_TYPES cable    = CABLE_NONE;
-    char const *dev     = 0;
-    int vendor    = 0;
-    int product   = 0;
-    int channel   = 0;
-    char const *desc    = 0;
+    char *cablename   = 0;
+    char const *dev   = 0;
     char const *serial  = 0;
-    int subtype = FTDI_NO_EN;
     std::auto_ptr<IOBase>  io;
-    long value;
     int res;
+    struct cable_t cable;
     
     // Start from parsing command line arguments
     while(true) {
-      switch(getopt(argc, args, "?hvc:d:D:LV:P:S:t:")) {
+      switch(getopt(argc, args, "?hvc:d:LS:")) {
       case -1:
 	goto args_done;
 	
@@ -97,43 +91,11 @@ int main(int argc, char **args)
 	break;
 	
       case 'c':
-	cable =  getCable(optarg);
-	if(cable == CABLE_UNKNOWN)
-	  {
-	    fprintf(stderr,"Unknown cable %s\n", optarg);
-	    usage();
-	  }
-	break;
-	
-      case 't':
-	subtype = getSubtype(optarg, &cable, &channel);
-	if (subtype == -1)
-	  {
-	    fprintf(stderr,"Unknow subtype %s\n", optarg);
-	    usage();
-	  }
+	cablename =  optarg;
 	break;
 	
       case 'd':
 	dev = optarg;
-	break;
-		
-      case 'D':
-	channel = atoi(optarg);
-	break;
-		
-      case 'V':
-	value = strtol(optarg, NULL, 0);
-	vendor = value;
-	break;
-		
-      case 'P':
-	value = strtol(optarg, NULL, 0);
-	product = value;
-	break;
-		
-      case 'S':
-	desc = optarg;
 	break;
 		
       case 's':
@@ -152,10 +114,12 @@ args_done:
   argc -= optind;
   args += optind;
   //fprintf(stderr, "argc: %d\n", argc);
-  if(argc != 0)  usage();
+  if((argc != 0) || (cablename == 0))  usage();
 
-  res = getIO( &io, cable, subtype, channel, vendor, product, dev, 
-               desc, serial, use_ftd2xx);
+  CableDB cabledb(0);
+  res = cabledb.getCable(cablename, &cable);
+
+  res |= getIO( &io, &cable, dev, serial, verbose, use_ftd2xx);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);

@@ -26,25 +26,118 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include "ioftdi.h"
 #include "io_exception.h"
+#include "utilities.h"
 
 using namespace std;
 
-IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
-	       int subtype, int channel, bool use_ftd2xx)
-  : IOBase(), bptr(0), calls_rd(0), calls_wr(0), retries(0){
-    
+IOFtdi::IOFtdi(bool u)
+  : IOBase(), bptr(0), calls_rd(0), calls_wr(0), retries(0)
+{
+    use_ftd2xx = u;
+
+    char *fname = getenv("FTDI_DEBUG");
+    if (fname)
+        fp_dbg = fopen(fname,"wb");
+    else
+        fp_dbg = NULL;
+    ftd2xx_handle = 0;
+    ftdi_handle = 0;
+}
+
+int IOFtdi::Init(struct cable_t *cable, const char *serial, const char *dev)
+{
   unsigned char   buf1[5];
   unsigned char   buf[9] = { SET_BITS_LOW, 0x00, 0x0b,
 			     TCK_DIVISOR,  0x03, 0x00 ,
-			     SET_BITS_HIGH, (unsigned char)~0xc4, 0xc4};
+			     SET_BITS_HIGH,0x00, 0x00};
+  char *description = 0;
+  char descstring[256];
+  unsigned int vendor = 0x403, product=0x6010;
+  unsigned int channel = 0;
+  unsigned int dbus_data =0, dbus_en = 0xb, cbus_data= 0, cbus_en = 0;
+  int res;
+  char *p = cable->optstring;
 
-  char *fname = getenv("FTDI_DEBUG");
-  if (fname)
-    fp_dbg = fopen(fname,"wb");
-  else
-      fp_dbg = NULL;
-  ftd2xx_handle = 0;
-  ftdi_handle = 0;
+  /* split string by hand for more flexibility*/
+  if (p)
+  {
+      vendor = strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      product = strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      char *q = strchr(p,':');
+      int len;
+
+      if (q)
+          len = q-p-1;
+      else
+          len = strlen(p);
+      if (len>0)
+          strncpy(descstring, p, (len>256)?256:len);
+      p = q;
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      channel = strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      dbus_data = strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      dbus_en |= strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      cbus_data = strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      cbus_en = strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  
+  fprintf(stderr,"Vendor 0x%04x\n", vendor);
+
+  if (verbose)
+  {
+      fprintf(stderr, "Cable %s type %s VID 0x%04x PID %04x",
+              cable->alias, getCableName(cable->cabletype), vendor, product);
+      if (description)
+          fprintf(stderr, " Desc %s", description);
+      if (serial)
+          fprintf(stderr, " Serial %s", serial);
+      
+      fprintf(stderr, " dbus data %02x enable %02x cbus data %02x data %02x\n",
+              dbus_data, dbus_en, cbus_data, cbus_en);
+  }
   if (!use_ftd2xx)
   {
       int res;
@@ -52,34 +145,55 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
       ftdi_handle = ftdi_new();
       // Set interface
       if (channel > 2)
-          throw  io_exception(std::string("invalid MPSSE channel"));  
-      if(ftdi_set_interface(ftdi_handle, (ftdi_interface)channel) < 0) {
-          throw  io_exception(std::string("ftdi_set_interface: ") 
-                              + ftdi_get_error_string(ftdi_handle));
+      {
+          fprintf(stderr, "Invalid MPSSE channel: %d", channel);
+          res = 2;
+          goto ftdi_fail;
+      }
+      res =ftdi_set_interface(ftdi_handle, (ftdi_interface)channel);
+      if(res <0)
+      {
+          fprintf(stderr, "ftdi_set_interface: %s\n",
+                  ftdi_get_error_string(ftdi_handle));
+          goto ftdi_fail;
       }
       
       // Open device
-      res = ftdi_usb_open_desc(ftdi_handle, vendor, product, desc, serial);
+      res = ftdi_usb_open_desc
+          (ftdi_handle, vendor, product, 
+           description, serial);
       if ( res == 0)
       {
-          if(ftdi_set_bitmode(ftdi_handle, 0x00, BITMODE_RESET) < 0) {
-              throw  io_exception(std::string("ftdi_set_bitmode: ")
-                                  + ftdi_get_error_string(ftdi_handle));
+          res = ftdi_set_bitmode(ftdi_handle, 0x00, BITMODE_RESET);
+          if(res < 0)
+          {
+              fprintf(stderr, "ftdi_set_bitmode: %s",
+                      ftdi_get_error_string(ftdi_handle));
+              goto ftdi_fail;
           }
-          if(ftdi_usb_purge_buffers(ftdi_handle) < 0) {
-              throw  io_exception(std::string("ftdi_set_bitmode: ")
-                                  + ftdi_get_error_string(ftdi_handle));
-          }
+          res = ftdi_usb_purge_buffers(ftdi_handle);
+          if(res < 0)
+          {
+              fprintf(stderr, "ftdi_usb_purge_buffers: %s",
+                      ftdi_get_error_string(ftdi_handle));
+              goto ftdi_fail;
+         }
           //Set the lacentcy time to a low value
-          if(ftdi_set_latency_timer(ftdi_handle, 1) <0) {
-              throw  io_exception(std::string("ftdi_set_latency_timer: ")
-                                  + ftdi_get_error_string(ftdi_handle));
+          res = ftdi_set_latency_timer(ftdi_handle, 1);
+          if( res <0)
+          {
+              fprintf(stderr, "ftdi_set_latency_timer: %s",
+                      ftdi_get_error_string(ftdi_handle));
+              goto ftdi_fail;
           }
           
           // Set mode to MPSSE
-          if(ftdi_set_bitmode(ftdi_handle, 0xfb, BITMODE_MPSSE) < 0) {
-              throw  io_exception(std::string("ftdi_set_bitmode: ")
-                                  + ftdi_get_error_string(ftdi_handle));
+          res = ftdi_set_bitmode(ftdi_handle, 0xfb, BITMODE_MPSSE);
+          if(res< 0)
+          {
+              fprintf(stderr, "ftdi_set_bitmode: %s",
+                      ftdi_get_error_string(ftdi_handle));
+              goto ftdi_fail;
           }
           /* FIXME: Without this read, consecutive runs on the 
              FT2232H may hang */
@@ -98,15 +212,24 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
       DWORD dwNumDevs;
       res = FT_CreateDeviceInfoList(&dwNumDevs);
       if (res != FT_OK) 
-          throw  io_exception(std::string("FT_CreateDeviceInfoList failed"));
+      {
+          fprintf(stderr, "FT_CreateDeviceInfoList failed \n");
+          goto fail;
+      }
       if (dwNumDevs <1)
-          throw  io_exception(std::string("No FTDI devices attached"));
-          
+      {
+          fprintf(stderr, "No FTDI device found\n");
+          res = 1;
+          goto fail;
+      }
 #if defined (__linux)
       res = FT_SetVIDPID(vendor, product);
       if (res != FT_OK)
-          throw  io_exception(std::string("SetVIDPID failed"));
-      if(serial && desc && (dwNumDevs>1))
+      {
+          fprintf(stderr, "FT_SetVIDPID failed \n");
+          goto fail;
+      }
+      if(serial &&  description && (dwNumDevs>1))
           fprintf(stderr,
                   "On linux device selection may fail due to missing LOCID\n");
 #else
@@ -118,69 +241,84 @@ IOFtdi::IOFtdi(int vendor, int product, char const *desc, char const *serial,
       
       if(serial)
           res = FT_OpenEx((void*)serial, FT_OPEN_BY_SERIAL_NUMBER, &ftd2xx_handle);
-      else if(desc)
-          res = FT_OpenEx((void*)desc, FT_OPEN_BY_DESCRIPTION, &ftd2xx_handle);
+      else if(description)
+          res = FT_OpenEx((void*)description, FT_OPEN_BY_DESCRIPTION, &ftd2xx_handle);
       else
       {
-          if (channel == 2)
+          if (channel == INTERFACE_B)
               res = FT_Open (1, &ftd2xx_handle);
           else
               res = FT_Open (0, &ftd2xx_handle);
       }
       if (res != FT_OK)
-          throw  io_exception(std::string("Open FTDI failed"));
+      {
+          fprintf(stderr, "FTD2XX Open failed\n");
+          goto fail;
+      }
       
       res = FT_ResetDevice(ftd2xx_handle);
       if (res != FT_OK)
-          throw  io_exception(std::string("Reset FTDI failed"));
+      {
+          fprintf(stderr, "FT_ResetDevice failed\n");
+          goto fail;
+      }
       
       res = FT_SetBitMode(ftd2xx_handle, 0xfb, BITMODE_MPSSE);
       if (res != FT_OK)
-          throw  io_exception(std::string("Set Bitmode failed"));
+      {
+          fprintf(stderr, "FT_SetBitMode failed\n");
+          goto fail;
+      }
       
       res = FT_Purge(ftd2xx_handle, FT_PURGE_RX | FT_PURGE_TX);
       if (res != FT_OK)
-          throw  io_exception(std::string("FT_Purge failed"));
+      {
+          fprintf(stderr, "FT_Purge failed\n");
+          goto fail;
+      }
       
       res = FT_SetLatencyTimer(ftd2xx_handle, 2);
       if (res != FT_OK)
-          throw  io_exception(std::string("FT_SetLatencyTimer failed"));
+      {
+          fprintf(stderr, "FT_SetLatencyTimer failed\n");
+          goto fail;
+      }
       
       res = FT_SetTimeouts(ftd2xx_handle, 1000, 1000);
       if (res != FT_OK)
-          throw  io_exception(std::string("FT_SetTimeouts failed"));
+      {
+          fprintf(stderr, "FT_SetTimeouts failed\n");
+          goto fail;
+      }
   }
   
   if (!ftd2xx_handle && !ftdi_handle)
-      throw  io_exception(std::string("Neither libftdi nor libftd2xx found"));
+  {
+      fprintf(stderr,"Neither libftdi nor libftd2xx found\n");
+      res = 1;
+      goto fail;
+  }
   else if(ftdi_handle)
       fprintf(stderr, "Using Libftdi, ");
   else fprintf(stderr, "Using FTD2XX, ");
 
   // Prepare for JTAG operation
-  if (subtype == FTDI_NO_EN)
-    mpsse_add_cmd(buf, 6);
-  else if (subtype == FTDI_IKDA)
-    mpsse_add_cmd(buf, 9);
-  else if ((subtype == FTDI_OLIMEX  ) || (subtype == FTDI_FTDIJTAG) || 
-           (subtype == FTDI_AMONTEC ) || (subtype == FTDI_LLBBC   ) ||
-           (subtype == FTDI_LLIF))
-    {
-      if (subtype == FTDI_LLBBC)  
-          buf[1] = 0x10; /* Switch off forwarding of JTAG to backplane */
-      if (subtype == FTDI_LLIF)  
-          buf[4] = 0x00/*1*/; /* Slower speed when driving backplane*/
-      buf[2] = 0x1b; /* Enable nOE on ADBUS4 */
-      buf[7] = 0x0f; /* Disable and tristate TRST/SRST. Switch on LED*/
-      buf[8] = 0x0f; /* Disable and tristate TRST/SRST. Switch on LED*/
-      mpsse_add_cmd(buf, 9);
-    }
-  else
-    throw  io_exception(std::string("Unknown subtype"));
+  buf[1] |= dbus_data;
+  buf[2] |= dbus_en;
+  buf[7] = cbus_data;
+  buf[8] = cbus_en;
+  
+  mpsse_add_cmd(buf, 9);
   mpsse_send();
-  if(buf[5] || buf[4]) /* verbose Variable not yet accessible */
+  if (verbose)
       fprintf(stderr, "Using FTDI Clock divisor 0x%02x%02x",buf[5],buf[4]);
   fprintf(stderr, "\n");
+  return 0;
+
+ftdi_fail:
+  free(ftdi_handle);
+fail:
+  return res;
 }
 
 void IOFtdi::settype(int sub_type)

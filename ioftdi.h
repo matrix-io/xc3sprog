@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include <ftd2xx.h>
 
 #include "iobase.h"
+#include "cabledb.h"
 
 #define VENDOR_FTDI 0x0403
 #define DEVICE_DEF  0x6010
@@ -41,7 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #define FTDI_IKDA     1
 #define FTDI_OLIMEX   2
 #define FTDI_AMONTEC  3
-#define FTDI_FTDIJTAG 4  
+#define FTDI_FTDIJTAG 4 
 #define FTDI_LLBBC    5   
 #define FTDI_LLIF     6   
 
@@ -54,16 +55,17 @@ class IOFtdi : public IOBase
   struct ftdi_context *ftdi_handle;
   unsigned char usbuf[TX_BUF];
   int buflen;
+  bool use_ftd2xx;
+  bool verbose;
+  struct cable_t *cable;
   DWORD bptr;
   int calls_rd, calls_wr, subtype, retries;
   FILE *fp_dbg;
 
  public:
-  IOFtdi(int vendor, int product, char const *desc, char const *serial, 
-         int subtype, int channel, bool use_ftd2xx);
+  IOFtdi(bool use_ftd2xx);
   ~IOFtdi();
-
- public:
+  int  Init(struct cable_t *cable, const char * serial, const char *dev);
   void settype(int subtype);
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
   void tx_tms(unsigned char *pat, int length, int force);

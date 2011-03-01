@@ -63,7 +63,7 @@ class IOXPC : public IOBase
   FILE *fp_dbg;
   
  public:
-  IOXPC(int const vendor, int const product, char const *desc, char const *serial, int subtype);
+  IOXPC(struct cable_t *cable, char const *serial);
   ~IOXPC();
   
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);

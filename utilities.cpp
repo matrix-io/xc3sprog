@@ -8,8 +8,6 @@
 #include <memory>
 
 #include "io_exception.h"
-#include "jtag.h"
-#include "devicedb.h"
 #include "ioparport.h"
 #include "iofx2.h"
 #include "ioftdi.h"
@@ -39,110 +37,11 @@ void detect_chain(Jtag *jtag, DeviceDB *db)
     }
 }
 
-CABLES_TYPES getCable(const char *given_name)
+int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev, 
+            char const *serial, bool verbose, bool use_ftd2xx)
 {
-  if (strcasecmp(given_name, "pp") == 0)
-    return CABLE_PP;
-  if (strcasecmp(given_name, "ftdi") == 0)
-    return CABLE_FTDI;
-  if (strcasecmp(given_name, "fx2") == 0)
-    return CABLE_FX2;
-  if (strcasecmp(given_name, "xpc") == 0)
-    return CABLE_XPC;
-  return CABLE_UNKNOWN;
-}
+    int res;
 
-const char * getCableName(CABLES_TYPES type)
-{
-    switch (type)
-    {
-    case CABLE_PP: return "pp"; break;
-    case CABLE_FTDI: return "ftdi"; break;
-    case CABLE_FX2: return "fx2"; break;
-    case CABLE_XPC: return "xpc"; break;
-    default:
-        return "Unknown";
-    }
-}
-const char * getSubtypeName(int subtype)
-{
-    switch (subtype)
-    {
-    case FTDI_NO_EN: return "No enable"; break;
-    case FTDI_IKDA: return "IKDA"; break;
-    case FTDI_OLIMEX: return "OLIMEX"; break;
-    case FTDI_AMONTEC: return "AMONTEC"; break;
-    case FTDI_FTDIJTAG: return "FTDIJTAG"; break;
-    case FTDI_LLBBC: return "LLBBC"; break;
-    case FTDI_LLIF: return "LLIF"; break;
-    default:
-        return "Unknown";
-    }
-}
-
-int getSubtype(const char *given_name, CABLES_TYPES *cable, int *channel)
-{
-  if (strcasecmp(given_name, "ikda") == 0)
-    {
-      if (*cable == CABLE_NONE)
-	*cable = CABLE_FTDI;
-      if(*channel == 0)
-          *channel = 1;
-      return FTDI_IKDA;
-    }
-  else if (strcasecmp(given_name, "ftdijtag") == 0)
-    {
-      if (*cable == CABLE_NONE)
-	*cable = CABLE_FTDI;
-      if(*channel == 0)
-          *channel = 1;
-      return FTDI_FTDIJTAG;
-    }
-  else if (strcasecmp(given_name, "olimex") == 0)
-    {
-      if (*cable == CABLE_NONE)
-	*cable = CABLE_FTDI;
-      if(*channel == 0)
-          *channel = 1;
-      return FTDI_OLIMEX;
-    }
-  else if (strcasecmp(given_name, "amontec") == 0)
-    {
-       if (*cable == CABLE_NONE)
-	*cable = CABLE_FTDI;
-       if(*channel == 0)
-           *channel = 1;
-     return FTDI_AMONTEC;
-    }
-  else if (strcasecmp(given_name, "int") == 0)
-    {
-      if (*cable == CABLE_NONE)
-	*cable = CABLE_XPC;
-      return XPC_INTERNAL;
-    }
-  else if (strcasecmp(given_name, "llbbc") == 0)
-    {
-      if (*cable == CABLE_NONE)
-	*cable = CABLE_FTDI;
-      if(*channel == 0)
-          *channel = 2;
-      return FTDI_LLBBC;
-    }
-  else if (strcasecmp(given_name, "llif") == 0)
-    {
-      if (*cable == CABLE_NONE)
-	*cable = CABLE_FTDI;
-      if(*channel == 0)
-          *channel = 2;
-      return FTDI_LLIF;
-    }
-  return -1;
-}
-
-int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype, 
-            int channel, int  vendor, int  product, char const *dev, 
-            char const *desc, char const *serial, bool use_ftd2xx)
-{
     if (!cable)
     {
         fprintf(stderr, "No cable selected. You must use -c option."
@@ -150,11 +49,12 @@ int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype,
         return 1;
     }
 
-  if (cable == CABLE_PP)
+  if (cable->cabletype == CABLE_PP)
     {
       try
 	{
 	  io->reset(new IOParport(dev));
+          io->get()->setVerbose(verbose);
 	}
       catch(io_exception& e)
 	{
@@ -165,65 +65,44 @@ int  getIO( std::auto_ptr<IOBase> *io, CABLES_TYPES cable, int subtype,
   else 
     try
       {
-	if(cable == CABLE_FTDI)  
+	if(cable->cabletype == CABLE_FTDI)  
 	  {
-	    if ((subtype == FTDI_NO_EN) || (subtype == FTDI_IKDA)
-		|| (subtype == FTDI_FTDIJTAG) || (subtype == FTDI_LLBBC)
-                || (subtype == FTDI_LLIF))
-	      {
-		if (vendor == 0)
-		  vendor = VENDOR_FTDI;
-		if(product == 0)
-		  product = DEVICE_DEF;
-	      }
-	    else if (subtype ==  FTDI_OLIMEX)
-	      {
-		if (vendor == 0)
-		  vendor = VENDOR_OLIMEX;
-		if(product == 0)
-		  product = DEVICE_OLIMEX_ARM_USB_OCD;
-	      }
-	    else if (subtype ==  FTDI_AMONTEC)
-	      {
-		if (vendor == 0)
-		  vendor = VENDOR_FTDI;
-		if(product == 0)
-		  product = DEVICE_AMONTEC_KEY;
-	      }
-	    io->reset(new IOFtdi(vendor, product, desc, serial, subtype, 
-                                 channel, use_ftd2xx));
+              io->reset(new IOFtdi(use_ftd2xx));
+              io->get()->setVerbose(verbose);
+              res = io->get()->Init(cable, serial, dev);
 	  }
-	else if(cable == CABLE_FX2)  
-	  {
-	    if (vendor == 0)
-	      vendor = USRP_VENDOR;
-	    if(product == 0)
-	      product = USRP_DEVICE;
-	    io->reset(new IOFX2(vendor, product, desc, serial));
+	else if(cable->cabletype  == CABLE_FX2)
+        { 
+	    io->reset(new IOFX2(cable, serial));
+              io->get()->setVerbose(verbose);
 	  }
-	else if(cable == CABLE_XPC)  
+	else if(cable->cabletype == CABLE_XPC)  
 	  {
-	    if (vendor == 0)
-	      vendor = XPC_VENDOR;
-	    if(product == 0)
-	      product = XPC_DEVICE;
-	    io->reset(new IOXPC(vendor, product, desc, serial, subtype));
+              io->reset(new IOXPC(cable, serial));
+              io->get()->setVerbose(verbose);
 	  }
 	else
 	  return 2;
       }
     catch(io_exception& e)
       {
-	fprintf(stderr, "Could not find USB dongle %04x:%04x\n", 
-		vendor, product);
-	if (desc)
-	  fprintf(stderr, " with given description \"%s\"\n", desc);
-	if (serial)
-	    fprintf(stderr, " with given Serial Number \"%s\"\n", serial);
         fprintf(stderr, "Reason: %s\n",e.getMessage().c_str());
 	return 1;
       }
   return 0;
+}
+
+const char *getCableName(int type)
+{
+    switch (type)
+    {
+    case CABLE_PP: return "pp"; break;
+    case CABLE_FTDI: return "ftdi"; break;
+    case CABLE_FX2: return "fx2"; break;
+    case CABLE_XPC: return "xpc"; break;
+    default:
+        return "Unknown";
+    }
 }
 
 void

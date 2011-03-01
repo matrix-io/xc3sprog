@@ -29,13 +29,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "cables.h"
 #include "utilities.h"
 
-CableDB::CableDB(const char *cf_name, const char * serial)
+CableDB::CableDB(const char *cf_name)
 {
     cable_t cable;
     char alias[64];
     char cabletype[64];
-    int freq;
-    char product_desc[64];
     char options[64];
     FILE *fp;
     char * fname;
@@ -54,19 +52,17 @@ CableDB::CableDB(const char *cf_name, const char * serial)
         {
 	  char buffer[256];
 	  fgets(buffer,256,fp);  // Get next line from file
-	  if (sscanf(buffer,"%s %s %d %s%s", 
-                     alias, cabletype, &freq, product_desc, options) == 5)
+	  if (sscanf(buffer,"%s %s %s", 
+                     alias, cabletype, options) == 3)
 	    {
-	      cable.alias = alias;
-	      cable.cabletype = getCable(cabletype);
-	      cable.speed = freq;
-              if (strcasecmp(product_desc,"NULL"))
-                  cable.productdescription = product_desc;
-              else
-                  cable.productdescription = NULL;
-	      cable.serial = serial;
-	      cable.optstring = options;
-              cable_db.push_back(cable);
+                fprintf(stderr,"Alias %s type %s opt %s\n",
+                        alias, cabletype, options);
+                cable.alias = new char[strlen(alias)+1];
+                strcpy(cable.alias,alias);
+                cable.cabletype = getCableType(cabletype);
+                cable.optstring = new char[strlen(options)+1];
+                strcpy(cable.optstring,options);
+                cable_db.push_back(cable);
 	    }
 	}
       fclose(fp);
@@ -89,66 +85,54 @@ CableDB::CableDB(const char *cf_name, const char * serial)
             buffer[i] = 0;
             while(*p && *p == ';')
                 p++;
-            if (sscanf(buffer,"%s %s %d %s%s", 
-                       alias, cabletype, &freq, product_desc, options) == 5)
+            if(buffer[0] == '#')
+                continue;
+            if (sscanf(buffer,"%s %s %s", 
+                       alias, cabletype, options) == 3)
 	    {
-                cable.alias = alias;
-                cable.cabletype = getCable(cabletype);
-                cable.speed = freq;
-                cable.serial = serial;
-                cable.optstring = options;
+                fprintf(stderr,"Alias %s type %s opt %s\n",
+                        alias, cabletype, options);
+                cable.alias = new char[strlen(alias)+1];
+                strcpy(cable.alias,alias);
+                cable.cabletype = getCableType(cabletype);
+                cable.optstring = new char[strlen(options)+1];
+                strcpy(cable.optstring,options);
+                cable_db.push_back(cable);
                 cable_db.push_back(cable);
 	    }
 	}
     }
 }
 
-int CableDB::CableIndex(const char *name)
+/* Return 0 on match*/
+int CableDB::getCable(const char *name, struct cable_t *cable)
 {
     unsigned int i;
 
     for(i = 0; i < cable_db.size(); i++)
     {
         if (!(strcasecmp(cable_db[i].alias, name)))
-            return i;
+        {
+            cable->alias = cable_db[i].alias;
+            cable->cabletype = cable_db[i].cabletype;
+            cable->optstring = cable_db[i].optstring;
+            return 0;
+        }
     }
-    return -1;
+    return 1;
 }
 
-int CableDB::getType(int index)
+CABLES_TYPES CableDB::getCableType(const char *given_name)
 {
-    if (index == -1)
-        return CABLE_UNKNOWN;
-    return cable_db[index].cabletype;
+  if (strcasecmp(given_name, "pp") == 0)
+    return CABLE_PP;
+  if (strcasecmp(given_name, "ftdi") == 0)
+    return CABLE_FTDI;
+  if (strcasecmp(given_name, "fx2") == 0)
+    return CABLE_FX2;
+  if (strcasecmp(given_name, "xpc") == 0)
+    return CABLE_XPC;
+  return CABLE_UNKNOWN;
 }
-
-const char* CableDB::getSerial(int index)
-{
-    if (index == -1)
-        return NULL;
-    return cable_db[index].serial;
-}
-
-const char* CableDB::getProdDesc(int index)
-{
-    if (index == -1)
-        return NULL;
-    return cable_db[index].productdescription;
-}
-
-const char* CableDB::getOptions(int index)
-{
-    if (index == -1)
-        return NULL;
-    return cable_db[index].optstring;
-}
-
-int CableDB::getSpeed(int index)
-{
-   if (index == -1)
-        return 0;
-    return cable_db[index].speed;
-}
-
 
         

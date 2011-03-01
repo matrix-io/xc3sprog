@@ -69,9 +69,6 @@ void usage() {
     	  "   \tOptional pp arguments:\n"
 	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
 	  "   \tOptional fx2/ftdi arguments:\n"
-	  "   \t\t[-V vendor]      (idVendor)\n"
-	  "   \t\t[-P product]     (idProduct)\n"
-	  "   \t\t[-S description string] (Product string)\n"
 	  "   \t\t[-s serial]      (SerialNumber string)\n"
 	  "   \tOptional ftdi arguments:\n"
 	  "   \t\t[-t subtype]\n"
@@ -110,26 +107,21 @@ int main(int argc, char **args)
   bool    gProgramFlash = false;
   bool    gProgramEeprom = false;
   bool    gProgramFuseBits = false;
-  CABLES_TYPES cable    = CABLE_NONE;
+  struct cable_t cable;
   char const *dev       = 0;
   char const *eepromfile= 0;
   static char DefName[256];
   int         chainpos  = 0;
-  int vendor    = 0;
-  int product   = 0;
-  int channel   = 0;
-  char const *desc    = 0;
   char const *serial  = 0;
-  int subtype = FTDI_NO_EN;
   char *devicedb = NULL;
+  const char *cablename;
   DeviceDB db(devicedb);
   std::auto_ptr<IOBase>  io;
-  long value;
   int res;
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hLc:Cd:D:e:f:jp:P:s:S:t:vV:")) {
+    switch(getopt(argc, args, "?hLc:Cd:e:f:jp:s:v")) {
     case -1:
       goto args_done;
       
@@ -150,16 +142,7 @@ int main(int argc, char **args)
       break;
 
     case 'c':
-      cable =  getCable(optarg);
-      if(cable == CABLE_UNKNOWN)
-	{
-	  fprintf(stderr,"Unknown cable %s\n", optarg);
-	  usage();
-	}
-      break;
-
-     case 'D':
-      channel = atoi(optarg);
+      cablename =  optarg;
       break;
 
     case 'e':
@@ -170,15 +153,6 @@ int main(int argc, char **args)
       gFuseName = optarg;
       break;
 
-    case 't':
-      subtype = getSubtype(optarg, &cable, &channel);
-      if (subtype == -1)
-	{
-	  fprintf(stderr,"Unknow subtype %s\n", optarg);
-	  usage();
-	}
-      break;
-      
     case 'd':
       dev = optarg;
       break;
@@ -187,23 +161,10 @@ int main(int argc, char **args)
       chainpos = atoi(optarg);
       break;
 
-    case 'V':
-      value = strtol(optarg, NULL, 0);
-      vendor = value;
-      break;
-      
-    case 'P':
-      value = strtol(optarg, NULL, 0);
-      product = value;
-      break;
-		
     case 's':
       serial = optarg;
       break;
       
-    case 'S':
-      desc = optarg;
-      break;
 
     case '?':
     case 'h':
@@ -212,7 +173,7 @@ int main(int argc, char **args)
     }
   }
  args_done:
-  if(argc < 1)  usage();
+  if((argc < 1) ||(cablename == 0)) usage();
   // Get rid of options
   //printf("argc: %d\n", argc);
   argc -= optind;
@@ -291,17 +252,9 @@ int main(int argc, char **args)
   // Produce release info from CVS tags
   printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests! Check Sourceforge SVN!\n");
 
-  if (verbose)
-      fprintf(stderr, "Using Cable %s Subtype %s %s%c VID 0x%04x PID 0x%04x %s%s %s%s\n",
-              getCableName(cable),
-              getSubtypeName(subtype),
-              (channel)?"Channel ":"",(channel)? (channel+'0'):0,
-              vendor, product,
-              (desc)?"Product: ":"", (desc)?desc:"",
-              (serial)?"Serial: ":"", (serial)?serial:"");
-
-  res = getIO( &io, cable, subtype, channel, vendor, product, dev, 
-               desc, serial, use_ftd2xx);
+  CableDB cabledb(0);
+  res = cabledb.getCable(cablename, &cable);
+  res = getIO( &io, &cable, dev, serial, verbose, use_ftd2xx);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);
