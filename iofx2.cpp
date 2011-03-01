@@ -92,6 +92,7 @@ int IOFX2::Init(struct cable_t *cable, char const *serial)
       fprintf(stderr," Can't open device, res: %d\n", res);  
       return res;
   }
+  return 0;
 }
 
 IOFX2::~IOFX2()
