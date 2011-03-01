@@ -1,6 +1,8 @@
 /* JTAG GNU/Linux parport device io
 
 Copyright (C) 2004 Andrew Rogers
+Additions (C) 2005-2011  Uwe Bonnes 
+                         bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,7 +34,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 class IOParport : public IOBase
 {
  protected:
-  int fd, total, cable, debug;
+  int fd, total, cabletype, debug;
   unsigned char def_byte, tdi_value, tms_value, tck_value, tdo_mask, tdo_inv;
   int write_data(int fd, unsigned char data);
   int write_control(int fd, unsigned char control);
@@ -40,7 +42,8 @@ class IOParport : public IOBase
   int read_status(int fd, unsigned char *status);
 
  public:
-  IOParport(char const *dev);
+  IOParport();
+  int Init(struct cable_t cable, char const *dev);
   ~IOParport();
   void tx(bool tms, bool tdi);
   bool txrx(bool tms, bool tdi);

@@ -2,7 +2,7 @@
 
 Using I2C addresses above 0x80 in the USRP/XGUFF framework
  
-Copyright (C) 2005-2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
+Copyright (C) 2005-2011 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -46,7 +46,8 @@ class IOFX2 : public IOBase
   int bptr, calls_rd, calls_wr;
   
  public:
-  IOFX2(struct cable_t *cable, char const *serial);
+  IOFX2();
+  int Init(struct cable_t *cable, char const *serial);
   ~IOFX2();
   
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
