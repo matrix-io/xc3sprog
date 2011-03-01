@@ -23,30 +23,33 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <string>
 #include <sys/types.h>
 
+enum CABLES_TYPES 
+  { 
+    CABLE_NONE, 
+    CABLE_UNKNOWN,
+    CABLE_PP,
+    CABLE_FTDI,
+    CABLE_FX2,
+    CABLE_XPC
+  };
+
+struct cable_t
+{
+    char * alias;
+    int cabletype;
+    char * optstring;
+};
+
 class CableDB
 {
 private:
-    struct cable_t
-    {
-        char * alias;
-        int cabletype;
-        int speed; /* in Hertz*/
-        char *productdescription;
-        char const * serial;
-        char * optstring;
-    };
   std::vector<cable_t> cable_db;
   std::string  cablename;
+  CABLES_TYPES getCableType(const char *given_name);
     
 public:
-  CableDB(const char *cf_name, const char *serial);
-    std::string const& getFile() const { return cablename; };
-    int CableIndex(const char * name);
-    int getType(int index);
-    const char* getSerial(int index);
-    const char* getProdDesc(int index);
-    const char* getOptions(int index);
-    int getSpeed(int index);
-
+  CableDB(const char *cf_name);
+  std::string const& getFile() const { return cablename; };
+  int getCable(const char *name, struct cable_t *cable);
 };
 #endif //CABLEDB_H

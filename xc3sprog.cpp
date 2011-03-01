@@ -43,6 +43,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "bitfile.h"
 #include "jtag.h"
 #include "devicedb.h"
+#include "cabledb.h"
 #include "progalgxcf.h"
 #include "progalgxcfp.h"
 #include "javr.h"
@@ -321,7 +322,7 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
   
 void usage(bool all_options)
 {
-  fprintf(stderr, "usage:\txc3sprog [options] <file0> <file1> ...\n");
+  fprintf(stderr, "usage:\txc3sprog -c cable [options] <file0> <file1> ...\n");
   fprintf(stderr, "\tfile may specify a style after %%\n");
   fprintf(stderr, "\tFlash programming honors offset after @ and length after #\n");
   fprintf(stderr, "\tE.g. file.bin@0x10000%%bin\n");
@@ -330,7 +331,6 @@ void usage(bool all_options)
   fprintf(stderr, "Possible options:\n");
 #define OPT(arg, desc)	\
   fprintf(stderr, "   %-8s  %s\n", (arg), (desc))
-  OPT("-c", "Choose programmer type [pp|ftdi|fx2|xpc].");
   OPT("-C [len]", "Verify device against file (no programming).");
   OPT("-r [len]", "Read from device and write to file.");
   OPT("",         "Optional: [len] in Bytes.");
@@ -356,24 +356,8 @@ void usage(bool all_options)
   /* Parallel cable */
   OPT("-d", "(pp only     ) Parallel port device.");
   /* USB devices */
-  OPT("-V vid" , "(usb devices only) Vendor ID.");
-  OPT("-P pid" , "(usb devices only) Product ID.");
-  OPT("-S desc", "(usb devices only) Product ID string.");
   OPT("-s num" , "(usb devices only) Serial number string.");
-  /* FTDI/FX cables */
-  OPT("-t type", "(ftdi only       ) Type can be "
-      "[NONE|IKDA|OLIMEX|FTDIJTAG|AMONTEC|LLBBC|LLIF].");
-  OPT("", "(NONE\t(0x0403:0x0610) or");
-  OPT("", "IKDA\t(0x0403:0x0610, EN_N on ACBUS2/ACBUS7/ACBUS8) or");
-  OPT("", "OLIMEX\t(0x15b1:0x0003, JTAG_EN_N on ADBUS4, LED on ACBUS3)) or");
-  OPT("", "AMONTEC\t(0x0403:0xcff8, JTAG_EN_N on ADBUS4) or");
-  OPT("", "LLBBC\t(0x0403:0x0610), IF 2 or");
-  OPT("", "LLIF\t(0x0403:0x0610), IF 2 enabling JTAG on Backplane");
-  OPT("-D if  ", "(ftdi only       ) MPSSE Interface can be"
-      "[0|1|2] for any|INTERFACE_A|INTERFACE_B.");
   OPT("-L     ", "(ftdi only       ) Don't use LibUSB.");
-  /* Xilinx USB JTAG cable */
-  OPT("-t",      "(xpc only        ) NONE or INT  (Internal Chain , not for DLC10))");
 
   fprintf(stderr, "\nDevice specific options:\n");
   OPT("-E file", "(AVR only) EEPROM file.");
@@ -497,7 +481,7 @@ int main(int argc, char **args)
   unsigned int offset   = 0;
   unsigned int length   = 0;
   unsigned long id;
-  CABLES_TYPES cable    = CABLE_NONE;
+  struct cable_t cable;
   char const *dev       = 0;
   char const *eepromfile= 0;
   char const *fusefile  = 0;
@@ -507,19 +491,15 @@ int main(int argc, char **args)
   int      chainpos     = 0;
   int      nchainpos    = 1;
   int      chainpositions[MAXPOSITIONS] = {0};
-  int vendor    = 0;
-  int product   = 0;
-  int channel   = 0; /* FT2232 MPSSE Channel */
   int test_count = 0;
-  char const *desc    = 0;
   char const *serial  = 0;
   char *bscanfile = 0;
+  char *cablename = 0;
   char osname[OSNAME_LEN];
-  int subtype = FTDI_NO_EN;
   char *devicedb = NULL;
   DeviceDB db(devicedb);
+  CableDB cabledb("");
   std::auto_ptr<IOBase>  io;
-  long value;
   FILE *fpin =0;
   FILE *fpout = 0;
   int res;
@@ -536,7 +516,9 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hC::Lc:d:D:eE:fF:i:I::jLm:o:O:p:P:r::Rs:S:t:T::vV:")) {
+      char c = getopt(argc, args, "?hC::Lc:d:eE:fF:i:I::jLm:o:O:p:r::Rs:S:T::v");
+    switch(c) 
+    {
     case -1:
       goto args_done;
 
@@ -586,12 +568,7 @@ int main(int argc, char **args)
       break;
 
     case 'c':
-      cable =  getCable(optarg);
-      if(cable == CABLE_UNKNOWN)
-	{
-	  fprintf(stderr,"Unknown cable %s\n", optarg);
-	  usage(false);
-	}
+      cablename =  optarg;
       break;
 
     case 'm':
@@ -604,16 +581,6 @@ int main(int argc, char **args)
 
     case 'E':
       eepromfile = optarg;
-      break;
-
-    case 'D':
-      char *endptr;  
-      channel = strtol(optarg, &endptr, 10);
-      if(channel < 0 || channel > 2 || endptr == optarg)
-      {
-	  fprintf(stderr,"Unknown interface %s\n", optarg);
-	  usage(false);
-      }
       break;
 
     case 'F':
@@ -646,16 +613,7 @@ int main(int argc, char **args)
           length = strtol(optarg, NULL, 0);
       break;
 
-    case 't':
-      subtype = getSubtype(optarg, &cable, &channel);
-      if (subtype == -1)
-	{
-	  fprintf(stderr,"Unknow subtype %s\n", optarg);
-	  usage(false);
-	}
-      break;
-
-    case 'd':
+     case 'd':
       dev = optarg;
       break;
 
@@ -683,57 +641,36 @@ int main(int argc, char **args)
       chainpos = chainpositions[0];
       break;
 
-    case 'V':
-      value = strtol(optarg, NULL, 0);
-      vendor = value;
-      break;
-      
-    case 'P':
-      value = strtol(optarg, NULL, 0);
-      product = value;
-      break;
-		
     case 's':
       serial = optarg;
       break;
       
-    case 'S':
-      desc = optarg;
-      break;
-
     case '?':
     case 'h':
     default:
-      usage(true);
+        fprintf(stderr, "Unknown option -%c\n", c);
+        usage(true);
     }
   }
  args_done:
   argc -= optind;
   args += optind;
-  if(argc < 0)  usage(true);
+  if((argc < 0) || (cablename == 0))  usage(true);
   if(argc < 1 && !reconfigure && !erase) detectchain = true;
 
-  if (verbose)
+  res = cabledb.getCable(cablename, &cable);
+  if(res)
   {
-      fprintf(stderr, "Using Cable %s Subtype %s %s%c",
-              getCableName(cable),
-              getSubtypeName(subtype),
-              (channel)?"Channel ":"",(channel)? (channel+'0'):0);
-      if (vendor) 
-          fprintf(stderr, " VID %x04x", vendor);
-      if (product)
-          fprintf(stderr, " PID %x04x", product);
-       fprintf(stderr, " %s%s %s%s\n",
-              (desc)?"Product: ":"\"\"", (desc)?desc:"",
-              (serial)?"Serial: ":"", (serial)?serial:"");
+      fprintf(stderr,"Can't find description for a cable named %s\n",
+             cablename);
+      exit(1);
   }
-  res = getIO( &io, cable, subtype, channel, vendor, product, dev, desc, serial, use_ftd2xx);
+  res = getIO( &io, &cable, dev, serial, verbose, use_ftd2xx);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);
       else usage(false);
     }
-  io.get()->setVerbose(verbose);
   
   Jtag jtag = Jtag(io.get());
   jtag.setVerbose(verbose);

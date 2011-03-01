@@ -29,12 +29,48 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include "iofx2.h"
 #include "io_exception.h"
 
-IOFX2::IOFX2(int const vendor, int const product, char const *desc,
-	     char const *serial)
+IOFX2::IOFX2(struct cable_t *cable, char const *serial)
  :  IOBase(), bptr(0), calls_rd(0) , calls_wr(0)
 {
+    unsigned int vendor = 0xfffe, product = 0x0018;
+    char descstring[256];
+    char *p = cable->optstring;
+    char *description = 0;
+    
+  /* split string by hand for more flexibility*/
+  if (p)
+  {
+      vendor = strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      product = strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      char *q = strchr(p,':');
+      int len;
+
+      if (q)
+          len = q-p-1;
+      else
+          len = strlen(p);
+      if (len >0)
+          strncpy(descstring, p, (len>256)?256:len);
+      p = q;
+      if(p)
+          p ++;
+  }
+         
    // Open device
-    if (fx2_usb_open_desc(vendor, product, desc, serial) < 0)
+    if (fx2_usb_open_desc
+        (vendor, product, description, serial) < 0)
       throw  io_exception(std::string("ftdi_usb_open_desc: ") + 
                           error_str);
 }

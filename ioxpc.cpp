@@ -32,25 +32,59 @@
 #include "ioxpc.h"
 #include "io_exception.h"
 
-IOXPC::IOXPC(int const vendor, int const product, char const *desc,
-	     char const *serial, int stype)
+IOXPC::IOXPC(struct cable_t *cable, char const *serial)
   :  IOBase(), bptr(0), calls_rd(0) , calls_wr(0), call_ctrl(0)
 {
   unsigned char buf[2];
   unsigned long long lserial=0;
+  char descstring[256];
+  char *description = 0;
+  char *p = cable->optstring;
   int r;
+  unsigned int vendor = 0x03fd, product= 0x0008;
   char *fname = getenv("XPC_DEBUG");
   if (fname)
     fp_dbg = fopen(fname,"wb");
   else
       fp_dbg = NULL;
  
-  
-  subtype = stype;
+  /* split string by hand for more flexibility*/
+  if (p)
+  {
+      vendor = strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      product = strtol(p, NULL, 0);
+      p = strchr(p,':');
+      if(p)
+          p ++;
+  }
+  if (p)
+  {
+      char *q = strchr(p,':');
+      int len;
+
+      if (q)
+          len = q-p-1;
+      else
+          len = strlen(p);
+      if (len >0)
+          strncpy(descstring, p, (len>256)?256:len);
+      p = q;
+      if(p)
+          p ++;
+  }
+         
+  if(!(strcasecmp(cable->alias,"xpc_internal")))
+      subtype = XPC_INTERNAL;
   // Open device
   if(serial)
     sscanf(serial,"%Lx", &lserial);
-  if (xpc_usb_open_desc(vendor, product, desc, lserial) < 0)
+  if (xpc_usb_open_desc(vendor, product, description, lserial) < 0)
     throw  io_exception(std::string("No dongle found") );
   if (xpcu_request_28(xpcu, 0x11) < 0)
     throw  io_exception(std::string("xpcu_request_28: ") );
@@ -343,7 +377,6 @@ IOXPC::xpcu_do_ext_transfer( xpc_ext_transfer_state_t *xts )
 {
   int r;
   int in_len, out_len;
-  int last_tdo;
   
   in_len = 2 * (xts->in_bits >> 2);
   if ((xts->in_bits & 3) != 0) in_len += 2;
@@ -363,7 +396,7 @@ IOXPC::xpcu_do_ext_transfer( xpc_ext_transfer_state_t *xts )
   if(r >= 0 && xts->out_bits > 0)
     {
         int shift =  xts->out_bits & 0xf;
-        int i, j;
+        int i;
  
         if (shift)
             shift = 16 -shift;

@@ -28,6 +28,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define BLOCK_SIZE 65536
 #define CHUNK_SIZE 128
 #define TICK_COUNT 2048
+#include "cabledb.h"
 
 class IOBase
 {
@@ -44,6 +45,7 @@ class IOBase
   virtual ~IOBase() {}
 
  public:
+  virtual int Init(struct cable_t *cable, const char *serial, const char *dev);
   virtual void flush() {}
 
  public:

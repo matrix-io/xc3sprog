@@ -1,3 +1,3 @@
 #Bring devlist.txt in a form that we can compile as fallback
 file(STRINGS ${DEVLIST_DIR}/devlist.txt fb_string)
-configure_file(${DEVLIST_DIR}/devices.in.h devices.h)
+configure_file(${DEVLIST_DIR}/devices.h.in devices.h)

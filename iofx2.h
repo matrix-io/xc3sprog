@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <usb.h>
 
 #include "iobase.h"
+#include "cabledb.h"
 
 #define USRP_VENDOR 0xfffe
 #define USRP_DEVICE 0x0018
@@ -45,7 +46,7 @@ class IOFX2 : public IOBase
   int bptr, calls_rd, calls_wr;
   
  public:
-  IOFX2(int const vendor, int const product, char const *desc, char const *serial);
+  IOFX2(struct cable_t *cable, char const *serial);
   ~IOFX2();
   
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
