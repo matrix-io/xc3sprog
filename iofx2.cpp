@@ -2,7 +2,7 @@
 
 Using I2C addresses above 0x80 in the USRP/XGUFF framework
  
-Copyright (C) 2005-2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
+Copyright (C) 2005-2011 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,14 +28,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include "iofx2.h"
 #include "io_exception.h"
+#include "utilities.h"
 
-IOFX2::IOFX2(struct cable_t *cable, char const *serial)
- :  IOBase(), bptr(0), calls_rd(0) , calls_wr(0)
+IOFX2::IOFX2()
+:  IOBase(), bptr(0), calls_rd(0) , calls_wr(0)
+{
+}
+
+int IOFX2::Init(struct cable_t *cable, char const *serial)
 {
     unsigned int vendor = 0xfffe, product = 0x0018;
     char descstring[256];
     char *p = cable->optstring;
     char *description = 0;
+    int res;
     
   /* split string by hand for more flexibility*/
   if (p)
@@ -68,11 +74,24 @@ IOFX2::IOFX2(struct cable_t *cable, char const *serial)
           p ++;
   }
          
-   // Open device
-    if (fx2_usb_open_desc
-        (vendor, product, description, serial) < 0)
-      throw  io_exception(std::string("ftdi_usb_open_desc: ") + 
-                          error_str);
+  if (verbose)
+  {
+      fprintf(stderr, "Cable %s type %s VID 0x%04x PID %04x",
+              cable->alias, getCableName(cable->cabletype), vendor, product);
+      if (description)
+          fprintf(stderr, " Desc %s", description);
+      if (serial)
+          fprintf(stderr, " Serial %s", serial);
+      fprintf(stderr, "\n");
+  }
+
+  // Open device
+  res = fx2_usb_open_desc(vendor, product, description, serial);
+  if(res)
+  {
+      fprintf(stderr," Can't open device, res: %d\n", res);  
+      return res;
+  }
 }
 
 IOFX2::~IOFX2()

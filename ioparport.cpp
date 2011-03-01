@@ -1,7 +1,7 @@
 /* JTAG GNU/Linux parport device io
 
 Copyright (C) 2004 Andrew Rogers
-Additions for Byte Blaster Cable (C) 2005-2009  Uwe Bonnes 
+Additions for Byte Blaster Cable (C) 2005-2011  Uwe Bonnes 
                               bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
@@ -98,7 +98,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <unistd.h>
 
 #include "ioparport.h"
-#include "io_exception.h"
 #include "debug.h"
 
 #define NO_CABLE 0
@@ -151,7 +150,7 @@ int  IOParport::detectcable(void)
       fprintf(stderr,"IOParport::detectcable status 0x%02x control %02x"
 	      " Check system driver setup\n",
 	      status, control);
-      throw  io_exception(std::string("Driver Problem"));
+      return NO_CABLE;
     }
   /* Error_n should is hardwired to ground on a byteblaster cable*/
   if (!(status & PARPORT_STATUS_ERROR))
@@ -302,7 +301,13 @@ int  IOParport::detectcable(void)
   }
 }
 
-IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
+IOParport::IOParport() : IOBase(), total(0), debug(0) 
+{
+}
+
+int IOParport::Init(struct cable_t cable, char const *dev)
+{
+    int res;
 
   // Try to obtain device from environment or use default if not given
   if(!dev) {
@@ -320,25 +325,33 @@ IOParport::IOParport(char const *dev) : IOBase(), total(0), debug(0) {
       {
 	fprintf(stderr,"Could not access parallel device '%s': %s\n",
 		dev, strerror(errno));
-	throw  io_exception(std::string("Failed to open: ") + dev);
+	return -1;
       }
   
 #if defined (__linux__)
   // Lock port
-  if(ioctl(fd, PPCLAIM)) {
-    throw  io_exception(std::string("Port already in use: ") + dev);
+  res = ioctl(fd, PPCLAIM);
+  if(res) 
+  {
+      fprintf(stderr, "Port %s already in use\n", dev);
+      return res;
   }
   
   // Switch to compatibility mode
   int const  mode = IEEE1284_MODE_COMPAT;
-  if(ioctl(fd, PPNEGOT, &mode)) {
-    throw  io_exception(std::string("IEEE1284 compatibility not available: ")
-			+ dev);
+  res = ioctl(fd, PPNEGOT, &mode);
+  if(res) {
+      fprintf(stderr,"IEEE1284 compatibility not available on dev %s\n", dev);
+      return res;
   }
 #endif
-  cable = detectcable();
-  if(cable == NO_CABLE)
-    throw io_exception(std::string("No adapter found\n"));
+  cabletype = detectcable();
+  if(cabletype == NO_CABLE)
+  {
+      fprintf(stderr, "No adapter found\n");
+      return 1;
+  }
+  return 0;
 }
 
 bool IOParport::txrx(bool tms, bool tdi)
@@ -441,7 +454,7 @@ void IOParport::tx_tms(unsigned char *pat, int length, int force)
 
 IOParport::~IOParport()
 {
-  if (cable == IS_BBLST)
+  if (cabletype == IS_BBLST)
     {
       unsigned char control;
       read_control(fd, &control);

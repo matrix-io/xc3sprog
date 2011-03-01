@@ -7,7 +7,6 @@
 #include <strings.h>
 #include <memory>
 
-#include "io_exception.h"
 #include "ioparport.h"
 #include "iofx2.h"
 #include "ioftdi.h"
@@ -51,45 +50,29 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
 
   if (cable->cabletype == CABLE_PP)
     {
-      try
-	{
-	  io->reset(new IOParport(dev));
+	  io->reset(new IOParport());
           io->get()->setVerbose(verbose);
-	}
-      catch(io_exception& e)
-	{
-            fprintf(stderr, "Could not open parallel port %s\n", dev);
-            return 1;
-	}
+          res = io->get()->Init(cable, dev);
     }
-  else 
-    try
-      {
-	if(cable->cabletype == CABLE_FTDI)  
-	  {
-              io->reset(new IOFtdi(use_ftd2xx));
-              io->get()->setVerbose(verbose);
-              res = io->get()->Init(cable, serial, dev);
-	  }
-	else if(cable->cabletype  == CABLE_FX2)
-        { 
-	    io->reset(new IOFX2(cable, serial));
-              io->get()->setVerbose(verbose);
-	  }
-	else if(cable->cabletype == CABLE_XPC)  
-	  {
-              io->reset(new IOXPC(cable, serial));
-              io->get()->setVerbose(verbose);
-	  }
-	else
-	  return 2;
-      }
-    catch(io_exception& e)
-      {
-        fprintf(stderr, "Reason: %s\n",e.getMessage().c_str());
-	return 1;
-      }
-  return 0;
+  else if(cable->cabletype == CABLE_FTDI)  
+  {
+      io->reset(new IOFtdi(use_ftd2xx));
+      io->get()->setVerbose(verbose);
+      res = io->get()->Init(cable, serial);
+  }
+  else if(cable->cabletype  == CABLE_FX2)
+  { 
+      io->reset(new IOFX2());
+      io->get()->setVerbose(verbose);
+      res = io->get()->Init(cable, serial);
+  }
+  else if(cable->cabletype == CABLE_XPC)  
+  {
+      io->reset(new IOXPC());
+      io->get()->setVerbose(verbose);
+      res = io->get()->Init(cable, serial);
+  }
+  return res;
 }
 
 const char *getCableName(int type)

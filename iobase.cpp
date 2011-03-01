@@ -1,6 +1,8 @@
 /* JTAG low level functions and base class for cables
 
 Copyright (C) 2004 Andrew Rogers
+Additions (C) 2005-2011  Uwe Bonnes 
+                         bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,7 +45,7 @@ IOBase::IOBase()
     tms_len = 0;
 }    
 
-int IOBase::Init(struct cable_t *cable, const char *serial, const char *dev)
+int IOBase::Init(struct cable_t *cable, const char *devopt)
 {
     return 0;
 }    

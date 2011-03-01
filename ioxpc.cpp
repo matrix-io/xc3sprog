@@ -4,7 +4,7 @@
    Adapted from urjtag/trunk/jtag/xpc.c
    Copyright (C) 2008 Kolja Waschk
    
-   Copyright (C) 2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
+   Copyright (C) 2009-2011 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
    
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -32,9 +32,13 @@
 #include "ioxpc.h"
 #include "io_exception.h"
 
-IOXPC::IOXPC(struct cable_t *cable, char const *serial)
+IOXPC::IOXPC()
   :  IOBase(), bptr(0), calls_rd(0) , calls_wr(0), call_ctrl(0)
 {
+}
+int IOXPC::Init(struct cable_t *cable, char const *serial)
+{
+  int res;
   unsigned char buf[2];
   unsigned long long lserial=0;
   char descstring[256];
@@ -84,37 +88,64 @@ IOXPC::IOXPC(struct cable_t *cable, char const *serial)
   // Open device
   if(serial)
     sscanf(serial,"%Lx", &lserial);
-  if (xpc_usb_open_desc(vendor, product, description, lserial) < 0)
-    throw  io_exception(std::string("No dongle found") );
-  if (xpcu_request_28(xpcu, 0x11) < 0)
-    throw  io_exception(std::string("xpcu_request_28: ") );
-  if (xpcu_write_gpio(xpcu, XPC_PROG) < 0)
-    throw  io_exception(std::string("xpcu_write_gpio: ") );
-  if (xpcu_read_firmware_version(xpcu, buf) < 0)
-    throw  io_exception(std::string("xpcu_read_firmware_version: ") );
-  fprintf(stderr, "firmware version = 0x%02x%02x (%u)\n", 
-	  buf[1], buf[0], buf[1]<<8| buf[0]);
-  
-  if (xpcu_read_cpld_version(xpcu, buf) < 0)
-    throw  io_exception(std::string("xpcu_read_cpld_version: ") );
-  fprintf(stderr, "CPLD version = 0x%02x%02x (%u)\n", 
-	  buf[1], buf[0], buf[1]<<8| buf[0]);
-  if(hid)
+  res = xpc_usb_open_desc(vendor, product, description, lserial);
+  if (res < 0)
+  {
+      fprintf(stderr,"No dongle found\n");
+      return res;
+  }
+  res = xpcu_request_28(xpcu, 0x11);
+  if (res < 0)
+  {
+      fprintf(stderr,"pcu_request_28 failed\n");
+      return res;
+  }
+  res = xpcu_write_gpio(xpcu, XPC_PROG);
+  if (res < 0)
+  {
+      fprintf(stderr,"xpcu_write_gpio failed\n");
+      return res;
+  }
+  res = xpcu_read_firmware_version(xpcu, buf);
+  if (res < 0)
+  {
+      fprintf(stderr,"xpcu_read_firmware_version:  failed\n");
+      return res;
+  }
+  res = xpcu_read_cpld_version(xpcu, buf);
+  if (res < 0)
+  {
+      fprintf(stderr,"xpcu_read_cpld_version:  failed\n");
+      return res;
+  }
+  if (verbose)
+  {
+      fprintf(stderr, "firmware version = 0x%02x%02x (%u)\n", 
+              buf[1], buf[0], buf[1]<<8| buf[0]);
+      fprintf(stderr, "CPLD version = 0x%02x%02x (%u)\n", 
+              buf[1], buf[0], buf[1]<<8| buf[0]);
+      if(hid)
 #ifdef __WIN32__
-    fprintf(stderr, "DLC HID = 0x%I64x\n", hid);
+          fprintf(stderr, "DLC HID = 0x%I64x\n", hid);
 #else
-    fprintf(stderr, "DLC HID = 0x%015Lx\n", hid);
+      fprintf(stderr, "DLC HID = 0x%015Lx\n", hid);
 #endif
+  }
   if(!buf[1] && !buf[0])
-    throw  io_exception(std::string("Warning: version '0' can't be correct."
-				    " Please try resetting the cable\n"));
+  {
+      fprintf(stderr,"Warning: version '0' can't be correct."
+              " Please try resetting the cable\n");
+      return 1;
+  }
   
   if (subtype == XPC_INTERNAL)
     {
-      if (xpcu_select_gpio(xpcu, 0)<0)
+        res = xpcu_select_gpio(xpcu, 0);
+      if (res < 0)
 	{
 	  usb_close(xpcu);
-	  throw  io_exception(std::string("Setting internal mode: ") );
+	  fprintf(stderr, "Error Setting internal mode: ");
+          return 2;
 	}
     }
   else
@@ -129,9 +160,11 @@ IOXPC::IOXPC(struct cable_t *cable, char const *serial)
       if (r<0)
         {
 	  usb_close(xpcu);
-	  throw  io_exception(std::string("Setting external mode: ") );
+	  fprintf(stderr, "Setting external mode: ");
+          return 3;
 	}
-    } 
+    }
+  return 0;
 }
 
 IOXPC::~IOXPC()

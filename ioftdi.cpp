@@ -1,6 +1,6 @@
 /* JTAG GNU/Linux FTDI FT2232 low-level I/O
 
-Copyright (C) 2005-2009 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
+Copyright (C) 2005-2011 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 Copyright (C) 2006 Dmitry Teytelman
 
 This program is free software; you can redistribute it and/or modify
@@ -44,7 +44,7 @@ IOFtdi::IOFtdi(bool u)
     ftdi_handle = 0;
 }
 
-int IOFtdi::Init(struct cable_t *cable, const char *serial, const char *dev)
+int IOFtdi::Init(struct cable_t *cable, const char *serial)
 {
   unsigned char   buf1[5];
   unsigned char   buf[9] = { SET_BITS_LOW, 0x00, 0x0b,
@@ -52,7 +52,7 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, const char *dev)
 			     SET_BITS_HIGH,0x00, 0x00};
   char *description = 0;
   char descstring[256];
-  unsigned int vendor = 0x403, product=0x6010;
+  unsigned int vendor = VENDOR_FTDI, product = DEVICE_DEF;
   unsigned int channel = 0;
   unsigned int dbus_data =0, dbus_en = 0xb, cbus_data= 0, cbus_en = 0;
   int res;
@@ -124,8 +124,6 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, const char *dev)
           p ++;
   }
   
-  fprintf(stderr,"Vendor 0x%04x\n", vendor);
-
   if (verbose)
   {
       fprintf(stderr, "Cable %s type %s VID 0x%04x PID %04x",
