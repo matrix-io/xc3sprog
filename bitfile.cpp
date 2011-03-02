@@ -644,6 +644,7 @@ const char * BitFile::styleToString(FILE_STYLE style)
       case STYLE_HEX_RAW: return "HEXRAW";
       case STYLE_MCS: return "MCS";
       case STYLE_MCS_REV: return "MCSREV";
+      case STYLE_JEDEC: return "JEDEC";
       case STYLE_AUTO: return "AUTO";
       default: return 0;
     }
@@ -663,6 +664,8 @@ int BitFile::styleFromString(const char *stylestr, FILE_STYLE *style)
     *style = STYLE_MCS;
   else if (!strcasecmp(stylestr, "MCSREV"))
     *style = STYLE_MCS_REV;
+  else if (!strcasecmp(stylestr, "JEDEC"))
+    *style = STYLE_JEDEC;
   else if (!strcasecmp(stylestr, "AUTO"))
     *style = STYLE_AUTO;
   else
