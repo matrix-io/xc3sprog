@@ -79,11 +79,16 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial)
       int len;
 
       if (q)
-          len = q-p-1;
+          len = q-p;
       else
           len = strlen(p);
       if (len>0)
-          strncpy(descstring, p, (len>256)?256:len);
+      {
+          int num;
+          num = (len>255)?255:len;
+          strncpy(descstring, p, num);
+          descstring[num] = 0;
+      }
       p = q;
       if(p)
           p ++;
