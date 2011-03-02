@@ -18,5 +18,5 @@ l_motctl      avr109  0x0403:0x6010:L_MOTCTL:1:0x00:0x00:0x00:0x00
 xpc           xpc     0x03fd:0x0008
 xpc_internal  xpc     0x03fd:0x0008
 llbbc08       fx2     0xfffe:0x0018
-pp            pp
-
+pp            pp      NULL
+dlc5          pp      NULL
