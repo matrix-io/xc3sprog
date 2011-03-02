@@ -70,8 +70,8 @@ void ctrl_c(int sig)
   do_exit = 1;
 }
 
-int programXC3S(Jtag &g, BitFile &file, bool verify, bool reconfig,
-		int family);
+int programXC3S(Jtag &g, int argc, char **args, bool verbose,
+                bool reconfig, int family);
 int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
                 FILE *fpout, FILE_STYLE out_style, const char *device,
                 int *chainpositions, int nchainpos);
@@ -79,8 +79,8 @@ int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
 		 const char *device);
 int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback,
 		const char *device);
-int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
-               bool reconfig,  bool readback, bool force, int test_count,
+int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool erase,
+               bool reconfig,  int test_count,
                char *bscanfile,int family, const char *device);
 
 /* Excercise the IR Chain for at least 10000 Times
@@ -812,9 +812,9 @@ int main(int argc, char **args)
     }
 
   if(spiflash)
-      return programSPI(jtag, argc, args, verbose, verify, reconfigure, 
-                        readback, force, test_count, bscanfile, family, 
-                        db.getDeviceDescription(chainpos));
+      return programSPI(jtag, argc, args, verbose, erase,
+                        reconfigure, test_count, 
+                        bscanfile, family, db.getDeviceDescription(chainpos));
   else if (manufacturer == MANUFACTURER_XILINX)
     {
       /* Probably XC4V and XC5V should work too. No devices to test at IKDA */
@@ -888,8 +888,8 @@ int main(int argc, char **args)
               }
 	      else 
               {
-                  return  programXC3S(jtag, file,
-                                      verify, reconfigure, family);
+                  return  programXC3S(jtag, argc, args, verbose,
+                                      reconfigure, family);
               }
 	    }
 	  catch(io_exception& e) {
@@ -1030,19 +1030,81 @@ ProgAlg * makeProgAlg(Jtag &jtag, unsigned long id)
     }
 }
 
-int programXC3S(Jtag &jtag, BitFile &file, bool verify, bool reconfig, int family)
+int programXC3S(Jtag &jtag, int argc, char** args,
+                bool verbose, bool reconfig, int family)
 {
 
-  if(verify)
-    {
-      fprintf(stderr, "Sorry, FPGA can't be verified (yet)\n");
-      return 1;
-    }
   ProgAlgXC3S alg(jtag, family);
+  int i;
+
   if(reconfig)
       alg.reconfig();
   else
-      alg.array_program(file);
+  {
+      for(i=0; i< argc; i++)
+      {
+          int res;
+          unsigned int bitfile_offset = 0;
+          unsigned int bitfile_length = 0;
+          char action = 'w';
+          FILE_STYLE bitfile_style = STYLE_BIT;
+          FILE *fp;
+          BitFile bitfile;
+          
+          fp = getFile_and_Attribute_from_name
+              (args[i], &action, NULL, &bitfile_offset,
+               &bitfile_style, &bitfile_length);
+          if (action != 'w')
+          {
+              if (verbose)
+              {
+                  fprintf(stderr,"Action %c not supported for XC3S\n", action);
+              }
+              continue;
+          }
+          if( bitfile_offset != 0)
+          {
+              if (verbose)
+              {
+                  fprintf(stderr,"Offset %d not supported for XC3S\n",
+                      bitfile_offset);
+              }
+              continue;
+          }
+          if( bitfile_length != 0)
+          {
+              if (verbose)
+              {
+                  fprintf(stderr,"Length %d not supported for XC3S\n",
+                      bitfile_length);
+              }
+              continue;
+          }
+          res = bitfile.readFile(fp, bitfile_style);
+          if (res != 0)
+          {
+              if (verbose)
+              {
+                  fprintf(stderr,"Reading Bitfile %s failed\n",
+                      args[i]);
+              }
+              continue;
+          }
+ 
+          if(verbose) 
+          {
+              fprintf(stderr, "Created from NCD file: %s\n",
+                      bitfile.getNCDFilename());
+              fprintf(stderr, "Target device: %s\n",
+                      bitfile.getPartName());
+              fprintf(stderr, "Created: %s %s\n",
+                      bitfile.getDate(), bitfile.getTime());
+              fprintf(stderr, "Bitstream length: %lu bits\n",
+                      bitfile.getLength());
+          }
+          alg.array_program(bitfile);
+      }
+  }
   return 0;
 }
 
@@ -1140,8 +1202,8 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
 }
 
 
-int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
-               bool reconfig,  bool readback, bool force, int test_count,
+int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool erase,
+               bool reconfig,  int test_count,
                char *bscanfile, int family, const char *device)
 {
     int i;
@@ -1149,18 +1211,13 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
     
     if (bscanfile)
     {
-        FILE_STYLE bscan_style = STYLE_BIT;
-        FILE *fp ;
-        BitFile  bscan_file;
-        
-        fp = getFile_and_Attribute_from_name
-            (bscanfile, NULL, NULL, 0, &bscan_style, 0 );
-        if(fp)
-        {
-            bscan_file.readFile(fp, bscan_style);
-            programXC3S(jtag, bscan_file, verify, 0, family);
-            fclose(fp);
-        }
+        programXC3S(jtag, 1, &bscanfile, verbose, 0, family);
+    }
+
+    if (alg.spi_flashinfo() != 1 && !reconfig)
+    {
+        fprintf(stderr,"ISF Bitfile probably not loaded\n");
+        return 2;
     }
 
     if (test_count)
@@ -1168,10 +1225,10 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
         alg.test(test_count);
         goto test_reconf;
     }
-    if (alg.spi_flashinfo() != 1 && !reconfig)
+
+    if(erase)
     {
-        fprintf(stderr,"ISF Bitfile probably not loaded\n");
-        return 2;
+        alg.erase();
     }
 
     for(i=0; i< argc; i++)
@@ -1181,7 +1238,7 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
         int ret = 0;
         char action = 'w';
         BitFile spifile;
-        FILE_STYLE  spifile_style;
+        FILE_STYLE  spifile_style = STYLE_BIT;
  
         FILE *spifile_fp = 
             getFile_and_Attribute_from_name
