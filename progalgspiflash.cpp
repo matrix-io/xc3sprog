@@ -773,7 +773,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
   offset = (pfile.getOffset()/pgsize)*pgsize;
   if (offset > pages *pgsize)
   {
-      fprintf(stderr,"Verify start outside PROM area, aborting\n");
+      fprintf(stderr,"Program start outside PROM area, aborting\n");
       return -1;
   }
   
@@ -789,7 +789,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
   }
   if( data_end > pages * pgsize)
   {
-      fprintf(stderr,"Verify outside PROM areas requested, clipping\n");
+      fprintf(stderr,"Program outside PROM areas requested, clipping\n");
       data_end = pages * pgsize;
   }
   for(i = offset ; i < data_end; i+= pgsize)
@@ -887,57 +887,67 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
 int ProgAlgSPIFlash::program_at45(BitFile &pfile)
 {
     int len = pfile.getLength()/8;
-    int i;
-    unsigned int page, read_page = 0;
+    unsigned int i, offset, data_end, data_page= 0;
     double max_page_program = 0.0;
     double delta;
     
-    page = pfile.getOffset()/pgsize;
-    if (page > pages)
+    offset = (pfile.getOffset()/pgsize)*pgsize;
+    if (offset > pages *pgsize)
     {
-        fprintf(stderr,"Write starting outside PROM area, aborting\n");
+        fprintf(stderr,"Program start outside PROM area, aborting\n");
         return -1;
     }
-    if ((page * pgsize + len) > pages * pgsize)
+    
+    if (pfile.getRLength() != 0)
     {
-        fprintf(stderr,"File too large for PROM, clipping\n");
-        len = pages * pgsize;
+        data_end = offset + pfile.getRLength();
+        len = pfile.getRLength();
     }
-    
-    buf[0] = 0x82;/* page program with builtin erase */
-    for(; page < (pfile.getOffset() +len)/pgsize; page++)
+    else
     {
-        int res;
-        int rlen = ((len- page*pgsize)>pgsize) ? pgsize : (len- page*pgsize);
-    
+        data_end = offset + pfile.getLength()/8;
+        len = pfile.getLength()/8;
+    }
+    if( data_end > pages * pgsize)
+    {
+        fprintf(stderr,"Program outside PROM areas requested, clipping\n");
+        data_end = pages * pgsize;
+    }
+    buf[0] = 0x82;/* page program with builtin erase */
+    for(i = offset ; i < data_end; i+= pgsize)
+    {
+        unsigned int j;
+        unsigned int rlen = ((data_end -i) > pgsize) ? pgsize : 
+            (data_end -i);
         if(jtag->getVerbose())
         {
-            fprintf(stderr, "\r                                                       \r"
-                    "Writing page %6d",page-1); 
+            fprintf(stderr, "\r\t\t\tWriting data page %6d/%6d",
+                    (i - offset + pgsize -1)/pgsize, (len + pgsize -1)/pgsize);
+            fprintf(stderr, " at flash page %6d", 
+                    (i + pgsize -1)/pgsize); 
             fflush(stderr);
         }
         
-        page2padd(buf, page, pgsize);
-        memcpy(buf+4,&pfile.getData()[read_page * pgsize], rlen);
-        res=spi_xfer_user1(NULL, 0, 0, buf, rlen, 4);
-        
+        page2padd(buf, i/pgsize, pgsize);
+        memcpy(buf+4,&pfile.getData()[i-offset], rlen);
+        spi_xfer_user1(NULL,0,0,buf, rlen, 4);
         /* Page Erase/Program takes up to 35 ms (t_pep, UG333.pdf page 43)*/
-        i = wait(AT45_READ_STATUS, 1, 35, &delta);
-        if (i != 0)
+        j = wait(AT45_READ_STATUS, 1, 35, &delta);
+        if(j != 0)
         {
-            fprintf(stderr, "                               \r"
-                    "Failed to programm page %d\n", page); 
+            fprintf(stderr,"\nPage Program failed for flashpage %6d\n", 
+                    i/pgsize +1);
             return -1;
         }
-        if (delta > max_page_program)
-	    max_page_program= delta;
-        read_page++;
+        else
+        {
+            if (delta > max_page_program)
+                max_page_program= delta;
+	  
+	}
+        data_page++;
     }
-    if(jtag->getVerbose())
-    {
-        fprintf(stderr, "\nMaximum Page erase/program time %.1f ms\n",
-	      max_page_program/1.0e3);
-    }
+ 
     return 0;
 }
 
