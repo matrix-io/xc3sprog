@@ -638,8 +638,11 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     byte *data = new byte[pgsize];
     byte buf[4] = {PAGE_READ, 0,0,0};
     
-    if (data == 0)
+    if (data == 0 || len == 0)
+    {
+        fprintf(stderr,"Program start outside PROM area, aborting\n");
         return -1;
+    }
     
     offset = (vfile.getOffset()/pgsize)*pgsize;
     if (offset > pages* pgsize)
@@ -663,6 +666,7 @@ int ProgAlgSPIFlash::verify(BitFile &vfile)
     {
         fprintf(stderr,"Verify outside PROM areas requested, clipping\n");
         data_end = pages * pgsize;
+        len = data_end - offset;
     }
     l = -pgsize;
     for(i = offset; i < data_end+pgsize; i+= pgsize)
@@ -770,6 +774,12 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
   double max_page_program = 0.0;
   double delta;
 
+  if (len == 0)
+  {
+      fprintf(stderr,"Sourcefile empty, aborting\n");
+      return -1;
+  }
+    
   offset = (pfile.getOffset()/pgsize)*pgsize;
   if (offset > pages *pgsize)
   {
