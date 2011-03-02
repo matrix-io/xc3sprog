@@ -75,8 +75,8 @@ int programXC3S(Jtag &g, int argc, char **args, bool verbose,
 int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
                 FILE *fpout, FILE_STYLE out_style, const char *device,
                 int *chainpositions, int nchainpos);
-int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
-		 const char *device);
+int programXC95X(Jtag &jtag, unsigned long id, int argc, char **args, 
+                 bool verbose, bool erase, const char *device);
 int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback,
 		const char *device);
 int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool erase,
@@ -771,7 +771,7 @@ int main(int argc, char **args)
       usage(false);
     }
 
-  if (args[0] && !spiflash)
+  if (args[0] && !spiflash && (family == FAMILY_XCF))
     {
       if (readback)
 	{
@@ -899,37 +899,7 @@ int main(int argc, char **args)
 	}
       else if( family == 0x4b) /* XC95XL XC95XV*/
 	{
-	  int size = (id & 0x000ff000)>>13;
-	  JedecFile  file;
-	  ProgAlgXC95X alg(jtag, size);
-          if (erase)
-              return alg.erase();
-	  if (!readback)
-	    {
-	      int res = file.readFile(fpin);
-	      fclose (fpin);
-	      if (res)
-		{
-		  fprintf(stderr, "Probably no JEDEC File, aborting\n");
-		  return 2;
-		}
-		  
-	      if (file.getLength() == 0)
-		{
-		  fprintf(stderr, "Short JEDEC File, aborting\n");
-		  return 3;
-		}
-	      if(strncasecmp(db.getDeviceDescription(chainpos), file.getDevice(), 
-			 sizeof(db.getDeviceDescription(chainpos))) !=0)
-		{
-		  fprintf(stderr, "Incompatible Jedec File for Device %s\n"
-			 "Actual device in Chain is %s\n", 
-			 file.getDevice(), db.getDeviceDescription(chainpos));
-		  return 4;
-		}
-	    }
-	  
-	  return programXC95X(alg, file, verify, fpout,
+	  return programXC95X(jtag, id, argc,args, verbose, erase,
 			      db.getDeviceDescription(chainpos));
 	}
       else if ((family & 0x7e) == 0x36) /* XC2C */
@@ -1291,25 +1261,76 @@ test_reconf:
     return 0;
 }
 
-int programXC95X(ProgAlgXC95X &alg, JedecFile &file, bool verify, FILE *fp,
-		 const char *device)
+int programXC95X(Jtag &jtag, unsigned long id, int argc, char **args, 
+                 bool verbose, bool erase, const char *device)
 {
-  if(fp) /* Readback requested*/
+    int i, size = (id & 0x000ff000)>>13;
+    ProgAlgXC95X alg(jtag, size);
+    
+    if (erase)
     {
-      alg.array_read(file);
-      file.saveAsJed(device, fp);
-      return 0;
+        alg.erase();
     }
-  if (!verify)
+    
+    for (i = 0; i< argc; i++)
     {
-      if (!alg.erase())
-	{
-	  fprintf(stderr, "Erase failed\n");
-	  return 1;
-	}
-      alg.array_program(file);
+        int ret = 0;
+        unsigned int jedecfile_offset = 0;
+        unsigned int jedecfile_rlength = 0;
+        char action = 'w';
+        JedecFile  jedecfile;
+        FILE_STYLE  jedecfile_style= STYLE_JEDEC;
+             
+        if (i>1)
+        {
+            fprintf(stderr, "Multiple arguments not supported: %s\n", args[i]);
+            continue;
+        }
+        
+        FILE *jedecfile_fp = 
+            getFile_and_Attribute_from_name
+            (args[i], &action, NULL, &jedecfile_offset,
+             &jedecfile_style, &jedecfile_rlength);
+        
+        if (jedecfile_offset != 0)
+        {
+            fprintf(stderr, "Offset %d not supported, Using 0\n", 
+                    jedecfile_offset);
+            jedecfile_offset = 0;
+        }
+        if (jedecfile_rlength != 0)
+        {
+            fprintf(stderr, "Readlength %d not supported, Using 0\n", 
+                    jedecfile_rlength);
+            jedecfile_rlength = 0;
+        }
+        if(jedecfile_style != STYLE_JEDEC)
+        {
+            fprintf(stderr, "Style %s not supported, skipping\n",
+                    BitFile::styleToString(jedecfile_style));
+        }
+        if (action == 'r')
+        {
+            alg.array_read(jedecfile);
+            jedecfile.saveAsJed(device, jedecfile_fp);
+        }
+        else if (action == 'v' || action == 'w') 
+        {
+            jedecfile.readFile(jedecfile_fp);
+            if (action == 'w')
+            {
+                if (!erase)
+                {
+                    ret = alg.erase();
+                }
+                alg.array_program(jedecfile);
+            }
+            ret = alg.array_verify(jedecfile);
+        }
+        if(ret)
+            return ret;
     }
-  return alg.array_verify(file);
+    return 0;
 }
 
 int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback, const char *device)
