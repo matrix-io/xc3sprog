@@ -82,16 +82,6 @@ ProgAlgSPIFlash::~ProgAlgSPIFlash(void)
     fclose(fp_dbg);
 }
 
-int spi_cfg[] = {
-    // sreg[5..2], pagesize, pages, pages/sectors
-    3, 264, 512, 128, // XC3S50AN
-    7, 264, 2048, 256, // XC3S200AN / XC3S400AN
-    9, 264, 4096, 256,// XC3S700AN
-    11, 528, 4096, 256, // XC3S1400AN
-    13, 528, 8192, 256, /* AT45DB321*/
-    -1, 0, 0, 0
-};
-
 int ProgAlgSPIFlash::spi_flashinfo_s33(unsigned char *buf) 
 {
   fprintf(stderr, "Found Intel Device, Device ID 0x%02x%02x\n",
@@ -253,14 +243,33 @@ int ProgAlgSPIFlash::spi_flashinfo_w25(unsigned char *buf)
   return 1;
 }
 
+struct at45_t
+{
+    unsigned int id;
+    int pgsize;
+    int alt_pagesize;
+    int pages;
+    int pages_per_sector;
+    char chipname[12];
+};
+
 int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf) 
  
 {
   byte fbuf[128];
   int idx;
+#define  NUM_AT45  7
+  struct at45_t at45chips[NUM_AT45] =
+      {
+          {    3,  264,  256,  512, 128, "AT45DB011"},
+          {    7,  164,  256, 2048, 256, "AT45DB041"},
+          {    9,  264,  256, 4096, 256, "AT45DB801"},
+          { 0x0b,  528,  512, 4096, 256, "AT45DB161"},
+          { 0x0d,  528,  512, 8192, 256, "AT45DB321"},
+          { 0x0f, 1056, 1024, 8192, 256, "AT45DB641"},
+          { 0xff,    0,    0,    0,   0, "UNKNOWN"  }
+      };
   
-  fprintf(stderr, "Found Atmel Device, Device ID 0x%02x%02x\n",
-	  buf[1], buf[2]);
   // read result
   fbuf[0]= AT45_READ_STATUS;
   spi_xfer_user1(NULL,0,0,fbuf, 2, 1);
@@ -270,20 +279,22 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf)
   fbuf[0] = bitRevTable[fbuf[0]];
   fbuf[1] = bitRevTable[fbuf[1]];
   fprintf(stderr, "status: %02x\n",fbuf[1]);
-        
-  for(idx=0;spi_cfg[idx] != -1;idx+=3) {
-    if(spi_cfg[idx] == ((fbuf[0]>>2)&0x0f))
+      
+  for(idx=0; idx < NUM_AT45;idx++) {
+    if(at45chips[idx].id == ((fbuf[0]>>2)&0x0f))
       break;
   }
   
-  if(spi_cfg[idx] == -1) {
+  if(idx ==  NUM_AT45) {
     fprintf(stderr, "don't know that flash or status b0rken!\n");
     return -1;
   }
   
-  pgsize=spi_cfg[idx+1];
-  pages=spi_cfg[idx+2];
-  pages_per_sector = spi_cfg[idx+3];
+  fprintf(stderr, "Found Atmel Device, Device ID 0x%02x%02x: %s\n",
+	  buf[1], buf[2], at45chips[idx].chipname);
+  pgsize=at45chips[idx].pgsize;
+  pages=at45chips[idx].pages;
+  pages_per_sector = at45chips[idx].pages_per_sector;
   pages_per_block = 8;
   
   /* try to read the OTP Number */ 
