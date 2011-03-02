@@ -368,100 +368,168 @@ void usage(bool all_options)
   exit(255);
 }
 
-/* Parse a filename in the type aaaa.bb@0x10000#0x10000%rawhex
- * for offset(@), length(#)  and style(%)
+/* Parse a filename in the type aaaa.bb:action:0x10000|section:0x10000:rawhex:0x1000
+ * for name, action, offset|area, style, length 
  * 
  * return the Open File
+ *
+ * possible action
+ * w: erase whole area, write and verify
+ * W: Write with auto-sector erase and verify
+ * v: Verify device against filename
+ * r: Read from device and write to file, don't overwrite exixting file
+ * R: Read from device and write to file, overwrite exixting file
+ *
+ * possible sections:
+ * f:
+ * a:
+ * 
  */
-FILE *getFile_and_Attribute_from_name(const char *name, bool readback, int force, 
-                                      int *offset, int *length, FILE_STYLE * style)
+FILE *getFile_and_Attribute_from_name(
+    char *name, char * action, char * section, 
+    unsigned int *offset, FILE_STYLE *style, unsigned int *length)
 {
     FILE *ret;
-    int i, len = 0, off = 0, res;
-    FILE_STYLE st =STYLE_BIT;
-    char *p, *q, *r, *buf;
+    char filename[256];
+    char *p = name, *q;
+    int len;
+    char localaction = 'w';
+    char localsection = 'a';
+    unsigned int localoffset = 0;
+    FILE_STYLE localstyle=STYLE_BIT;
+    unsigned int locallength = 0;
     
-    if(!name)
+    if(!p)
         return NULL;
-
-    buf = (char*) malloc(strlen(name) +1);
-    if (!buf)
+    else
     {
-        fprintf(stderr,"Malloc failed\n");
-        return NULL;
+        q = strchr(p,':');
+        
+        if (q)
+            len = q-p;
+        else
+            len = strlen(p);
+        if (len>0)
+        {
+            int num = (len>255)?255:len;
+            strncpy(filename, p, num);
+            filename[num] = 0;
+        }
+        else
+            return NULL;
+        p = q;
+        if(p)
+            p ++;
     }
-    strcpy(buf, name);
-    
-    p = strchr(buf,'@');
-    q = strchr(buf, '%');
-    r = strchr(buf, '#');
-    
-    if (p )
-        *p = 0;
-    if (q )
-        *q = 0;
-    if (r)
-        *r = 0;
- 
-    if (p)
+    /* Action*/
+    if(p)
     {
-        res = sscanf(p+1,"%i", &i);
-        if (res == 1)
-            off = i;
+        q = strchr(p,':');
+        
+        if (q)
+            len = q-p;
+        else
+            len = strlen(p);
+        if (len == 1)
+            localaction = *p;
+        else
+            localaction = 'w';
+        if (action)
+            *action =  tolower(localaction);
+        p = q;
+        if(p)
+            p ++;
     }
-         
-    if(q && (BitFile::styleFromString(q+1, &st) != 0))
+    /*Offset/Area*/
+    if(p)
     {
-        fprintf(stderr, "\nUnknown format \"%s\"\n", q+1);
-        free(buf);
-        usage(false);
-    }
-    
-    if (r)
-    {
-        res = sscanf(r+1,"%i", &i);
-        if (res == 1)
-            len = i;
-    }
-
-    if(length)
-        *length = len;
-    if(offset)
-        *offset = off;
-    if(style)
-        *style = st;
-         
-    if (readback)
-    {
-        if (buf[0] == '-')
-	    ret= stdout;
+        q = strchr(p,':');
+        if (q)
+            len = q-p;
+        else
+            len = strlen(p);
+        if ((len == 1) && ! (isdigit(*p)))
+        {
+            localsection = *p;
+            if (section)
+                *section = localsection;
+        }
         else
         {
+            localoffset = strtol(p, NULL, 0);
+            if (offset)
+                *offset = localoffset;
+        }
+        p = q;
+        if(p)
+            p ++;
+    }
+    /*Style*/
+    if(p )
+    {
+        int res = 0;
+        q = strchr(p,':');
+        
+        if (q)
+            len = q-p;
+        else
+            len = strlen(p);
+        if (len)
+            res = BitFile::styleFromString(p, &localstyle);
+        if(res)
+        {
+            fprintf(stderr, "\nUnknown format \"%*s\"\n", len, p);
+            return 0;
+        }
+        if (len && style)
+            *style = localstyle;
+        p = q;
+        if(p)
+            p ++;
+    }
+    /*Length*/
+    
+    if(p)
+    {
+        locallength = strtol(p, NULL, 0);
+        p = strchr(p,':');
+        if (length)
+            *length = locallength;
+        if(p)
+            p ++;
+    }
+    
+    if  (tolower(localaction) == 'r')
+    {
+        if (filename[0] == '-')
+            ret= stdout;
+        else
+        {
+            int res; 
             struct stat  stats;
-            stat(buf, &stats);
-            if (!force && stats.st_size !=0)
-                {
-                    fprintf(stderr, "File %s already exists. Aborting\n", buf);
-                    return NULL;
-                }
-            ret=fopen(buf,"wb");
+            res = stat(filename, &stats);
+            if ((res == 0) && (localaction == 'r') && stats.st_size !=0)
+            {
+                fprintf(stderr, "File %s already exists. Aborting\n", filename);
+                return NULL;
+            }
+            ret=fopen(filename,"wb");
             if(!ret)
-                fprintf(stderr, "Unable to open File %s. Aborting\n", buf);
+                fprintf(stderr, "Unable to open File %s. Aborting\n", filename);
         }
     }
     else
     {
-        if (buf[0] == '-')
+        if (filename[0] == '-')
             ret = stdout;
         else
         {
-            ret = fopen(buf,"rb");
+            ret = fopen(filename,"rb");
             if(!ret)
-                fprintf(stderr, "Can't open datafile %s: %s\n", buf, 
+                fprintf(stderr, "Can't open datafile %s: %s\n", filename, 
                         strerror(errno));
         }
     }
-    free(buf);
     return ret;
 }
 
@@ -1081,12 +1149,12 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
     
     if (bscanfile)
     {
-        FILE_STYLE bscan_style;
+        FILE_STYLE bscan_style = STYLE_BIT;
         FILE *fp ;
         BitFile  bscan_file;
         
         fp = getFile_and_Attribute_from_name
-            (bscanfile, 0, 0, NULL, NULL, &bscan_style);
+            (bscanfile, NULL, NULL, 0, &bscan_style, 0 );
         if(fp)
         {
             bscan_file.readFile(fp, bscan_style);
@@ -1100,18 +1168,6 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
         alg.test(test_count);
         goto test_reconf;
     }
-/*validate all arguments */
-    for(i=0; i< argc; i++)
-    {
-        FILE *fp = 
-            getFile_and_Attribute_from_name(args[i], readback, force , NULL,
-                                            NULL, NULL);
-        if(!fp)
-            return 1;
-        else
-            fclose(fp);
-    }    
-        
     if (alg.spi_flashinfo() != 1 && !reconfig)
     {
         fprintf(stderr,"ISF Bitfile probably not loaded\n");
@@ -1120,22 +1176,30 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
 
     for(i=0; i< argc; i++)
     {
-        int spifile_offset;
-        int spifile_length;
+        unsigned int spifile_offset = 0;
+        unsigned int spifile_rlength = 0;
+        int ret = 0;
+        char action = 'w';
         BitFile spifile;
         FILE_STYLE  spifile_style;
+ 
         FILE *spifile_fp = 
             getFile_and_Attribute_from_name
-            (args[i], readback, force ,&spifile_offset,
-             &spifile_length, &spifile_style);
+            (args[i], &action, NULL, &spifile_offset,
+                 &spifile_style, &spifile_rlength);
         if(!spifile_fp)
             continue;
         spifile.setOffset(spifile_offset);
-        spifile.setRLength(spifile_length);
-        if (readback)
+        spifile.setRLength(spifile_rlength);
+        if (action == 'r')
         {
             alg.read(spifile);
             spifile.saveAs(spifile_style, device, spifile_fp);
+        }
+        else if (action == 'v')
+        {
+            spifile.readFile(spifile_fp, spifile_style);
+            ret = alg.verify(spifile);
         }
         else
         {
@@ -1152,11 +1216,14 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool verify,
                 fprintf(stderr, "Bitstream length: %lu bits\n",
                         spifile.getLength());
             }
-            if (!verify && alg.program(spifile) <0 )
-                return 1;
-            if (alg.verify(spifile) != 0)
-                return 2;
+            ret = alg.program(spifile);
+            if (ret == 0 )
+                ret = alg.verify(spifile);
         }
+        if (spifile_fp)
+            fclose(spifile_fp);
+        if (ret != 0)
+            return ret;
     }
 test_reconf:
     if(reconfig)
