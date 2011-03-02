@@ -54,15 +54,13 @@ CableDB::CableDB(const char *cf_name)
 	  fgets(buffer,256,fp);  // Get next line from file
 	  if (sscanf(buffer,"%s %s %s", 
                      alias, cabletype, options) == 3)
-	    {
-                fprintf(stderr,"Alias %s type %s opt %s\n",
-                        alias, cabletype, options);
-                cable.alias = new char[strlen(alias)+1];
-                strcpy(cable.alias,alias);
-                cable.cabletype = getCableType(cabletype);
-                cable.optstring = new char[strlen(options)+1];
-                strcpy(cable.optstring,options);
-                cable_db.push_back(cable);
+          {
+              cable.alias = new char[strlen(alias)+1];
+              strcpy(cable.alias,alias);
+              cable.cabletype = getCableType(cabletype);
+              cable.optstring = new char[strlen(options)+1];
+              strcpy(cable.optstring,options);
+              cable_db.push_back(cable);
 	    }
 	}
       fclose(fp);
@@ -90,8 +88,6 @@ CableDB::CableDB(const char *cf_name)
             if (sscanf(buffer,"%s %s %s", 
                        alias, cabletype, options) == 3)
 	    {
-                fprintf(stderr,"Alias %s type %s opt %s\n",
-                        alias, cabletype, options);
                 cable.alias = new char[strlen(alias)+1];
                 strcpy(cable.alias,alias);
                 cable.cabletype = getCableType(cabletype);
