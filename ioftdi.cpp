@@ -89,6 +89,7 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial)
           strncpy(descstring, p, num);
           descstring[num] = 0;
       }
+      description = descstring;
       p = q;
       if(p)
           p ++;
