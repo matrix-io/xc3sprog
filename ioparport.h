@@ -43,7 +43,7 @@ class IOParport : public IOBase
 
  public:
   IOParport();
-  int Init(struct cable_t cable, char const *dev);
+  int Init(struct cable_t *cable, const char *dev);
   ~IOParport();
   void tx(bool tms, bool tdi);
   bool txrx(bool tms, bool tdi);
