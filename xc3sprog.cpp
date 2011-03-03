@@ -77,8 +77,9 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
                 int *chainpositions, int nchainpos);
 int programXC95X(Jtag &jtag, unsigned long id, int argc, char **args, 
                  bool verbose, bool erase, const char *device);
-int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback,
-		const char *device);
+int programXC2C(Jtag &jtag, unsigned int id, int argc, char ** args, 
+                bool verbose, bool erase, const char *mapdir,
+                const char *device);
 int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool erase,
                bool reconfig,  int test_count,
                char *bscanfile,int family, const char *device);
@@ -904,66 +905,8 @@ int main(int argc, char **args)
 	}
       else if ((family & 0x7e) == 0x36) /* XC2C */
 	{
-	  int size_ind = (id & 0x001f0000)>>16;
-	  BitFile  file;
-	  MapFile_XC2C map;
-	  JedecFile  fuses;
-	  bool map_available = false;
-	  int res;
-
-	  if (map.loadmapfile(mapdir, db.getDeviceDescription(chainpos)))
-	    fprintf(stderr, "Failed to load Mapfile %s, aborting\n"
-		    "Only Bitfile can be handled, e.g. read back, verified and proframmed in other device\n",
-		    map.GetFilename());
-	  else
-	    map_available = true;
-	  
-	  if (!readback)
-	    {
-	      if (map_available)
-		{
-		  int res = fuses.readFile(fpin);
-		  fclose (fpin);
-		  if (res)
-		    {
-		      fprintf(stderr, "Probably no JEDEC File, aborting\n");
-		      return 2;
-		    }
-		  map.jedecfile2bitfile(&fuses, &file);
-		}
-	      else
-		{
-		  file.readFile(fpin, in_style);
-		  fclose(fpin);
-		  if (file.getLength() == 0)
-		    {
-		      fprintf(stderr, "Probably no Bitfile, aborting\n");
-		      return 2;
-		    }
-		}
-	      if(strncmp(db.getDeviceDescription(chainpos),
-			 (map_available)?fuses.getDevice():file.getPartName(),
-			 sizeof("XC2CXX")) !=0)
-                {
-                  fprintf(stderr, "Incompatible File for Device %s\n"
-                         "Actual device in Chain is %s\n", 
-			  (map_available)?fuses.getDevice():file.getPartName(), 
-			  db.getDeviceDescription(chainpos));
-                  return 3;
-                }
-	    }
-	  ProgAlgXC2C alg(jtag, size_ind);
-	  res = programXC2C(alg, file, verify, readback, db.getDeviceDescription(chainpos));
-	  if (res)
-	    return res;
-	  if (map_available)
-	    {
-	      map.bitfile2jedecfile(&file, &fuses);
-	      fuses.saveAsJed( db.getDeviceDescription(chainpos), fpout);
-	    }
-	  else
-	    file.saveAs(out_style, db.getDeviceDescription(chainpos), fpout);
-	  return 0;
+            return programXC2C(jtag, id, argc, args, verbose, erase,
+                               mapdir, db.getDeviceDescription(chainpos));
 	}
       else 
 	{
@@ -1333,29 +1276,143 @@ int programXC95X(Jtag &jtag, unsigned long id, int argc, char **args,
     return 0;
 }
 
-int programXC2C(ProgAlgXC2C &alg, BitFile &file, bool verify, bool readback, const char *device)
+int programXC2C( Jtag &jtag, unsigned int id, int argc, char ** args, 
+                 bool verbose, bool erase, const char *mapdir,
+                 const char *device)
 {
-  if(readback) /* Readback requested*/
+    int i, ret;
+    int size_ind = (id & 0x001f0000)>>16;
+    bool map_available = false;
+    MapFile_XC2C map;
+ 
+    if (map.loadmapfile(mapdir, device))
     {
-      alg.array_read(file);
-      return 0;
+        fprintf(stderr, "Failed to load Mapfile %s, aborting\n"
+                "Only Bitfile can be handled, e.g. read back, "
+                "verified and programmed in other device\n",
+                map.GetFilename());
     }
-  if (!verify)
+    else
+        map_available = true;
+    
+    if (erase)
     {
-      alg.erase();
-      if (alg.blank_check())
-	{
-	  fprintf(stderr, "Erase failed\n");
-	  return 1;
-	}
-      alg.array_program(file);
+        ProgAlgXC2C alg(jtag, size_ind);
+        alg.erase();
+        ret = alg.blank_check();
+        if (ret != 0)
+        {
+            fprintf(stderr,"Erase failed\n");
+            return ret;
+        }
     }
-  if(alg.array_verify(file))
+    
+    for (i = 0; i< argc; i++)
     {
-      fprintf(stderr, "Verify failed\n");
-      return 1;
+        int ret = 0;
+        unsigned int file_offset = 0;
+        unsigned int file_rlength = 0;
+        char action = 'w';
+        BitFile  file;
+        JedecFile  fuses;
+        FILE_STYLE file_style= (map_available)?STYLE_JEDEC:STYLE_BIT;
+             
+        FILE *fp = 
+            getFile_and_Attribute_from_name
+            (args[i], &action, NULL, &file_offset,
+             &file_style, &file_rlength);
+        
+        if (i>1)
+        {
+            fprintf(stderr, "Multiple arguments not supported: %s\n", args[i]);
+            continue;
+        }
+        
+        if (file_offset != 0)
+        {
+            fprintf(stderr, "Offset %d not supported, Using 0\n", file_offset);
+            file_offset = 0;
+        }
+        if (file_rlength != 0)
+        {
+            fprintf(stderr, "Readlength %d not supported, Using 0\n", 
+                    file_rlength);
+            file_rlength = 0;
+        }
+        if(action == 'r') /* Readback requested*/
+        {
+            ProgAlgXC2C alg(jtag, size_ind);
+
+            alg.array_read(file);
+            if (map_available)
+            {
+                map.bitfile2jedecfile(&file, &fuses);
+                fuses.saveAsJed( device, fp);
+            }
+            else
+                file.saveAs(file_style, device, fp);
+            ret = 0;
+        }
+        else if (action == 'v' || action == 'w')
+        {
+            /* Load file */
+            if (map_available)
+            {
+                ret = fuses.readFile(fp);
+                if (ret)
+                    fprintf(stderr, "Probably no JEDEC File, aborting\n");
+                else
+                    /*FIXME ret = */
+                    map.jedecfile2bitfile(&fuses, &file);
+            }
+            else 
+            {
+                fprintf(stderr,"Reading style %s\n",
+                        file.styleToString(file_style));
+                file.readFile(fp, file_style);
+                if (file.getLength() == 0)
+                {
+                    fprintf(stderr, "Probably no Bitfile, aborting\n");
+                    return 2;
+                }
+            }
+            if(strncmp(device,
+                       (map_available)?fuses.getDevice():file.getPartName(),
+                       sizeof("XC2CXX")) !=0)
+            {
+                fprintf(stderr, "Incompatible File for Device %s\n"
+                        "Actual device in Chain is %s\n", 
+                            (map_available)?fuses.getDevice():
+                        file.getPartName(), 
+                        device);
+                ret = 3;
+            }
+            
+            if (ret == 0)
+            {
+                ProgAlgXC2C alg(jtag, size_ind);
+
+                if(action == 'w')
+                {
+                    if (!erase)
+                    {
+                        alg.erase();
+                        ret = alg.blank_check();
+                    }
+                    if (ret == 0)
+                    {
+                        alg.array_program(file);
+                    }
+                }
+                ret = alg.array_verify(file);
+                alg.done_program();
+            }
+        }
+ 
+        if(fp)
+            fclose(fp);
+        if (ret)
+            return ret;
     }
-  if(!verify)
-    alg.done_program();
-  return 0;
+    return 0;
 }

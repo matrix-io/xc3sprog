@@ -558,8 +558,6 @@ void JedecFile::saveAsJed(const char  *device, FILE *fp)
    for(i=0; i<(jed.fuse_count/8 + ((jed.fuse_count%8)?1:0)); i++)
      chksum += jed.fuse_list[i];
   fprintf(fp, "C%04X*\n%c0000\n", chksum, 3);
-  fclose(fp);
-  
 }
 
 void JedecFile::setLength(unsigned int f_count)
