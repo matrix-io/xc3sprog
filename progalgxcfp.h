@@ -23,6 +23,7 @@ class ProgAlgXCFP : public ProgAlg
   unsigned long idcode;
   unsigned int narray;
   unsigned int block_size;
+  virtual int erase(int array_mask);
  public:
   ProgAlgXCFP(Jtag &j, unsigned long id);
   virtual ~ProgAlgXCFP() { }
