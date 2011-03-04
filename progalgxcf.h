@@ -49,8 +49,8 @@ class ProgAlgXCF : public ProgAlg
   static const byte BIT4;
 
   Jtag *jtag;
-  int block_size;  
-  int size;
+  unsigned int block_size;  
+  unsigned int size;
   bool use_optimized_algs;
  public:
   ProgAlgXCF(Jtag &j, int si);

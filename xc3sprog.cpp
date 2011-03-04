@@ -72,9 +72,9 @@ void ctrl_c(int sig)
 
 int programXC3S(Jtag &g, int argc, char **args, bool verbose,
                 bool reconfig, int family);
-int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
-                FILE *fpout, FILE_STYLE out_style, const char *device,
-                int *chainpositions, int nchainpos);
+int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
+               bool verbose, bool erase, bool reconfigure,
+               const char *device, int *chainpositions, int nchainpos);
 int programXC95X(Jtag &jtag, unsigned long id, int argc, char **args, 
                  bool verbose, bool erase, const char *device);
 int programXC2C(Jtag &jtag, unsigned int id, int argc, char ** args, 
@@ -569,8 +569,6 @@ int main(int argc, char **args)
   DeviceDB db(devicedb);
   CableDB cabledb("");
   std::auto_ptr<IOBase>  io;
-  FILE *fpin =0;
-  FILE *fpout = 0;
   int res;
 
   get_os_name(osname, sizeof(osname));
@@ -772,46 +770,6 @@ int main(int argc, char **args)
       usage(false);
     }
 
-  if (args[0] && !spiflash && (family == FAMILY_XCF))
-    {
-      if (readback)
-	{
-	  if (*args[0] == '-')
-	    fpout = stdout;
-	  else
-	    {
-                struct stat  stats;
-                stat(args[0], &stats);
-                if (!force && stats.st_size !=0)
-                {
-                    fprintf(stderr, "File %s already exists. Aborting\n", args[0]);
-                    return 1;
-                }
-                fpout=fopen(args[0],"wb");
-                if(!fpout)
-		{
-		  fprintf(stderr, "Unable to open File %s. Aborting\n", args[0]);
-		  return 1;
-		}
-	    }
-	}
-      else
-	{
-	  if (*args[0] == '-')
-	    fpin = stdin;
-	  else
-	    {
-	      fpin=fopen(args[0],"rb");
-	      if(!fpin)
-		{
-		  fprintf(stderr, "Can't open datafile %s: %s\n", args[0], 
-			  strerror(errno));
-		  return 1;
-		}
-	    }
-	}
-    }
-
   if(spiflash)
       return programSPI(jtag, argc, args, verbose, erase,
                         reconfigure, test_count, 
@@ -826,7 +784,6 @@ int main(int argc, char **args)
 	  (family == FAMILY_XC3SAN) ||
 	  (family == FAMILY_XC3SD) ||
 	  (family == FAMILY_XC6S) ||
-	  (family == FAMILY_XCF) ||
 	  (family == FAMILY_XC2V) ||
           (family == FAMILY_XC5VLX) ||
           (family == FAMILY_XC5VLXT) ||
@@ -834,70 +791,16 @@ int main(int argc, char **args)
           (family == FAMILY_XC5VFXT) ||
           (family == FAMILY_XC5VTXT)
 	  )
-	{
-	  try 
-	    {
-	      BitFile  file;
-              file.setOffset(offset);
-              file.setRLength(length);
-	      if (fpin)
-		{
-		  file.readFile(fpin, in_style);
-		  fclose(fpin);
-		  if(verbose) 
-		    {
-		      fprintf(stderr, "Created from NCD file: %s\n",
-			      file.getNCDFilename());
-		      fprintf(stderr, "Target device: %s\n",
-			      file.getPartName());
-		      fprintf(stderr, "Created: %s %s\n",
-			      file.getDate(),file.getTime());
-		      fprintf(stderr, "Bitstream length: %lu bits\n",
-			      file.getLength());
-		    }      
-		  if (family == FAMILY_XCF)
-		    {
-		      for(int i = 1; i < argc; i++) 
-			{
-			  char *end;
-			  
-			  unsigned long const  val = strtoul(args[i], &end, 0);
-			  unsigned long        cnt = 1;
-			  switch(*end) {
-			  case '*':
-			  case 'x':
-			  case 'X':
-			    cnt = strtoul(end+1, &end, 0);
-			  }
-			  if(*end == '\0')  file.append(val, cnt);
-			  else  file.append(args[i]);
-			}
-
-		      if(verbose) 
-			{
-			  printf("Bitstream length with appended data: %lu bits\n", 
-				 file.getLength());
-			}
-		    }
-		}
-	      if (family == FAMILY_XCF)
-              {
-                  return programXCF(jtag, db, file, verify, reconfigure,
-                                    fpout, out_style,
-                                    db.getDeviceDescription(chainpos),
-                                    chainpositions, nchainpos);
-              }
-	      else 
-              {
-                  return  programXC3S(jtag, argc, args, verbose,
-                                      reconfigure, family);
-              }
-	    }
-	  catch(io_exception& e) {
-	    fprintf(stderr, "IOException: %s\n", e.getMessage().c_str());
-	    return  1;
-	  }
-	}
+          return  programXC3S(jtag, argc, args, verbose,
+                              reconfigure, family);
+  
+      else if (family == FAMILY_XCF)
+      {
+          return programXCF(jtag, db, argc, args, verbose,
+                            erase, reconfigure,
+                            db.getDeviceDescription(chainpos),
+                            chainpositions, nchainpos);
+      }
       else if( family == 0x4b) /* XC95XL XC95XV*/
 	{
 	  return programXC95X(jtag, id, argc,args, verbose, erase,
@@ -1021,20 +924,13 @@ int programXC3S(Jtag &jtag, int argc, char** args,
   return 0;
 }
 
-int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconfig,
-               FILE *fpout, FILE_STYLE out_style, const char *device,
-               int *chainpositions, int nchainpos)
+int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
+               bool verbose, bool erase, bool reconfigure,
+               const char *device, int *chainpositions, int nchainpos)
 {
   // identify all specified devices
   unsigned int total_size = 0;
-
-  if(reconfig)
-    {
-      unsigned long id = get_id(jtag, db, chainpositions[0]);
-      std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
-      alg->reconfig();
-      return 0;
-    }
+  int i, cur_filepos = 0;
 
   for (int i = 0; i < nchainpos; i++)
     {
@@ -1048,69 +944,133 @@ int programXCF(Jtag &jtag, DeviceDB &db, BitFile &file, bool verify, bool reconf
       std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
       total_size += alg->getSize();
     }
-  if (file.getLength() > total_size)
-    {
-      fprintf(stderr, "Length of bitfile (%lu bits) exceeds size of PROM devs (%u bits)\n", file.getLength(), total_size);
-    }
 
-  // process data
-  if (fpout)
-    file.setLength(total_size);
-  int cur_filepos = 0;
-  for (int i = 0; i < nchainpos; i++)
-    {
-      unsigned long id = get_id(jtag, db, chainpositions[i]);
-      std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
-      BitFile tmp_bitfile;
-      BitFile *cur_bitfile = (nchainpos == 1) ? &file : &tmp_bitfile;
-      if (fpout)
-        {
-          alg->read(*cur_bitfile);
-          if (nchainpos != 1)
-            {
-              // copy temp object to selected part of output file
-              assert(cur_filepos % 8 == 0);
-              assert(cur_bitfile->getLength() % 8 == 0);
-              memcpy(file.getData() + cur_filepos / 8, cur_bitfile->getData(), cur_bitfile->getLength() / 8);
-            }
-        }
-      else
-        {
-          if (nchainpos != 1)
-            {
-              // copy selected part of input file to temp object
-              int k = file.getLength() - cur_filepos;
-              if (k > alg->getSize())
-                k = alg->getSize();
-              assert(cur_filepos % 8 == 0);
-              assert(k % 8 == 0);
-              cur_bitfile->setLength(k);
-              memcpy(cur_bitfile->getData(), file.getData() + cur_filepos / 8, k / 8);
-            }
-          if (!verify)
-            {
-              if ((alg->erase() == 0) && (alg->program(*cur_bitfile) == 0))
-		alg->disable();
-	      else
-		return 1;
-            }
-          alg->verify(*cur_bitfile);
-          alg->disable();
-        }
-      cur_filepos += alg->getSize();
-    }
+  if (erase)
+  {
+      for ( i = 0; i < nchainpos; i++)
+      {
+          unsigned long id = get_id(jtag, db, chainpositions[i]);
+          std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
+          alg->erase();
+      }
+  }
 
-  // write output file
-  if (fpout)
-    file.saveAs(out_style, device, fpout);
+
+  for(i=0; i< argc; i++)
+  {
+      unsigned int promfile_offset = 0; /* Where to start in the XCF address space*/
+      unsigned int promfile_rlength = 0;/* How many bytes to read or full size*/
+      unsigned int promfile_remain = 0; 
+      char action = 'w';
+      BitFile promfile;
+      FILE_STYLE  promfile_style = STYLE_BIT;
+      
+      FILE *promfile_fp = 
+          getFile_and_Attribute_from_name
+          (args[i], &action, NULL, &promfile_offset,
+           &promfile_style, &promfile_rlength);
+      if(!promfile_fp)
+          continue;
+      promfile.setOffset(promfile_offset);
+      promfile.setRLength(promfile_rlength);
+
+      if ((promfile_offset + 
+           (promfile_rlength)?promfile_rlength:promfile.getLength()) > total_size)
+      {
+          fprintf(stderr, "Length of bitfile (%u bits) exceeds size of PROM devs\n", 
+                  total_size);
+          continue;
+      }
+      if (action == 'v' || action == 'w')
+      {
+          promfile.readFile(promfile_fp, promfile_style);
+      }
+      else if(action == 'r')
+      {
+          promfile.setLength((promfile_rlength)?promfile_rlength:total_size);
+      }
+
+      promfile_remain = (promfile_rlength)?(promfile_rlength):promfile.getLength();
+
+      for (int i = 0; i < nchainpos; i++)
+      {
+          unsigned long id = get_id(jtag, db, chainpositions[i]);
+          std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
+          unsigned int current_promsize =  alg->getSize();
+          unsigned int current_offset;
+          unsigned int current_RLenght;
+          BitFile tmp_bitfile;
+          BitFile *cur_bitfile = (nchainpos == 1) ? &promfile : &tmp_bitfile;
+
+          if(nchainpos != 1)
+          {
+              if(i == 0)
+                  current_offset = promfile_offset;
+              else
+                  current_offset = 0;
+              if ((current_offset + promfile_remain) < current_promsize)
+                  current_RLenght = current_offset + promfile_remain;
+              else
+                  current_RLenght = 0;
+              cur_bitfile->setOffset(current_offset);
+              cur_bitfile->setLength(current_promsize);
+              cur_bitfile->setRLength(current_RLenght);
+          }
+          
+          if (action == 'r')
+          {
+              alg->read(*cur_bitfile);
+              if (nchainpos != 1)
+              {
+                  // copy temp object to selected part of output file
+                  assert(cur_filepos % 8 == 0);
+                  assert(cur_bitfile->getLength() % 8 == 0);
+                  memcpy(promfile.getData() + cur_filepos / 8, cur_bitfile->getData(), 
+                         cur_bitfile->getLength() / 8);
+              }
+          }
+          else
+          {
+              if (nchainpos != 1)
+              {
+                  // copy selected part of input file to temp object
+                  int k = promfile.getLength() - cur_filepos;
+                  if (k > alg->getSize())
+                      k = alg->getSize();
+                  assert(cur_filepos % 8 == 0);
+                  assert(k % 8 == 0);
+                  cur_bitfile->setLength(k);
+                  memcpy(cur_bitfile->getData(), promfile.getData() + cur_filepos / 8, k / 8);
+              }
+              if (action == 'w')
+              {
+                  if ((alg->erase() == 0) && (alg->program(*cur_bitfile) == 0))
+                      alg->disable();
+                  else
+                      return 1;
+              }
+              alg->verify(*cur_bitfile);
+              alg->disable();
+          }
+          cur_filepos += alg->getSize();
+          if (current_RLenght >= promfile_remain)
+              break;
+          else
+              promfile_remain -=current_RLenght;
+      }
+
+      // write output file
+      if (action == 'r')
+          promfile.saveAs(promfile_style, device, promfile_fp);
+  }
 
   // send reconfiguration cmd to first device
-  if (!verify && !fpout)
-    {
+  if (reconfigure)
+  {
       unsigned long id = get_id(jtag, db, chainpositions[0]);
       std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
       alg->reconfig();
-    }
+  }
   return 0;
 }
 
