@@ -110,6 +110,7 @@ class BitFile
   int readFile(FILE *fp, FILE_STYLE in_style);
   
  public:
+  /* Offset and RLength are in bytes!*/
   inline void setOffset(int of){offset = of;}
   inline unsigned int getOffset(void){ return offset;}
   inline void setRLength(int lt){rlength = lt;}
