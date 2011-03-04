@@ -1042,9 +1042,17 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
                   cur_bitfile->setLength(k);
                   memcpy(cur_bitfile->getData(), promfile.getData() + cur_filepos / 8, k / 8);
               }
-              if (action == 'w')
+              if (action == 'w' || action == 'W')
               {
-                  if ((alg->erase() == 0) && (alg->program(*cur_bitfile) == 0))
+                  int res;
+                  if (action == 'w')
+                  {
+                      res = alg->erase();
+                      if (res)
+                          return res;
+                  }
+                  res = alg->program(*cur_bitfile);
+                  if(res)
                       alg->disable();
                   else
                       return 1;
