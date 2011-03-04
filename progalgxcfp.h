@@ -22,6 +22,7 @@ class ProgAlgXCFP : public ProgAlg
   Jtag *jtag;
   unsigned long idcode;
   unsigned int narray;
+  unsigned int block_size;
  public:
   ProgAlgXCFP(Jtag &j, unsigned long id);
   virtual ~ProgAlgXCFP() { }
