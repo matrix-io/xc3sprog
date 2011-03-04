@@ -74,8 +74,12 @@ int ProgAlgXCFP::getSize() const
     return narray * 32768 * 256;
 }
 
-
 int ProgAlgXCFP::erase()
+{
+    return erase((1<<narray) -1);
+}
+
+int ProgAlgXCFP::erase(int array_mask)
 {
   Timer timer;
   byte data[3];
@@ -91,7 +95,7 @@ int ProgAlgXCFP::erase()
 
   enable();
 
-  data[0] = 0x30 | ((1 << narray) - 1);
+  data[0] = 0x30 | array_mask;
   data[1] = 0x00;
   data[2] = 0x00;
 
