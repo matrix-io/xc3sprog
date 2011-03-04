@@ -54,6 +54,7 @@ ProgAlgXCFP::ProgAlgXCFP(Jtag &j, unsigned long id)
   jtag = &j;
   idcode = id;
 
+  block_size = 0x1000000;
   if (IDCODE_IS_XCF08P(idcode))
     narray = 1;
   else if (IDCODE_IS_XCF16P(idcode))
@@ -173,7 +174,7 @@ int ProgAlgXCFP::program(BitFile &file)
         {
           if (jtag->getVerbose())
             fprintf(stderr, "\rProgramming frames 0x%06lx to 0x%06lx     ",
-                    k*0x100000+i*32, k*0x100000+i*32+31);
+                    k*block_size+i*32, k*block_size+i*32+31);
 
           jtag->shiftIR(ISC_DATA_SHIFT);
           unsigned long p = (k * 32768 + i) * 256;
@@ -192,7 +193,7 @@ int ProgAlgXCFP::program(BitFile &file)
 
           if (i == 0)
             {
-              jtag->longToByteArray(k * 0x100000, data);
+              jtag->longToByteArray(k * block_size, data);
               jtag->shiftIR(ISC_ADDRESS_SHIFT);
               jtag->shiftDR(data, 0, 24);
               jtag->cycleTCK(1);
@@ -349,7 +350,7 @@ int ProgAlgXCFP::verify(BitFile &file)
       if (k * 32768 * 256 >= file.getLength())
         break;
 
-      jtag->longToByteArray(k * 0x100000, data);
+      jtag->longToByteArray(k * block_size, data);
       jtag->shiftIR(ISC_ADDRESS_SHIFT);
       jtag->shiftDR(data, 0, 24);
       jtag->cycleTCK(1);
@@ -365,7 +366,7 @@ int ProgAlgXCFP::verify(BitFile &file)
 
           if (jtag->getVerbose())
             fprintf(stderr, "\rVerifying frames 0x%06lx to 0x%06lx     ",
-                    k*0x100000+i*32, k*0x100000+i*32+n/8-1);
+                    k*block_size+i*32, k*block_size+i*32+n/8-1);
 
           jtag->shiftIR(ISC_READ);
           jtag->Usleep(25);
@@ -378,7 +379,7 @@ int ProgAlgXCFP::verify(BitFile &file)
             {
               ret = 1;
 	      fprintf(stderr, "\nVerify failed at frame 0x%06lx to 0x%06lx\n",
-		      k*0x100000+i*32, k*0x100000+i*32+n/8-1);
+		      k*block_size+i*32, k*block_size+i*32+n/8-1);
               break;
             }
         }
@@ -490,7 +491,7 @@ int ProgAlgXCFP::read(BitFile &file)
 
   for (unsigned long k = first_block; k <= last_block; k++)
     {
-      jtag->longToByteArray(k * 0x100000, data);
+      jtag->longToByteArray(k * block_size, data);
       jtag->shiftIR(ISC_ADDRESS_SHIFT);
       jtag->shiftDR(data, 0, 24);
       jtag->cycleTCK(1);
@@ -499,7 +500,7 @@ int ProgAlgXCFP::read(BitFile &file)
         {
           if (jtag->getVerbose())
             fprintf(stderr, "\rReading frames 0x%06lx to 0x%06lx     ",
-                    k*0x100000+i*32,k*0x100000+i*32+31);
+                    k*block_size+i*32,k*block_size+i*32+31);
 
           jtag->shiftIR(ISC_READ);
           jtag->Usleep(25);
