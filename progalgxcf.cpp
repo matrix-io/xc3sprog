@@ -1,6 +1,6 @@
 /* XCF Flash PROM JTAG programming algorithms
 
-Copyright (C) 2004 Andrew Rogers
+Copyright (C) 2004-2011 Andrew Rogers
               2009 Uwe Bonnes
 
 This program is free software; you can redistribute it and/or modify
@@ -164,13 +164,42 @@ int ProgAlgXCF::erase()
 
 int ProgAlgXCF::program(BitFile &file)
 {
-  struct timeval tv[2];
+    struct timeval tv[2];
+    byte data[4];
+    int len = file.getLength()/8;
+    unsigned int i, offset, data_end= 0;
+    
+    offset = (file.getOffset()/block_size)*block_size;
+    if (file.getOffset()%block_size != 0)
+    {
+        fprintf(stderr,"Programming does not start at block boundary, Correcting start\n");
+    }
+    if (offset > size)
+    {
+        fprintf(stderr,"Program start outside PROM area, aborting\n");
+        return -1;
+    }
+    
+    if (file.getRLength() != 0)
+    {
+        data_end = offset + file.getRLength();
+        len = file.getRLength();
+    }
+    else
+    {
+        data_end = offset + file.getLength()/8;
+        len = file.getLength()/8;
+    }
+    if( data_end > size)
+    {
+        fprintf(stderr,"Program outside PROM areas requested, clipping\n");
+        data_end = size;
+    }
   
   gettimeofday(tv, NULL);
   jtag->shiftIR(&ISC_DISABLE);
   jtag->Usleep(1000);
   jtag->setTapState(Jtag::TEST_LOGIC_RESET);
-  byte data[4];
   jtag->shiftIR(&ISC_ENABLE);
   if (! use_optimized_algs)
     data[0]=0x34;
@@ -178,13 +207,19 @@ int ProgAlgXCF::program(BitFile &file)
     data[0]=0x37;
   jtag->shiftDR(data,0,6);
 
-  for(unsigned int i=0; i<file.getLength(); i+=block_size){
+  for(i = offset; i < data_end; i+=block_size){
     int frame=i/(block_size/32);
     int j;
 
     if(jtag->getVerbose())
-      fprintf(stderr, "                            \r"
-	      "Programming frames 0x%04x to 0x%04x",frame,frame+31); ;
+    {
+        fprintf(stderr, "\r\t\t\tWriting Block %6d/%6d",
+                (i - offset + block_size -1)/block_size, (len + block_size -1)/block_size);
+        fprintf(stderr, " at XCF Block %6d", 
+                (i + block_size -1)/block_size); 
+        fflush(stderr);
+    }
+        
     jtag->shiftIR(&ISC_DATA_SHIFT);
     if((i+block_size)<=file.getLength()){
       jtag->shiftDR(&(file.getData())[i/8],0,block_size);
@@ -224,7 +259,7 @@ int ProgAlgXCF::program(BitFile &file)
 	  }
 	if(j == 28)
 	  {
-	    fprintf(stderr,"\nProgramming frame %4d failed! Aborting\n", frame);
+	    fprintf(stderr,"\nProgramming block %4d failed! Aborting\n", frame);
 	    return 1;
 	  }
       } 
@@ -253,6 +288,40 @@ int ProgAlgXCF::verify(BitFile &file)
 {
   struct timeval tv[2];
   byte data[4096/8];
+  unsigned int i, offset, data_end;
+  int l, len = file.getLength()/8;
+  
+  if (len == 0)
+  {
+      fprintf(stderr,"Program start outside PROM area, aborting\n");
+      return -1;
+  }
+  
+  offset = (file.getOffset()/block_size)*block_size;
+  if (offset > size)
+  {
+      fprintf(stderr,"Verify start outside PROM area, aborting\n");
+      return 1;
+  }
+  
+  if (file.getRLength() != 0 && (file.getRLength() < file.getLength()/8))
+  {
+      data_end = offset + file.getRLength();
+      len = file.getRLength();
+  }
+  else
+  {
+      data_end = offset + file.getLength()/8;
+      len = file.getLength()/8;
+  }
+  if( data_end > size)
+  {
+      fprintf(stderr,"Verify outside PROM areas requested, clipping\n");
+      data_end = size;
+      len = data_end - offset;
+  }
+  l = -block_size;
+  for(i = offset; i < data_end+block_size; i+= block_size)
   
   gettimeofday(tv, NULL);
   jtag->setTapState(Jtag::TEST_LOGIC_RESET);
@@ -260,17 +329,18 @@ int ProgAlgXCF::verify(BitFile &file)
   data[0]=0x34;
   jtag->shiftDR(data,0,6);
 
-  for(unsigned int i=0; i<file.getLength(); i+=block_size)
+  for(unsigned int i=offset; i<file.getLength(); i+=block_size)
     {
       int frame=i/(block_size/32);
       int res;
 
       if(jtag->getVerbose())
-	{
-	  fprintf(stderr, "\rVerifying frames 0x%04x to 0x%04x",
-		  frame,frame+31); 
-	  fflush(stderr);
-	}
+      {
+          fprintf(stderr, "\rVerifying block %6d/%6d at XCF block %6d",
+                  (i - offset +block_size-1)/block_size, (len +block_size -1)/block_size,
+                  (i + block_size -1)/block_size ); 
+          fflush(stderr);
+      }
       jtag->longToByteArray(frame,data);
       jtag->shiftIR(&ISC_ADDRESS_SHIFT);
       jtag->shiftDR(data,0,16);
@@ -289,8 +359,8 @@ int ProgAlgXCF::verify(BitFile &file)
 	}
       if (res)
 	{
-	  fprintf(stderr, "\nVerify failed at frame 0x%04x to 0x%04x\n",
-		  frame,frame+31);
+	  fprintf(stderr, "\nVerify failed at block 0x%04x\n",
+		  frame);
 	  return res;
 	}
        
@@ -308,6 +378,33 @@ int ProgAlgXCF::read(BitFile &file)
   struct timeval tv[2];
   byte data[4096/8];
   
+  unsigned int offset, len , data_end, i;
+  int l;
+  
+  offset = (file.getOffset()/block_size) * block_size;
+  if (offset > size)
+  {
+      fprintf(stderr,"Offset greater than PROM\n");
+      return -1;
+  }
+  if (file.getRLength() != 0)
+  {
+      data_end = offset + file.getRLength();
+      len  =  file.getRLength();
+  }
+  else
+  {
+      data_end = size;
+      len  = data_end - offset;
+  }
+  if (len  > size)
+  {
+      fprintf(stderr,"Read outside PROM arearequested, clipping\n");
+      data_end = size;
+  }
+  file.setLength(len * 8);
+  l = -block_size;
+
   file.setLength(size);
   gettimeofday(tv, NULL);
   jtag->setTapState(Jtag::TEST_LOGIC_RESET);
@@ -315,15 +412,18 @@ int ProgAlgXCF::read(BitFile &file)
   data[0]=0x34;
   jtag->shiftDR(data,0,6);
 
-  for(unsigned int i=0; i<file.getLength(); i+=block_size)
+  for(i = offset; i < data_end; i+= block_size)
     {
       int frame=i/(block_size/32);
 
       if(jtag->getVerbose())
-	{
-	  fprintf(stderr, "\rReading frames 0x%04x to 0x%04x",frame,frame+31); 
+      {
+          fprintf(stderr, "\rReading block %6d/%6d at XCF block flash page %6d",
+                  (i   + block_size - offset  -1)/block_size , 
+                  (len                        -1)/block_size, 
+                  (i   + block_size           -1)/block_size); 
 	  fflush(stderr);
-	}
+      }
       jtag->longToByteArray(frame,data);
       jtag->shiftIR(&ISC_ADDRESS_SHIFT);
       jtag->shiftDR(data,0,16);
