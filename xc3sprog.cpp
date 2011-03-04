@@ -875,7 +875,7 @@ int programXC3S(Jtag &jtag, int argc, char** args,
           fp = getFile_and_Attribute_from_name
               (args[i], &action, NULL, &bitfile_offset,
                &bitfile_style, &bitfile_length);
-          if (action != 'w')
+          if (tolower(action) != 'w')
           {
               if (verbose)
               {
@@ -1047,8 +1047,7 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
                   cur_bitfile->setLength(k);
                   memcpy(cur_bitfile->getData(), promfile.getData() + cur_filepos / 8, k / 8);
               }
-              fprintf(stderr,"Action %c\n",action);
-              if (action == 'w' || action == 'W')
+              if (tolower(action) == 'W')
               {
                   int res;
                   if (action == 'w')
@@ -1232,7 +1231,7 @@ int programXC95X(Jtag &jtag, unsigned long id, int argc, char **args,
             alg.array_read(jedecfile);
             jedecfile.saveAsJed(device, jedecfile_fp);
         }
-        else if (action == 'v' || action == 'w') 
+        else if (action == 'v' || tolower(action) == 'w') 
         {
             jedecfile.readFile(jedecfile_fp);
             if (action == 'w')
@@ -1241,8 +1240,9 @@ int programXC95X(Jtag &jtag, unsigned long id, int argc, char **args,
                 {
                     ret = alg.erase();
                 }
+	    }
+	    if(tolower(action) == 'w')
                 alg.array_program(jedecfile);
-            }
             ret = alg.array_verify(jedecfile);
         }
         if(ret)
@@ -1328,7 +1328,7 @@ int programXC2C( Jtag &jtag, unsigned int id, int argc, char ** args,
                 file.saveAs(file_style, device, fp);
             ret = 0;
         }
-        else if (action == 'v' || action == 'w')
+        else if (action == 'v' || tolower(action) == 'w')
         {
             /* Load file */
             if (map_available)
@@ -1367,9 +1367,9 @@ int programXC2C( Jtag &jtag, unsigned int id, int argc, char ** args,
             {
                 ProgAlgXC2C alg(jtag, size_ind);
 
-                if(action == 'w')
+                if(tolower(action) == 'w')
                 {
-                    if (!erase)
+                    if (!erase && (action == 'w'))
                     {
                         alg.erase();
                         ret = alg.blank_check();
