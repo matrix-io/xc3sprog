@@ -740,7 +740,7 @@ int ProgAlgSPIFlash::wait(byte command, int report, int limit, double *delta)
     fbuf[0] = command;
     spi_xfer_user1(NULL,0,0,fbuf, 1, 1);
     gettimeofday(tv, NULL);
-    /* wait for erase complete */
+    /* wait for command complete */
     do
     {
         jtag->Usleep(1000);       
@@ -748,7 +748,7 @@ int ProgAlgSPIFlash::wait(byte command, int report, int limit, double *delta)
         j++;
         if ((jtag->getVerbose()) &&((j%report) == (report -1)))
         {
-            /* one tick every report mS Erase wait time */
+            /* one tick every report mS wait time */
             fprintf(stderr,".");
             fflush(stderr);
         }
