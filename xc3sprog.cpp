@@ -436,7 +436,12 @@ FILE *getFile_and_Attribute_from_name(
         else
             localaction = 'w';
         if (action)
-            *action =  tolower(localaction);
+        {
+            if(localaction == 'W')
+                *action =  localaction;
+            else
+                *action =  tolower(localaction);
+        }
         p = q;
         if(p)
             p ++;
@@ -975,22 +980,22 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
       promfile.setRLength(promfile_rlength);
 
       if ((promfile_offset + 
-           (promfile_rlength)?promfile_rlength:promfile.getLength()) > total_size)
+           (promfile_rlength)?(promfile_rlength*8):promfile.getLength()) > total_size)
       {
           fprintf(stderr, "Length of bitfile (%u bits) exceeds size of PROM devs\n", 
                   total_size);
           continue;
       }
-      if (action == 'v' || action == 'w')
+      if (action == 'v' || tolower(action) == 'w')
       {
           promfile.readFile(promfile_fp, promfile_style);
       }
       else if(action == 'r')
       {
-          promfile.setLength((promfile_rlength)?promfile_rlength:total_size);
+          promfile.setLength(((promfile_rlength)?promfile_rlength:total_size/8));
       }
 
-      promfile_remain = (promfile_rlength)?(promfile_rlength):promfile.getLength();
+      promfile_remain = (promfile_rlength)?(promfile_rlength):promfile.getLength()/8;
 
       for (int i = 0; i < nchainpos; i++)
       {
@@ -1013,7 +1018,7 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
               else
                   current_RLenght = 0;
               cur_bitfile->setOffset(current_offset);
-              cur_bitfile->setLength(current_promsize);
+              cur_bitfile->setLength(current_promsize*8);
               cur_bitfile->setRLength(current_RLenght);
           }
           
@@ -1042,6 +1047,7 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
                   cur_bitfile->setLength(k);
                   memcpy(cur_bitfile->getData(), promfile.getData() + cur_filepos / 8, k / 8);
               }
+              fprintf(stderr,"Action %c\n",action);
               if (action == 'w' || action == 'W')
               {
                   int res;
@@ -1053,9 +1059,10 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
                   }
                   res = alg->program(*cur_bitfile);
                   if(res)
+                  {
                       alg->disable();
-                  else
-                      return 1;
+                      return res;
+                  }
               }
               alg->verify(*cur_bitfile);
               alg->disable();

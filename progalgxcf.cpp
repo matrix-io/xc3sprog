@@ -166,11 +166,11 @@ int ProgAlgXCF::program(BitFile &file)
 {
     struct timeval tv[2];
     byte data[4];
-    int len = file.getLength()/8;
+    int len;
     unsigned int i, offset, data_end= 0;
     
-    offset = (file.getOffset()/block_size)*block_size;
-    if (file.getOffset()%block_size != 0)
+    offset = ((file.getOffset()*8)/block_size)*block_size;
+    if ((file.getOffset()*8)%block_size != 0)
     {
         fprintf(stderr,"Programming does not start at block boundary, Correcting start\n");
     }
@@ -182,13 +182,13 @@ int ProgAlgXCF::program(BitFile &file)
     
     if (file.getRLength() != 0)
     {
-        data_end = offset + file.getRLength();
-        len = file.getRLength();
+        data_end = offset + file.getRLength()*8;
+        len = file.getRLength()*8;
     }
     else
     {
-        data_end = offset + file.getLength()/8;
-        len = file.getLength()/8;
+        data_end = offset + file.getLength();
+        len = file.getLength();
     }
     if( data_end > size)
     {
@@ -213,10 +213,10 @@ int ProgAlgXCF::program(BitFile &file)
 
     if(jtag->getVerbose())
     {
-        fprintf(stderr, "\r\t\t\tWriting Block %6d/%6d",
-                (i - offset + block_size -1)/block_size, (len + block_size -1)/block_size);
-        fprintf(stderr, " at XCF Block %6d", 
-                (i + block_size -1)/block_size); 
+        fprintf(stderr, "\rProgramming block %6d/%6d at XCF block flash page %6d",
+                (i   + block_size - offset  -1)/block_size , 
+                (len                        -1)/block_size, 
+                (i   + block_size           -1)/block_size); 
         fflush(stderr);
     }
         
@@ -288,16 +288,15 @@ int ProgAlgXCF::verify(BitFile &file)
 {
   struct timeval tv[2];
   byte data[4096/8];
-  unsigned int i, offset, data_end;
-  int l, len = file.getLength()/8;
+  unsigned int offset, data_end;
+  int len;
   
-  if (len == 0)
+  offset = ((file.getOffset()*8)/block_size)*block_size;
+  if ((file.getOffset()*8)%block_size != 0)
   {
-      fprintf(stderr,"Program start outside PROM area, aborting\n");
-      return -1;
+      fprintf(stderr,
+              "Programming does not start at block boundary, Correcting\n");
   }
-  
-  offset = (file.getOffset()/block_size)*block_size;
   if (offset > size)
   {
       fprintf(stderr,"Verify start outside PROM area, aborting\n");
@@ -306,13 +305,13 @@ int ProgAlgXCF::verify(BitFile &file)
   
   if (file.getRLength() != 0 && (file.getRLength() < file.getLength()/8))
   {
-      data_end = offset + file.getRLength();
-      len = file.getRLength();
+      data_end = (offset + file.getRLength())*8;
+      len = file.getRLength()*8;
   }
   else
   {
-      data_end = offset + file.getLength()/8;
-      len = file.getLength()/8;
+      data_end = offset*8 + file.getLength();
+      len = file.getLength();
   }
   if( data_end > size)
   {
@@ -320,8 +319,6 @@ int ProgAlgXCF::verify(BitFile &file)
       data_end = size;
       len = data_end - offset;
   }
-  l = -block_size;
-  for(i = offset; i < data_end+block_size; i+= block_size)
   
   gettimeofday(tv, NULL);
   jtag->setTapState(Jtag::TEST_LOGIC_RESET);
@@ -329,16 +326,17 @@ int ProgAlgXCF::verify(BitFile &file)
   data[0]=0x34;
   jtag->shiftDR(data,0,6);
 
-  for(unsigned int i=offset; i<file.getLength(); i+=block_size)
+  for(unsigned int i=offset; i< data_end; i+=block_size)
     {
       int frame=i/(block_size/32);
       int res;
 
       if(jtag->getVerbose())
       {
-          fprintf(stderr, "\rVerifying block %6d/%6d at XCF block %6d",
-                  (i - offset +block_size-1)/block_size, (len +block_size -1)/block_size,
-                  (i + block_size -1)/block_size ); 
+          fprintf(stderr, "\rVerify block %6d/%6d at XCF block flash page %6d",
+                  (i   + block_size - offset  -1)/block_size , 
+                  (len                        -1)/block_size, 
+                  (i   + block_size           -1)/block_size); 
           fflush(stderr);
       }
       jtag->longToByteArray(frame,data);
@@ -379,9 +377,8 @@ int ProgAlgXCF::read(BitFile &file)
   byte data[4096/8];
   
   unsigned int offset, len , data_end, i;
-  int l;
   
-  offset = (file.getOffset()/block_size) * block_size;
+  offset = (file.getOffset()*8/block_size) * block_size;
   if (offset > size)
   {
       fprintf(stderr,"Offset greater than PROM\n");
@@ -389,8 +386,8 @@ int ProgAlgXCF::read(BitFile &file)
   }
   if (file.getRLength() != 0)
   {
-      data_end = offset + file.getRLength();
-      len  =  file.getRLength();
+      data_end = offset + file.getRLength()*8;
+      len  =  file.getRLength()*8;
   }
   else
   {
@@ -402,8 +399,7 @@ int ProgAlgXCF::read(BitFile &file)
       fprintf(stderr,"Read outside PROM arearequested, clipping\n");
       data_end = size;
   }
-  file.setLength(len * 8);
-  l = -block_size;
+  file.setLength(len);
 
   file.setLength(size);
   gettimeofday(tv, NULL);
