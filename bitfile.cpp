@@ -652,23 +652,31 @@ const char * BitFile::styleToString(FILE_STYLE style)
 
 int BitFile::styleFromString(const char *stylestr, FILE_STYLE *style)
 {
-  if (!strcasecmp(stylestr, "BIT"))
-    *style = STYLE_BIT;
-  else if (!strcasecmp(stylestr, "BIN"))
-    *style = STYLE_BIN;
-  else if (!strcasecmp(stylestr, "HEX"))
-    *style = STYLE_HEX;
-  else if (!strcasecmp(stylestr, "HEXRAW"))
-      *style = STYLE_HEX_RAW;
-  else if (!strcasecmp(stylestr, "MCS"))
-    *style = STYLE_MCS;
-  else if (!strcasecmp(stylestr, "MCSREV"))
-    *style = STYLE_MCS_REV;
-  else if (!strcasecmp(stylestr, "JEDEC"))
-    *style = STYLE_JEDEC;
-  else if (!strcasecmp(stylestr, "AUTO"))
-    *style = STYLE_AUTO;
-  else
-    return 1;
-  return 0;
+    char * q = strchr((char*)stylestr,':');
+    int len;
+
+    if (q)
+	len = q-stylestr;
+    else
+	len = strlen(stylestr);
+    
+    if (!strncasecmp(stylestr, "BIT", len))
+	*style = STYLE_BIT;
+    else if (!strncasecmp(stylestr, "BIN", len))
+	*style = STYLE_BIN;
+    else if (!strncasecmp(stylestr, "HEX", len))
+	*style = STYLE_HEX;
+    else if (!strncasecmp(stylestr, "HEXRAW", len))
+	*style = STYLE_HEX_RAW;
+    else if (!strncasecmp(stylestr, "MCS", len))
+	*style = STYLE_MCS;
+    else if (!strncasecmp(stylestr, "MCSREV", len))
+	*style = STYLE_MCS_REV;
+    else if (!strncasecmp(stylestr, "JEDEC", len))
+	*style = STYLE_JEDEC;
+    else if (!strncasecmp(stylestr, "AUTO", len))
+	*style = STYLE_AUTO;
+    else
+	return 1;
+    return 0;
 }
