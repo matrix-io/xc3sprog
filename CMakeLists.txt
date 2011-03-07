@@ -110,7 +110,7 @@ add_library(xc3sproglib  STATIC ioparport.cpp ioftdi.cpp iofx2.cpp
 			progalgxcf.cpp progalgxcfp.cpp progalgxc3s.cpp
 			progalgavr.cpp progalgxc2c.cpp  mapfile_xc2c.cpp
 			ioxpc.cpp progalgspiflash.cpp bitrev.cpp
-                        cabledb.cpp
+                        cabledb.cpp pdioverjtag.cpp xmega_pdi_nvm.cpp
                         ${CONDITIONAL_FILES} devices.h cables.h)
 
 add_executable(xc2c_warp xc2c_warp.cpp)
