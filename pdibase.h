@@ -21,6 +21,6 @@ class PDIBase
 {
 protected:
     virtual enum PDI_STATUS_CODE pdi_write(const uint8_t *data, uint16_t length) =0;
-    virtual uint16_t pdi_read(uint8_t *data, uint16_t length, uint32_t retries) = 0;
+    virtual uint32_t pdi_read(uint8_t *data, uint32_t length, uint32_t retries) = 0;
 };
 #endif //PDIBASE_H

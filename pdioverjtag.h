@@ -16,7 +16,7 @@ private:
 public:
     PDIoverJTAG(Jtag *j, uint8_t pdicom);
     ~PDIoverJTAG(void);
-    uint16_t pdi_read(uint8_t *data, uint16_t length, int retries);
+    uint32_t pdi_read(uint8_t *data, uint32_t length, int retries);
     enum PDI_STATUS_CODE pdi_write
 	(const uint8_t *data, uint16_t length);
 };
