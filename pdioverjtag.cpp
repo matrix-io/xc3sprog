@@ -68,9 +68,9 @@ enum PDI_STATUS_CODE PDIoverJTAG::pdi_write(const uint8_t *data,
     return STATUS_OK;
 }
 
-uint16_t PDIoverJTAG::pdi_read(uint8_t *data, uint16_t length, int retries)
+uint32_t PDIoverJTAG::pdi_read(uint8_t *data, uint32_t length, int retries)
 {
-    int i;
+    uint32_t i;
     jtag->shiftIR(&pdicmd);
     for (i = 0 ; i <length; i++)
     {
@@ -82,7 +82,7 @@ uint16_t PDIoverJTAG::pdi_read(uint8_t *data, uint16_t length, int retries)
 	{
 	    if (pdi_dbg)
 	    {
-		int j;
+		uint32_t j;
 		fprintf(pdi_dbg, "\npdi_read parity error at pos %d/%d :",
 			i, length);
 		fprintf(pdi_dbg, " %02x %02x\n", rev[1], rev[0]);
