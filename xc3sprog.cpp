@@ -1411,6 +1411,7 @@ int programXMega(Jtag *jtag, unsigned long id, int argc, char **args,
     int i;
     enum PDI_STATUS_CODE res;
     uint32_t appl_size, boot_size, eeprom_size;
+    uint8_t bypass = 0;
     
     PDIoverJTAG protocol (jtag, 0x7);
     ProgAlgNVM alg(&protocol);
@@ -1459,9 +1460,8 @@ int programXMega(Jtag *jtag, unsigned long id, int argc, char **args,
     }
     for (i = 0; i< argc; i++)
     {
-        int ret = 0;
 	char section = 'a';
-        unsigned int file_offset = 0;
+	unsigned int file_offset = 0;
         unsigned int file_rlength = 0;
         char action = 'w';
         BitFile  file;
@@ -1543,6 +1543,8 @@ int programXMega(Jtag *jtag, unsigned long id, int argc, char **args,
 	}
 #endif	
     }
-    return 0;
+    alg.xnvm_pull_dev_out_of_reset();
+    jtag->shiftIR(&bypass);
+    return res;
 }
 
