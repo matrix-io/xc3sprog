@@ -54,6 +54,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgxc2c.h"
 #include "progalgavr.h"
 #include "progalgspiflash.h"
+#include "progalgnvm.h"
 #include "utilities.h"
 
 #define MAXPOSITIONS    8
@@ -83,6 +84,10 @@ int programXC2C(Jtag &jtag, unsigned int id, int argc, char ** args,
 int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool erase,
                bool reconfig,  int test_count,
                char *bscanfile,int family, const char *device);
+
+int programXMega(Jtag *jtag, unsigned long id, int argc, char **args, 
+		 bool verbose, bool erase, bool reconfigure,
+		 const char *device);
 
 /* Excercise the IR Chain for at least 10000 Times
    If we read a different pattern, print the pattern for for optical 
@@ -827,7 +832,14 @@ int main(int argc, char **args)
     }
   else if  ( manufacturer == MANUFACTURER_ATMEL)
     {
-      return jAVR (jtag, id, args[0],verify, lock, eepromfile, fusefile);
+	switch(db.getIDCmd(chainpos))
+	{
+	case 3:
+	    return programXMega(&jtag, id, argc, args, verbose, erase, reconfigure,
+				db.getDeviceDescription(chainpos));
+	default:
+	    return jAVR (jtag, id, args[0],verify, lock, eepromfile, fusefile);
+	}
     }
   else
     fprintf(stderr,
@@ -1391,3 +1403,146 @@ int programXC2C( Jtag &jtag, unsigned int id, int argc, char ** args,
     }
     return 0;
 }
+
+int programXMega(Jtag *jtag, unsigned long id, int argc, char **args, 
+		 bool verbose, bool erase, bool reconfigure,
+		 const char *device)
+{
+    int i;
+    enum PDI_STATUS_CODE res;
+    uint32_t appl_size, boot_size, eeprom_size;
+    
+    PDIoverJTAG protocol (jtag, 0x7);
+    ProgAlgNVM alg(&protocol);
+
+    switch((id >>12)& 0xffff)
+    {
+    case 0x9642:
+    case 0x964c:
+    case 0x964e:
+	appl_size   = 0x10000;
+	boot_size   = 0x01000;
+	eeprom_size = 0x00800;
+	break;
+    case 0x974a:
+    case 0x974c:
+	appl_size   = 0x20000;
+	boot_size   = 0x02000;
+	eeprom_size = 0x00800;
+	break;
+    case 0x9842:
+    case 0x9843:
+	appl_size   = 0x40000;
+	boot_size   = 0x02000;
+	eeprom_size = 0x01000;
+	break;
+    default:
+	fprintf(stderr,"Unknown/Unhandled XMega device 0x%08lx\n", id);
+	return 1;
+    }
+
+    res = alg.xnvm_init();
+    if(res != STATUS_OK)
+    {
+	fprintf(stderr, "Init Xmega PDI programming failed\n");
+	return 1;
+    }
+
+    if(erase)
+    {
+	res = alg.xnvm_chip_erase();
+	if (res != STATUS_OK)
+	{
+	    fprintf(stderr, "Xmega PDI chip erase failed\n");
+	    return 1;
+	}
+    }
+    for (i = 0; i< argc; i++)
+    {
+        int ret = 0;
+	char section = 'a';
+        unsigned int file_offset = 0;
+        unsigned int file_rlength = 0;
+        char action = 'w';
+        BitFile  file;
+        FILE_STYLE file_style= STYLE_MCS;
+	uint32_t base = 0x800000;
+	uint32_t length;
+             
+        FILE *fp = 
+            getFile_and_Attribute_from_name
+            (args[i], &action, &section, &file_offset,
+             &file_style, &file_rlength);
+        if(!fp)
+            continue;
+ 
+	switch (section)
+	{
+	case 'a':
+	    length =  appl_size;
+	    break;
+	case 'b':
+	    base += appl_size;
+	    length = boot_size;
+	    break;
+	case 'e':
+	    base = 0x8c0000;
+	    length = eeprom_size;
+	    break;
+	case 'p':
+	    base = 0x8e0200;
+	    length = 0x40;
+	    break;
+	case 'u':
+	    base = 0x8e0400;
+	    length = 0x100;
+	    break;
+	case 'f':
+	    base = 0x8f0020;
+	    length = 8;
+	    break;
+	default:
+	    fprintf(stderr,"Unknown section %c\n", section);
+	    continue;
+	}
+
+	if (file_rlength != 0)
+	{
+	    length = file_rlength;
+	}
+	if (file_offset != 0)
+	    file.setOffset(file_offset);
+	else
+	    file.setOffset(length);
+
+	    
+	if (action == 'r')
+	{
+	    uint32_t res;
+
+	    file.setLength(length *8);
+	    res = alg.xnvm_read_memory(base, file.getData(), length);
+	    if(res != length)
+	    {
+		fprintf(stderr, "Xmega PDI Reading Section %c failed: 0x%06x read vs 0x%06x req\n", 
+			res, length, section);
+		return 1;
+	    }
+	    file.saveAs(file_style, device, fp);
+ 
+	}
+#if 0
+ 	if ((action == 'e' || action == 'w') &&(section == 'a'))
+	{
+	    res = alg.xnvm_application_erase();
+	    if(res != STATUS_OK)
+	    {
+		fprintf(stderr, "Xmega PDI Application section erase failed\n");
+		return 1;
+	    }
+	}
+#endif	
+    }
+    return 0;
+}
+
