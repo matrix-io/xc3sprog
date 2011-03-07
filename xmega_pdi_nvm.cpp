@@ -342,7 +342,7 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_application_erase(void)
 }
 
 /**
- *  \brief Erase the application section chip
+ *  \brief Erase the boot section chip
  *
  *  \retval STATUS_OK erase chip succussfully.
  *  \retval ERR_TIMEOUT Time out.
@@ -536,7 +536,7 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_st_ptr(uint32_t address)
  *  \retval zero read fail.
  */
 uint16_t ProgAlgNVM::xnvm_read_memory
-(uint32_t address, uint8_t *data, uint16_t length)
+(uint32_t address, uint8_t *data, uint32_t length)
 {
     xnvm_ctrl_cmd_write(XNVM_CMD_READ_NVM_PDI);
     xnvm_st_ptr(address);
