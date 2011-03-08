@@ -42,6 +42,7 @@ IOFtdi::IOFtdi(bool u)
         fp_dbg = NULL;
     ftd2xx_handle = 0;
     ftdi_handle = 0;
+    verbose = false;
 }
 
 int IOFtdi::Init(struct cable_t *cable, const char *serial)
