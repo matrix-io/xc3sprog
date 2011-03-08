@@ -297,7 +297,7 @@ int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
 	  }
 	return res;
       }
-    case STYLE_MCS_REV:
+    case STYLE_IHEX:
 /*
  * MCS files written by Xilinx PROMGen are bit-reversed with respect
  * to the original BIT files. So in this case, xc3sprog must not reverse
@@ -537,7 +537,7 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
 	}
       break;
     case STYLE_MCS:
-    case STYLE_MCS_REV:
+    case STYLE_IHEX:
       {
         unsigned int base = (unsigned int)-1;
         char buf[1024];
@@ -643,7 +643,7 @@ const char * BitFile::styleToString(FILE_STYLE style)
       case STYLE_HEX: return "HEX";
       case STYLE_HEX_RAW: return "HEXRAW";
       case STYLE_MCS: return "MCS";
-      case STYLE_MCS_REV: return "MCSREV";
+      case STYLE_IHEX: return "IHEX";
       case STYLE_JEDEC: return "JEDEC";
       case STYLE_AUTO: return "AUTO";
       default: return 0;
@@ -670,8 +670,8 @@ int BitFile::styleFromString(const char *stylestr, FILE_STYLE *style)
 	*style = STYLE_HEX_RAW;
     else if (!strncasecmp(stylestr, "MCS", len))
 	*style = STYLE_MCS;
-    else if (!strncasecmp(stylestr, "MCSREV", len))
-	*style = STYLE_MCS_REV;
+    else if (!strncasecmp(stylestr, "IHEX", len))
+	*style = STYLE_IHEX;
     else if (!strncasecmp(stylestr, "JEDEC", len))
 	*style = STYLE_JEDEC;
     else if (!strncasecmp(stylestr, "AUTO", len))
