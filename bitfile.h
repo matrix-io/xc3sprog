@@ -72,7 +72,7 @@ word. */
 typedef unsigned char byte;
 
 enum FILE_STYLE { STYLE_BIT, STYLE_BIN, STYLE_HEX, STYLE_HEX_RAW, 
-                  STYLE_MCS, STYLE_MCS_REV , STYLE_JEDEC, STYLE_AUTO};
+                  STYLE_MCS, STYLE_IHEX , STYLE_JEDEC, STYLE_AUTO};
 
 class BitFile
 {
