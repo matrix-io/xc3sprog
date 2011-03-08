@@ -36,18 +36,17 @@ CableDB::CableDB(const char *cf_name)
     char cabletype[64];
     char options[64];
     FILE *fp;
-    char * fname;
     
     if(!cf_name)
     {
-        if(!(fname = getenv("CABLEDB")))
-            strcpy(fname,CABLEDB);
+        if(!(cf_name = getenv("CABLEDB")))
+            cf_name = CABLEDB;
     }
 
-    fp = fopen(fname,"rt");
+    fp = fopen(cf_name,"rt");
     if (fp)
     {
-        cablename = fname;
+        cablename = cf_name;
         while(!feof(fp))
         {
 	  char buffer[256];
@@ -94,12 +93,22 @@ CableDB::CableDB(const char *cf_name)
                 cable.optstring = new char[strlen(options)+1];
                 strcpy(cable.optstring,options);
                 cable_db.push_back(cable);
-                cable_db.push_back(cable);
-	    }
+ 	    }
 	}
     }
 }
-
+CableDB::~CableDB()
+{
+    unsigned int i;
+    
+    for(i = 0; i < cable_db.size(); i++)
+    {
+        if (cable_db[i].alias != 0)
+            delete [] cable_db[i].alias;
+        if( cable_db[i].optstring != 0)
+            delete []  cable_db[i].optstring;
+    }
+}
 /* Return 0 on match*/
 int CableDB::getCable(const char *name, struct cable_t *cable)
 {
