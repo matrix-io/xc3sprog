@@ -49,6 +49,7 @@ private:
     
 public:
   CableDB(const char *cf_name);
+  ~CableDB(void);
   std::string const& getFile() const { return cablename; };
   int getCable(const char *name, struct cable_t *cable);
 };
