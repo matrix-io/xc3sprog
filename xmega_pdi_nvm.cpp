@@ -144,6 +144,7 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_wait_for_nvmen(uint32_t retries)
 
     while (retries != 0) {
 	if (xnvm_read_pdi_status(&pdi_status) != STATUS_OK) {
+            fprintf(stderr,"xnvm_wait_for_nvmen failed retries %d\n", retries);
 	    return ERR_BAD_DATA;
 	}
 	if ((pdi_status & XNVM_NVMEN) != 0) {
