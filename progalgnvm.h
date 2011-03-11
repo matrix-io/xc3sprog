@@ -138,7 +138,7 @@ public:
     enum PDI_STATUS_CODE xnvm_erase_program_user_sign
 	(uint32_t address, uint8_t *dat_buf, uint16_t length);
     enum PDI_STATUS_CODE xnvm_write_fuse_bit
-	(uint32_t address, uint8_t value, uint32_t retries);
+	(uint32_t address, uint8_t value);
 };
 
 #endif //PROGALGNVM_H

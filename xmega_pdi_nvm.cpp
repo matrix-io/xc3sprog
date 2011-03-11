@@ -676,15 +676,14 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_erase_program_user_sign
 }
 
 /**
- *  \brief Write the fuse bit with NVM controller
+ *  \brief Write a single fuse byte with NVM controller
  *
  *  \param  address the fuse bit address.
  *  \param  value which should be write into the fuse bit.
- *  \param  retries the time out delay number.
  *  \retval STATUS_OK write succussfully.
  *  \retval ERR_TIMEOUT time out.
  */
-enum PDI_STATUS_CODE ProgAlgNVM::xnvm_write_fuse_bit(uint32_t address, uint8_t value, uint32_t retries)
+enum PDI_STATUS_CODE ProgAlgNVM::xnvm_write_fuse_byte(uint32_t address, uint8_t value)
 {
     uint32_t register_address;
 
@@ -700,7 +699,7 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_write_fuse_bit(uint32_t address, uint8_t v
 
     prot->pdi_write(cmd_buffer, 6);
 
-    return xnvm_ctrl_wait_nvmbusy(retries);
+    return xnvm_ctrl_wait_nvmbusy(WAIT_RETRIES_NUM);
 }
 
 /**
