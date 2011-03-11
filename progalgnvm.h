@@ -127,9 +127,12 @@ public:
     enum PDI_STATUS_CODE xnvm_chip_erase(void);
     enum PDI_STATUS_CODE xnvm_application_erase(void);
     enum PDI_STATUS_CODE xnvm_boot_erase(uint32_t address);
+    enum PDI_STATUS_CODE xnvm_erase_eeprom(void);
     uint16_t xnvm_read_memory(uint32_t address, uint8_t *data, uint32_t length);
     enum PDI_STATUS_CODE xnvm_erase_program_flash_page
 	(uint32_t address, uint8_t *dat_buf, uint16_t length);
+    enum PDI_STATUS_CODE xnvm_program_flash_page
+        (uint32_t address, uint8_t *dat_buf, uint16_t length);
     enum PDI_STATUS_CODE xnvm_put_dev_in_reset (void);
     enum PDI_STATUS_CODE xnvm_pull_dev_out_of_reset(void);
     enum PDI_STATUS_CODE xnvm_erase_program_eeprom_page
@@ -139,6 +142,7 @@ public:
 	(uint32_t address, uint8_t *dat_buf, uint16_t length);
     enum PDI_STATUS_CODE xnvm_write_fuse_byte
 	(uint32_t address, uint8_t value);
+    enum PDI_STATUS_CODE xnvm_write_lock_byte(uint8_t value);
 };
 
 #endif //PROGALGNVM_H
