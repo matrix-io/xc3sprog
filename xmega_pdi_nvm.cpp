@@ -457,10 +457,9 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_program_flash_page(
  *  \retval STATUS_OK program succussfully.
  *  \retval ERR_TIMEOUT Time out.
  */
-enum PDI_STATUS_CODE ProgAlgNVM::xnvm_erase_program_flash_page(uint32_t address, uint8_t *dat_buf, uint16_t length)
+enum PDI_STATUS_CODE ProgAlgNVM::xnvm_erase_program_flash_page(
+    uint32_t address, uint8_t *dat_buf, uint16_t length)
 {
-    address = address + XNVM_FLASH_BASE;
-
     xnvm_erase_flash_buffer(WAIT_RETRIES_NUM);
     xnvm_load_flash_page_buffer(address, dat_buf, length);
     xnvm_ctrl_cmd_write(XNVM_CMD_ERASE_AND_WRITE_FLASH_PAGE);
