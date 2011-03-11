@@ -346,13 +346,14 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_application_erase(void)
  *  \retval STATUS_OK erase chip succussfully.
  *  \retval ERR_TIMEOUT Time out.
  */
-enum PDI_STATUS_CODE ProgAlgNVM::xnvm_boot_erase(void)
+enum PDI_STATUS_CODE ProgAlgNVM::xnvm_boot_erase(uint32_t address)
 {
     /* Write the chip erase command to the NVM command reg */
     xnvm_ctrl_cmd_write(XNVM_CMD_ERASE_BOOT_SECTION);
     /* Write the CMDEX to execute command */
-    xnvm_ctrl_cmdex_write();
-    return xnvm_wait_for_nvmen(WAIT_RETRIES_NUM);
+    xnvm_st_ptr(address);
+    xnvm_st_star_ptr_postinc(DUMMY_BYTE);
+    return xnvm_ctrl_wait_nvmbusy(WAIT_RETRIES_NUM);
 }
 
 /**

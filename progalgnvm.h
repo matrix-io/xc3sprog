@@ -126,7 +126,7 @@ public:
     enum PDI_STATUS_CODE xnvm_iowrite_byte(uint16_t address, uint8_t value);
     enum PDI_STATUS_CODE xnvm_chip_erase(void);
     enum PDI_STATUS_CODE xnvm_application_erase(void);
-    enum PDI_STATUS_CODE xnvm_boot_erase(void);
+    enum PDI_STATUS_CODE xnvm_boot_erase(uint32_t address);
     uint16_t xnvm_read_memory(uint32_t address, uint8_t *data, uint32_t length);
     enum PDI_STATUS_CODE xnvm_erase_program_flash_page
 	(uint32_t address, uint8_t *dat_buf, uint16_t length);
