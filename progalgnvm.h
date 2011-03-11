@@ -137,7 +137,7 @@ public:
     enum PDI_STATUS_CODE xnvm_erase_user_sign(void);
     enum PDI_STATUS_CODE xnvm_erase_program_user_sign
 	(uint32_t address, uint8_t *dat_buf, uint16_t length);
-    enum PDI_STATUS_CODE xnvm_write_fuse_bit
+    enum PDI_STATUS_CODE xnvm_write_fuse_byte
 	(uint32_t address, uint8_t value);
 };
 
