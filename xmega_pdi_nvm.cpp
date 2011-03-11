@@ -357,6 +357,22 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_boot_erase(uint32_t address)
 }
 
 /**
+ *  \brief Erase the eeprom section chip
+ *
+ *  \retval STATUS_OK erase chip succussfully.
+ *  \retval ERR_TIMEOUT Time out.
+ */
+enum PDI_STATUS_CODE ProgAlgNVM::xnvm_erase_eeprom(void)
+{
+    /* Write the chip erase command to the NVM command reg */
+    xnvm_ctrl_cmd_write(XNVM_CMD_ERASE_EEPROM);
+    /* Write the CMDEX to execute command */
+    xnvm_st_ptr(XNVM_EEPROM_BASE);
+    xnvm_st_star_ptr_postinc(DUMMY_BYTE);
+    return xnvm_ctrl_wait_nvmbusy(WAIT_RETRIES_NUM);
+}
+
+/**
  *  \internal
  *  \brief Load the flash page buffer
  *
@@ -404,6 +420,30 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_erase_flash_buffer(uint32_t retries)
     xnvm_ctrl_cmdex_write();
 
     return xnvm_ctrl_wait_nvmbusy(retries);
+}
+
+/**
+ *  \internal
+ *  \brief  Program the flash page buffer with NVM controller.
+ *
+ *  \param  address the address of the flash IN PDI address space
+ *  \param  dat_buf the pointer which points to the data buffer.
+ *  \param  length the data length.
+ *  \retval STATUS_OK program succussfully.
+ *  \retval ERR_TIMEOUT Time out.
+ */
+enum PDI_STATUS_CODE ProgAlgNVM::xnvm_program_flash_page(
+    uint32_t address, uint8_t *dat_buf, uint16_t length)
+{
+    xnvm_erase_flash_buffer(WAIT_RETRIES_NUM);
+    xnvm_load_flash_page_buffer(address, dat_buf, length);
+    xnvm_ctrl_cmd_write(XNVM_CMD_WRITE_FLASH_PAGE);
+
+    /* Dummy write for starting the erase and write command */
+    xnvm_st_ptr(address);
+    xnvm_st_star_ptr_postinc(DUMMY_BYTE);
+
+    return xnvm_ctrl_wait_nvmbusy(WAIT_RETRIES_NUM);
 }
 
 /**
@@ -693,6 +733,32 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_write_fuse_byte(uint32_t address, uint8_t 
 	XNVM_PDI_BYTE_DATA_MASK;
 
     register_address = XNVM_FUSE_BASE + address;
+
+    memmove((cmd_buffer + 1), (uint8_t*)&register_address, 4);
+    cmd_buffer[5] = value;
+
+    prot->pdi_write(cmd_buffer, 6);
+
+    return xnvm_ctrl_wait_nvmbusy(WAIT_RETRIES_NUM);
+}
+
+/**
+ *  \brief Write the lock byte with NVM controller
+ *
+ *  \param  value which should be write into the lock byte.
+ *  \retval STATUS_OK write succussfully.
+ *  \retval ERR_TIMEOUT time out.
+ */
+enum PDI_STATUS_CODE ProgAlgNVM::xnvm_write_lock_byte(uint8_t value)
+{
+    uint32_t register_address;
+
+    xnvm_ctrl_cmd_write(XNVM_CMD_WRITE_LOCK_BITS);
+
+    cmd_buffer[0] = XNVM_PDI_STS_INSTR | XNVM_PDI_LONG_ADDRESS_MASK |
+	XNVM_PDI_BYTE_DATA_MASK;
+
+    register_address = XNVM_FUSE_BASE + NVM_LOCKBIT_ADDR;
 
     memmove((cmd_buffer + 1), (uint8_t*)&register_address, 4);
     cmd_buffer[5] = value;
