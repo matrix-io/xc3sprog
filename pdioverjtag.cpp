@@ -49,7 +49,7 @@ enum PDI_STATUS_CODE PDIoverJTAG::pdi_write(const uint8_t *data,
 
     if (pdi_dbg)
     {
-	fprintf(pdi_dbg, "pdi_write:");
+	fprintf(pdi_dbg, "pdi_write len %d:", length);
 	for (i = 0; i < length; i++ )
 	    fprintf(pdi_dbg, " %02x", data[i]);
 	fprintf(pdi_dbg, "\n");
@@ -71,15 +71,34 @@ enum PDI_STATUS_CODE PDIoverJTAG::pdi_write(const uint8_t *data,
 uint32_t PDIoverJTAG::pdi_read(uint8_t *data, uint32_t length, int retries)
 {
     uint32_t i;
+    int j = 0;
     jtag->shiftIR(&pdicmd);
     for (i = 0 ; i <length; i++)
     {
 	uint8_t rev[3];
-
-	jtag->shiftDR(0, rev, 9);
-	rev[2] = get_parity( rev[0]);
-	if( rev[2] != rev[1])
-	{
+        
+        jtag->shiftDR(0, rev, 9);
+        rev[2] = get_parity( rev[0]);
+        
+        while((rev[2] != rev[1]) && (rev[0] == 0xeb) && (j <retries))
+        {
+            jtag->shiftDR(0, rev, 9);
+            rev[2] = get_parity( rev[0]);
+            j++;
+            if (pdi_dbg)
+                fprintf(pdi_dbg, " %02x", rev[0]);
+                
+        }
+        if (j>0 && pdi_dbg)
+            fprintf(pdi_dbg, "\n");
+        if (j == retries)
+        {
+	    if (pdi_dbg)
+                fprintf(pdi_dbg," Read time out\n");
+            return 0;
+        }
+        if ( rev[2] != rev[1])
+        {
 	    if (pdi_dbg)
 	    {
 		uint32_t j;
