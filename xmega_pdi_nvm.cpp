@@ -462,7 +462,7 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_erase_program_flash_page(uint32_t address,
 
     xnvm_erase_flash_buffer(WAIT_RETRIES_NUM);
     xnvm_load_flash_page_buffer(address, dat_buf, length);
-    xnvm_ctrl_cmd_write(XNVM_CMD_ERASE_AND_WRITE_APP_SECTION);
+    xnvm_ctrl_cmd_write(XNVM_CMD_ERASE_AND_WRITE_FLASH_PAGE);
 
     /* Dummy write for starting the erase and write command */
     xnvm_st_ptr(address);
