@@ -169,8 +169,7 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_read_pdi_status(uint8_t *status)
     enum PDI_STATUS_CODE ret = STATUS_OK;
 
     cmd_buffer[0] = XNVM_PDI_LDCS_INSTR;
-    cmd_buffer[1] = 0x00;
-    if (STATUS_OK != prot->pdi_write(cmd_buffer, 2)) {
+    if (STATUS_OK != prot->pdi_write(cmd_buffer, 1)) {
 	ret = ERR_BAD_DATA;
     }
     if (prot->pdi_read(status, 1, WAIT_RETRIES_NUM) == 0) {
