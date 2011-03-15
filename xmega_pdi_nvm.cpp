@@ -337,7 +337,8 @@ enum PDI_STATUS_CODE ProgAlgNVM::xnvm_application_erase(void)
     /* Write the chip erase command to the NVM command reg */
     xnvm_ctrl_cmd_write(XNVM_CMD_ERASE_APP_SECTION);
     /* Write the CMDEX to execute command */
-    xnvm_ctrl_cmdex_write();
+    xnvm_st_ptr(XNVM_FLASH_BASE);
+    xnvm_st_star_ptr_postinc(DUMMY_BYTE);
     return xnvm_wait_for_nvmen(WAIT_RETRIES_NUM);
 }
 
