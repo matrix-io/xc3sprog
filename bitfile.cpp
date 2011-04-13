@@ -107,10 +107,15 @@ int BitFile::readHEXRAW(FILE *fp)
 {
     char buf[1024];
     unsigned int byte_count = 0;
-    int count;
+    int res, count;
     
     fseek(fp, 0, SEEK_END);
-    length = (ftell(fp)  >> 1); /* Fix at end */
+    res = ftell(fp);
+    if (res == -1)
+        length = 0;
+    else
+        length = res;
+    length >>= 1; /* We read two Hex nibbles for each byte*/
     fseek(fp, 0, SEEK_SET);
     if(buffer) delete [] buffer;
     buffer= new byte[length];
@@ -461,6 +466,8 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
   /* Don't store 0xff bytes from the end of the flash */
   for(clip=length-1; (buffer[clip] == 0xff) && clip>0; clip--){};
   clip++; /* clip is corrected length, not index */
+  if (rlength) /* Don't clip is explicit length is requested */
+      clip = rlength;
   switch (style)
     {
     case STYLE_BIT:
@@ -535,6 +542,8 @@ unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
 	  if ( i%4 == 3)
 	    fprintf(fp,"\n");
 	}
+      if ( i%4 != 3) /* Terminate semil full lines */
+          fprintf(fp,"\n");
       break;
     case STYLE_MCS:
     case STYLE_IHEX:
