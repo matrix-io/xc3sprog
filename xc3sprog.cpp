@@ -459,18 +459,16 @@ FILE *getFile_and_Attribute_from_name(
             len = q-p;
         else
             len = strlen(p);
-        if ((len == 1) && ! (isdigit(*p)))
+        if (!isdigit(*p))
         {
             localsection = *p;
             if (section)
                 *section = localsection;
+            p++;
         }
-        else
-        {
-            localoffset = strtol(p, NULL, 0);
-            if (offset)
-                *offset = localoffset;
-        }
+        localoffset = strtol(p, NULL, 0);
+        if (offset)
+            *offset = localoffset;
         p = q;
         if(p)
             p ++;
@@ -512,7 +510,7 @@ FILE *getFile_and_Attribute_from_name(
     
     if  (tolower(localaction) == 'r')
     {
-        if (filename[0] == '-')
+        if (!(strcasecmp(filename,"stdout")))
             ret= stdout;
         else
         {
@@ -531,9 +529,11 @@ FILE *getFile_and_Attribute_from_name(
     }
     else
     {
-        if (filename[0] == '-')
-            ret = stdout;
+#if 0
+        if (!(strcasecmp(filename,"stdin")))
+            ret = stdin;
         else
+#endif
         {
             ret = fopen(filename,"rb");
             if(!ret)
@@ -1408,9 +1408,10 @@ int programXMega(Jtag *jtag, unsigned long id, int argc, char **args,
 		 bool verbose, bool erase, bool reconfigure,
 		 const char *device)
 {
-    int i;
+    int i,ret = 0;
     enum PDI_STATUS_CODE res;
-    uint32_t appl_size, boot_size, eeprom_size;
+    uint32_t appl_size, boot_size, eeprom_size, eeprom_page = 0x20;
+    uint32_t flash_page = 0x200;
     uint8_t bypass = 0;
     
     PDIoverJTAG protocol (jtag, 0x7);
@@ -1424,6 +1425,7 @@ int programXMega(Jtag *jtag, unsigned long id, int argc, char **args,
 	appl_size   = 0x10000;
 	boot_size   = 0x01000;
 	eeprom_size = 0x00800;
+        flash_page  = 0x100;
 	break;
     case 0x974a:
     case 0x974c:
@@ -1449,13 +1451,36 @@ int programXMega(Jtag *jtag, unsigned long id, int argc, char **args,
 	return 1;
     }
 
+    if (verbose)
+    {
+        uint8_t device_id[5];
+        uint8_t fuses[8];
+        uint8_t row[200];
+        alg.xnvm_read_memory(0x1000090, device_id, 5);
+        fprintf(stderr,"DeviceID from MCU_CONTROL 0x%02x%02x%02x Rev %c"
+                " JTAGUID %02x\n", 
+                device_id[0],device_id[1], device_id[2],'A'+ device_id[3],
+                device_id[4]
+            );
+        alg.xnvm_read_memory(0x08f0020, fuses, 8);
+        fprintf(stderr,"Fuses U:%02x W:%02x R:%02x S:%02x V:%02x L:%02x\n",
+                fuses[0], fuses[1], fuses[2], fuses[4], fuses[5], fuses[7]);
+        alg.xnvm_read_memory(0x08e0200, row, 200);
+        fprintf(stderr,"Lot:%02x%02x%02x%02x%02x%02x Wafer:%02x "
+                "X:%02x%02x Y:%02x%02x\n",
+                row[0xd], row[0xc], row[0xb], row[0xa], row[9], row[8],
+                row[0x10], row[0x13], row[0x12], row[0x15], row[0x14]);
+       
+       
+    }
     if(erase)
     {
 	res = alg.xnvm_chip_erase();
 	if (res != STATUS_OK)
 	{
 	    fprintf(stderr, "Xmega PDI chip erase failed\n");
-	    return 1;
+            ret = 1;
+            goto xmega_release;
 	}
     }
     for (i = 0; i< argc; i++)
@@ -1465,15 +1490,15 @@ int programXMega(Jtag *jtag, unsigned long id, int argc, char **args,
         unsigned int file_rlength = 0;
         char action = 'w';
         BitFile  file;
-        FILE_STYLE file_style= STYLE_MCS;
+        FILE_STYLE file_style= STYLE_IHEX;
 	uint32_t base = 0x800000;
-	uint32_t length;
+	unsigned int length;
              
         FILE *fp = 
             getFile_and_Attribute_from_name
             (args[i], &action, &section, &file_offset,
              &file_style, &file_rlength);
-        if(!fp)
+        if((action != 'e') && !fp)
             continue;
  
 	switch (section)
@@ -1495,11 +1520,15 @@ int programXMega(Jtag *jtag, unsigned long id, int argc, char **args,
 	    break;
 	case 'u':
 	    base = 0x8e0400;
-	    length = 0x100;
+	    length = flash_page;
 	    break;
 	case 'f':
 	    base = 0x8f0020;
 	    length = 8;
+	    break;
+	case 'l':
+	    base = 0x8f0027;
+	    length = 1;
 	    break;
 	default:
 	    fprintf(stderr,"Unknown section %c\n", section);
@@ -1521,30 +1550,193 @@ int programXMega(Jtag *jtag, unsigned long id, int argc, char **args,
 	    uint32_t res;
 
 	    file.setLength(length *8);
-	    res = alg.xnvm_read_memory(base, file.getData(), length);
+             /* Inhibit clipping of trailing 0xff's for fuses and lock*/
+            if ((section == 'f') || (section == 'l'))
+                 file.setRLength(length);
+
+	    res = alg.xnvm_read_memory(base + file_offset, file.getData(), length);
 	    if(res != length)
 	    {
-		fprintf(stderr, "Xmega PDI Reading Section %c failed: 0x%06x read vs 0x%06x req\n", 
-			res, length, section);
-		return 1;
+		fprintf(stderr, "Xmega PDI Reading Section %c failed:"
+                        " read 0x%06x vs requested 0x%06x\n", 
+			section, res, length);
+                res = 1;
+                goto xmega_release;
 	    }
 	    file.saveAs(file_style, device, fp);
  
 	}
-#if 0
- 	if ((action == 'e' || action == 'w') &&(section == 'a'))
-	{
-	    res = alg.xnvm_application_erase();
-	    if(res != STATUS_OK)
+        else if (action == 'v')
+        {
+	    uint32_t j, res;
+            BitFile  vfile;
+            vfile.readFile(fp, file_style);
+            length = vfile.getLength()/8;
+	    file.setLength(length *8);
+	    res = alg.xnvm_read_memory(base, file.getData(), length);
+	    if(res != length)
 	    {
-		fprintf(stderr, "Xmega PDI Application section erase failed\n");
-		return 1;
+		fprintf(stderr, "Xmega PDI Verify Section %c failed:"
+                        " 0x%06x read vs 0x%06x req\n", 
+			section, res, length);
+                    ret = 1;
+                    goto xmega_release;
+		
 	    }
-	}
-#endif	
+            for(j=0; j<length; j++)
+            {
+                if(file.getData()[j] != vfile.getData()[j])
+                {
+                    fprintf(stderr, "Verify mismath at section %c pos 0x%06x:"
+                            " 0x%02x vs 0x%02x\n", 
+                            section, j, file.getData()[j], vfile.getData()[j]);
+                    ret = 1;
+                    goto xmega_release;
+                }  
+            }
+            fprintf(stderr,"Verify %s success\n", args[i]);
+        }
+
+ 	else if ((action == 'e') || (tolower(action) == 'w'))
+	{
+            BitFile  rfile;
+            rfile.readFile(fp, file_style);
+            unsigned int i, length = rfile.getLength()/8;
+
+            if (!erase && ((action == 'w') || (action == 'e')))
+            {
+                switch (section)
+                {
+                case 'a':
+                    res = alg.xnvm_application_erase();
+                    break;
+                case 'b':
+                    res = alg.xnvm_boot_erase(base);
+                    break;
+                case 'e':
+                    res = alg.xnvm_erase_eeprom();
+                    break;
+                case 'u':
+                    res = alg.xnvm_erase_user_sign();
+                    break;
+                case 'l':
+                case 'f':
+                    break;
+                default:
+                        fprintf(stderr, "No action \"erase\" for section %c\n",
+                                section);
+                    continue;
+                }
+                if (res)
+                {
+                    fprintf(stderr, "Erase failed for section %c\n",
+                            section);
+                    ret = 1;
+                    goto xmega_release;
+                }
+                if (action == 'e')
+                    continue;
+            }
+
+            switch (section)
+            {
+            case 'a':
+            case 'b':
+            case 'u':
+            {
+                uint32_t offset = (file_offset/flash_page)*flash_page;
+                for (i= offset; i<length; i+=flash_page)
+                {
+                    if (action == 'w')
+                    {
+                        res = alg.xnvm_program_flash_page
+                            (base + i, rfile.getData()+i, flash_page);
+                    }
+                    else
+                        res = alg.xnvm_erase_program_flash_page                            
+                            (base +i, rfile.getData()+i, flash_page);
+                    if(res)
+                    {
+                        fprintf(stderr, 
+                                "Write failed for section %c Addr 0x%06x\n",
+                                section, i);
+                        ret = 1;
+                        goto xmega_release;
+                    }
+                }
+            }
+            break;
+            case 'e':
+            {
+                uint32_t offset = (file_offset/eeprom_page)*eeprom_page;
+                for (i= offset; i<length; i+=eeprom_page)
+                {
+                    res = alg.xnvm_erase_program_eeprom_page
+                        (i,rfile.getData()+i, eeprom_page); 
+                    if(res)
+                    {
+                        fprintf(stderr, 
+                                "Write failed for EEPROM Addr 0x%06x\n", i);
+                        ret = 1;
+                        goto xmega_release;
+                    }
+                   break;
+                }
+            }
+            break;
+            case 'f':
+            {
+                uint32_t j , fuse = file_offset;
+                
+                for (j= fuse; j<length; j++)
+                {
+                    uint8_t data = rfile.getData()[j];
+                    if ((j == 3) || (j == 6))
+                        /* skip reserved fuses*/
+                        continue;
+                    if ((j == 4)  && ((data & 1) == 1))
+                    {
+                        if (action == 'w')
+                        {
+                            fprintf(stderr, "JTAGEN should probably be set. Correcting\n");
+                            fprintf(stderr, "If really wanted, Use action 'W'\n");
+                            data &= 0xfe;
+                        }
+                    }
+                        
+#if 0
+                    res = alg.xnvm_write_fuse_byte(j, data); 
+                    if(res)
+                    {
+                        fprintf(stderr, 
+                                "Write Fuse %d failed\n", j);
+                        ret = 1;
+                        goto xmega_release;
+                    }
+#else
+                    fprintf(stderr, "Fuse %d val %02x\n", j, data);
+#endif
+                }
+            }
+            break;
+            case 'l':
+//                res = alg.xnvm_write_lock_byte(rfile.getData()[0]); 
+                if(res)
+                {
+                    fprintf(stderr, 
+                            "Write Lock failed\n");
+                    ret = 1;
+                    goto xmega_release;
+                }
+                break;
+            default:
+                fprintf(stderr,"Write to section \'%c\' not handled\n",section);
+            }
+        }
     }
+xmega_release:    
     alg.xnvm_pull_dev_out_of_reset();
     jtag->shiftIR(&bypass);
-    return res;
+    return ret;
 }
 
