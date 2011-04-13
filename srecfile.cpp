@@ -218,6 +218,7 @@ int SrecFile::ReadOneLine(FILE *fp,char *dest, int len)
 
 SrecFile::SrecFile(void)
 {
+    buffer = 0;
 }
 
 SrecFile::~SrecFile(void)
