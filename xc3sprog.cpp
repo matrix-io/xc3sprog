@@ -1059,7 +1059,7 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
                   cur_bitfile->setLength(k);
                   memcpy(cur_bitfile->getData(), promfile.getData() + cur_filepos / 8, k / 8);
               }
-              if (tolower(action) == 'W')
+              if (tolower(action) == 'w')
               {
                   int res;
                   if (action == 'w')
