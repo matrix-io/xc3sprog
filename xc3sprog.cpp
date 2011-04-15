@@ -328,30 +328,40 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
   
 void usage(bool all_options)
 {
-  fprintf(stderr, "usage:\txc3sprog -c cable [options] <file0> <file1> ...\n");
-  fprintf(stderr, "\tfile may specify a style after %%\n");
-  fprintf(stderr, "\tFlash programming honors offset after @ and length after #\n");
-  fprintf(stderr, "\tE.g. file.bin@0x10000%%bin\n");
+  fprintf(stderr, "usage:\txc3sprog -c cable [options] <file0spec> <file1spec> ...\n");
+  fprintf(stderr, "\tfilespec is filename:action:offset:style:length\n");
+  fprintf(stderr, "\taction on of 'w|W|v|r|R'\n");
+  fprintf(stderr, "\tw: erase whole area, write and verify\n");
+  fprintf(stderr, "\tW: Write with auto-sector erase and verify\n");
+  fprintf(stderr, "\tv: Verify device against filename\n");
+  fprintf(stderr, "\tr: Read from device,write to file, don't overwrite existing file\n");
+  fprintf(stderr, "\tR: Read from device and write to file, overwrite existing file\n");
+  fprintf(stderr, "\tDefault action is 'w'\n\n");
+  fprintf(stderr, "\tDefault offset is 0\n\n");
+  fprintf(stderr, "\tstyle: One of BIT|BIN|MCS|MCSREV|IHEX|HEX\n");
+  fprintf(stderr, "\tBIT: Xilinc .bit format\n");
+  fprintf(stderr, "\tBIN: Binary format\n");
+  fprintf(stderr, "\tMCS: XILINX Prom format\n");
+  fprintf(stderr, "\tMCSREV: XILINX Prom format with Bytes reversed\n");
+  fprintf(stderr, "\tMCSREV: INTEL Hex format\n");
+  fprintf(stderr, "\tHEX:  Hex dump format\n");
+  fprintf(stderr, "\tDefault for FPGA|SPI|XCF is BIT\n");
+  fprintf(stderr, "\tDefault for CPLD is JED\n");
+  fprintf(stderr, "\tDefault for XMEGA is IHEX\n");
+  fprintf(stderr, "\tDefault length is whole device\n");
+
   if (!all_options) exit(255);
 
   fprintf(stderr, "Possible options:\n");
 #define OPT(arg, desc)	\
   fprintf(stderr, "   %-8s  %s\n", (arg), (desc))
-  OPT("-C [len]", "Verify device against file (no programming).");
-  OPT("-r [len]", "Read from device and write to file.");
-  OPT("",         "Optional: [len] in Bytes.");
-  OPT("-f", "When reading from device, overwrite exiting file, abort without -f");
-  OPT("-e", "Erase(XC95C/SPI only).");
+  OPT("-e", "Erase whole device).");
   OPT("-h", "Print this help.");
-  OPT("-i", "Input file format (BIT|BIN|MCS|MCSREV|HEX|HEXRAW).");
   OPT("-I[file]", "Work on connected SPI Flash (ISF Mode),");
   OPT(""  , "after loading 'bscan_spi' bitfile if given.");
   OPT("-j", "Detect JTAG chain, nothing else (default action).");
   OPT("-l", "Program lockbits if defined in fusefile.");
   OPT("-m <dir>", "Directory with XC2C mapfiles.");
-  OPT("-o", "Output file format (BIT|BIN|MCS|MCSREV|HEX).");
-  OPT("-O val", "Offset in PROM in Bytes, clipped to start of page");
-  OPT("-p", "Position in the JTAG chain.");
   OPT("-R", "Try to reconfigure device(No other action!).");
   OPT("-T val", "Test chain 'val' times (0 = forever) or 10000 times"
       " default.");
@@ -374,7 +384,8 @@ void usage(bool all_options)
   exit(255);
 }
 
-/* Parse a filename in the type aaaa.bb:action:0x10000|section:0x10000:rawhex:0x1000
+/* Parse a filename in the form
+ *           aaaa.bb:action:0x10000|section:0x10000:rawhex:0x1000
  * for name, action, offset|area, style, length 
  * 
  * return the Open File
@@ -387,7 +398,7 @@ void usage(bool all_options)
  * R: Read from device and write to file, overwrite exixting file
  *
  * possible sections:
- * f:
+ * f: Flash
  * a:
  * 
  */
