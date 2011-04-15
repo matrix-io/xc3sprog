@@ -108,10 +108,13 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
   unsigned char din[256];
   unsigned char dout[256];
   unsigned char dcmp[256];
-  memset(din, 0xff, 256);
+  memset(din, 0xaa, 256);
   int run_irtest = 0;
 
   if(num == 0)
+      /* the chain is not functional and we have no idea 
+       * what parts to look for
+       */
     {
       fprintf(stderr, "Running getChain %d times\n", test_count);
       k=0;
@@ -147,7 +150,7 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
           break;
       }
       for (j = 0; j < db.getIRLength(i); j = j+8)
-	ir_in[j>>3] =  (db.getIDCmd(i)>>j) & 0xff;
+        ir_in[j>>3] =  (db.getIDCmd(i)>>j) & 0xff;
       jtag->shiftIR(ir_in, ir_out);
       jtag->cycleTCK(1);
       jtag->shiftDR(NULL, &dout[i*4], 32);
@@ -172,9 +175,10 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
       jtag->setTapState(Jtag::SHIFT_IR);
       io->shiftTDITDO(din,dout,len,true);
       jtag->nextTapState(true);
+      fprintf(stderr, "0x");
       for(i=0; i <len>>3;  i++)
 	fprintf(stderr, "%02x", dout[i]);
-      fprintf(stderr, " ");
+      fprintf(stderr, " binary ");
       k=len-1;
       for(i = 0; i<num; i++)
 	{
@@ -258,11 +262,7 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 	      fprintf(stderr, "\nMismatch run %8d:", i+1);
               failed++;
 	      for(j=num-1; j>=0; j--)
-		if(memcmp(dout+j*4, dcmp+j*4, 4) !=0)
 		  fprintf(stderr," 0x%08lx", jtag->byteArrayToLong(dout+j*4));
-		else
-		  fprintf(stderr," XXXXXXXXXXX");
-		  //		  fprintf(stderr,"           ");
 	      fflush(stderr);
 	    }
 	  if(i%1000 == 999)
@@ -1161,6 +1161,7 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool erase,
         {
             spifile.readFile(spifile_fp, spifile_style);
             fclose(spifile_fp);
+            spifile_fp = NULL;
             if(verbose)
             {
                 fprintf(stderr, "Created from NCD file: %s\n",
