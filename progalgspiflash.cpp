@@ -869,7 +869,7 @@ int ProgAlgSPIFlash::sectorerase_and_program(BitFile &pfile)
       fprintf(stderr, "\nMaximum erase time %.1f ms, Max PP time %.0f us\n",
 	      max_sector_erase/1.0e3, max_sector_erase/1e1);
     }
-  return 1;
+  return 0;
 }
 
 int ProgAlgSPIFlash::program(BitFile &pfile) 
