@@ -47,7 +47,6 @@ class IOFtdi : public IOBase
   unsigned char usbuf[TX_BUF];
   int buflen;
   bool use_ftd2xx;
-  bool verbose;
   struct cable_t *cable;
   DWORD bptr;
   int calls_rd, calls_wr, subtype, retries;
