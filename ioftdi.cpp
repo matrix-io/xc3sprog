@@ -51,7 +51,7 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial)
   unsigned char   buf[9] = { SET_BITS_LOW, 0x00, 0x0b,
 			     TCK_DIVISOR,  0x03, 0x00 ,
 			     SET_BITS_HIGH,0x00, 0x00};
-  char *description = 0;
+  char *description = NULL;
   char descstring[256];
   unsigned int vendor = VENDOR_FTDI, product = DEVICE_DEF;
   unsigned int channel = 0;
@@ -77,20 +77,16 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial)
   if (p)
   {
       char *q = strchr(p,':');
-      int len;
+      int len = q ? q-p : strlen(p);
 
-      if (q)
-          len = q-p;
-      else
-          len = strlen(p);
       if (len>0)
       {
           int num;
           num = (len>255)?255:len;
           strncpy(descstring, p, num);
           descstring[num] = 0;
+		  description = descstring;
       }
-      description = descstring;
       p = q;
       if(p)
           p ++;
