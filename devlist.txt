@@ -243,11 +243,11 @@
 #AVR32
 01e8203f     5   0x1 AT32AP7000
 
-#STM (STM32 seems to haveno IDCODE command
-06412041     5   0x0 STM32F10XX_low-density
-06410041     5   0x0 STM32F10XX_medium-density
-06414041     5   0x0 STM32F10XX_high-density
-06430041     5   0x0 STM32F10XX_XL-density
+#STM 
+06412041     5   0x1 STM32F10XX_low-density
+06410041     5   0x1 STM32F10XX_medium-density
+06414041     5   0x1 STM32F10XX_high-density
+06430041     5   0x1 STM32F10XX_XL-density
 06418041     5   0x1 STM32F10XX_connectivity_line
 
 #ARM Debug
