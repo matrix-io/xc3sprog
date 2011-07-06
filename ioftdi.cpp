@@ -45,7 +45,7 @@ IOFtdi::IOFtdi(bool u)
     verbose = false;
 }
 
-int IOFtdi::Init(struct cable_t *cable, const char *serial)
+int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
 {
   unsigned char   buf1[5];
   unsigned char   buf[9] = { SET_BITS_LOW, 0x00, 0x0b,
@@ -56,8 +56,17 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial)
   unsigned int vendor = VENDOR_FTDI, product = DEVICE_DEF;
   unsigned int channel = 0;
   unsigned int dbus_data =0, dbus_en = 0xb, cbus_data= 0, cbus_en = 0;
+  unsigned int divisor;
   int res;
   char *p = cable->optstring;
+
+  if (freq == 0 || (freq > 3000000)) /* freq = 0 means max rate, 3 MHz for now*/
+      divisor = 1;
+  else
+      divisor = 6000000/freq ;
+
+  buf[4] = divisor & 0xff;
+  buf[5] = (divisor >> 8) && 0xff;
 
   /* split string by hand for more flexibility*/
   if (p)
@@ -312,7 +321,7 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial)
   mpsse_add_cmd(buf, 9);
   mpsse_send();
   if (verbose)
-      fprintf(stderr, "Using FTDI Clock divisor 0x%02x%02x",buf[5],buf[4]);
+      fprintf(stderr,"Using JTAG frequency %d\n", 6000000/(divisor+1));
   fprintf(stderr, "\n");
   return 0;
 

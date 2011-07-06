@@ -47,7 +47,7 @@ class IOFX2 : public IOBase
   
  public:
   IOFX2();
-  int Init(struct cable_t *cable, char const *serial);
+  int Init(struct cable_t *cable, char const *serial, unsigned int freq);
   ~IOFX2();
   
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);

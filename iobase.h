@@ -47,7 +47,7 @@ class IOBase
   virtual ~IOBase() {}
 
  public:
-  virtual int Init(struct cable_t *cable, const char *devopt);
+  virtual int Init(struct cable_t *cable, const char *devopt, unsigned int freq);
   virtual void flush() {}
 
  public:

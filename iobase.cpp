@@ -45,7 +45,7 @@ IOBase::IOBase()
     tms_len = 0;
 }    
 
-int IOBase::Init(struct cable_t *cable, const char *devopt)
+int IOBase::Init(struct cable_t *cable, const char *devopt, unsigned int freq)
 {
     return 0;
 }    

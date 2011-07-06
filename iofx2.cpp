@@ -35,7 +35,7 @@ IOFX2::IOFX2()
 {
 }
 
-int IOFX2::Init(struct cable_t *cable, char const *serial)
+int IOFX2::Init(struct cable_t *cable, char const *serial, unsigned int freq)
 {
     unsigned int vendor = 0xfffe, product = 0x0018;
     char descstring[256];

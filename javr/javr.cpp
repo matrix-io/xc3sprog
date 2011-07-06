@@ -64,6 +64,8 @@ void usage() {
 	  "   -v\t\tverbose output\n"
 	  "   -j\t\tDetect JTAG chain, nothing else\n"
 	  "   -T[val]\tTest chain integrity val times (0 = forever) or 10000 times default\n"
+          "   -J[val]\tRun at max with given JTAG Frequency, 0(default) means max. Rate of device\n"
+          "         \tOnly used for FTDI cables for now\n\n"
 	  "   -C\t\tVerify device against File (no programming)\n"
 	  "    Supported cable types: pp, ftdi, fx2, xpc\n"
     	  "   \tOptional pp arguments:\n"
@@ -107,6 +109,7 @@ int main(int argc, char **args)
   bool    gProgramFlash = false;
   bool    gProgramEeprom = false;
   bool    gProgramFuseBits = false;
+  unsigned int jtag_freq;
   struct cable_t cable;
   char const *dev       = 0;
   char const *eepromfile= 0;
@@ -121,7 +124,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-    switch(getopt(argc, args, "?hLc:Cd:e:f:jp:s:v")) {
+    switch(getopt(argc, args, "?hJ:Lc:Cd:e:f:jp:s:v")) {
     case -1:
       goto args_done;
       
@@ -131,6 +134,10 @@ int main(int argc, char **args)
 
     case 'l':
       gLockOption = true;
+      break;
+
+    case 'J':
+      jtag_freq = atoi(optarg);
       break;
 
     case 'L':
@@ -254,7 +261,7 @@ int main(int argc, char **args)
 
   CableDB cabledb(0);
   res = cabledb.getCable(cablename, &cable);
-  res = getIO( &io, &cable, dev, serial, verbose, use_ftd2xx);
+  res = getIO( &io, &cable, dev, serial, verbose, use_ftd2xx, jtag_freq);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);
