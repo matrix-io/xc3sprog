@@ -4,6 +4,7 @@
 # OptString for pp: 
 # OptString for xps:  VID:PID
 # Max_Freq == 0 mean use maximum speed of device
+# Use 1500000 for all cable connected cables and max for all on board cables
 
 ftdi          ftdi    0x0403:0x6010:                                       1500000
 bbv2          ftdi    0x0403:0x6010::1:0x00:0x10:0x00:0x0                  1500000
