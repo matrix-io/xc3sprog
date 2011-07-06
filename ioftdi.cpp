@@ -285,12 +285,8 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
       
       {
           FT_DEVICE ftDevice;
-          FT_STATUS ftStatus;
-          DWORD deviceID;
-          char SerialNumber[16];
-          char Description[64];
 
-          ftStatus = FT_GetDeviceInfo(
+          res = FT_GetDeviceInfo(
               ftd2xx_handle, &ftDevice, NULL, NULL, NULL, NULL);
           if (res == FT_OK)
           {
