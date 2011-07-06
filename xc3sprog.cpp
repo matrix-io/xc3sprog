@@ -619,7 +619,6 @@ int main(int argc, char **args)
   bool        lock      = false;
   bool     detectchain  = false;
   bool     chaintest    = false;
-  bool     readback     = false;
   bool     spiflash     = false;
   bool     reconfigure  = false;
   bool     erase        = false;
@@ -660,7 +659,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-      char c = getopt(argc, args, "?hC::Lc:d:DeE:fF:i:I::jLm:o:O:p:r::Rs:S:T::v");
+      char c = getopt(argc, args, "?hC::Lc:d:DeE:fF:i:I::jLm:o:O:p:Rs:S:T::v");
     switch(c) 
     {
     case -1:
@@ -755,12 +754,6 @@ int main(int argc, char **args)
 	}
       break;
       
-    case 'r':
-      readback = true;
-      if (optarg)
-          length = strtol(optarg, NULL, 0);
-      break;
-
      case 'd':
       dev = optarg;
       break;
