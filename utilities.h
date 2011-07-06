@@ -11,7 +11,8 @@ class DeviceDB;
 
 void detect_chain(Jtag *jtag, DeviceDB *db);
 int getIO(std::auto_ptr<IOBase> *io, struct cable_t*,  
-          char const *dev, const char *serial, bool verbose, bool ftd2xx);
+          char const *dev, const char *serial, bool verbose, bool ftd2xx,
+          unsigned int freq);
 const char *getCableName(int type);
 #define OSNAME_LEN	64
 void get_os_name(char *buf, int buflen);

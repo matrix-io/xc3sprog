@@ -47,7 +47,9 @@ void usage(void)
 {
   fprintf(stderr, 
 	  "\nUsage: detectchain [-c cable_type] [-v]\n"
-	  "   -v\tverbose output\n\n"
+	  "   -v\tverbose output\n"
+	  "   -J val\tRun at max with given JTAG Frequency, 0(default) means max. Rate of device\n"
+          "         \tOnly used for FTDI cables for now\n\n"
 	  "   Supported cable types: pp, ftdi, fx2, xpc\n"
 	  "   \tOptional pp arguments:\n"
 	  "   \t\t[-d device] (e.g. /dev/parport0)\n"
@@ -72,13 +74,14 @@ int main(int argc, char **args)
     char *cablename   = 0;
     char const *dev   = 0;
     char const *serial  = 0;
+    unsigned int jtag_freq = 0;
     std::auto_ptr<IOBase>  io;
     int res;
     struct cable_t cable;
     
     // Start from parsing command line arguments
     while(true) {
-      switch(getopt(argc, args, "?hvc:d:LS:")) {
+      switch(getopt(argc, args, "?hvc:d:J:LS:")) {
       case -1:
 	goto args_done;
 	
@@ -86,6 +89,10 @@ int main(int argc, char **args)
 	verbose = true;
 	break;
 	
+      case 'J':
+        jtag_freq = atoi(optarg);
+        break;
+
       case 'L':
 	use_ftd2xx = true;
 	break;
@@ -119,7 +126,7 @@ args_done:
   CableDB cabledb(0);
   res = cabledb.getCable(cablename, &cable);
 
-  res |= getIO( &io, &cable, dev, serial, verbose, use_ftd2xx);
+  res |= getIO( &io, &cable, dev, serial, verbose, use_ftd2xx, jtag_freq);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);

@@ -305,7 +305,7 @@ IOParport::IOParport() : IOBase(), total(0), debug(0)
 {
 }
 
-int IOParport::Init(struct cable_t *cable, const char *dev)
+int IOParport::Init(struct cable_t *cable, const char *dev, unsigned int freq)
 {
     int res;
 

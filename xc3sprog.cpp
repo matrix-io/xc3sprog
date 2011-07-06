@@ -367,6 +367,8 @@ void usage(bool all_options)
   OPT("-R", "Try to reconfigure device(No other action!).");
   OPT("-T val", "Test chain 'val' times (0 = forever) or 10000 times"
       " default.");
+  OPT("-J val", "Run at max with given JTAG Frequency, 0(default) means max. Rate of device");
+  OPT("", "Only used for FTDI cables for now");
   OPT("-D", "Dump internal devlist and cablelist to files");
   OPT(""      , "In ISF Mode, test the SPI connection.");
   OPT("-v", "Verbose output.");
@@ -625,6 +627,7 @@ int main(int argc, char **args)
   bool     use_ftd2xx   = false;
   unsigned int offset   = 0;
   unsigned int length   = 0;
+  unsigned int jtag_freq= 0;
   unsigned long id;
   struct cable_t cable;
   char const *dev       = 0;
@@ -659,7 +662,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-      char c = getopt(argc, args, "?hC::Lc:d:DeE:fF:i:I::jLm:o:O:p:Rs:S:T::v");
+      char c = getopt(argc, args, "?hC::Lc:d:DeE:fF:i:I::jJ:Lm:o:O:p:Rs:S:T::v");
     switch(c) 
     {
     case -1:
@@ -704,6 +707,10 @@ int main(int argc, char **args)
 	test_count = atoi(optarg);
       if (test_count == 0)
 	test_count = INT_MAX;
+      break;
+
+    case 'J':
+      jtag_freq = atoi(optarg);
       break;
 
     case 'l':
@@ -808,7 +815,7 @@ int main(int argc, char **args)
              cablename);
       exit(1);
   }
-  res = getIO( &io, &cable, dev, serial, verbose, use_ftd2xx);
+  res = getIO( &io, &cable, dev, serial, verbose, use_ftd2xx, jtag_freq);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);

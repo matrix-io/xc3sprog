@@ -55,7 +55,7 @@ class IOFtdi : public IOBase
  public:
   IOFtdi(bool use_ftd2xx);
   ~IOFtdi();
-  int  Init(struct cable_t *cable, const char * serial);
+  int  Init(struct cable_t *cable, const char * serial, unsigned int freq);
   void settype(int subtype);
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
   void tx_tms(unsigned char *pat, int length, int force);
