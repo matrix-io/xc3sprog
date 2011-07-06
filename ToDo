@@ -7,5 +7,5 @@
 - More devices (XC2C, XC95xx (without X))
 - Other devices with published 1532 algorithm
 - Bitorder for Intel HEX format
-- Auto Cable Detection, VID:PID setting without code dublication
+- Finer granularity for erasing XCFP
 - ... 
