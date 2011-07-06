@@ -140,4 +140,33 @@ CABLES_TYPES CableDB::getCableType(const char *given_name)
   return CABLE_UNKNOWN;
 }
 
-        
+const char *CableDB::getCableName(const CABLES_TYPES type )
+{
+    switch (type)
+    {
+    case CABLE_PP: return "pp";
+    case CABLE_FTDI: return "ftdi";
+    case CABLE_FX2: return  "fx2";
+    case CABLE_XPC: return "xpc";
+    case CABLE_NONE: return "none";
+    case CABLE_UNKNOWN: return "unknown";
+    }
+    return "UNKNOWN";
+}
+
+int CableDB::dumpCables(FILE *fp_out)
+{
+    unsigned int i;
+
+    if (!fp_out)
+    {
+        fprintf(stderr," No valid file to dump Cablelist\n");
+        return 1;
+    }
+    for(i = 0; i < cable_db.size(); i++)
+        fprintf(fp_out,"%-14s%-7s%-40s\n",
+                cable_db[i].alias,
+                getCableName(cable_db[i].cabletype),
+                cable_db[i].optstring);
+    return 0;
+}       

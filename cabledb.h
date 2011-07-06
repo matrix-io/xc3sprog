@@ -36,7 +36,7 @@ enum CABLES_TYPES
 struct cable_t
 {
     char * alias;
-    int cabletype;
+    CABLES_TYPES cabletype;
     char * optstring;
 };
 
@@ -46,11 +46,13 @@ private:
   std::vector<cable_t> cable_db;
   std::string  cablename;
   CABLES_TYPES getCableType(const char *given_name);
-    
+ 
 public:
   CableDB(const char *cf_name);
   ~CableDB(void);
   std::string const& getFile() const { return cablename; };
   int getCable(const char *name, struct cable_t *cable);
+  int dumpCables(FILE *fp_out);
+  const char *getCableName(const CABLES_TYPES type );
 };
 #endif //CABLEDB_H

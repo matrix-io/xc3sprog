@@ -132,3 +132,21 @@ const char *DeviceDB::getDeviceDescription(unsigned int i)
   if(i>=devices.size())return 0;
   return devices[i].text.c_str();
 }
+
+int DeviceDB::dumpDevices(FILE *fp_out)
+{
+    unsigned int i;
+
+    if (!fp_out)
+    {
+        fprintf(stderr," No valid file to dump Cablelist\n");
+        return 1;
+    }
+    for(i = 0; i < id_db.size(); i++)
+        fprintf(fp_out,"%08x %6d 0x%04x %s\n",
+                id_db[i].idcode,
+                id_db[i].irlen,
+                id_db[i].id_cmd,
+                id_db[i].text.c_str());
+    return 0;
+}       
