@@ -58,6 +58,7 @@ class DeviceDB
   int getIRLength(unsigned int i);
   int getIDCmd(unsigned int i);
   const char *getDeviceDescription(unsigned int i);
+  int dumpDevices(FILE *fp_out);
 };
 
 #endif

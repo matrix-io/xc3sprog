@@ -32,7 +32,9 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <memory>
 #include <errno.h>
 #include <assert.h>
+#include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <signal.h>
 
 #include "io_exception.h"
@@ -365,6 +367,7 @@ void usage(bool all_options)
   OPT("-R", "Try to reconfigure device(No other action!).");
   OPT("-T val", "Test chain 'val' times (0 = forever) or 10000 times"
       " default.");
+  OPT("-D", "Dump internal devlist and cablelist to files");
   OPT(""      , "In ISF Mode, test the SPI connection.");
   OPT("-v", "Verbose output.");
 
@@ -554,10 +557,63 @@ FILE *getFile_and_Attribute_from_name(
     }
     return ret;
 }
+void dump_lists(CableDB *cabledb, DeviceDB *db)
+{
+    int fd;
+    FILE *fp_out;
+    char outname[17] = "cablelist.txt";
+
+   fd = open(outname, O_WRONLY|O_CREAT|O_EXCL, 0644);
+    if (fd <0 )
+    {
+        sprintf(outname,"cablelist.txt.1");
+        fd = open(outname, O_WRONLY|O_CREAT, 0644);
+    }
+    if (fd <0 )
+    {
+        fprintf(stderr, "Error creating file\n");
+    }
+    else
+    {
+        fprintf(stderr, "Dumping internal cablelist to %s\n", outname);
+        fp_out = fdopen(fd, "w");
+        if (fp_out)
+        {
+            fprintf(fp_out, "# Alias       Type  OptString\n");
+            cabledb->dumpCables(fp_out);
+            fclose(fp_out);
+        }
+    }
+
+    sprintf(outname,"devlist.txt");
+   fd = open(outname, O_WRONLY|O_CREAT|O_EXCL, 0644);
+    if (fd <0 )
+    {
+        sprintf(outname,"devlist.txt.1");
+        fd = open(outname, O_WRONLY|O_CREAT, 0644);
+    }
+    if (fd <0 )
+    {
+        fprintf(stderr, "Error creating file\n");
+    }
+    else
+    {
+        fprintf(stderr, "Dumping internal devicelist to %s\n", outname);
+        fp_out = fdopen(fd, "w");
+        if (fp_out)
+        {
+            fprintf(fp_out, "# IDCODE IR_len ID_Cmd Text\n");
+            db->dumpDevices(fp_out);
+            fclose(fp_out);
+        }
+    }
+    exit(0);
+}
 
 int main(int argc, char **args)
 {
   bool        verbose   = false;
+  bool        dump      = false;
   bool        force     = false;
   bool        verify    = false;
   bool        lock      = false;
@@ -604,7 +660,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-      char c = getopt(argc, args, "?hC::Lc:d:eE:fF:i:I::jLm:o:O:p:r::Rs:S:T::v");
+      char c = getopt(argc, args, "?hC::Lc:d:DeE:fF:i:I::jLm:o:O:p:r::Rs:S:T::v");
     switch(c) 
     {
     case -1:
@@ -665,6 +721,10 @@ int main(int argc, char **args)
 
     case 'e':
       erase = true;
+      break;
+
+    case 'D':
+      dump = true;
       break;
 
     case 'E':
@@ -743,9 +803,11 @@ int main(int argc, char **args)
  args_done:
   argc -= optind;
   args += optind;
+  if (dump)
+      dump_lists(&cabledb, &db);
+
   if((argc < 0) || (cablename == 0))  usage(true);
   if(argc < 1 && !reconfigure && !erase) detectchain = true;
-
   res = cabledb.getCable(cablename, &cable);
   if(res)
   {
