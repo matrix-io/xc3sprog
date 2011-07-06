@@ -579,7 +579,7 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
         }
         if (read != len)
         {
-            fprintf(stderr,"readusb: Short read %ld vs %ld\n", read, len);
+            fprintf(stderr,"readusb: Short read %d vs %ld\n", read, len);
             throw  io_exception();
         }
     }
@@ -698,7 +698,7 @@ void IOFtdi::mpsse_send() {
   if(bptr == 0)  return;
 
   if(fp_dbg)
-    fprintf(fp_dbg,"mpsse_send %ld\n", bptr);
+    fprintf(fp_dbg,"mpsse_send %d\n", bptr);
   if (ftd2xx_handle)
   {
       DWORD written, last_written;
@@ -729,7 +729,7 @@ void IOFtdi::mpsse_send() {
       }
       if(written != bptr)
       {
-          fprintf(stderr,"mpsse_send: Short write %ld vs %ld\n", written, bptr);
+          fprintf(stderr,"mpsse_send: Short write %d vs %d\n", written, bptr);
           throw  io_exception();
       }
   }
@@ -739,7 +739,7 @@ void IOFtdi::mpsse_send() {
       int written = ftdi_write_data(ftdi_handle, usbuf, bptr);
       if(written != (int) bptr) 
       {
-          fprintf(stderr,"mpsse_send: Short write %d vs %ld at run %d, Err: %s\n", 
+          fprintf(stderr,"mpsse_send: Short write %d vs %d at run %d, Err: %s\n", 
                   written, bptr, calls_wr, ftdi_get_error_string(ftdi_handle));
           throw  io_exception();
       }
