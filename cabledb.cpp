@@ -51,8 +51,8 @@ CableDB::CableDB(const char *cf_name)
         {
 	  char buffer[256];
 	  fgets(buffer,256,fp);  // Get next line from file
-	  if (sscanf(buffer,"%s %s %s", 
-                     alias, cabletype, options) == 3)
+	  if (sscanf(buffer,"%s %s %s %d", 
+                     alias, cabletype, options, &cable.freq) == 4)
           {
               cable.alias = new char[strlen(alias)+1];
               strcpy(cable.alias,alias);
@@ -84,8 +84,8 @@ CableDB::CableDB(const char *cf_name)
                 p++;
             if(buffer[0] == '#')
                 continue;
-            if (sscanf(buffer,"%s %s %s", 
-                       alias, cabletype, options) == 3)
+            if (sscanf(buffer,"%s %s %s %d", 
+                       alias, cabletype, options, &cable.freq) == 4)
 	    {
                 cable.alias = new char[strlen(alias)+1];
                 strcpy(cable.alias,alias);
@@ -121,6 +121,7 @@ int CableDB::getCable(const char *name, struct cable_t *cable)
             cable->alias = cable_db[i].alias;
             cable->cabletype = cable_db[i].cabletype;
             cable->optstring = cable_db[i].optstring;
+            cable->freq = cable_db[i].freq;
             return 0;
         }
     }
@@ -164,9 +165,10 @@ int CableDB::dumpCables(FILE *fp_out)
         return 1;
     }
     for(i = 0; i < cable_db.size(); i++)
-        fprintf(fp_out,"%-14s%-7s%-40s\n",
+        fprintf(fp_out,"%-14s%-7s%-60s%-8d\n",
                 cable_db[i].alias,
                 getCableName(cable_db[i].cabletype),
-                cable_db[i].optstring);
+                cable_db[i].optstring,
+                cable_db[i].freq);
     return 0;
 }       

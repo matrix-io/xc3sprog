@@ -41,6 +41,7 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
             unsigned int freq)
 {
     int res;
+    unsigned int use_freq;
 
     if (!cable)
     {
@@ -49,29 +50,34 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
         return 1;
     }
 
+    if ((freq == 0) || (freq > cable->freq))
+        use_freq = cable->freq;
+    else
+        use_freq = freq;
+
   if (cable->cabletype == CABLE_PP)
     {
 	  io->reset(new IOParport());
           io->get()->setVerbose(verbose);
-          res = io->get()->Init(cable, dev, freq);
+          res = io->get()->Init(cable, dev, use_freq);
     }
   else if(cable->cabletype == CABLE_FTDI)  
   {
       io->reset(new IOFtdi(use_ftd2xx));
       io->get()->setVerbose(verbose);
-      res = io->get()->Init(cable, serial, freq);
+      res = io->get()->Init(cable, serial, use_freq);
   }
   else if(cable->cabletype  == CABLE_FX2)
   { 
       io->reset(new IOFX2());
       io->get()->setVerbose(verbose);
-      res = io->get()->Init(cable, serial, freq);
+      res = io->get()->Init(cable, serial, use_freq);
   }
   else if(cable->cabletype == CABLE_XPC)  
   {
       io->reset(new IOXPC());
       io->get()->setVerbose(verbose);
-      res = io->get()->Init(cable, serial, freq);
+      res = io->get()->Init(cable, serial, use_freq);
   }
   return res;
 }

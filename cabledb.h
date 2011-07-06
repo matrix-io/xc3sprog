@@ -38,6 +38,7 @@ struct cable_t
     char * alias;
     CABLES_TYPES cabletype;
     char * optstring;
+    unsigned int freq;
 };
 
 class CableDB
