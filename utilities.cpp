@@ -50,7 +50,7 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
         return 1;
     }
 
-    if ((freq == 0) || (freq > cable->freq))
+    if ((freq == 0) || ((cable->freq != 0) && (freq > cable->freq)))
         use_freq = cable->freq;
     else
         use_freq = freq;

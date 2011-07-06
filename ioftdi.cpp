@@ -59,14 +59,18 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
   unsigned int divisor;
   int res;
   char *p = cable->optstring;
+  bool device_has_fast_clock = false;
 
-  if (freq == 0 || (freq > 3000000)) /* freq = 0 means max rate, 3 MHz for now*/
-      divisor = 1;
+      /* set for now. If we have a fast device, correct later */
+  if ((freq == 0 )|| (freq >= 6000000)) /* freq = 0 means max rate, 3 MHz for now*/
+      divisor = 0;
   else
-      divisor = 6000000/freq ;
+      divisor = 6000000/freq - ((6000000&freq)?0:1);
+  if (divisor > 0xffff)
+      divisor = 0xffff;
 
   buf[4] = divisor & 0xff;
-  buf[5] = (divisor >> 8) && 0xff;
+  buf[5] = (divisor >> 8) & 0xff;
 
   /* split string by hand for more flexibility*/
   if (p)
@@ -150,7 +154,6 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
   }
   if (!use_ftd2xx)
   {
-      int res;
       // allocate and initialize FTDI structure
       ftdi_handle = ftdi_new();
       // Set interface
@@ -209,6 +212,18 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
              FT2232H may hang */
           ftdi_read_data(ftdi_handle, buf1,5);
 
+          /* Check if we have a fast clock cabable device*/
+          switch(ftdi_handle->type)
+          {
+          case TYPE_2232H:
+          case TYPE_4232H:
+          case TYPE_232H:
+              device_has_fast_clock = true;
+              break;
+          default:
+              device_has_fast_clock = false;
+          }
+
       }
       else /* Unconditionally try ftd2xx on error*/
       {
@@ -218,7 +233,6 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
   }
   if (ftdi_handle == 0)
   {
-      FT_STATUS res;
       DWORD dwNumDevs;
       res = FT_CreateDeviceInfoList(&dwNumDevs);
       if (res != FT_OK) 
@@ -242,6 +256,9 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
       if(serial &&  description && (dwNumDevs>1))
           fprintf(stderr,
                   "On linux device selection may fail due to missing LOCID\n");
+      if((serial ||  description) && (channel == INTERFACE_B))
+          fprintf(stderr,
+                  "On linux device selection second channnel fails due to missing LOCID\n");
 #else
       if ((vendor != 0x0403) || 
           ((product != 0x6001) && (product != 0x6010) && (product != 0x6006)))
@@ -266,6 +283,30 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
           goto fail;
       }
       
+      {
+          FT_DEVICE ftDevice;
+          FT_STATUS ftStatus;
+          DWORD deviceID;
+          char SerialNumber[16];
+          char Description[64];
+
+          ftStatus = FT_GetDeviceInfo(
+              ftd2xx_handle, &ftDevice, NULL, NULL, NULL, NULL);
+          if (res == FT_OK)
+          {
+              switch (ftDevice)
+              {
+              case FT_DEVICE_2232H:
+              case FT_DEVICE_4232H:
+              case  FT_DEVICE_232H:
+                  device_has_fast_clock = true;
+                  break;
+              default:
+                  device_has_fast_clock = false;
+              }
+          }
+      }
+
       res = FT_ResetDevice(ftd2xx_handle);
       if (res != FT_OK)
       {
@@ -320,8 +361,26 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
   
   mpsse_add_cmd(buf, 9);
   mpsse_send();
-  if (verbose)
-      fprintf(stderr,"Using JTAG frequency %d\n", 6000000/(divisor+1));
+  /* On H devices, use the non-divided clock*/
+  if (device_has_fast_clock && ((freq == 0) ||(freq > 458)))
+  {
+      if ((freq == 0) ||(freq >= 30000000)) /* freq = 0 means max rate, 30 MHz for now*/
+          divisor = 0;
+      else
+          divisor = 30000000/freq -((30000000%freq)?0:1);
+      if (divisor > 0xffff)
+          divisor = 0xffff;
+      buf[0] = DIS_DIV_5;
+      buf[1] = TCK_DIVISOR;
+      buf[2] =  divisor & 0xff;
+      buf[3] = (divisor >> 8) & 0xff;
+      mpsse_add_cmd(buf, 4);
+      mpsse_send();
+      if (verbose)
+          fprintf(stderr,"Using JTAG frequency %d from undivided clock", 30000000/(1+divisor));
+  }
+  else  if (verbose)
+      fprintf(stderr,"Using JTAG frequency %d", 6000000/(1+divisor));
   fprintf(stderr, "\n");
   return 0;
 
