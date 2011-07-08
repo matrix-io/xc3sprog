@@ -230,6 +230,8 @@ int main(int argc, char **args)
       
      if(!eepromfile)
 	eepromfile= DefName;
+     else
+         gFuseBitsAll.EESAVE = 1;
       
       strncpy(fname, eepromfile, 250);
       fp = fopen(fname,"rb");
