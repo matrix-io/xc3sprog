@@ -652,7 +652,7 @@ int main(int argc, char **args)
 
   get_os_name(osname, sizeof(osname));
   // Produce release info from SVN tags
-  fprintf(stderr, "XC3SPROG (c) 2004-2010 xc3sprog project $Rev$ OS: %s\n"
+  fprintf(stderr, "XC3SPROG (c) 2004-2011 xc3sprog project $Rev$ OS: %s\n"
 	  "Free software: If you contribute nothing, expect nothing!\n"
 	  "Feedback on success/failure/enhancement requests:\n"
           "\thttp://sourceforge.net/mail/?group_id=170565 \n"

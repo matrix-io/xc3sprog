@@ -79,6 +79,10 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }
+  else
+  {
+      fprintf(stderr, "Unknown Cable \"%s\" \n", getCableName(cable->cabletype));
+  }
   return res;
 }
 
@@ -90,6 +94,7 @@ const char *getCableName(int type)
     case CABLE_FTDI: return "ftdi"; break;
     case CABLE_FX2: return "fx2"; break;
     case CABLE_XPC: return "xpc"; break;
+    case CABLE_UNKNOWN: return "unknown"; break;
     default:
         return "Unknown";
     }
