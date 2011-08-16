@@ -644,9 +644,8 @@ int main(int argc, char **args)
   char *bscanfile = 0;
   char *cablename = 0;
   char osname[OSNAME_LEN];
-  char *devicedb = NULL;
-  DeviceDB db(devicedb);
-  CableDB cabledb("");
+  DeviceDB db(NULL);
+  CableDB cabledb(NULL);
   std::auto_ptr<IOBase>  io;
   int res;
 
