@@ -28,3 +28,4 @@ llbbc08       fx2     0xfffe:0x0018                                        0
 qdu16         fx2     0xfffe:0x0018                                        0
 pp            pp      NULL                                                 0
 dlc5          pp      NULL                                                 0
+jtaghs1       ftdi    0x0403:0x6010::0:0x80:0x80:0x00:0x0                  1500000
