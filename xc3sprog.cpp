@@ -357,6 +357,8 @@ void usage(bool all_options)
   fprintf(stderr, "Possible options:\n");
 #define OPT(arg, desc)	\
   fprintf(stderr, "   %-8s  %s\n", (arg), (desc))
+  OPT("-p val", "Use device at JTAG Chain position <val>. 0(default) is device"
+      " connected to JTAG Adapter TDO.");
   OPT("-e", "Erase whole device).");
   OPT("-h", "Print this help.");
   OPT("-I[file]", "Work on connected SPI Flash (ISF Mode),");
