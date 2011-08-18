@@ -217,7 +217,9 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
           {
           case TYPE_2232H:
           case TYPE_4232H:
+#ifdef TYPE_232H
           case TYPE_232H:
+#endif
               device_has_fast_clock = true;
               break;
           default:
@@ -366,6 +368,9 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
           divisor = 30000000/freq -((30000000%freq)?0:1);
       if (divisor > 0xffff)
           divisor = 0xffff;
+#ifndef DIS_DIV_5
+#define DIS_DIV_5 0x8a
+#endif
       buf[0] = DIS_DIV_5;
       buf[1] = TCK_DIVISOR;
       buf[2] =  divisor & 0xff;
