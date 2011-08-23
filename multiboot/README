@@ -3,3 +3,13 @@ Generate BIT File:
 ../build/bitparse -i hexraw <your File>.bit
 Generate BIN File:
 ../build/bitparse -i hexraw -o bin -O <your File>.bin <your File>
+
+Spartan6:
+========
+At least the Multiboot Image should be generated with the bitgen Options
+" -g next_config_register_write:Disable"
+" -g Reset_on_err:Yes"
+so that booting a partial written or corrupted multiboot image will 
+result in the golden image to be booted. Otherwise only a Flash pattern 
+with no valid sync pattern at the multiboot address 
+(and up bitgen option TIMER_CFG = 0x10000 bytes) will use the golden image.
