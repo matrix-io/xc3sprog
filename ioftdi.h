@@ -29,7 +29,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include <windows.h>
 #endif
 
+#ifdef USE_FTD2XX
 #include <ftd2xx.h>
+#endif
 
 #include "iobase.h"
 #include "cabledb.h"
@@ -42,13 +44,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 class IOFtdi : public IOBase
 {
  protected:
+#ifdef USE_FTD2XX
   FT_HANDLE ftd2xx_handle;   
+#endif
   struct ftdi_context *ftdi_handle;
   unsigned char usbuf[TX_BUF];
   int buflen;
   bool use_ftd2xx;
   struct cable_t *cable;
-  DWORD bptr;
+  unsigned int bptr;
   int calls_rd, calls_wr, subtype, retries;
   FILE *fp_dbg;
 

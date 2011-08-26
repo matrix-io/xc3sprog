@@ -8,11 +8,21 @@ if(${WIN32})
 set(USE_STATIC_FTDI ON)
 endif(${WIN32})
 
+option(USE_FTD2XX "Use FTDI libFTD2XX instead of free libftdi" ON)
+
 find_package(libftdi)
 include_directories(${LIBFTDI_INCLUDE_DIR})
 
-find_package(libFTD2XX)
-include_directories(${LIBFTD2XX_INCLUDE_DIR})
+if(USE_FTD2XX)
+  find_package(libFTD2XX)
+endif(USE_FTD2XX)
+
+if(LIBFTD2XX_FOUND)
+  include_directories(${LIBFTD2XX_INCLUDE_DIR})
+  add_definitions( -DUSE_FTD2XX )
+else(LIBFTD2XX_FOUND)
+  set(LIBFTD2XX_LIBRARIES "")
+endif(LIBFTD2XX_FOUND)
 
 FIND_PACKAGE(Subversion)
 IF(Subversion_FOUND)
