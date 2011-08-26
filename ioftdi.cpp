@@ -40,7 +40,9 @@ IOFtdi::IOFtdi(bool u)
         fp_dbg = fopen(fname,"wb");
     else
         fp_dbg = NULL;
+#ifdef USE_FTD2XX
     ftd2xx_handle = 0;
+#endif
     ftdi_handle = 0;
     verbose = false;
 }
@@ -152,6 +154,7 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
       fprintf(stderr, " dbus data %02x enable %02x cbus data %02x data %02x\n",
               dbus_data, dbus_en, cbus_data, cbus_en);
   }
+
   if (!use_ftd2xx)
   {
       // allocate and initialize FTDI structure
@@ -172,10 +175,9 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
       }
       
       // Open device
-      res = ftdi_usb_open_desc
-          (ftdi_handle, vendor, product, 
-           description, serial);
-      if ( res == 0)
+      res = ftdi_usb_open_desc(ftdi_handle, vendor, product, 
+                               description, serial);
+      if (res == 0)
       {
           res = ftdi_set_bitmode(ftdi_handle, 0x00, BITMODE_RESET);
           if(res < 0)
@@ -229,10 +231,14 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
       }
       else /* Unconditionally try ftd2xx on error*/
       {
+          fprintf(stderr, "Could not open FTDI device (using libftdi): %s\n",
+                  ftdi_get_error_string(ftdi_handle));
           ftdi_free(ftdi_handle);
           ftdi_handle = 0;
       }
   }
+
+#ifdef USE_FTD2XX
   if (ftdi_handle == 0)
   {
       DWORD dwNumDevs;
@@ -244,7 +250,7 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
       }
       if (dwNumDevs <1)
       {
-          fprintf(stderr, "No FTDI device found\n");
+          fprintf(stderr, "No FTDI device found (using FTD2XX)\n");
           res = 1;
           goto fail;
       }
@@ -340,10 +346,15 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
           goto fail;
       }
   }
-  
+#endif
+
+#ifdef USE_FTD2XX
   if (!ftd2xx_handle && !ftdi_handle)
+#else
+  if (!ftdi_handle)
+#endif
   {
-      fprintf(stderr,"Neither libftdi nor libftd2xx found\n");
+      fprintf(stderr, "Unable to access FTDI device with either libftdi or FTD2XX\n");
       res = 1;
       goto fail;
   }
@@ -386,7 +397,6 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
   return 0;
 
 ftdi_fail:
-  free(ftdi_handle);
 fail:
   return res;
 }
@@ -550,8 +560,9 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
 {
   //unsigned char buf[1] = { SEND_IMMEDIATE};
   //mpsse_add_cmd(buf,1);
-    DWORD read = 0;
+    unsigned int read = 0;
     mpsse_send();
+#ifdef USE_FTD2XX
     if (ftd2xx_handle)
     {
         DWORD  length = (DWORD) len, last_read;
@@ -589,6 +600,7 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
         }
     }
     else
+#endif
     {
 
         int length = (int) len;
@@ -656,10 +668,12 @@ void IOFtdi::deinit(void)
   read = readusb( tbuf,5);
   if  (read != 5) 
       fprintf(stderr,"Loopback failed, expect problems on later runs\n");
-  
+ 
+#ifdef USE_FTD2XX 
   if (ftd2xx_handle)
       FT_Close(ftd2xx_handle);
   else
+#endif
   {
       ftdi_set_bitmode(ftdi_handle, 0, BITMODE_RESET);
       ftdi_usb_reset(ftdi_handle);
@@ -704,6 +718,7 @@ void IOFtdi::mpsse_send() {
 
   if(fp_dbg)
     fprintf(fp_dbg,"mpsse_send %d\n", bptr);
+#ifdef USE_FTD2XX
   if (ftd2xx_handle)
   {
       DWORD written, last_written;
@@ -739,6 +754,7 @@ void IOFtdi::mpsse_send() {
       }
   }
   else
+#endif
   {
       calls_wr++;
       int written = ftdi_write_data(ftdi_handle, usbuf, bptr);
