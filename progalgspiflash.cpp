@@ -887,6 +887,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
   case 0x30: /* AMIC */
   case 0x40: /* AMIC Quad */
   case 0xef: /* Winbond */
+  case 0x89: /* Intel S33 */
     return sectorerase_and_program(pfile);
   default:
     fprintf(stderr,"Programming not yet implemented\n");
@@ -1073,6 +1074,7 @@ int ProgAlgSPIFlash::erase(void)
   case 0x20: /* Numonyx */
   case 0x30: /* AMIC */
   case 0x40: /* AMIC Quad */
+  case 0x89: /* Intel */
   case 0xef: /* Winbond */
     return erase_bulk();
   default:
