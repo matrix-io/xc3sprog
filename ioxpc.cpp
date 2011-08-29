@@ -435,7 +435,8 @@ IOXPC::xpcu_do_ext_transfer( xpc_ext_transfer_state_t *xts )
             shift = 16 -shift;
         if (xts->out_bits >31)
             shift = 0;
-        fprintf(fp_dbg, "out_done %d shift %d\n", xts->out_done, shift);
+        if (fp_dbg)
+            fprintf(fp_dbg, "out_done %d shift %d\n", xts->out_done, shift);
         for (i= 0; i <xts->out_bits; i++)
         {
             int bit_num = i + shift;
