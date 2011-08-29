@@ -36,7 +36,7 @@ IOXPC::IOXPC()
   :  IOBase(), bptr(0), calls_rd(0) , calls_wr(0), call_ctrl(0)
 {
 }
-int IOXPC::Init(struct cable_t *cable, char const *serial)
+int IOXPC::Init(struct cable_t *cable, char const *serial, unsigned int freq)
 {
   int res;
   unsigned char buf[2];
