@@ -1,5 +1,8 @@
 # Project
 project(xc3sprog)
+set(xc3sprog_VERSION_MAJOR 0)
+set(xc3sprog_VERSION_MINOR 0)
+
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 set(CMAKE_CXX_FLAGS "-g -Wall")
 cmake_minimum_required(VERSION 2.6)
@@ -27,7 +30,7 @@ endif(LIBFTD2XX_FOUND)
 FIND_PACKAGE(Subversion)
 IF(Subversion_FOUND)
   Subversion_WC_INFO(${PROJECT_SOURCE_DIR} Project)
-  set(VERSION_STRING "svn${Project_WC_REVISION}")
+  set(VERSION_STRING "${xc3sprog_VERSION_MAJOR}.${xc3sprog_VERSION_MINOR}-svn${Project_WC_REVISION}")
 ELSE(Subversion_FOUND)
   set(VERSION_STRING "unknown")
 ENDIF(Subversion_FOUND)
