@@ -24,16 +24,18 @@ class ProgAlgXCFP : public ProgAlg
   unsigned int narray;
   unsigned int block_size;
   virtual int erase(int array_mask);
+
  public:
   ProgAlgXCFP(Jtag &j, unsigned long id);
   virtual ~ProgAlgXCFP() { }
-  virtual int getSize() const;
+  virtual unsigned int getSize() const;
   virtual int erase();
   virtual int program(BitFile &file);
   virtual int verify(BitFile &file);
   virtual int read(BitFile &file);
   virtual void reconfig();
   virtual void disable();
+
  private:
   int  verify_idcode();
   void enable();

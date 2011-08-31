@@ -52,10 +52,11 @@ class ProgAlgXCF : public ProgAlg
   unsigned int block_size;  
   unsigned int size;
   bool use_optimized_algs;
+
  public:
   ProgAlgXCF(Jtag &j, int si);
   virtual ~ProgAlgXCF() { }
-  virtual int getSize() const { return size; }
+  virtual unsigned int getSize() const { return size; }
   virtual int erase();
   virtual int program(BitFile &file);
   virtual int verify(BitFile &file);

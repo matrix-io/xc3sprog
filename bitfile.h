@@ -110,13 +110,24 @@ class BitFile
   int readFile(FILE *fp, FILE_STYLE in_style);
   
  public:
-  /* Offset and RLength are in bytes!*/
-  inline void setOffset(int of){offset = of;}
-  inline unsigned int getOffset(void){ return offset;}
-  inline void setRLength(int lt){rlength = lt;}
-  inline unsigned int getRLength(void){ return rlength;}
-  inline byte *getData(){return buffer;}
-  inline unsigned long getLength(){return length*8;} // Returns length of bitstream
+  // Set offset of requested operation in bytes.
+  inline void setOffset(unsigned int of)        { offset = of; }
+
+  // Return offset of requested operation in bytes.
+  inline unsigned int getOffset(void)           { return offset; }
+
+  // Set length of requested operation in bytes.
+  inline void setRLength(unsigned int lt)       { rlength = lt; }
+
+  // Return length of requested operation in bytes.
+  inline unsigned int getRLength(void)          { return rlength; }
+
+  // Return pointer to data buffer.
+  inline byte *getData()                        { return buffer; }
+
+  // Return length of bitfile in bits.
+  inline unsigned long getLength()              { return length*8; }
+
   inline const char *getError(){
     if(!Error)return("");
     Error=false;
@@ -128,7 +139,7 @@ class BitFile
   inline const char *getTime(){return dtime.c_str();}
   void setNCDFields(const char * partname);
   void setLength(unsigned int bit_count);
-  unsigned long saveAs(FILE_STYLE style, const char  *device, FILE *fp);
+  unsigned long saveAs(FILE_STYLE style, const char *device, FILE *fp);
   int get_bit(unsigned int idx);
   void set_bit(unsigned int idx, int blow);
 
@@ -137,4 +148,3 @@ class BitFile
 };
 
 #endif //BITFILE_H
-

@@ -340,12 +340,11 @@ void usage(bool all_options)
   fprintf(stderr, "\tR: Read from device and write to file, overwrite existing file\n");
   fprintf(stderr, "\tDefault action is 'w'\n\n");
   fprintf(stderr, "\tDefault offset is 0\n\n");
-  fprintf(stderr, "\tstyle: One of BIT|BIN|MCS|MCSREV|IHEX|HEX\n");
+  fprintf(stderr, "\tstyle: One of BIT|BIN|MCS|IHEX|HEX\n");
   fprintf(stderr, "\tBIT: Xilinc .bit format\n");
   fprintf(stderr, "\tBIN: Binary format\n");
   fprintf(stderr, "\tMCS: XILINX Prom format\n");
-  fprintf(stderr, "\tMCSREV: XILINX Prom format with Bytes reversed\n");
-  fprintf(stderr, "\tMCSREV: INTEL Hex format\n");
+  fprintf(stderr, "\tIHEX: INTEL Hex format (= MCS with bits reversed)\n");
   fprintf(stderr, "\tHEX:  Hex dump format\n");
   fprintf(stderr, "\tDefault for FPGA|SPI|XCF is BIT\n");
   fprintf(stderr, "\tDefault for CPLD is JED\n");
@@ -354,12 +353,12 @@ void usage(bool all_options)
 
   if (!all_options) exit(255);
 
-  fprintf(stderr, "Possible options:\n");
+  fprintf(stderr, "\nPossible options:\n");
 #define OPT(arg, desc)	\
   fprintf(stderr, "   %-8s  %s\n", (arg), (desc))
-  OPT("-p val", "Use device at JTAG Chain position <val>. 0(default) is device"
-      " connected to JTAG Adapter TDO.");
-  OPT("-e", "Erase whole device).");
+  OPT("-p val[,val...]", "Use device at JTAG Chain position <val>.");
+  OPT("",   "Default (0) is device connected to JTAG Adapter TDO.");
+  OPT("-e", "Erase whole device.");
   OPT("-h", "Print this help.");
   OPT("-I[file]", "Work on connected SPI Flash (ISF Mode),");
   OPT(""  , "after loading 'bscan_spi' bitfile if given.");
@@ -561,6 +560,7 @@ FILE *getFile_and_Attribute_from_name(
     }
     return ret;
 }
+
 void dump_lists(CableDB *cabledb, DeviceDB *db)
 {
     int fd;
@@ -1022,11 +1022,10 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
 {
   // identify all specified devices
   unsigned int total_size = 0;
-  int i, cur_filepos = 0;
 
-  for (int i = 0; i < nchainpos; i++)
+  for (int k = 0; k < nchainpos; k++)
     {
-      unsigned long id = get_id(jtag, db, chainpositions[i]);
+      unsigned long id = get_id(jtag, db, chainpositions[k]);
       if (IDCODE_TO_MANUFACTURER(id) != MANUFACTURER_XILINX ||
           IDCODE_TO_FAMILY(id) != FAMILY_XCF)
         {
@@ -1039,20 +1038,19 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
 
   if (erase)
   {
-      for ( i = 0; i < nchainpos; i++)
+      for (int k = 0; k < nchainpos; k++)
       {
-          unsigned long id = get_id(jtag, db, chainpositions[i]);
+          unsigned long id = get_id(jtag, db, chainpositions[k]);
           std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
           alg->erase();
       }
   }
 
-
-  for(i=0; i< argc; i++)
+  for (int i = 0; i < argc; i++)
   {
-      unsigned int promfile_offset = 0; /* Where to start in the XCF address space*/
-      unsigned int promfile_rlength = 0;/* How many bytes to read or full size*/
-      unsigned int promfile_remain = 0; 
+      unsigned int promfile_offset = 0; /* Where to start in the XCF space */
+      unsigned int promfile_rlength = 0;/* How many bytes to process */
+      unsigned int prom_pos = 0;        /* Current byte position in XCF space */
       char action = 'w';
       BitFile promfile;
       FILE_STYLE  promfile_style = STYLE_BIT;
@@ -1061,64 +1059,86 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
           getFile_and_Attribute_from_name
           (args[i], &action, NULL, &promfile_offset,
            &promfile_style, &promfile_rlength);
-      if(!promfile_fp)
+      if (!promfile_fp)
           continue;
+
       promfile.setOffset(promfile_offset);
       promfile.setRLength(promfile_rlength);
 
-      if ((promfile_offset + 
-           (promfile_rlength)?(promfile_rlength*8):promfile.getLength()) > total_size)
-      {
-          fprintf(stderr, "Length of bitfile (%u bits) exceeds size of PROM devs\n", 
-                  total_size);
-          continue;
-      }
       if (action == 'v' || tolower(action) == 'w')
       {
           promfile.readFile(promfile_fp, promfile_style);
+
+          // If no explicit length requested, default to complete file.
+          if (promfile_rlength == 0)
+            promfile_rlength = promfile.getLength() / 8;
       }
       else if(action == 'r')
       {
-          promfile.setLength(((promfile_rlength)?promfile_rlength:total_size/8));
+          // If no length requested, default to complete PROM space.
+          if (promfile_rlength == 0)
+            promfile_rlength = total_size / 8 - promfile_offset;
+          promfile.setLength(promfile_rlength * 8);
       }
 
-      promfile_remain = (promfile_rlength)?(promfile_rlength):promfile.getLength()/8;
-
-      for (int i = 0; i < nchainpos; i++)
+      if (promfile_rlength > promfile.getLength() / 8)
       {
-          unsigned long id = get_id(jtag, db, chainpositions[i]);
-          std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
-          unsigned int current_promsize =  alg->getSize();
-          unsigned int current_offset;
-          unsigned int current_RLenght;
-          BitFile tmp_bitfile;
-          BitFile *cur_bitfile = (nchainpos == 1) ? &promfile : &tmp_bitfile;
+          fprintf(stderr, "Requested length (%u bytes) exceeds bitfile size (%lu bytes)\n", promfile_rlength, promfile.getLength() / 8);
+          continue;
+      }
 
-          if(nchainpos != 1)
+      if (promfile_offset > total_size / 8 ||
+          promfile_rlength > total_size / 8 - promfile_offset)
+      {
+          fprintf(stderr, "Requested operation (offset %u, length %u bytes) exceeds PROM space (%u bits)\n", promfile_offset, promfile_rlength, total_size);
+          continue;
+      }
+
+      for (int k = 0; k < nchainpos; k++)
+      {
+          unsigned long id = get_id(jtag, db, chainpositions[k]);
+          std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
+          BitFile tmp_bitfile;
+          BitFile &cur_bitfile = (nchainpos == 1) ? promfile : tmp_bitfile;
+          unsigned int current_promlen = alg->getSize() / 8;
+          unsigned int current_offset = 0;
+          unsigned int current_rlength = 0;
+
+          if (prom_pos + current_promlen <= promfile_offset)
           {
-              if(i == 0)
-                  current_offset = promfile_offset;
-              else
-                  current_offset = 0;
-              if ((current_offset + promfile_remain) < current_promsize)
-                  current_RLenght = current_offset + promfile_remain;
-              else
-                  current_RLenght = 0;
-              cur_bitfile->setOffset(current_offset);
-              cur_bitfile->setLength(current_promsize*8);
-              cur_bitfile->setRLength(current_RLenght);
+              // current PROM falls before requested range
+              prom_pos += current_promlen;
+              continue;
           }
-          
+          else if (prom_pos < promfile_offset)
+          {
+              // requested range starts inside current PROM
+              current_offset = promfile_offset - prom_pos;
+          }
+
+          if (prom_pos >= promfile_offset + promfile_rlength)
+          {
+              // current PROM falls behind the requested range
+              break;
+          }
+          else if (prom_pos + current_promlen > promfile_offset + promfile_rlength)
+          {
+              // requested range ends inside current PROM
+              current_rlength = promfile_offset + promfile_rlength - prom_pos - current_offset;
+          }
+
+          cur_bitfile.setOffset(current_offset);
+          cur_bitfile.setRLength(current_rlength);
+
           if (action == 'r')
           {
-              alg->read(*cur_bitfile);
+              alg->read(cur_bitfile);
               if (nchainpos != 1)
               {
-                  // copy temp object to selected part of output file
-                  assert(cur_filepos % 8 == 0);
-                  assert(cur_bitfile->getLength() % 8 == 0);
-                  memcpy(promfile.getData() + cur_filepos / 8, cur_bitfile->getData(), 
-                         cur_bitfile->getLength() / 8);
+                  // copy temp data to selected part of output file
+                  assert(cur_bitfile.getLength() % 8 == 0);
+                  assert(prom_pos - promfile_offset + tmp_bitfile.getLength() / 8 <= promfile.getLength() / 8);
+                  memcpy(promfile.getData() + prom_pos - promfile_offset, tmp_bitfile.getData(), tmp_bitfile.getLength() / 8);
               }
           }
           else
@@ -1126,13 +1146,10 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
               if (nchainpos != 1)
               {
                   // copy selected part of input file to temp object
-                  int k = promfile.getLength() - cur_filepos;
-                  if (k > alg->getSize())
-                      k = alg->getSize();
-                  assert(cur_filepos % 8 == 0);
-                  assert(k % 8 == 0);
-                  cur_bitfile->setLength(k);
-                  memcpy(cur_bitfile->getData(), promfile.getData() + cur_filepos / 8, k / 8);
+                  unsigned int n = current_rlength ? current_rlength : (current_promlen - current_offset);
+                  assert(prom_pos - promfile_offset + n <= promfile.getLength() / 8);
+                  tmp_bitfile.setLength(n * 8);
+                  memcpy(tmp_bitfile.getData(), promfile.getData() + prom_pos - promfile_offset, n);
               }
               if (tolower(action) == 'w')
               {
@@ -1143,21 +1160,18 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
                       if (res)
                           return res;
                   }
-                  res = alg->program(*cur_bitfile);
-                  if(res)
+                  res = alg->program(cur_bitfile);
+                  if (res)
                   {
                       alg->disable();
                       return res;
                   }
               }
-              alg->verify(*cur_bitfile);
+              alg->verify(cur_bitfile);
               alg->disable();
           }
-          cur_filepos += alg->getSize();
-          if (current_RLenght >= promfile_remain)
-              break;
-          else
-              promfile_remain -=current_RLenght;
+
+          prom_pos += current_promlen;
       }
 
       // write output file
