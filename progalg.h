@@ -5,13 +5,14 @@
 
 #include "bitfile.h"
 
+
 class ProgAlg
 {
  protected:
   ProgAlg() { }
  public:
   virtual ~ProgAlg() { }
-  virtual int getSize() const = 0;
+  virtual unsigned int getSize() const = 0;
   virtual int erase() = 0;
   virtual int program(BitFile &file) = 0;
   virtual int verify(BitFile &file) = 0;

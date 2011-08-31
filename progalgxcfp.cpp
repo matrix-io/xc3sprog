@@ -69,7 +69,7 @@ ProgAlgXCFP::ProgAlgXCFP(Jtag &j, unsigned long id)
 }
 
 
-int ProgAlgXCFP::getSize() const
+unsigned int ProgAlgXCFP::getSize() const
 {
     return narray * 32768 * 256;
 }
@@ -162,6 +162,9 @@ int ProgAlgXCFP::program(BitFile &file)
   byte data[32];
   byte xcstatus[1];
   int ret = 0;
+
+  if (file.getOffset() || file.getRLength())
+    throw std::invalid_argument("XCFP does not yet support bitfile subranges");
  
   jtag->tapTestLogicReset();
   jtag->Usleep(1000);
@@ -339,6 +342,9 @@ int ProgAlgXCFP::verify(BitFile &file)
   byte data[32];
   int ret = 0;
 
+  if (file.getOffset() || file.getRLength())
+    throw std::invalid_argument("XCFP does not yet support bitfile subranges");
+
   jtag->tapTestLogicReset();
   jtag->Usleep(1000);
 
@@ -463,6 +469,9 @@ int ProgAlgXCFP::read(BitFile &file)
   Timer timer;
   byte data[32];
   int ret = 0;
+
+  if (file.getOffset() || file.getRLength())
+    throw std::invalid_argument("XCFP does not yet support bitfile subranges");
 
   timer.start();
 

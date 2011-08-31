@@ -37,9 +37,13 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 using namespace std;
 
 BitFile::BitFile()
-    : length(0), buffer(0),
-      Error(false), logfile(stderr), offset(0), rlength(0) {
-
+  : length(0)
+  , buffer(0)
+  , Error(false)
+  , logfile(stderr)
+  , offset(0)
+  , rlength(0)
+{
 }
 
 int BitFile::readBitfile(FILE *fp)
@@ -308,7 +312,7 @@ int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
  * MCS files written by Xilinx PROMGen are bit-reversed with respect
  * to the original BIT files. So in this case, xc3sprog must not reverse
  * the bits again, it has already been done by PROMGen.
- * Specify the file type as -i MCSREV to activate this option.
+ * Specify the file type as -i IHEX to activate this option.
  */
       return readMCSfile(fp);
     case STYLE_HEX_RAW:
