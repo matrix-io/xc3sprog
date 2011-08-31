@@ -244,11 +244,14 @@
 01e8203f     5   0x1 AT32AP7000
 
 #STM 
-06412041     5   0x1 STM32F10XX_low-density
-06410041     5   0x1 STM32F10XX_medium-density
-06414041     5   0x1 STM32F10XX_high-density
-06430041     5   0x1 STM32F10XX_XL-density
-06418041     5   0x1 STM32F10XX_connectivity_line
+06410041     5   0x1 STM32L1_Med_density
+06411041     5   0x1 STM32F2
+06412041     5   0x1 STM32F1_Low_density
+06414041     5   0x1 STM32F1_High_density
+06418041     5   0x1 STM32F1_Connectivity_line
+06420041     5   0x1 STM32F1_Low_Med_density_value
+06428041     5   0x1 STM32F1_High_density_value
+06430041     5   0x1 STM32F1_XL_density
 
 #ARM Debug
 3BA00477     4   0xe ARM_Cortex-M3_r1p1-01rel0
