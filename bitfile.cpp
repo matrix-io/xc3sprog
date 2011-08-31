@@ -37,7 +37,8 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 using namespace std;
 
 BitFile::BitFile()
-  : length(0), buffer(0), Error(false), logfile(stderr) {
+    : length(0), buffer(0),
+      Error(false), logfile(stderr), offset(0), rlength(0) {
 
 }
 

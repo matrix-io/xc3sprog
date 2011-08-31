@@ -87,7 +87,6 @@ int main(int argc, char**args)
   try {
     BitFile  file;
     FILE* fp;
-    file.setRLength(0);
 
     if (*args[0] == '-')
       fp = stdin;
