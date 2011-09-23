@@ -9,3 +9,5 @@
 - Bitorder for Intel HEX format
 - Finer granularity for erasing XCFP
 - ... 
+- Check Byte Oder IHEX versus MCS
+- Document cable Database
