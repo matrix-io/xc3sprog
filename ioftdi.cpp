@@ -561,7 +561,11 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
   //unsigned char buf[1] = { SEND_IMMEDIATE};
   //mpsse_add_cmd(buf,1);
     mpsse_send();
+#ifdef USE_FTD2XX
     DWORD read = 0;
+#else
+    unsigned int read = 0;
+#endif
 #ifdef USE_FTD2XX
     if (ftd2xx_handle)
     {
