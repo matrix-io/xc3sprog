@@ -1128,7 +1128,10 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
           }
 
           cur_bitfile.setOffset(current_offset);
-          cur_bitfile.setRLength(current_rlength);
+          if (current_rlength * 8 != cur_bitfile.getLength())
+            cur_bitfile.setRLength(current_rlength);
+          else
+            cur_bitfile.setRLength(0);
 
           if (action == 'r')
           {
