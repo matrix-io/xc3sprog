@@ -54,7 +54,7 @@ ProgAlgXCFP::ProgAlgXCFP(Jtag &j, unsigned long id)
   jtag = &j;
   idcode = id;
 
-  block_size = 0x1000000;
+  block_size = 0x100000;
   if (IDCODE_IS_XCF08P(idcode))
     narray = 1;
   else if (IDCODE_IS_XCF16P(idcode))
