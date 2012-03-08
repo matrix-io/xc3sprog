@@ -51,8 +51,8 @@ CableDB::CableDB(const char *cf_name)
         {
 	  char buffer[256];
 	  fgets(buffer,256,fp);  // Get next line from file
-	  if (sscanf(buffer,"%s %s %s %d", 
-                     alias, cabletype, options, &cable.freq) == 4)
+	  if (sscanf(buffer,"%64s %64s %d %256c", 
+                     alias, cabletype, &cable.freq, options) == 4)
           {
               cable.alias = new char[strlen(alias)+1];
               strcpy(cable.alias,alias);
@@ -84,8 +84,8 @@ CableDB::CableDB(const char *cf_name)
                 p++;
             if(buffer[0] == '#')
                 continue;
-            if (sscanf(buffer,"%s %s %s %d", 
-                       alias, cabletype, options, &cable.freq) == 4)
+	  if (sscanf(buffer,"%64s %64s %d %256c", 
+                     alias, cabletype, &cable.freq, options) == 4)
 	    {
                 cable.alias = new char[strlen(alias)+1];
                 strcpy(cable.alias,alias);
