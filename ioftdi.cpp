@@ -144,10 +144,10 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
   
   if (verbose)
   {
-      fprintf(stderr, "Cable %s type %s VID 0x%04x PID %04x",
+      fprintf(stderr, "Cable %s type %s VID 0x%04x PID 0x%04x",
               cable->alias, getCableName(cable->cabletype), vendor, product);
       if (description)
-          fprintf(stderr, " Desc %s", description);
+          fprintf(stderr, " Desc \"%s\"", description);
       if (serial)
           fprintf(stderr, " Serial %s", serial);
       
@@ -270,7 +270,7 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
 #else
       if ((vendor != 0x0403) || 
           ((product != 0x6001) && (product != 0x6010) && (product != 0x6006)))
-          fprintf(stderr,"Can't set VID/PID to %04x:%04x. Expect failure\n",
+          fprintf(stderr,"FTD2XX/WIN: Can't set VID/PID to %04x:%04x. Expect failure\n",
                   vendor, product);
 #endif
       
