@@ -34,7 +34,7 @@ CableDB::CableDB(const char *cf_name)
     cable_t cable;
     char alias[64];
     char cabletype[64];
-    char options[64];
+    char options[256];
     FILE *fp;
     
     if(!cf_name)
@@ -49,9 +49,14 @@ CableDB::CableDB(const char *cf_name)
         cablename = cf_name;
         while(!feof(fp))
         {
+          int i;
 	  char buffer[256];
 	  fgets(buffer,256,fp);  // Get next line from file
-	  if (sscanf(buffer,"%64s %64s %d %256c", 
+          i = strlen(buffer);         
+          while (i > 0 && isspace(buffer[i-1]))
+            i--;
+          buffer[i] = 0;
+	  if (sscanf(buffer,"%64s %64s %d %255[^;]", 
                      alias, cabletype, &cable.freq, options) == 4)
           {
               cable.alias = new char[strlen(alias)+1];
@@ -60,6 +65,7 @@ CableDB::CableDB(const char *cf_name)
               cable.optstring = new char[strlen(options)+1];
               strcpy(cable.optstring,options);
               cable_db.push_back(cable);
+printf("got alias='%s' type='%s' opt='%s'\n", alias, cabletype, options);
 	    }
 	}
       fclose(fp);
@@ -79,12 +85,14 @@ CableDB::CableDB(const char *cf_name)
                 buffer[i] = p[i];
 	    }
             p += i;
-            buffer[i] = 0;
             while(*p && *p == ';')
                 p++;
+            while(i>0 && isspace(buffer[i-1]))
+                i--;
+            buffer[i] = 0;
             if(buffer[0] == '#')
                 continue;
-	  if (sscanf(buffer,"%64s %64s %d %256c", 
+	  if (sscanf(buffer,"%64s %64s %d %255[^;]", 
                      alias, cabletype, &cable.freq, options) == 4)
 	    {
                 cable.alias = new char[strlen(alias)+1];
@@ -93,6 +101,7 @@ CableDB::CableDB(const char *cf_name)
                 cable.optstring = new char[strlen(options)+1];
                 strcpy(cable.optstring,options);
                 cable_db.push_back(cable);
+printf("got alias='%s' type='%s' opt='%s'\n", alias, cabletype, options);
  	    }
 	}
     }
