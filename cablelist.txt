@@ -30,6 +30,6 @@ llbbc08       fx2     0       0xfffe:0x0018
 qdu16         fx2     0       0xfffe:0x0018                                        
 pp            pp      0       NULL                                                 
 dlc5          pp      0       NULL                                                 
-jtaghs1       ftdi    1500000 0x0403:0x6010::0:0x80:0x80:0x00:0x0                 
+jtaghs1       ftdi    1500000 0x0403:0x6010:Digilent Adept USB Device:0:0x80:0x80:0x00:0x0
 turtelizer    ftdi    1500000 0x0403:0xbdc8:Turtelizer JTAG/RS232 Adapter:0:0x10:0:0 
 arm-usb-ocd-h ftdi    1500000 0x15ba:0x002b::1:0x00:0x10:0x00:0x08
