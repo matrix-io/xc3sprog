@@ -65,7 +65,6 @@ CableDB::CableDB(const char *cf_name)
               cable.optstring = new char[strlen(options)+1];
               strcpy(cable.optstring,options);
               cable_db.push_back(cable);
-printf("got alias='%s' type='%s' opt='%s'\n", alias, cabletype, options);
 	    }
 	}
       fclose(fp);
@@ -101,7 +100,6 @@ printf("got alias='%s' type='%s' opt='%s'\n", alias, cabletype, options);
                 cable.optstring = new char[strlen(options)+1];
                 strcpy(cable.optstring,options);
                 cable_db.push_back(cable);
-printf("got alias='%s' type='%s' opt='%s'\n", alias, cabletype, options);
  	    }
 	}
     }
