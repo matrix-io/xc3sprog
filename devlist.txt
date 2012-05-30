@@ -248,6 +248,7 @@
 06411041     5   0x1 STM32F2
 06412041     5   0x1 STM32F1_Low_density
 06414041     5   0x1 STM32F1_High_density
+06416041     5   0x1 STM32L15
 06418041     5   0x1 STM32F1_Connectivity_line
 06420041     5   0x1 STM32F1_Low_Med_density_value
 06428041     5   0x1 STM32F1_High_density_value
