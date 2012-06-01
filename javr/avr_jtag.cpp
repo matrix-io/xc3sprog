@@ -524,11 +524,10 @@ int ReadEepromBlock(unsigned startaddress, unsigned length, unsigned char *dest)
 {
   unsigned char buffer[EEPROM_READ_PAGE_SIZE];
   unsigned pagenumber;
-  int i,last_pages,count=0;
+  int i,count=0;
 
   if(startaddress>=gDeviceData.eeprom)
     return(0);
-  last_pages=gDeviceData.eeprom/EEPROM_READ_PAGE_SIZE;
   pagenumber=startaddress/EEPROM_READ_PAGE_SIZE;
   if(startaddress+length>gDeviceData.eeprom)
   {
@@ -673,7 +672,7 @@ int ReadFlashBlock(unsigned startaddress, unsigned length, unsigned char *dest)
   unsigned blocksize;
   unsigned pagenumber;
   unsigned i;
-  int last_pages,count=0;
+  int count=0;
 
   switch(gDeviceData.Index)
   {
@@ -688,7 +687,6 @@ int ReadFlashBlock(unsigned startaddress, unsigned length, unsigned char *dest)
   }
   if(startaddress>=gDeviceData.flash)
     return(0);
-  last_pages=gDeviceData.flash/blocksize;
   pagenumber=startaddress/blocksize;
   if(startaddress+length>gDeviceData.flash)
   {
