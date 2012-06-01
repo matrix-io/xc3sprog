@@ -583,7 +583,7 @@ void dump_lists(CableDB *cabledb, DeviceDB *db)
         fp_out = fdopen(fd, "w");
         if (fp_out)
         {
-            fprintf(fp_out, "# Alias       Type   %-60sFrequency\n", "OptString");
+            fprintf(fp_out, "%-20s%-8s%-10sOptString\n", "#Alias", "Type", "Frequency");
             cabledb->dumpCables(fp_out);
             fclose(fp_out);
         }
