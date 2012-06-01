@@ -116,7 +116,6 @@ int main(int argc, char **args)
     byte idata[8];
     byte odata[8];
     int chainpos =0;
-    unsigned int id;
     char *devicedb = NULL;
     std::auto_ptr<IOBase>  io;
     DeviceDB db(devicedb);
@@ -181,7 +180,7 @@ args_done:
   
   Jtag jtag(io.get());
   jtag.setVerbose(verbose);
-  id = get_id (jtag, db, chainpos, verbose);
+  get_id (jtag, db, chainpos, verbose);
 
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
