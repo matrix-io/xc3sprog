@@ -796,6 +796,11 @@ int main(int argc, char **args)
 
   if((argc < 0) || (cablename == 0))  usage(true);
   if(argc < 1 && !reconfigure && !erase) detectchain = true;
+  if (verbose)
+  {
+    fprintf(stderr, "Using %s\n", db.getFile().c_str());
+    fprintf(stderr, "Using %s\n", cabledb.getFile().c_str());
+  }
   res = cabledb.getCable(cablename, &cable);
   if(res)
   {
@@ -812,8 +817,6 @@ int main(int argc, char **args)
   
   Jtag jtag = Jtag(io.get());
   jtag.setVerbose(verbose);
-  if (verbose)
-    fprintf(stderr, "Using %s\n", db.getFile().c_str());
 
   if (init_chain(jtag, db))
     id = get_id (jtag, db, chainpos);
