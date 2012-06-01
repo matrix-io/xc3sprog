@@ -121,7 +121,8 @@ Only used for cable type \fBpp\fR.
 
 .TP
 \fB\-s\fR \fIserialnum\fR
-Use the USB device with the specified serial number string.
+Use the USB device with the specified serial number string. Needed if
+several adapters of the same type are connected at the same time.
 
 .TP
 .B \-L
@@ -237,6 +238,18 @@ compile-time database will be used.
 If a cable subtype (e.g. different VID/PID) is not yet know, the builtin
 list can be dumped, the information on the new cable added and on the next
 run the new list will be read and used.
+
+The database contains a line for each nown cable. The line consists of the
+alias for that cable to used with the \-c option, the basic type of the
+cable, the maximum allowed JTAG frequency of the cable and an optional
+option string.
+
+For FTDI devices the option string contains the USB vendor ID (VID), USB
+product ID (PID), the USB device description string, the FTDI channel of the
+JTAG interface and eventual commands for setting other pins beside the JTAG
+pins. e.g. to switch on some buffers. If the JTAG device uses a FTDI default
+VID/PID, the USB device description string is important to destinguish your
+JTAG device from other eventual connected FTDI devices with the same VID/PID
 
 .SH EXAMPLES
 
