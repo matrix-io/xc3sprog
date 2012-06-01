@@ -112,7 +112,7 @@ int BitFile::readHEXRAW(FILE *fp)
 {
     char buf[1024];
     unsigned int byte_count = 0;
-    int res, count;
+    int res;
     
     fseek(fp, 0, SEEK_END);
     res = ftell(fp);
@@ -132,7 +132,6 @@ int BitFile::readHEXRAW(FILE *fp)
     {
         int bytes_read = 0;
         unsigned char value;
-        count = strlen(buf);
        while (1)
         {
             if (buf[bytes_read] == 0x0a || 
