@@ -1,6 +1,6 @@
 /* Programming cable database
 
-Copyright (C) 2011 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
+Copyright (C) 2011, 2012 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -172,10 +172,10 @@ int CableDB::dumpCables(FILE *fp_out)
         return 1;
     }
     for(i = 0; i < cable_db.size(); i++)
-        fprintf(fp_out,"%-14s%-7s%-60s%-8d\n",
+        fprintf(fp_out,"%-20s%-8s%-10d%-60s\n",
                 cable_db[i].alias,
                 getCableName(cable_db[i].cabletype),
-                cable_db[i].optstring,
-                cable_db[i].freq);
+                cable_db[i].freq,
+                cable_db[i].optstring);
     return 0;
 }       
