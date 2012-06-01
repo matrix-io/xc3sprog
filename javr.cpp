@@ -22,7 +22,11 @@ int jAVR(Jtag &jtag, unsigned int id, char * flashfile, bool verify, bool lock,
 	gDeviceBOOTSize=gBOOT_Size[i];
 	break;
       }
-  
+  if(Index==UNKNOWN_DEVICE)
+  {
+      fprintf(stderr, "Unknown device\n");
+      return 1;
+  }
   fprintf(stderr, "%s, Rev %c with",gDeviceData.name,((id>>28) & 0xf)+'A'); 
   fprintf(stderr, " %ldK Flash, %u Bytes EEPROM and %u Bytes RAM\r\n",
 	  gDeviceData.flash/1024,
