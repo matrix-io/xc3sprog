@@ -34,6 +34,7 @@ CableDB::CableDB(const char *cf_name)
     cable_t cable;
     char alias[64];
     char cabletype[64];
+    char freq_string[64];
     char options[256];
     FILE *fp;
     
@@ -56,9 +57,16 @@ CableDB::CableDB(const char *cf_name)
           while (i > 0 && isspace(buffer[i-1]))
             i--;
           buffer[i] = 0;
-	  if (sscanf(buffer,"%64s %64s %d %255[^;]", 
-                     alias, cabletype, &cable.freq, options) == 4)
+	  if (sscanf(buffer,"%64s %64s %64s %255[^;]", 
+                     alias, cabletype, freq_string, options) == 4)
           {
+              if (strchr(freq_string, ':'))
+              {
+                  fprintf(stderr,"%s has wrong format!\n", cf_name);
+                  break;
+              }
+              else
+                  cable.freq = atoi(freq_string);                  
               cable.alias = new char[strlen(alias)+1];
               strcpy(cable.alias,alias);
               cable.cabletype = getCableType(cabletype);
