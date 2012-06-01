@@ -618,7 +618,6 @@ int main(int argc, char **args)
 {
   bool        verbose   = false;
   bool        dump      = false;
-  bool        force     = false;
   bool        verify    = false;
   bool        lock      = false;
   bool     detectchain  = false;
@@ -627,8 +626,6 @@ int main(int argc, char **args)
   bool     reconfigure  = false;
   bool     erase        = false;
   bool     use_ftd2xx   = false;
-  unsigned int offset   = 0;
-  unsigned int length   = 0;
   unsigned int jtag_freq= 0;
   unsigned long id;
   struct cable_t cable;
@@ -663,7 +660,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-      char c = getopt(argc, args, "?hC::Lc:d:DeE:fF:i:I::jJ:Lm:o:O:p:Rs:S:T::v");
+      char c = getopt(argc, args, "?hCLc:d:DeE:F:i:I::jJ:Lm:o:p:Rs:S:T::v");
     switch(c) 
     {
     case -1:
@@ -673,14 +670,8 @@ int main(int argc, char **args)
       verbose = true;
       break;
 
-    case 'f':
-      force = true;
-      break;
-
     case 'C':
       verify = true;
-      if (optarg)
-          length = strtol(optarg, NULL, 0);
       break;
 
     case 'I':
@@ -749,10 +740,6 @@ int main(int argc, char **args)
 	  usage(false);
 	}
       break;
-
-    case 'O':
-        offset = strtol(optarg, NULL, 0);
-        break;
 
     case 'i':
       if (BitFile::styleFromString(optarg, &in_style) != 0)
