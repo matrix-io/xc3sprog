@@ -210,12 +210,11 @@ to descriptive names and get basic knowledge how to handle the part, at
 minimum how to skip it. 
 
 A default device database is compiled into the \fBxc3sprog\fR executable.
-Alternatively, the database can be loaded from a file at run time.
-If the environment variable \fB$XCDB\fR is defined, it specifies the
-name of the device database file, otherwise the file \fIdevlist.txt\fR
-is read from the current directory.
-If a database file is not found, the internal compile-time database will
-be used.
+The database is tried to be loaded from a file at run time.  If the
+environment variable \fB$XCDB\fR is defined, it specifies the name of the
+device database file, otherwise the file \fIdevlist.txt\fR is read from the
+current directory.  If a database file is not found at all, the internal
+compile-time database will be used.
 
 If a device is not yet know, the builtin list can be dumped, the information
 on the unknown part added and on the next run the new list will be read and used.
@@ -229,12 +228,11 @@ The database maps the label to parameters to be used to access the hardware
 of the cable.
 
 A default cable database is compiled into the \fBxc3sprog\fR executable.
-Alternatively, the database can be loaded from a file at run time.
-If the environment variable \fB$CABLEDB\fR is defined, it specifies the
-name of the cable database file, otherwise the file \fIcablelist.txt\fR
-is read from the current directory.
-If a database file is not found, the internal compile-time database will
-be used.
+The database is tried to be loaded from a file at run time.  If the
+environment variable \fB$CABLEDB\fR is defined, it specifies the name of the
+cable database file, otherwise the file \fIcablelist.txt\fR is read from the
+current directory.  If a database file is not found at all, the internal
+compile-time database will be used.
 
 If a cable subtype (e.g. different VID/PID) is not yet know, the builtin
 list can be dumped, the information on the new cable added and on the next
