@@ -57,6 +57,8 @@ CableDB::CableDB(const char *cf_name)
           while (i > 0 && isspace(buffer[i-1]))
             i--;
           buffer[i] = 0;
+          if(buffer[0] == '#')
+              continue;
 	  if (sscanf(buffer,"%64s %64s %64s %255[^;]", 
                      alias, cabletype, freq_string, options) == 4)
           {
