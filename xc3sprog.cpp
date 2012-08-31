@@ -331,6 +331,7 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
 void usage(bool all_options)
 {
   fprintf(stderr, "usage:\txc3sprog -c cable [options] <file0spec> <file1spec> ...\n");
+  fprintf(stderr, "\tList of known cables is given with -c follow by no or invalid cablename\n");
   fprintf(stderr, "\tfilespec is filename:action:offset:style:length\n");
   fprintf(stderr, "\taction on of 'w|W|v|r|R'\n");
   fprintf(stderr, "\tw: erase whole area, write and verify\n");
@@ -784,6 +785,12 @@ int main(int argc, char **args)
     case '?':
     case 'h':
     default:
+        if (optopt == 'c')
+        {
+            fprintf(stdout, "Known Cables\n");
+            cabledb.dumpCables(stderr);
+            exit(1);
+        }
         fprintf(stderr, "Unknown option -%c\n", c);
         usage(true);
     }
@@ -806,6 +813,8 @@ int main(int argc, char **args)
   {
       fprintf(stderr,"Can't find description for a cable named %s\n",
              cablename);
+      fprintf(stdout, "Known Cables\n");
+      cabledb.dumpCables(stderr);
       exit(1);
   }
   res = getIO( &io, &cable, dev, serial, verbose, use_ftd2xx, jtag_freq);
