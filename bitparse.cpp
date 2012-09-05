@@ -24,7 +24,8 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <stdint.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <unistd.h>
 
 #include "bitfile.h"
@@ -104,7 +105,7 @@ int main(int argc, char**args)
     fprintf(stderr, "Created from NCD file: %s\n",file.getNCDFilename());
     fprintf(stderr, "Target device: %s\n",file.getPartName());
     fprintf(stderr, "Created: %s %s\n",file.getDate(),file.getTime());
-    fprintf(stderr, "Bitstream length: %lu bits %lu bytes(0x%06lx)\n", 
+    fprintf(stderr, "Bitstream length: %u bits %u bytes(0x%06x)\n", 
             file.getLength(),file.getLength()/8,file.getLength()/8);
 
     for (i = 0; i < file.getLength()/8; i++)
@@ -114,7 +115,7 @@ int main(int argc, char**args)
         */
         sum += (file.getData()[i]) ^0xff;
     }
-    fprintf(stderr, "64-bit sum: %lu\n", sum);
+    fprintf(stderr, "64-bit sum: %" PRIu64 "\n", sum);
     
     if(outfile) {
       if(outfile[0] == '-')

@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include <stdio.h>
 #include <string>
+#include <stdint.h>
 
 // ----------------------Xilinx .bit file format---------------------------
 
@@ -81,7 +82,7 @@ class BitFile
   std::string partName; // key 'b'
   std::string date; // key 'c'
   std::string dtime; // key 'd'
-  unsigned long length; // The length of the byte data that follows, multiply by 8 to get bitstream length.
+  uint32_t length; // The length of the byte data that follows, multiply by 8 to get bitstream length.
   byte *buffer; // Each byte is reversed, Xilinx does things MSB first and JTAG does things LSB first!
   std::string filename;
   bool Error;
@@ -105,7 +106,7 @@ class BitFile
   ~BitFile();
 
  public:
-  void append(unsigned long  val, unsigned cnt);
+  void append(uint32_t  val, unsigned cnt);
   void append(char const *file);
   int readFile(FILE *fp, FILE_STYLE in_style);
   
@@ -126,7 +127,7 @@ class BitFile
   inline byte *getData()                        { return buffer; }
 
   // Return length of bitfile in bits.
-  inline unsigned long getLength()              { return length*8; }
+  inline uint32_t getLength()              { return length*8; }
 
   inline const char *getError(){
     if(!Error)return("");
@@ -139,7 +140,7 @@ class BitFile
   inline const char *getTime(){return dtime.c_str();}
   void setNCDFields(const char * partname);
   void setLength(unsigned int bit_count);
-  unsigned long saveAs(FILE_STYLE style, const char *device, FILE *fp);
+  uint32_t saveAs(FILE_STYLE style, const char *device, FILE *fp);
   int get_bit(unsigned int idx);
   void set_bit(unsigned int idx, int blow);
 

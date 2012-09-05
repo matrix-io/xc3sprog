@@ -1006,7 +1006,7 @@ int programXC3S(Jtag &jtag, int argc, char** args,
                       bitfile.getPartName());
               fprintf(stderr, "Created: %s %s\n",
                       bitfile.getDate(), bitfile.getTime());
-              fprintf(stderr, "Bitstream length: %lu bits\n",
+              fprintf(stderr, "Bitstream length: %u bits\n",
                       bitfile.getLength());
           }
           alg.array_program(bitfile);
@@ -1082,7 +1082,7 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
 
       if (promfile_rlength > promfile.getLength() / 8)
       {
-          fprintf(stderr, "Requested length (%u bytes) exceeds bitfile size (%lu bytes)\n", promfile_rlength, promfile.getLength() / 8);
+          fprintf(stderr, "Requested length (%u bytes) exceeds bitfile size (%u bytes)\n", promfile_rlength, promfile.getLength() / 8);
           continue;
       }
 
@@ -1261,7 +1261,7 @@ int programSPI(Jtag &jtag, int argc, char ** args, bool verbose, bool erase,
                         spifile.getPartName());
                 fprintf(stderr, "Created: %s %s\n",
                         spifile.getDate(),spifile.getTime());
-                fprintf(stderr, "Bitstream length: %lu bits\n",
+                fprintf(stderr, "Bitstream length: %u bits\n",
                         spifile.getLength());
             }
             ret = alg.program(spifile);
