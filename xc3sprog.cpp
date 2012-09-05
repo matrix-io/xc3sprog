@@ -661,7 +661,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-      char c = getopt(argc, args, "?hCLc:d:DeE:F:i:I::jJ:Lm:o:p:Rs:S:T::v");
+      int c = getopt(argc, args, "?hCLc:d:DeE:F:i:I::jJ:Lm:o:p:Rs:S:T::v");
     switch(c) 
     {
     case -1:
