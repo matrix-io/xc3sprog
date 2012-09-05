@@ -259,6 +259,9 @@
 3BA00477     4   0xe ARM_Cortex-M3_r1p1-01rel0
 4BA00477     4   0xe ARM-Cortex-M4F_r0p1
 
+#Unsure about IR_Len...
+0270817f     11  0x1 BCM2835
+
 #Manufacturer list
 00000093        99  0 Xilinx_Unknown
 0000003f	99  0 Atmel_Unknown
