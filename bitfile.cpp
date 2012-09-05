@@ -342,7 +342,7 @@ void BitFile::processData(FILE *fp)
   if(!feof(fp))  error("Ignoring extra data at end of file");
 }
 
-void BitFile::append(unsigned long val, unsigned cnt) {
+void BitFile::append(uint32_t val, unsigned cnt) {
   size_t const  nlen = length + 4*cnt;
   byte  *const  nbuf = new byte[nlen];
     
@@ -459,7 +459,7 @@ unsigned char BitFile::checksum(char *buf)
   return (chksum ^ 0xff) + 1;
 }
 
-unsigned long BitFile::saveAs(FILE_STYLE style, const char  *device,
+uint32_t BitFile::saveAs(FILE_STYLE style, const char  *device,
 			      FILE *fp)
 {
   if(length<=0)return length;
@@ -620,7 +620,7 @@ void BitFile::set_bit(unsigned int idx, int blow)
   bval = idx / 8;
   if(bval >= length)
     {
-      fprintf(stderr,"set_bit invalid index %d lenght %ld\n", idx, length*8);
+      fprintf(stderr,"set_bit invalid index %d lenght %d\n", idx, length*8);
       throw  io_exception(std::string("bit_set_fuse"));
     }
   bit  = idx % 8;

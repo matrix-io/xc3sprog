@@ -118,7 +118,7 @@ int main(int argc, char**args)
       if (bits.readFile(fp, in_style) == 0 )
 	{
 	  if (verbose)
-	    fprintf(stderr,"Got Bitfile for Device %s: %ld Fuses\n", 
+	    fprintf(stderr,"Got Bitfile for Device %s: %d Fuses\n", 
 		    bits.getPartName(), bits.getLength());
 	  revert = true;
 	  strncpy(device, bits.getPartName(), 255);
