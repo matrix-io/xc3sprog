@@ -161,7 +161,7 @@ void ReadFuseBits(struct MENU_ITEM *ptr)
 
 void WriteFuseBits(struct MENU_ITEM *ptr)
 {
-  char buffer[BUFSIZE];
+  char buffer[BUFSIZE], *p;
 
   ptr=ptr;
   SetATMegaFuseDefault();  /* Any bits not defined in the fuse file will be the default value */
@@ -175,6 +175,10 @@ void WriteFuseBits(struct MENU_ITEM *ptr)
     case '\n':
       break;
     default:
+      p=strchr(buffer, '\n');
+      if (p) *p = '\0';
+      p=strchr(buffer, '\r');
+      if (p) *p = '\0';
       gFuseName=buffer;
       GetParamInfo();
       EncodeATMegaFuseBits();
