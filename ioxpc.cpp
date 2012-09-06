@@ -342,12 +342,18 @@ int IOXPC::xpcu_select_gpio(struct usb_dev_handle *xpcu, int int_or_ext )
  *   After the bulk write, if any of the bits 12..15 was set in any word, a 
  *   bulk_read shall follow to collect the TDO data.
  *
- *   TDO data is shifted in from MSB. In a "full" word with 16 TDO bits, the
- *   earliest one reached bit 0. The earliest of 15 bits however would 
- *   be bit 0, and if there's only one TDO bit, it arrives as the MSB
- *   of the word.
+ *   TDO data is shifted in from MSB to LSB and transferred 32-bit little-endian.
+ *   In a "full" word with 32 TDO bits, the earliest one reached bit 0.
+ *   The earliest of 31 bits however would be bit 1. A 17 bit transfer has the LSB
+ *   as the MSB of uint16_t[0], other bits are in uint16_t[1].
  *
- *   For transfers > 31 bits this doesn't seem to happen
+ *   However, if the last packet is smaller than 16, only 2 bytes are transferred.
+ *   If there's only one TDO bit, it arrives as the MSB of the 16-bit word, uint16_t[0].
+ *   uint16_t[1] is then skipped.
+ *
+ *   For full 32 bits blocks, the data is aligned. The last non 32-bits block arrives
+ *   non-aligned and has to be re-aligned. Half-words (16-bits) transfers have to be
+ *   re-aligned too. 
  */
 int
 IOXPC::xpcu_shift(struct usb_dev_handle *xpcu, int reqno, int bits,
@@ -411,9 +417,11 @@ IOXPC::xpcu_do_ext_transfer( xpc_ext_transfer_state_t *xts )
   int r;
   int in_len, out_len;
   
+  //cpld expects data (tdi) to be in 16 bit words
   in_len = 2 * (xts->in_bits >> 2);
   if ((xts->in_bits & 3) != 0) in_len += 2;
   
+  //cpld returns the read data (tdo) in 32 bit words
   out_len = 2 * (xts->out_bits >> 4);
   if ((xts->out_bits & 15) != 0) out_len += 2;
   
@@ -427,49 +435,58 @@ IOXPC::xpcu_do_ext_transfer( xpc_ext_transfer_state_t *xts )
       r = xpcu_shift (xpcu, 0xA6, xts->in_bits, in_len, xts->buf, 0, NULL);
     }
   if(r >= 0 && xts->out_bits > 0)
-    {
-        int shift =  xts->out_bits & 0xf;
-        int i;
- 
-        if (shift)
-            shift = 16 -shift;
-        if (xts->out_bits >31)
-            shift = 0;
-        if (fp_dbg)
-            fprintf(fp_dbg, "out_done %d shift %d\n", xts->out_done, shift);
-        for (i= 0; i <xts->out_bits; i++)
-        {
-            int bit_num = i + shift;
-            int bit_val = xts->buf[bit_num >>3] & (1 << (bit_num & 0x7));
-            if(!(xts->out_done & 0x7))
-                xts->out[xts->out_done>>3] = 0;
-            if (bit_val)
-                xts->out[xts->out_done>>3] |= (1<<(xts->out_done & 0x7));
-            xts->out_done++;
-        }
-       
-      
-      if (fp_dbg)
-      {
-          int i; 
-          fprintf(fp_dbg, "Shifted data");
-          for( i = 0; i < out_len; i++)
-          {
-              fprintf(fp_dbg, " %02x", xts->out[i]);
-          }
-          fprintf(fp_dbg, "\n");
-      }
-          
-    }
-  
+   {
+	   int i;
+	   unsigned int aligned_32bitwords, aligned_bytes;
+	   unsigned int shift, bit_num, bit_val;
+
+	   aligned_32bitwords = xts->out_bits/32;
+	   aligned_bytes = aligned_32bitwords*4;
+	   memcpy(xts->out, xts->buf, aligned_bytes);
+	   xts->out_done = aligned_bytes*8;
+
+	   //This data is not aligned
+	   if (xts->out_bits % 32)
+	   {
+		   shift =  xts->out_bits % 16;		//we can also receive a 16-bit word in which case
+		   if (shift)											//the MSB starts in the least significant 16 bit word
+			   shift = 16 - shift;					//and it shifts the same way for 32 bit if
+		   																//out_bits > 16 and ( shift = 32 - out_bits % 32 )
+		   if (fp_dbg)
+			   fprintf(fp_dbg, "out_done %d shift %d\n", xts->out_done, shift);
+		   for (i = aligned_bytes*8; i < xts->out_bits; i++)
+		   {
+			   bit_num = i + shift;
+			   bit_val = xts->buf[bit_num/8] & (1<<(bit_num%8));
+			   if(!(xts->out_done % 8))
+				   xts->out[xts->out_done/8] = 0;
+			   if (bit_val)
+				   xts->out[xts->out_done/8] |= (1<<(xts->out_done%8));
+			   xts->out_done++;
+		   }
+	   }
+
+	   if (fp_dbg)
+	   {
+		   int i; 
+		   fprintf(fp_dbg, "Shifted data");
+		   for( i = 0; i < out_len; i++)
+		   {
+			   fprintf(fp_dbg, " %02x", xts->out[i]);
+		   }
+		   fprintf(fp_dbg, "\n");
+	   }
+
+   }
+
   xts->in_bits = 0;
   xts->out_bits = 0;
-  
+
   return r;
 }
 
 /* ---------------------------------------------------------------------- */
-void
+	void
 IOXPC::xpcu_add_bit_for_ext_transfer( xpc_ext_transfer_state_t *xts, bool in,
 				      bool tms, bool is_real )
 {
@@ -569,7 +586,7 @@ void IOXPC::txrx_block(const unsigned char *in, unsigned char *out, int len,
 	  xpcu_add_bit_for_ext_transfer( &xts, (tdi & 1),
 					 (i== len-1)?last:0, 1 );
 	  tdi >>= 1;
-	  if(xts.in_bits == (4*XPC_A6_CHUNKSIZE - 1))
+	  if(xts.in_bits == (2*CPLD_MAX_BYTES - 1))
 	    {
 	      j = xpcu_do_ext_transfer( &xts );
 	    }
@@ -627,7 +644,7 @@ void IOXPC::tx_tms(unsigned char *in, int len, int force)
       for(i=0,j=0; i<len && j>=0; i++)
 	{
 	  xpcu_add_bit_for_ext_transfer( &xts, 1, (in[i>>3] & (1<<(i%8))), 1 );
-	  if(xts.in_bits == (4*XPC_A6_CHUNKSIZE - 1))
+	  if(xts.in_bits == (2*CPLD_MAX_BYTES - 1))
 	    {
 	      j = xpcu_do_ext_transfer( &xts );
 	    }
