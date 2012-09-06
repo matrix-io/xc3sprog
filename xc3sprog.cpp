@@ -1366,10 +1366,10 @@ int programXC2C( Jtag &jtag, unsigned int id, int argc, char ** args,
  
     if (map.loadmapfile(mapdir, device))
     {
-        fprintf(stderr, "Failed to load Mapfile %s, aborting\n"
-                "Only Bitfile can be handled, e.g. read back, "
-                "verified and programmed in other device\n",
-                map.GetFilename());
+        // map.GetFilename() isn't defined if loadmapfile fails().
+        // (It will also output its own error message.)
+        fprintf(stderr, "No mapfile available -- only bitfile (not JEDEC) "
+                "operations will be supported.\n");
     }
     else
         map_available = true;
@@ -1423,7 +1423,7 @@ int programXC2C( Jtag &jtag, unsigned int id, int argc, char ** args,
             ProgAlgXC2C alg(jtag, size_ind);
 
             alg.array_read(file);
-            if (map_available)
+            if (map_available && file_style == STYLE_JEDEC)
             {
                 map.bitfile2jedecfile(&file, &fuses);
                 fuses.saveAsJed( device, fp);
@@ -1435,7 +1435,7 @@ int programXC2C( Jtag &jtag, unsigned int id, int argc, char ** args,
         else if (action == 'v' || tolower(action) == 'w')
         {
             /* Load file */
-            if (map_available)
+            if (map_available && file_style == STYLE_JEDEC)
             {
                 ret = fuses.readFile(fp);
                 if (ret)
@@ -1831,4 +1831,3 @@ xmega_release:
     jtag->shiftIR(&bypass);
     return ret;
 }
-
