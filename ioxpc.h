@@ -37,19 +37,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define XPC_TDI     (1<<0)
 #define XPC_TDO     (1<<0)
 
-
-/* (urjtag: 16-bit words. More than 4 currently leads to bit errors; 13 to serious problems)
- * Impact from ISE10.1 with DLC10 uses 16384 byte buffers
+/*
+ * send max 4096 bytes to CPLD
+ * this is equal to 8192 TDI plus 8192 TDO bits
  */
-#define XPC_A6_CHUNKSIZE (1<<13)
+#define CPLD_MAX_BYTES (1<<12)
 
+/*
+ * Buffer has to hold 8192 bits for write, each 2 bytes hold 4 bits for write, so this has to be 4096
+ * Buffer has to hold 8192 bits for read, each byte holds 8 bits for read, so this has to be 1024
+ * Therefore, buffer size -> CPLD_MAX_BYTES
+ */
 typedef struct
 {
         int in_bits;
         int out_bits;
         int out_done;
         unsigned char *out;
-        unsigned char buf[XPC_A6_CHUNKSIZE*2];
+        unsigned char buf[CPLD_MAX_BYTES];
 }
 xpc_ext_transfer_state_t;
 
