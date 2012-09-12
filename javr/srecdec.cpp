@@ -35,8 +35,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-
 
 #include "srecdec.h"
 
@@ -44,10 +42,6 @@
 int ReadOneLine(FILE *fp,char *dest);
 long Hex2Bin(char *ptr);
 char RecordType(char Type);
-
-
-
-
 
 S_Record DecodeSRecordLine(char *source, unsigned char *dest)
 {
@@ -58,7 +52,8 @@ S_Record DecodeSRecordLine(char *source, unsigned char *dest)
   if(*source!='S')
   {
      printf("\n%s\n",source);
-     assert(*source=='S');
+     SRec.Type= INVALID_REC;
+     return SRec;
   }
   source++;
   SRec.Type=*source++-'0';
@@ -236,6 +231,12 @@ SrecRd ReadData(FILE *fp,unsigned char *Data,long MaxLen)
     if(i<=2)
       break;
     SRec = DecodeSRecordLine(LineBuffer,LBuf);
+    if (SRec.Type == INVALID_REC)
+    {
+        Rslt.Bytes_Read = 0;
+        return Rslt;
+    }
+        
     k=RecordType(SRec.Type);
     if(k==DATARECORD)
     {

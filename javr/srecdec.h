@@ -43,6 +43,7 @@ typedef struct
 #define  STARTRECORD  0
 #define  DATARECORD   1
 #define  ENDRECORD    2
+#define  INVALID_REC -1
 
 
 typedef struct  {
