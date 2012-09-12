@@ -139,7 +139,6 @@ int GetParamInfo(void)
             break;
           case 1:       /* Looking for token */
             c=fgetc(gFuseFile);
-            DataCount++;
             if(!isspace(c))
             {
               if(c==';')  /* Start of comment */
@@ -155,7 +154,6 @@ int GetParamInfo(void)
             break;
           case 2:       /* Reading Token */
             c=fgetc(gFuseFile);
-            DataCount++;
             if(isspace(c))
             {
               if(c!=' ')
@@ -182,6 +180,7 @@ int GetParamInfo(void)
             break;
           case 3:       /* Token in Buffer */
             Token=Tokenize(Buffer);
+            DataCount++;
             switch(Token)
             {
               case TokenM103C:
@@ -308,7 +307,6 @@ int GetParamInfo(void)
             break;
           case 4:   /* Skipping Comment */
             c=fgetc(gFuseFile);
-            DataCount++;
             if((c=='\r') || (c=='\n'))  /* End of comment */
             {
               Index=0;
@@ -326,7 +324,7 @@ int GetParamInfo(void)
    while(restart);
 
    fclose(gFuseFile);
-   return(1);
+   return(DataCount);
 }
 
 #ifdef __unix__
