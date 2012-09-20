@@ -1,0 +1,43 @@
+*~
+# /
+/*at90*
+/devlist
+/devlist.h
+/jedecparse
+/detectchain
+/bitparse
+/debug
+/xc3sprog
+/_impact*
+/a.out
+/build*
+/devices.h
+/cables.h
+/CMakeCache.txt
+/CMakeFiles
+/cmake_install.cmake
+/srecparse
+/Makefile
+CPackConfig.cmake
+CPackSourceConfig.cmake
+avrfuseparse
+javr/CMakeFiles/
+javr/cmake_install.cmake
+libxc3sproglib.a
+packages/CMakeFiles/
+packages/Makefile
+packages/cmake_install.cmake
+readdna
+xc2c_warp
+
+# /bscan_spi/
+/bscan_spi/bscan_spi_isf_sp3adsp
+
+# /javr/
+/javr/build
+/javr/build-win32
+/javr/javr
+/javr/*.map
+/javr/*.exe
+/javr/*.o
+javr/Makefile
