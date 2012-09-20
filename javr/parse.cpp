@@ -63,6 +63,7 @@ const char *gToken[]={
                "M161C:",
                "CKDIV8:",
                "CKOUT:",
+               "HWBE:",
                NULL
               };
 
@@ -88,7 +89,8 @@ const char *gToken[]={
 #define TokenM161C      16
 #define TokenCKDIV8     17
 #define TokenCKOUT      18
-#define TokenNone       19
+#define TokenHWBE       19
+#define TokenNone       20
 
 
 
@@ -215,6 +217,8 @@ int GetParamInfo(void)
                 break;
               case TokenCKOUT:
                 break;
+              case TokenHWBE:
+                break;
               case TokenNone:
                 /* printf("%s >>%s<<\n",gToken[TokenOld],Buffer); */
                 switch(TokenOld)
@@ -297,6 +301,10 @@ int GetParamInfo(void)
                   case TokenCKOUT:
                     sscanf((const char*)Buffer,"%i",&tmp);
                     gFuseBitsAll.CKOUT=tmp;
+                    break;
+                  case TokenHWBE:
+                    sscanf((const char*)Buffer,"%i",&tmp);
+                    gFuseBitsAll.HWBE=tmp;
                     break;
                 }
                 break;

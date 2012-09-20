@@ -51,7 +51,7 @@
 #undef FUSE_M
 
 
-#define BVAL(v,b)       (!(!((1<<(b))&(v))))
+#define BVAL(v,b)       (((1<<(b))&(v))?1:0)
 
 void DecodeATMegaFuseBits(void)
 {
@@ -67,14 +67,20 @@ void DecodeATMegaFuseBits(void)
   gFuseBitsAll.EESAVE=BVAL(gFuseByte[1],3);
   gFuseBitsAll.BOOTRST=BVAL(gFuseByte[1],0);
 
-  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128))
+  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128) || (gDeviceData.Index==AT90USB1287))
   {
     if(gDeviceData.Index==ATMEGA162)
       gFuseBitsAll.M161C=BVAL(gFuseByte[2],4);
     if(gDeviceData.Index==AT90CAN128)
       gFuseBitsAll.TA0SEL=BVAL(gFuseByte[2],0);
     gFuseBitsAll.WDTON=BVAL(gFuseByte[1],4);
-    gFuseBitsAll.BODLEVEL=(gFuseByte[2]>>1)&0x07;
+    if(gDeviceData.Index==AT90USB1287)
+    {
+        gFuseBitsAll.BODLEVEL=(gFuseByte[2])&0x07;
+        gFuseBitsAll.HWBE=BVAL(gFuseByte[2],3);
+    }
+    else
+        gFuseBitsAll.BODLEVEL=(gFuseByte[2]>>1)&0x07;
     gFuseBitsAll.CKDIV8=BVAL(gFuseByte[0],7);
     gFuseBitsAll.CKOUT=BVAL(gFuseByte[0],6);
     /*implicit definitions */
@@ -88,12 +94,12 @@ void DecodeATMegaFuseBits(void)
   }
 
   gFuseBitsAll.BOOTSIZE=(gFuseByte[1]>>1);
-  gFuseBitsAll.SUT=(gFuseByte[0]>>4);
-  gFuseBitsAll.CKSEL=gFuseByte[0];
+  gFuseBitsAll.SUT=(gFuseByte[0]>>4) & 0x3;
+  gFuseBitsAll.CKSEL=(gFuseByte[0]) & 0xf;
 
-  gLockBitsAll.LB=gLockByte;
-  gLockBitsAll.BLB0=gLockByte>>2;
-  gLockBitsAll.BLB1=gLockByte>>4;
+  gLockBitsAll.LB=(gLockByte) & 0x3;
+  gLockBitsAll.BLB0=(gLockByte>>2) & 0x3;
+  gLockBitsAll.BLB1=(gLockByte>>4) & 0x3;
 }
 
 
@@ -123,12 +129,17 @@ void EncodeATMegaFuseBits(void)
     tmp|=((gFuseBitsAll.BODLEVEL&0x07)<<1);
     gFuseByte[2]=tmp;
   }
-
+  else if(gDeviceData.Index==AT90USB1287)
+  {
+    tmp=0xF1|gFuseBitsAll.HWBE<<3;
+    tmp|=(gFuseBitsAll.BODLEVEL&0x07);
+    gFuseByte[2]=tmp;
+  }
   tmp=0x00;
   tmp|=(gFuseBitsAll.OCDEN<<7);
   tmp|=(gFuseBitsAll.JTAGEN<<6);
   tmp|=(gFuseBitsAll.SPIEN<<5);
-  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128))
+  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128)|| (gDeviceData.Index==AT90USB1287))
   {
     tmp|=(gFuseBitsAll.WDTON<<4);
   }
@@ -142,7 +153,7 @@ void EncodeATMegaFuseBits(void)
   gFuseByte[1]=tmp;
 
   tmp=0x00;
-  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128))
+  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128)|| (gDeviceData.Index==AT90USB1287))
   {
     tmp|=(gFuseBitsAll.CKDIV8<<7);
     tmp|=(gFuseBitsAll.CKOUT<<6);
@@ -173,13 +184,14 @@ void DisplayATMegaFuseData(void)
   unsigned long tmp1;
 
   printf("Fuse Bits: 0=\"Programmed\" => True\n");
-  if((gDeviceData.Index==ATMEGA128) || (gDeviceData.Index==ATMEGA64) || (gDeviceData.Index==ATMEGA162) ||(gDeviceData.Index==AT90CAN128))
+  if((gDeviceData.Index==ATMEGA128) || (gDeviceData.Index==ATMEGA64) || (gDeviceData.Index==ATMEGA162) 
+     ||(gDeviceData.Index==AT90CAN128)||(gDeviceData.Index==AT90USB1287))
   {
     printf("Extended Fuse Byte: 0x%2.2X ",gFuseByte[2]);
   }
   printf("High Fuse Byte: 0x%2.2X ",gFuseByte[1]);
   printf("Low Fuse Byte: 0x%2.2X\n",gFuseByte[0]);
-  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128))
+  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128)||(gDeviceData.Index==AT90USB1287))
     {
       tmp=gFuseBitsAll.CKSEL;
       printf("CKSEL: %X %s%s\n",gFuseBitsAll.CKSEL,gCKSEL_Data1[tmp],
@@ -201,10 +213,12 @@ void DisplayATMegaFuseData(void)
     printf("M103C   : %d  (%s)\n",gFuseBitsAll.M103C   ,gTF[gFuseBitsAll.M103C]);
     printf("WDTON   : %d  (%s)\n",gFuseBitsAll.WDTON   ,gTF[gFuseBitsAll.WDTON]);
   }
-  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128))
+  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128) || (gDeviceData.Index==AT90USB1287))
   {
     if (gDeviceData.Index==ATMEGA162)
       printf("M161C   : %d  (%s)\n",gFuseBitsAll.M161C   ,gTF[gFuseBitsAll.M161C]);
+    if (gDeviceData.Index==AT90USB1287)
+      printf("HWBE    : %d  (%s)\n",gFuseBitsAll.HWBE    ,gTF[gFuseBitsAll.HWBE ]);
     printf("WDTON   : %d  (%s)\n",gFuseBitsAll.WDTON   ,gTF[gFuseBitsAll.WDTON]);
     printf("CKOUT   : %d  (%s)\n",gFuseBitsAll.CKOUT   ,gTF[gFuseBitsAll.CKOUT]);
     printf("CKDIV8  : %d  (%s)\n",gFuseBitsAll.CKDIV8  ,gTF[gFuseBitsAll.CKDIV8]);
@@ -269,6 +283,33 @@ void DisplayATMegaFuseData(void)
         break;
       default:
         printf("(2.5V)");
+        break;
+    }
+    printf("\n");
+  }
+  else if(gDeviceData.Index == AT90USB1287) 
+  {
+    switch(gFuseBitsAll.BODLEVEL)
+    {
+      case 0x07:
+        printf("(BOD Disabled)");
+        break;
+      case 0x06:
+      case 0x05:
+      case 0x04:
+        printf("(Reserver)");
+        break;
+      case 0x03:
+        printf("(2.6V)");
+        break;
+       case 0x02:
+        printf("(3.4V)");
+        break;
+       case 0x01:
+        printf("(3.5V)");
+        break;
+      default:
+        printf("(4.3V)");
         break;
     }
     printf("\n");
@@ -360,7 +401,7 @@ void WriteATMegaFuse(void)
   Send_AVR_Prog_Command(0x2340);  /* Enter Fuse Write */
 
   if((gDeviceData.Index==ATMEGA128) || (gDeviceData.Index==ATMEGA64) || (gDeviceData.Index==ATMEGA162)
-     || (gDeviceData.Index==AT90CAN128))
+     || (gDeviceData.Index==AT90CAN128)||(gDeviceData.Index==AT90USB1287))
   {
     tmp=0x1300;
     tmp|=gFuseByte[2];
@@ -456,8 +497,14 @@ void WriteATMegaFuseFile(char *name)
 
   fprintf(fp,";%s Fuse Bit definitions" EOLINE,gDeviceData.name);
   fprintf(fp,";0 => Programmed, 1 => Not Programmed" EOLINE);
+  fprintf(fp,";");
+  if((gDeviceData.Index==ATMEGA128) || (gDeviceData.Index==ATMEGA64) || (gDeviceData.Index==ATMEGA162) 
+     ||(gDeviceData.Index==AT90CAN128)||(gDeviceData.Index==AT90USB1287))
+  fprintf(fp,"Ext 0x%02x ", gFuseByte[2]);
+  fprintf(fp,"High 0x%02x Low 0x%02x Lock 0x%02x" EOLINE, 
+          gFuseByte[1], gFuseByte[0], gLockByte);
   fprintf(fp,"CKSEL: 0x%X" EOLINE,gFuseBitsAll.CKSEL);
-  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128))
+  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128)||(gDeviceData.Index==AT90USB1287))
     {
     }
   else
@@ -469,10 +516,12 @@ void WriteATMegaFuseFile(char *name)
     fprintf(fp,"M103C: %d" EOLINE,gFuseBitsAll.M103C);
     fprintf(fp,"WDTON: %d" EOLINE,gFuseBitsAll.WDTON);
   }
-  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128))
+  if((gDeviceData.Index==ATMEGA162) || (gDeviceData.Index==AT90CAN128)||(gDeviceData.Index==AT90USB1287))
   {
     if(gDeviceData.Index==ATMEGA162)
       fprintf(fp,"M161C: %d" EOLINE,gFuseBitsAll.M161C);
+    if (gDeviceData.Index==AT90USB1287)
+      fprintf(fp,"HWBE: %d" EOLINE,gFuseBitsAll.HWBE );
     fprintf(fp,"WDTON: %d" EOLINE,gFuseBitsAll.WDTON);
     fprintf(fp,"CKDIV8: %d" EOLINE,gFuseBitsAll.CKDIV8);
     fprintf(fp,"CKOUT: %d" EOLINE,gFuseBitsAll.CKOUT);
