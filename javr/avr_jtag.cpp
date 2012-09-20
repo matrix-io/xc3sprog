@@ -94,6 +94,7 @@ void ResetReleaseAVR(void)
     fprintf(stderr,"ResetReleaseAVR\n");
   Send_Instruction(4,AVR_RESET);
   Send_Data(1,x);
+  Send_Instruction(4,BYPASS);
 }
 
 
