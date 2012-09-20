@@ -35,11 +35,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "srecdec.h"
 
 
-int ReadOneLine(FILE *fp,char *dest);
 long Hex2Bin(char *ptr);
 char RecordType(char Type);
 
@@ -225,17 +225,14 @@ SrecRd ReadData(FILE *fp,unsigned char *Data,long MaxLen)
 
   NumberOfBytes=0;
   MaxA=0;
-  while(!feof(fp))
+  while(fgets(LineBuffer, sizeof(LineBuffer), fp) != NULL)
   {
-    i=ReadOneLine(fp,LineBuffer);
+    i = strlen(LineBuffer);
     if(i<=2)
       break;
     SRec = DecodeSRecordLine(LineBuffer,LBuf);
     if (SRec.Type == INVALID_REC)
-    {
-        Rslt.Bytes_Read = 0;
         return Rslt;
-    }
         
     k=RecordType(SRec.Type);
     if(k==DATARECORD)
@@ -273,33 +270,3 @@ SrecRd ReadData(FILE *fp,unsigned char *Data,long MaxLen)
 
   return Rslt;
 }
-
-
-int ReadOneLine(FILE *fp,char *dest)
-{
-   char c;
-   int count=0;
-
-   while(!feof(fp))
-   {
-     c=fgetc(fp);
-     if(c=='\r' || c=='\n')
-     {
-       if(count)  /* If CR or LF is at start of line do not return */
-         return(count);
-     }
-     else
-     {
-       dest[count]=c;
-       count++;
-     }
-   }
-   return(count);
-}
-
-
-
-
-
-
-
