@@ -203,8 +203,14 @@ void ReadFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *dest)
   //tmp<<=7; /* Page Size is 2^7=128 words */
   tmp>>=1; /* Get Word Address of Page  (word = 2 bytes ) */
 
+  if (gDeviceData.Index==AT90USB1287)
+  {
+      instr=0x0b00;
+      instr|=(tmp>>16);
+      Send_AVR_Prog_Command(instr);  /* Enter Extended High Address Byte */
+  }
   instr=0x0700;
-  instr|=(tmp>>8);
+  instr|=((tmp>>8) & 0xff);
   Send_AVR_Prog_Command(instr);  /* Enter High Address Byte */
   instr=0x0300;
   instr|=(tmp&0xFF);
@@ -215,6 +221,7 @@ void ReadFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *dest)
 #if 1
    switch(gDeviceData.Index)
   {
+    case AT90USB1287:
     case AT90CAN128:
       cptr = (char*)gPageBuffer;
       for (i=0; i<pagesize; i ++) {
@@ -298,8 +305,14 @@ int WriteFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *src)
   //tmp<<=7;  /* Page Size is 2^7=128 words */
   tmp*=(pagesize/2);  /* Get word offset for pagenumber */
 
+  if (gDeviceData.Index==AT90USB1287)
+  {
+      instr=0x0b00;
+      instr|=(tmp>>16);
+      Send_AVR_Prog_Command(instr);  /* Enter Extended High Address Byte */
+  }
   instr=0x0700;
-  instr|=(tmp>>8);
+  instr|=((tmp>>8) & 0xff);
   Send_AVR_Prog_Command(instr);  /* Enter High Address Byte */
   instr=0x0300;
   if ((tmp & 0x7f) !=0)
@@ -314,6 +327,7 @@ int WriteFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *src)
 
    switch(gDeviceData.Index)
   {
+    case AT90USB1287:
     case AT90CAN128:
       cptr=(char*)gPageBuffer;
       for(i=0;i<pagesize; i++) {
@@ -567,6 +581,7 @@ void WriteEepromBlock(unsigned startaddress, unsigned length, unsigned char *src
 
   switch(gDeviceData.Index)
   {
+    case AT90USB1287:
     case AT90CAN128:
     case ATMEGA128:
     case ATMEGA64:
@@ -623,6 +638,7 @@ void WriteFlashBlock(unsigned long startaddress, unsigned long length, unsigned 
   }
   switch(gDeviceData.Index)
   {
+    case AT90USB1287:
     case AT90CAN128:
     case ATMEGA128:
     case ATMEGA64:
@@ -677,6 +693,7 @@ int ReadFlashBlock(unsigned startaddress, unsigned length, unsigned char *dest)
 
   switch(gDeviceData.Index)
   {
+    case AT90USB1287:
     case AT90CAN128:
     case ATMEGA128:
     case ATMEGA64:

@@ -122,6 +122,8 @@ int main(int argc, char **args)
   std::auto_ptr<IOBase>  io;
   int res;
 
+  gFuseName = 0;
+
   // Start from parsing command line arguments
   while(true) {
     switch(getopt(argc, args, "?hJ:Lc:Cd:e:f:jp:s:v")) {
@@ -210,10 +212,14 @@ int main(int argc, char **args)
       memset(gFlashBuffer,FILL_BYTE,gFlashBufferSize);
       gSourceInfo=ReadData(fp,gFlashBuffer,gFlashBufferSize);
       fclose(fp);
-      gProgramFlash=1;
-      printf("Flash Data from 0x%lX to 0x%lX, Length: %ld\n"
-	     ,gSourceInfo.StartAddr,gSourceInfo.EndAddr,gSourceInfo.Bytes_Read);
-
+      if (gSourceInfo.Bytes_Read)
+      {
+          gProgramFlash=1;
+          printf("Flash Data from 0x%lX to 0x%lX, Length: %ld\n"
+                 ,gSourceInfo.StartAddr,gSourceInfo.EndAddr,gSourceInfo.Bytes_Read);
+      }
+          else
+              printf("Invalid flash data\n");
       {
 	int i;
 	char * ptr = args[0];
@@ -259,7 +265,7 @@ int main(int argc, char **args)
     }
   
   // Produce release info from CVS tags
-  printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests! Check Sourceforge SVN!\n");
+  printf("Release $Rev: 630 $\nPlease provide feedback on success/failure/enhancement requests! Check Sourceforge SVN!\n");
 
   CableDB cabledb(0);
   res = cabledb.getCable(cablename, &cable);
@@ -310,6 +316,7 @@ int main(int argc, char **args)
     case ATMEGA162:
     case ATMEGA169:
     case AT90CAN128:
+    case AT90USB1287:
       break;
     default:
       fprintf(stderr,"Supported devices: ");
@@ -320,6 +327,7 @@ int main(int argc, char **args)
       fprintf(stderr," ,ATMega162");
       fprintf(stderr," ,ATMega169");
       fprintf(stderr," ,AT90CAN128");
+      fprintf(stderr," ,AT90USB1287");
       fprintf(stderr,"\n");
       exit(-1);
       break;
