@@ -344,7 +344,10 @@ int main(int argc, char **args)
 	  printf("\nProgramming Fuse Bits\n");
 	  DisplayATMegaFuseData();
 	  WriteATMegaFuse();
-	}
+        }
+      else
+          printf("\n%s or %s.fus is not a valid fuse file\n", 
+                 gFuseName, gFuseName);
     }
   else
   {
