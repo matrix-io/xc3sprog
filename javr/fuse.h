@@ -38,25 +38,26 @@
 
 
 typedef struct
-{                        /*                                    |128|32|16|162|CAN128|USB128  */
-  unsigned M103C:1;      /* ATMega103 Compatibility Mode       | x |  |  |   |      |        */
-  unsigned M161C:1;      /* ATMeag161 Compatibility Mode       |   |  |  |  x|      |        */
-  unsigned WDTON:1;      /* Watchdog Always on                 | x |  |  |  x| x    | x      */
-  unsigned OCDEN:1;      /* Enable On Chip Debug               | x | x| x|  x| x    | x      */
-  unsigned JTAGEN:1;     /* JTAG Enable                        | x | x| x|  x| x    | x      */
-  unsigned SPIEN:1;      /* Serial Programming Enable          | x | x| x|  x| x    | x      */
-  unsigned CKOPT:1;      /* Oscillator options                 | x | x| x|  x| x    | x      */
-  unsigned EESAVE:1;     /* Preserve EEPROM during chip Erase  | x | x| x|  x| x    | x      */
-  unsigned BOOTSIZE:2;   /* Depends on Device                  | x | x| x|  x| x    | x      */
-  unsigned BOOTRST:1;    /* Enable Booting from Bootblock      | x | x| x|  x| x    | x      */
-  unsigned BODLEVEL:3;   /* BOD Level                          | x | x| x|  x| x    | x      */
-  unsigned BODEN:1;      /* Brownout Detector Enable           | x | x| x|  x|      |        */
-  unsigned SUT:2;        /* Start Up Time                      | x | x| x|  x| x    | x      */
-  unsigned CKSEL:4;      /* Clock Select                       | x | x| x|  x| x    | x      */
-  unsigned CKDIV8:1;     /* Divide clock by 8                  |   |  |  |  x| x    | x      */
-  unsigned CKOUT:1;      /* Clock Output                       |   |  |  |  x| x    | x      */
-  unsigned TA0SEL:1;     /* (Reserved for factory tests)       |   |  |  |   | x    |        */
-  unsigned HWBE:1;       /* Hardware Boot Enable               |   |  |  |   |      | x      */
+{                        /*                                    |128|32|323|16 |162|169|CAN128|USB128  */
+  unsigned M103C:1;      /* ATMega103 Compatibility Mode       | x |  |   |   |   |   |      |        */
+  unsigned M161C:1;      /* ATMeag161 Compatibility Mode       |   |  |   |   |  x|   |      |        */
+  unsigned WDTON:1;      /* Watchdog Always on                 | x |  |   |   |  x| x | x    | x      */
+  unsigned OCDEN:1;      /* Enable On Chip Debug               | x | x| x | x |  x| x | x    | x      */
+  unsigned JTAGEN:1;     /* JTAG Enable                        | x | x| x | x |  x| x | x    | x      */
+  unsigned SPIEN:1;      /* Serial Programming Enable          | x | x| x | x |  x| x | x    | x      */
+  unsigned CKOPT:1;      /* Oscillator options                 | x | x|   | x |  x| x | x    | x      */
+  unsigned EESAVE:1;     /* Preserve EEPROM during chip Erase  | x | x| x | x |  x| x | x    | x      */
+  unsigned BOOTSIZE:2;   /* Depends on Device                  | x | x| x | x |  x| x | x    | x      */
+  unsigned BOOTRST:1;    /* Enable Booting from Bootblock      | x | x| x | x |  x| x | x    | x      */
+  unsigned BODLEVEL:3;   /* BOD Level                          | x | x| x | x |  x| x | x    | x      */
+  unsigned BODEN:1;      /* Brownout Detector Enable           | x | x| x | x |  x| x |      |        */
+  unsigned SUT:2;        /* Start Up Time                      | x | x|   | x |  x| x | x    | x      */
+  unsigned CKSEL:4;      /* Clock Select                       | x | x| x | x |  x| x | x    | x      */
+  unsigned CKDIV8:1;     /* Divide clock by 8                  |   |  |   |   |  x| x | x    | x      */
+  unsigned CKOUT:1;      /* Clock Output                       |   |  |   |   |  x| x | x    | x      */
+  unsigned TA0SEL:1;     /* (Reserved for factory tests)       |   |  |   |   |   |   | x    |        */
+  unsigned HWBE:1;       /* Hardware Boot Enable               |   |  |   |   |   |   |      | x      */
+  unsigned RESETDIS:1;   /* Disable Hardware Reset             |   |  |   |   |   | x |      |        */
 }FUSE_BITS_ALL;
 
 
