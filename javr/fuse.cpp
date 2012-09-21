@@ -163,6 +163,8 @@ void DecodeATMegaFuseBits(void)
   case ATMEGA2561:
       gFuseBitsAll.BODLEVEL =     (gFuseByte[2]  )&0x07;
       break;
+  case UNKNOWN_DEVICE:
+      break;
   }
   switch(gDeviceData.Index)
   {
@@ -200,6 +202,8 @@ void DecodeATMegaFuseBits(void)
       gFuseBitsAll.CKOUT    = BVAL(gFuseByte[0],6);
       gFuseBitsAll.SUT      =     (gFuseByte[0]>>4) & 0x3;
     break;
+  case UNKNOWN_DEVICE:
+      break;
   }
 }
 
@@ -257,6 +261,8 @@ void EncodeATMegaFuseBits(void)
       tmp|=(gFuseBitsAll.BODLEVEL     );
       gFuseByte[2]=tmp;
       break;
+  case UNKNOWN_DEVICE:
+      break;
   }
   
   tmp  = (gFuseBitsAll.OCDEN    << 7);
@@ -279,6 +285,23 @@ void EncodeATMegaFuseBits(void)
   case ATMEGA323:
       tmp &= 0xef;
       break;
+  case ATMEGA162:
+  case ATMEGA169:
+  case AT90CAN128:
+  case AT90USB1287: 
+  case ATMEGA640:
+  case ATMEGA1280:
+  case ATMEGA1281:
+  case ATMEGA2560:
+  case ATMEGA2561:
+  case AT90CAN32:
+  case AT90CAN64:
+  case ATMEGA329:
+  case ATMEGA3290:
+  case ATMEGA649:
+  case ATMEGA6490:
+  case UNKNOWN_DEVICE:
+      break;
   }
   gFuseByte[1]=tmp;
 
@@ -293,12 +316,17 @@ void DisplayATMegaFuseData(void)
 {
   unsigned char tmp;
   uint32_t bootsize;
-  int bod_en;
   double bod_val= 0.0;
 
   printf("Fuse Bits: 0=\"Programmed\" => True\n");
   switch(gDeviceData.Index)
   {
+  case ATMEGA64:
+  case ATMEGA323:
+  case ATMEGA32:
+  case ATMEGA16:
+  case UNKNOWN_DEVICE:
+      break;
   case ATMEGA128:
   case ATMEGA162:
   case ATMEGA169:
@@ -323,6 +351,8 @@ void DisplayATMegaFuseData(void)
   tmp=gFuseBitsAll.CKSEL;
   switch(gDeviceData.Index)
   {
+  case UNKNOWN_DEVICE:
+      break;
   case ATMEGA128:
   case ATMEGA16:
   case ATMEGA32:
@@ -384,6 +414,8 @@ void DisplayATMegaFuseData(void)
   case ATMEGA2561:
        printf("BODLEVEL: %d\n",gFuseBitsAll.BODLEVEL);
      break;
+  case UNKNOWN_DEVICE:
+      break;
   }
   switch(gDeviceData.Index)
   {
@@ -433,80 +465,78 @@ void DisplayATMegaFuseData(void)
       printf("CKDIV8  : %d  (%s)\n",gFuseBitsAll.CKDIV8  ,gTF[gFuseBitsAll.CKDIV8]);
       printf("CKOUT   : %d  (%s)\n",gFuseBitsAll.CKOUT   ,gTF[gFuseBitsAll.CKOUT]);
       break;
-  }
+  case UNKNOWN_DEVICE:
+      break;
+   }
 
   switch(gDeviceData.Index)
   {
   case ATMEGA323:
+  case ATMEGA16:
   case ATMEGA32:
   case ATMEGA64:
   case ATMEGA128:
-      bod_en = (gFuseBitsAll.BODEN)? 1:0;
-      bod_val = (gFuseBitsAll.BODLEVEL)?4.0:2.7;
+      bod_val = (gFuseBitsAll.BODEN)?((gFuseBitsAll.BODLEVEL)?4.0:2.7):0.0;
       break;
-  default:
-      if (gFuseBitsAll.BODLEVEL == 7)
-          bod_en = 0;
-      else
+  case AT90CAN32:
+  case AT90CAN64:
+  case AT90CAN128:
+      switch (gFuseBitsAll.BODLEVEL)
       {
-          bod_en = 1;
-          switch(gDeviceData.Index)
-          {
-          case AT90CAN32:
-          case AT90CAN64:
-          case AT90CAN128:
-              switch (gFuseBitsAll.BODLEVEL)
-              {
-              case 0 : bod_val = 2.5; break;
-              case 1 : bod_val = 2.6; break;
-              case 2 : bod_val = 2.7; break;
-              case 3 : bod_val = 3.8; break;
-              case 4 : bod_val = 3.9; break;
-              case 5 : bod_val = 4.0; break;
-              case 6 : bod_val = 4.1; break;
-              }
-              break;
-          case AT90USB1287:
-              switch (gFuseBitsAll.BODLEVEL)
-              {
-              case 0 : bod_val = 4.3; break;
-              case 1 : bod_val = 3.5; break;
-              case 2 : bod_val = 3.4; break;
-              case 3 : bod_val = 2.6; break;
-              default: bod_val = 1000;
-              }
-              break;
-          case ATMEGA162:
-              switch (gFuseBitsAll.BODLEVEL)
-              {
-              case 3 : bod_val = 2.3; break;
-              case 4 : bod_val = 4.3; break;
-              case 5 : bod_val = 2.7; break;
-              case 6 : bod_val = 1.8; break;
-              default: bod_val = 1000;
-              }
-              break;
-          case ATMEGA640:
-          case ATMEGA1280:
-          case ATMEGA1281:
-          case ATMEGA2560:
-          case ATMEGA2561:
-          case ATMEGA169:
-          case ATMEGA329:
-          case ATMEGA3290:
-          case ATMEGA649:
-          case ATMEGA6490:
-              switch (gFuseBitsAll.BODLEVEL)
-              {
-              case 4 : bod_val = 4.3; break;
-              case 5 : bod_val = 2.7; break;
-              case 6 : bod_val = 1.8; break;
-              default: bod_val = 1000;
-              }
-          }
+      case 0 : bod_val = 2.5; break;
+      case 1 : bod_val = 2.6; break;
+      case 2 : bod_val = 2.7; break;
+      case 3 : bod_val = 3.8; break;
+      case 4 : bod_val = 3.9; break;
+      case 5 : bod_val = 4.0; break;
+      case 6 : bod_val = 4.1; break;
+      case 7 : bod_val = 0.0; break;
       }
+      break;
+  case AT90USB1287:
+      switch (gFuseBitsAll.BODLEVEL)
+      {
+      case 0 : bod_val = 4.3; break;
+      case 1 : bod_val = 3.5; break;
+      case 2 : bod_val = 3.4; break;
+      case 3 : bod_val = 2.6; break;
+      case 7 : bod_val = 0.0; break;
+      default: bod_val = 1000;
+      }
+      break;
+  case ATMEGA162:
+      switch (gFuseBitsAll.BODLEVEL)
+      {
+      case 3 : bod_val = 2.3; break;
+      case 4 : bod_val = 4.3; break;
+      case 5 : bod_val = 2.7; break;
+      case 6 : bod_val = 1.8; break;
+      case 7 : bod_val = 0.0; break;
+      default: bod_val = 1000;
+      }
+      break;
+  case ATMEGA640:
+  case ATMEGA1280:
+  case ATMEGA1281:
+  case ATMEGA2560:
+  case ATMEGA2561:
+  case ATMEGA169:
+  case ATMEGA329:
+  case ATMEGA3290:
+  case ATMEGA649:
+  case ATMEGA6490:
+      switch (gFuseBitsAll.BODLEVEL)
+      {
+              case 4 : bod_val = 4.3; break;
+      case 5 : bod_val = 2.7; break;
+      case 6 : bod_val = 1.8; break;
+      case 7 : bod_val = 0.0; break;
+      default: bod_val = 1000;
+      }
+  case UNKNOWN_DEVICE:
+      break;
   }
-  if (bod_en)
+  if (bod_val > 0.01)
   {
       if (bod_val > 100)
           printf("Reserved Brownout Threshold\n");
@@ -809,6 +839,8 @@ void WriteATMegaFuseFile(char *name)
       fprintf(fp,"SUT: %d" EOLINE,gFuseBitsAll.SUT);
       fprintf(fp,"CKSEL: 0x%X" EOLINE,gFuseBitsAll.CKSEL);
       fprintf(fp,"CKSEL: 0x%X" EOLINE,gFuseBitsAll.CKSEL);
+      break;
+  case UNKNOWN_DEVICE:
       break;
   }
       
