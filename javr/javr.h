@@ -53,6 +53,31 @@ typedef struct
   char BREAKPT;
 }SCAN_1_Info;
 
+/* These defines must be in the same order as data in gAVR_Data[]  array */
+enum avr_known_devices {
+    ATMEGA128       = 0,
+    ATMEGA64        = 1,
+    ATMEGA323       = 2,
+    ATMEGA32        = 3,
+    ATMEGA16        = 4,
+    ATMEGA162       = 5,
+    ATMEGA169       = 6,
+    AT90CAN128      = 7,
+    AT90USB1287     = 8,
+    ATMEGA640       = 9,
+    ATMEGA1280      = 10,
+    ATMEGA1281      = 11,
+    ATMEGA2560      = 12,
+    ATMEGA2561      = 13,
+    AT90CAN32       = 14,
+    AT90CAN64       = 15,
+    ATMEGA329       = 16,
+    ATMEGA3290      = 17,
+    ATMEGA649       = 18,
+    ATMEGA6490      = 19,
+    UNKNOWN_DEVICE  = 0xff
+};
+
 typedef struct
 {
   unsigned short jtag_id;
@@ -60,34 +85,9 @@ typedef struct
   unsigned long flash;
   unsigned short ram;
   unsigned char bootsize;  /* 0: 128/256/512/1024 1: 256/512/1024/2048 2: 512/...*/
-  unsigned char Index;  /* Use To access array of Device Specific routines */
+  avr_known_devices Index;  /* Use To access array of Device Specific routines */
   const char *name;
 }AVR_Data;
-
-/* These defines must be in the same order as data in gAVR_Data[]  array */
-
-#define ATMEGA128       0
-#define ATMEGA64        1
-#define ATMEGA323       2
-#define ATMEGA32        3
-#define ATMEGA16        4
-#define ATMEGA162       5
-#define ATMEGA169       6
-#define AT90CAN128      7
-#define AT90USB1287     8
-#define ATMEGA640       9
-#define ATMEGA1280      10
-#define ATMEGA1281      11
-#define ATMEGA2560      12
-#define ATMEGA2561      13
-#define AT90CAN32       14
-#define AT90CAN64       15
-#define ATMEGA329       16
-#define ATMEGA3290      17
-#define ATMEGA649       18
-#define ATMEGA6490      19
-#define UNKNOWN_DEVICE  0xFF
-
 
 /* Flash Write Timing: T_WLRH is 5 ms in the datasheet */
 #define T_WLRH 7000
@@ -133,27 +133,27 @@ const char *gTAPStateNames[16]=
 const AVR_Data gAVR_Data[]=
 {
 /* jtag_id  eeprom  flash       ram    bootsize, Index  name  */
-    {0x9702, 4096  , 131072UL  , 4096  ,   2    , 0 ,   "ATMega128"},
-    {0x9602, 2048  , 65536UL   , 4096  ,   2    , 0 ,   "ATMega64"},
-    {0x9501, 1024  , 32768UL   , 2048  ,   1    , 0 ,   "ATMega323"},
-    {0x9502, 1024  , 32768UL   , 2048  ,   1    , 0 ,   "ATMega32"},
-    {0x9403, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega16"},
-    {0x9404, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega162"},
-    {0x9405, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega169"},
-    {0x9781, 4096  , 131072UL  , 4096  ,   2    , 0 ,   "AT90CAN128"},
-    {0x9782, 4096  , 131072UL  , 8192  ,   2    , 0 ,   "AT90USB1287"},
-    {0x9608, 4096  ,  65536UL  , 8192  ,   2    , 0 ,   "ATMega640"},
-    {0x9703, 4096  , 131072UL  , 8192  ,   2    , 0 ,   "ATMega1280"},
-    {0x9704, 4096  , 131072UL  , 8192  ,   2    , 0 ,   "ATMega1281"},
-    {0x9801, 4096  , 262144UL  , 8192  ,   2    , 0 ,   "ATMega2560"},
-    {0x9802, 4096  , 262144UL  , 8192  ,   2    , 0 ,   "ATMega2561"},
-    {0x9781, 1024  ,  32768UL  , 2048  ,   2    , 0 ,   "AT90CAN32"},
-    {0x9781, 2048  ,  65536UL  , 4096  ,   2    , 0 ,   "AT90CAN64"},
-    {0x950B, 512   , 16384UL   , 1024  ,   1    , 0 ,   "ATMega329"},
-    {0x950c, 512   , 16384UL   , 1024  ,   1    , 0 ,   "ATMega3290"},
-    {0x960b, 512   , 16384UL   , 1024  ,   1    , 0 ,   "ATMega649"},
-    {0x960c, 512   , 16384UL   , 1024  ,   1    , 0 ,   "ATMega6490"},
-    {0,0, 0, 0, 0, 0, "Unknown"}
+    {0x9702, 4096  , 131072UL  , 4096  ,   2    , ATMEGA128     ,   "ATMega128"},
+    {0x9602, 2048  , 65536UL   , 4096  ,   2    , ATMEGA64      ,   "ATMega64"},
+    {0x9501, 1024  , 32768UL   , 2048  ,   1    , ATMEGA323     ,   "ATMega323"},
+    {0x9502, 1024  , 32768UL   , 2048  ,   1    , ATMEGA32      ,   "ATMega32"},
+    {0x9403, 512   , 16384UL   , 1024  ,   0    , ATMEGA16      ,   "ATMega16"},
+    {0x9404, 512   , 16384UL   , 1024  ,   0    , ATMEGA162     ,   "ATMega162"},
+    {0x9405, 512   , 16384UL   , 1024  ,   0    , ATMEGA169     ,   "ATMega169"},
+    {0x9781, 4096  , 131072UL  , 4096  ,   2    , AT90CAN128    ,   "AT90CAN128"},
+    {0x9782, 4096  , 131072UL  , 8192  ,   2    , AT90USB1287   ,   "AT90USB1287"},
+    {0x9608, 4096  ,  65536UL  , 8192  ,   2    , ATMEGA640     ,   "ATMega640"},
+    {0x9703, 4096  , 131072UL  , 8192  ,   2    , ATMEGA1280    ,   "ATMega1280"},
+    {0x9704, 4096  , 131072UL  , 8192  ,   2    , ATMEGA1281    ,   "ATMega1281"},
+    {0x9801, 4096  , 262144UL  , 8192  ,   2    , ATMEGA2560    ,   "ATMega2560"},
+    {0x9802, 4096  , 262144UL  , 8192  ,   2    , ATMEGA2561    ,   "ATMega2561"},
+    {0x9781, 1024  ,  32768UL  , 2048  ,   2    , AT90CAN32     ,   "AT90CAN32"},
+    {0x9781, 2048  ,  65536UL  , 4096  ,   2    , AT90CAN64     ,   "AT90CAN64"},
+    {0x950B, 512   , 16384UL   , 1024  ,   1    , ATMEGA329     ,   "ATMega329"},
+    {0x950c, 512   , 16384UL   , 1024  ,   1    , ATMEGA3290    ,   "ATMega3290"},
+    {0x960b, 512   , 16384UL   , 1024  ,   1    , ATMEGA649     ,   "ATMega649"},
+    {0x960c, 512   , 16384UL   , 1024  ,   1    , ATMEGA6490    ,   "ATMega6490"},
+    {0,0, 0, 0, 0, UNKNOWN_DEVICE, "Unknown"}                  
 };
 
 AVR_Data gDeviceData;

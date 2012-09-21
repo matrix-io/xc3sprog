@@ -491,7 +491,6 @@ void DisplayJTAG_ID(void)
            if(gJTAG_ID.partnumber==gAVR_Data[i].jtag_id)
            {
              gDeviceData=gAVR_Data[i];
-             gDeviceData.Index=i;
              break;
            }
          }
