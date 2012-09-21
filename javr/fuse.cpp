@@ -50,6 +50,49 @@
 #include "fuse.h"
 #undef FUSE_M
 
+/*     M128   M323   M16    M162   M169P   CAN128 USB1287 
+ *     M64           M32           M169A                 
+ *                                 M329                  
+ *                                 M3290                 
+ *                                 M649                  
+ *                                 M6490                 
+ * E7  ------ ------ ------ ------ ------- ------ ------  
+ * E6  ------ ------ ------ ------ ------- ------ ------  
+ * E5  ------ ------ ------ ------ ------- ------ ------  
+ * E4  ------ ------ ------ M161C  ------- ------ ------  
+ * E3  -----  -----  -----  BODL2  BODL2   BODL2  HWBE    
+ * E2  -----  -----  -----  BODL0  BODL0   BODL0  BODL2   
+ * E1  M103C  -----  -----  BODL1  BODL1   BODL1  BODL0   
+ * E0  WDTON  -----  -----  ------ RSTDIS  TA0SEL BODL1   
+ *                                                        
+** H7  OCDEN  OCDEN  OCDEN  OCDEN  OCDEN   OCDEN  OCDEN   
+** H6  JTAGEN JTAGEN JTAGEN JTAGEN JTAGEN  JTAGEN JTAGEN  
+** H5  SPIEN  SPIEN  SPIEN  SPIEN  SPIEN   SPIEN  SPIEN   
+ * H4  CKOPT  -----  CKOPT  WDTON  WDTON   WDTON  WDTON   
+** H3  EESAVE EESAVE EESAVE EESAVE EESAVEE EESAVE EESAVE  
+** H2  BOOTS1 BOOTS1 BOOTS1 BOOTS1 BOOTS11 BOOTS1 BOOTS1  
+** H1  BOOTS0 BOOTS0 BOOTS0 BOOTS0 BOOTS00 BOOTS0 BOOTS0  
+** H0  BOOTRS BOOTRS BOOTRS BOOTRS BOOTRSS BOOTRS BOOTRS  
+ *                                                        
+ * L7  BODLVL BODLVL BODLVL CKDIV8 CKDIV8L CKDIV8 CKDIV8  
+ * L6  BODEN  BODEN  BODEN  CKOUT  CKOUT   CKOUT  CKOUT   
+ * L5  SUT1   ----   SUT1   SUT1   SUT1    SUT1   SUT1    
+ * L4  SUT0   ----   SUT0   SUT0   SUT0    SUT0   SUT0    
+** L3  CKSEL3 CKSEL3 CKSEL3 CKSEL3 CKSEL33 CKSEL3 CKSEL3  
+** L2  CKSEL2 CKSEL2 CKSEL2 CKSEL2 CKSEL22 CKSEL2 CKSEL2  
+** L1  CKSEL1 CKSEL1 CKSEL1 CKSEL1 CKSEL11 CKSEL1 CKSEL1  
+** L0  CKSEL0 CKSEL0 CKSEL0 CKSEL0 CKSEL00 CKSEL0 CKSEL0  
+ *                                                        
+ * LO7 ----   ----   ----   -----  ------  -----  -----   
+ * LO6 ----   ----   ----   -----  ------  -----  -----   
+ * LO5 LB12   LB12   LB12   BLB12  BBLB12  BLB12  BLB12   
+ * LO4 LB11   LB11   LB11   BLB11  BBLB11  BLB11  BLB11   
+ * LO3 LB02   LB02   LB02   BLB02  BBLB02  BLB02  BLB02   
+ * LO2 LB01   LB01   LB01   BLB01  BBLB01  BLB01  BLB01   
+ * LO1 B1     B1     B1     LB1    LLB1    LB1    LB1     
+ * LO0 B1     B1     B1     LB1    LLB1    LB1    LB1     
+ *
+ */
 
 #define BVAL(v,b)       (((1<<(b))&(v))?1:0)
 
