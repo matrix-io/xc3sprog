@@ -315,6 +315,8 @@ int main(int argc, char **args)
     case ATMEGA16:
     case ATMEGA162:
     case ATMEGA169:
+    case AT90CAN32:
+    case AT90CAN64:
     case AT90CAN128:
     case AT90USB1287:
     case ATMEGA640:
@@ -331,6 +333,8 @@ int main(int argc, char **args)
       fprintf(stderr," ,ATMega16");
       fprintf(stderr," ,ATMega162");
       fprintf(stderr," ,ATMega169");
+      fprintf(stderr," ,AT90CAN32");
+      fprintf(stderr," ,AT90CAN64");
       fprintf(stderr," ,AT90CAN128");
       fprintf(stderr," ,AT90USB1287");
       fprintf(stderr," ,ATMega640");

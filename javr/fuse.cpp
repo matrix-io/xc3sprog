@@ -107,6 +107,8 @@
  * ATMEGA649
  * ATMEGA6490 
  * AT90CAN128      2.5         2.6         2.7         3.8         3.9         4.0         4.1     disabled
+ * AT90CAN32       2.5         2.6         2.7         3.8         3.9         4.0         4.1     disabled
+ * AT90CAN64       2.5         2.6         2.7         3.8         3.9         4.0         4.1     disabled
  * AT90USB1287 4.1/4.3/4.5 3.3/3.5/3.7 3.2/3.4/3.6 2.4/2.6/2.8 reserved   reserved    reserved     disabled
 
  */
@@ -142,6 +144,8 @@ void DecodeATMegaFuseBits(void)
       gFuseBitsAll.BODLEVEL =     (gFuseByte[2]>>1)&0x07;
       gFuseBitsAll.RESETDIS = BVAL(gFuseByte[2],0);
       break;
+  case AT90CAN32:
+  case AT90CAN64:
   case AT90CAN128:
       gFuseBitsAll.BODLEVEL =     (gFuseByte[2]>>1)&0x07;     
       gFuseBitsAll.TA0SEL   = BVAL(gFuseByte[2],0);
@@ -174,6 +178,8 @@ void DecodeATMegaFuseBits(void)
       
   case ATMEGA162:
   case ATMEGA169:
+  case AT90CAN32:
+  case AT90CAN64:
   case AT90CAN128:
   case AT90USB1287:
   case ATMEGA640:
@@ -220,6 +226,8 @@ void EncodeATMegaFuseBits(void)
       tmp|=(gFuseBitsAll.RESETDIS     );
       gFuseByte[2]=tmp;
       break;
+  case AT90CAN32:
+  case AT90CAN64:
   case AT90CAN128:
       tmp=0xFC;
       tmp|=(gFuseBitsAll.M103C<<1);
@@ -282,6 +290,8 @@ void DisplayATMegaFuseData(void)
   case ATMEGA128:
   case ATMEGA162:
   case ATMEGA169:
+  case AT90CAN32:
+  case AT90CAN64:
   case AT90CAN128:
   case AT90USB1287:
   case ATMEGA640:
@@ -339,6 +349,8 @@ void DisplayATMegaFuseData(void)
       printf("BODLEVEL: %d\n",gFuseBitsAll.BODLEVEL);
       printf("RESETDIS: %d  (%s)\n",gFuseBitsAll.RESETDIS,gTF[gFuseBitsAll.RESETDIS]);
       break;
+  case AT90CAN32:
+  case AT90CAN64:
    case AT90CAN128:
       printf("BODLEVEL: %d\n",gFuseBitsAll.BODLEVEL);
       printf("TA0SEL: %d  (%s)\n",gFuseBitsAll.TA0SEL ,gTF[gFuseBitsAll.TA0SEL]);
@@ -374,6 +386,8 @@ void DisplayATMegaFuseData(void)
       break;
   case ATMEGA162:
   case ATMEGA169:
+  case AT90CAN32:
+  case AT90CAN64:
   case AT90CAN128:
   case AT90USB1287:
   case ATMEGA640:
@@ -414,6 +428,8 @@ void DisplayATMegaFuseData(void)
           bod_en = 1;
           switch(gDeviceData.Index)
           {
+          case AT90CAN32:
+          case AT90CAN64:
           case AT90CAN128:
               switch (gFuseBitsAll.BODLEVEL)
               {
@@ -723,6 +739,8 @@ void WriteATMegaFuseFile(char *name)
       fprintf(fp,"CKSEL: 0x%X" EOLINE,gFuseBitsAll.CKSEL);
       fprintf(fp,"CKSEL: 0x%X" EOLINE,gFuseBitsAll.CKSEL);
       break;
+  case AT90CAN32:
+  case AT90CAN64:
   case AT90CAN128:
       fprintf(fp,"BODLEVEL: 0x%X" EOLINE,gFuseBitsAll.BODLEVEL);
       fprintf(fp,"TA0SEL: 0x%X" EOLINE,gFuseBitsAll.TA0SEL);
