@@ -99,42 +99,40 @@ int debug = 0;
 char gOldTAPState,gTAPState;
 char gTMS;
 
-const char *gTAPStateNames[16]={
-                                "EXIT2_DR",
-                                "EXIT1_DR",
-                                "SHIFT_DR",
-                                "PAUSE_DR",
-                                "SELECT_IR_SCAN",
-                                "UPDATE_DR",
-                                "CAPTURE_DR",
-                                "SELECT_DR_SCAN",
-                                "EXIT2_IR",
-                                "EXIT1_IR",
-                                "SHIFT_IR",
-                                "PAUSE_IR",
-                                "RUN_TEST_IDLE",
-                                "UPDATE_IR",
-                                "CAPTURE_IR",
-                                "TEST_LOGIC_RESET"
-                               };
-
-
+const char *gTAPStateNames[16]=
+{
+    "EXIT2_DR",
+    "EXIT1_DR",
+    "SHIFT_DR",
+    "PAUSE_DR",
+    "SELECT_IR_SCAN",
+    "UPDATE_DR",
+    "CAPTURE_DR",
+    "SELECT_DR_SCAN",
+    "EXIT2_IR",
+    "EXIT1_IR",
+    "SHIFT_IR",
+    "PAUSE_IR",
+    "RUN_TEST_IDLE",
+    "UPDATE_IR",
+    "CAPTURE_IR",
+    "TEST_LOGIC_RESET"
+};
 
 const AVR_Data gAVR_Data[]=
-                        {/* jtag_id  eeprom  flash       ram    bootsize, Index  name  */
-                            {0x9702, 4096  , 131072UL  , 4096  ,   2    , 0 ,   "ATMega128"},
-                            {0x9602, 2048  , 65536UL   , 4096  ,   2    , 0 ,   "ATMega64"},
-                            {0x9501, 1024  , 32768UL   , 2048  ,   1    , 0 ,   "ATMega323"},
-                            {0x9502, 1024  , 32768UL   , 2048  ,   1    , 0 ,   "ATMega32"},
-                            {0x9403, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega16"},
-                            {0x9404, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega162"},
-                            {0x9405, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega169"},
-                            {0x9781, 4096  , 131072UL  , 4096  ,   2    , 0 ,   "AT90CAN128"},
-                            {0x9782, 4096  , 131072UL  , 8192  ,   2    , 0 ,   "AT90USB1287"},
-                            {0,0, 0, 0, 0, 0, "Unknown"}
-                          };
-
-
+{
+/* jtag_id  eeprom  flash       ram    bootsize, Index  name  */
+    {0x9702, 4096  , 131072UL  , 4096  ,   2    , 0 ,   "ATMega128"},
+    {0x9602, 2048  , 65536UL   , 4096  ,   2    , 0 ,   "ATMega64"},
+    {0x9501, 1024  , 32768UL   , 2048  ,   1    , 0 ,   "ATMega323"},
+    {0x9502, 1024  , 32768UL   , 2048  ,   1    , 0 ,   "ATMega32"},
+    {0x9403, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega16"},
+    {0x9404, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega162"},
+    {0x9405, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega169"},
+    {0x9781, 4096  , 131072UL  , 4096  ,   2    , 0 ,   "AT90CAN128"},
+    {0x9782, 4096  , 131072UL  , 8192  ,   2    , 0 ,   "AT90USB1287"},
+    {0,0, 0, 0, 0, 0, "Unknown"}
+};
 
 AVR_Data gDeviceData;
 unsigned char *gFlashBuffer;
