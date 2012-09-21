@@ -141,6 +141,10 @@ void DecodeATMegaFuseBits(void)
       gFuseBitsAll.BODLEVEL =     (gFuseByte[2]>>1)&0x07;
       break;
   case ATMEGA169:
+  case ATMEGA329:
+  case ATMEGA3290:
+  case ATMEGA649:
+  case ATMEGA6490:
       gFuseBitsAll.BODLEVEL =     (gFuseByte[2]>>1)&0x07;
       gFuseBitsAll.RESETDIS = BVAL(gFuseByte[2],0);
       break;
@@ -178,6 +182,10 @@ void DecodeATMegaFuseBits(void)
       
   case ATMEGA162:
   case ATMEGA169:
+  case ATMEGA329:
+  case ATMEGA3290:
+  case ATMEGA649:
+  case ATMEGA6490:
   case AT90CAN32:
   case AT90CAN64:
   case AT90CAN128:
@@ -221,6 +229,10 @@ void EncodeATMegaFuseBits(void)
       gFuseByte[2]=tmp;
      break;
   case ATMEGA169:
+  case ATMEGA329:
+  case ATMEGA3290:
+  case ATMEGA649:
+  case ATMEGA6490:
       tmp=0xf0;
       tmp|=(gFuseBitsAll.BODLEVEL << 1);
       tmp|=(gFuseBitsAll.RESETDIS     );
@@ -290,6 +302,10 @@ void DisplayATMegaFuseData(void)
   case ATMEGA128:
   case ATMEGA162:
   case ATMEGA169:
+  case ATMEGA329:
+  case ATMEGA3290:
+  case ATMEGA649:
+  case ATMEGA6490:
   case AT90CAN32:
   case AT90CAN64:
   case AT90CAN128:
@@ -341,11 +357,15 @@ void DisplayATMegaFuseData(void)
   case ATMEGA16:
   case ATMEGA32:
       break;
-   case ATMEGA162:
+  case ATMEGA162:
       printf("M61C    : %d  (%s)\n",gFuseBitsAll.M161C   ,gTF[gFuseBitsAll.M161C]);
       printf("BODLEVEL: %d\n",gFuseBitsAll.BODLEVEL);
       break;
-   case ATMEGA169:
+  case ATMEGA169:
+  case ATMEGA329:
+  case ATMEGA3290:
+  case ATMEGA649:
+  case ATMEGA6490:
       printf("BODLEVEL: %d\n",gFuseBitsAll.BODLEVEL);
       printf("RESETDIS: %d  (%s)\n",gFuseBitsAll.RESETDIS,gTF[gFuseBitsAll.RESETDIS]);
       break;
@@ -386,6 +406,10 @@ void DisplayATMegaFuseData(void)
       break;
   case ATMEGA162:
   case ATMEGA169:
+  case ATMEGA329:
+  case ATMEGA3290:
+  case ATMEGA649:
+  case ATMEGA6490:
   case AT90CAN32:
   case AT90CAN64:
   case AT90CAN128:
@@ -468,6 +492,10 @@ void DisplayATMegaFuseData(void)
           case ATMEGA2560:
           case ATMEGA2561:
           case ATMEGA169:
+          case ATMEGA329:
+          case ATMEGA3290:
+          case ATMEGA649:
+          case ATMEGA6490:
               switch (gFuseBitsAll.BODLEVEL)
               {
               case 4 : bod_val = 4.3; break;
@@ -724,6 +752,10 @@ void WriteATMegaFuseFile(char *name)
       fprintf(fp,"CKSEL: 0x%X" EOLINE,gFuseBitsAll.CKSEL);
       break;
   case ATMEGA169:
+  case ATMEGA329:
+  case ATMEGA3290:
+  case ATMEGA649:
+  case ATMEGA6490:
       fprintf(fp,"BODLEVEL: 0x%X" EOLINE,gFuseBitsAll.BODLEVEL);
       fprintf(fp,"RESETDIS: 0x%X" EOLINE,gFuseBitsAll.RESETDIS);
       fprintf(fp,"OCDEN: %d" EOLINE,gFuseBitsAll.OCDEN);
