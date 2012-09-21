@@ -75,6 +75,11 @@ typedef struct
 #define ATMEGA169       6
 #define AT90CAN128      7
 #define AT90USB1287     8
+#define ATMEGA640       9
+#define ATMEGA1280      10
+#define ATMEGA1281      11
+#define ATMEGA2560      12
+#define ATMEGA2561      13
 #define UNKNOWN_DEVICE  0xFF
 
 
@@ -131,6 +136,11 @@ const AVR_Data gAVR_Data[]=
     {0x9405, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega169"},
     {0x9781, 4096  , 131072UL  , 4096  ,   2    , 0 ,   "AT90CAN128"},
     {0x9782, 4096  , 131072UL  , 8192  ,   2    , 0 ,   "AT90USB1287"},
+    {0x9608, 4096  ,  65536UL  , 8192  ,   2    , 0 ,   "ATMega640"},
+    {0x9703, 4096  , 131072UL  , 8192  ,   2    , 0 ,   "ATMega1280"},
+    {0x9704, 4096  , 131072UL  , 8192  ,   2    , 0 ,   "ATMega1281"},
+    {0x9801, 4096  , 262144UL  , 8192  ,   2    , 0 ,   "ATMega2560"},
+    {0x9802, 4096  , 262144UL  , 8192  ,   2    , 0 ,   "ATMega2561"},
     {0,0, 0, 0, 0, 0, "Unknown"}
 };
 
