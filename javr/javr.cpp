@@ -315,6 +315,10 @@ int main(int argc, char **args)
     case ATMEGA16:
     case ATMEGA162:
     case ATMEGA169:
+    case ATMEGA329:
+    case ATMEGA3290:
+    case ATMEGA649:
+    case ATMEGA6490:
     case AT90CAN32:
     case AT90CAN64:
     case AT90CAN128:
