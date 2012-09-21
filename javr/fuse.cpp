@@ -181,7 +181,7 @@ void EncodeATMegaFuseBits(void)
 void DisplayATMegaFuseData(void)
 {
   unsigned char tmp;
-  unsigned long tmp1;
+  uint32_t bootsize;
 
   printf("Fuse Bits: 0=\"Programmed\" => True\n");
   if((gDeviceData.Index==ATMEGA128) || (gDeviceData.Index==ATMEGA64) || (gDeviceData.Index==ATMEGA162) 
@@ -205,9 +205,8 @@ void DisplayATMegaFuseData(void)
     }
   printf("SUT: %X   ",gFuseBitsAll.SUT);
   DisplayATMegaStartUpTime(); printf("\n");
-  tmp1=gDeviceData.flash;
-  tmp1-=gDeviceBOOTSize.size[gFuseBitsAll.BOOTSIZE];
-  printf("BOOTSIZE: %X  Size: %d Bytes  Start:0x%5.5lX\n",gFuseBitsAll.BOOTSIZE,gDeviceBOOTSize.size[gFuseBitsAll.BOOTSIZE],tmp1);
+  bootsize = 128 * gFuseBitsAll.BOOTSIZE * gDeviceData.bootsize;
+  printf("BOOTSIZE: %X  Size: %d Bytes  Start:0x%5.5lX\n",gFuseBitsAll.BOOTSIZE, bootsize ,gDeviceData.flash - bootsize);
   if((gDeviceData.Index==ATMEGA128) || (gDeviceData.Index==ATMEGA64))
   {
     printf("M103C   : %d  (%s)\n",gFuseBitsAll.M103C   ,gTF[gFuseBitsAll.M103C]);

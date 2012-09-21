@@ -59,17 +59,10 @@ typedef struct
   unsigned short eeprom;
   unsigned long flash;
   unsigned short ram;
+  unsigned char bootsize;  /* 0: 128/256/512/1024 1: 256/512/1024/2048 2: 512/...*/
   unsigned char Index;  /* Use To access array of Device Specific routines */
   const char *name;
 }AVR_Data;
-
-typedef struct
-{
-  unsigned short size[4]; /* BOOTSZ0, BOOTSZ1 Mapping size in bytes */
-}BOOT_Size;
-
-
-
 
 /* These defines must be in the same order as data in gAVR_Data[]  array */
 
@@ -128,35 +121,22 @@ const char *gTAPStateNames[16]={
 
 
 const AVR_Data gAVR_Data[]=
-                        {/* jtag_id  eeprom  flash       ram    Index  name  */
-                            {0x9702, 4096  , 131072UL  , 4096  , 0 ,   "ATMega128"},
-                            {0x9602, 2048  , 65536UL   , 4096  , 0 ,   "ATMega64"},
-                            {0x9501, 1024  , 32768UL   , 2048  , 0 ,   "ATMega323"},
-                            {0x9502, 1024  , 32768UL   , 2048  , 0 ,   "ATMega32"},
-                            {0x9403, 512   , 16384UL   , 1024  , 0 ,   "ATMega16"},
-                            {0x9404, 512   , 16384UL   , 1024  , 0 ,   "ATMega162"},
-                            {0x9405, 512   , 16384UL   , 1024  , 0 ,   "ATMega169"},
-                            {0x9781, 4096  , 131072UL  , 4096  , 0 ,   "AT90CAN128"},
-                            {0x9782, 4096  , 131072UL  , 8192  , 0 ,   "AT90USB1287"},
-                            {0,0, 0, 0, 0, "Unknown"}
+                        {/* jtag_id  eeprom  flash       ram    bootsize, Index  name  */
+                            {0x9702, 4096  , 131072UL  , 4096  ,   2    , 0 ,   "ATMega128"},
+                            {0x9602, 2048  , 65536UL   , 4096  ,   2    , 0 ,   "ATMega64"},
+                            {0x9501, 1024  , 32768UL   , 2048  ,   1    , 0 ,   "ATMega323"},
+                            {0x9502, 1024  , 32768UL   , 2048  ,   1    , 0 ,   "ATMega32"},
+                            {0x9403, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega16"},
+                            {0x9404, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega162"},
+                            {0x9405, 512   , 16384UL   , 1024  ,   0    , 0 ,   "ATMega169"},
+                            {0x9781, 4096  , 131072UL  , 4096  ,   2    , 0 ,   "AT90CAN128"},
+                            {0x9782, 4096  , 131072UL  , 8192  ,   2    , 0 ,   "AT90USB1287"},
+                            {0,0, 0, 0, 0, 0, "Unknown"}
                           };
 
-/* Must be in same sequence as gAVR_Data[] */
-const BOOT_Size gBOOT_Size[]={
-                              {{(4096*2),(2048*2),(1024*2),(512*2)}}, /* ATMega128 */
-                              {{(4096*2),(2048*2),(1024*2),(512*2)}}, /* ATMega64 */
-                              {{(2048*2),(1024*2),(512*2 ),(256*2)}}, /* ATMega323 */
-                              {{(2048*2),(1024*2),(512*2 ),(256*2)}}, /* ATMega32 */
-                              {{(1024*2),(512*2 ),(256*2 ),(128*2)}}, /* ATMega16 */
-                              {{(1024*2),(512*2 ),(256*2 ),(128*2)}}, /* ATMega162 */
-                              {{(1024*2),(512*2 ),(256*2 ),(128*2)}}, /* ATMega169 */
-                              {{(4096*2),(2048*2),(1024*2),(512*2)}}, /* AT90CAN128 */
-                              {{(4096*2),(2048*2),(1024*2),(512*2)}}  /* AT90USB1287 */
-                             };
 
 
 AVR_Data gDeviceData;
-BOOT_Size gDeviceBOOTSize;
 unsigned char *gFlashBuffer;
 unsigned char gEEPROMBuffer[MAX_EEPROM_SIZE];
 unsigned long gFlashBufferSize;
@@ -172,7 +152,7 @@ extern const char gICEBreakerRegSizes[16];
 
 extern JTAG_ID gJTAG_ID;
 extern AVR_Data gDeviceData;
-extern BOOT_Size gDeviceBOOTSize;
+
 
 extern unsigned char *gFlashBuffer;
 extern unsigned char gEEPROMBuffer[];
