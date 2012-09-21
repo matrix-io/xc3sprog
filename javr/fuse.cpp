@@ -50,47 +50,47 @@
 #include "fuse.h"
 #undef FUSE_M
 
-/*     M128   M323   M16    M162   M169P   CAN128 USB1287 
- *     M64           M32           M169A                 
- *                                 M329                  
- *                                 M3290                 
- *                                 M649                  
- *                                 M6490                 
- * E7  ------ ------ ------ ------ ------- ------ ------  
- * E6  ------ ------ ------ ------ ------- ------ ------  
- * E5  ------ ------ ------ ------ ------- ------ ------  
- * E4  ------ ------ ------ M161C  ------- ------ ------  
- * E3  -----  -----  -----  BODL2  BODL2   BODL2  HWBE    
- * E2  -----  -----  -----  BODL0  BODL0   BODL0  BODL2   
- * E1  M103C  -----  -----  BODL1  BODL1   BODL1  BODL0   
- * E0  WDTON  -----  -----  ------ RSTDIS  TA0SEL BODL1   
- *                                                        
-** H7  OCDEN  OCDEN  OCDEN  OCDEN  OCDEN   OCDEN  OCDEN   
-** H6  JTAGEN JTAGEN JTAGEN JTAGEN JTAGEN  JTAGEN JTAGEN  
-** H5  SPIEN  SPIEN  SPIEN  SPIEN  SPIEN   SPIEN  SPIEN   
- * H4  CKOPT  -----  CKOPT  WDTON  WDTON   WDTON  WDTON   
-** H3  EESAVE EESAVE EESAVE EESAVE EESAVEE EESAVE EESAVE  
-** H2  BOOTS1 BOOTS1 BOOTS1 BOOTS1 BOOTS11 BOOTS1 BOOTS1  
-** H1  BOOTS0 BOOTS0 BOOTS0 BOOTS0 BOOTS00 BOOTS0 BOOTS0  
-** H0  BOOTRS BOOTRS BOOTRS BOOTRS BOOTRSS BOOTRS BOOTRS  
- *                                                        
- * L7  BODLVL BODLVL BODLVL CKDIV8 CKDIV8L CKDIV8 CKDIV8  
- * L6  BODEN  BODEN  BODEN  CKOUT  CKOUT   CKOUT  CKOUT   
- * L5  SUT1   ----   SUT1   SUT1   SUT1    SUT1   SUT1    
- * L4  SUT0   ----   SUT0   SUT0   SUT0    SUT0   SUT0    
-** L3  CKSEL3 CKSEL3 CKSEL3 CKSEL3 CKSEL33 CKSEL3 CKSEL3  
-** L2  CKSEL2 CKSEL2 CKSEL2 CKSEL2 CKSEL22 CKSEL2 CKSEL2  
-** L1  CKSEL1 CKSEL1 CKSEL1 CKSEL1 CKSEL11 CKSEL1 CKSEL1  
-** L0  CKSEL0 CKSEL0 CKSEL0 CKSEL0 CKSEL00 CKSEL0 CKSEL0  
- *                                                        
- * LO7 ----   ----   ----   -----  ------  -----  -----   
- * LO6 ----   ----   ----   -----  ------  -----  -----   
- * LO5 LB12   LB12   LB12   BLB12  BBLB12  BLB12  BLB12   
- * LO4 LB11   LB11   LB11   BLB11  BBLB11  BLB11  BLB11   
- * LO3 LB02   LB02   LB02   BLB02  BBLB02  BLB02  BLB02   
- * LO2 LB01   LB01   LB01   BLB01  BBLB01  BLB01  BLB01   
- * LO1 B1     B1     B1     LB1    LLB1    LB1    LB1     
- * LO0 B1     B1     B1     LB1    LLB1    LB1    LB1     
+/*     M128   M323   M16    M162   M169P   CAN128 USB1287 M640    
+ *     M64           M32           M169A                  M1280   
+ *                                 M329                   M1281   
+ *                                 M3290                  M2560   
+ *                                 M649                   M2560   
+ *                                 M6490                          
+ * E7  ------ ------ ------ ------ ------- ------ ------  ------  
+ * E6  ------ ------ ------ ------ ------- ------ ------  ------  
+ * E5  ------ ------ ------ ------ ------- ------ ------  ------  
+ * E4  ------ ------ ------ M161C  ------- ------ ------  ------  
+ * E3  -----  -----  -----  BODL2  BODL2   BODL2  HWBE    -----   
+ * E2  -----  -----  -----  BODL0  BODL0   BODL0  BODL2   BODL2   
+ * E1  M103C  -----  -----  BODL1  BODL1   BODL1  BODL0   BODL0   
+ * E0  WDTON  -----  -----  ------ RSTDIS  TA0SEL BODL1   BODL1   
+ *                                                                
+** H7  OCDEN  OCDEN  OCDEN  OCDEN  OCDEN   OCDEN  OCDEN   OCDEN   
+** H6  JTAGEN JTAGEN JTAGEN JTAGEN JTAGEN  JTAGEN JTAGEN  JTAGEN  
+** H5  SPIEN  SPIEN  SPIEN  SPIEN  SPIEN   SPIEN  SPIEN   SPIEN   
+ * H4  CKOPT  -----  CKOPT  WDTON  WDTON   WDTON  WDTON   WDTON   
+** H3  EESAVE EESAVE EESAVE EESAVE EESAVEE EESAVE EESAVE  EESAVE  
+** H2  BOOTS1 BOOTS1 BOOTS1 BOOTS1 BOOTS11 BOOTS1 BOOTS1  BOOTS1  
+** H1  BOOTS0 BOOTS0 BOOTS0 BOOTS0 BOOTS00 BOOTS0 BOOTS0  BOOTS0  
+** H0  BOOTRS BOOTRS BOOTRS BOOTRS BOOTRSS BOOTRS BOOTRS  BOOTRS  
+ *                                                                
+ * L7  BODLVL BODLVL BODLVL CKDIV8 CKDIV8L CKDIV8 CKDIV8  CKDIV8  
+ * L6  BODEN  BODEN  BODEN  CKOUT  CKOUT   CKOUT  CKOUT   CKOUT   
+ * L5  SUT1   ----   SUT1   SUT1   SUT1    SUT1   SUT1    SUT1    
+ * L4  SUT0   ----   SUT0   SUT0   SUT0    SUT0   SUT0    SUT0    
+** L3  CKSEL3 CKSEL3 CKSEL3 CKSEL3 CKSEL33 CKSEL3 CKSEL3  CKSEL3  
+** L2  CKSEL2 CKSEL2 CKSEL2 CKSEL2 CKSEL22 CKSEL2 CKSEL2  CKSEL2  
+** L1  CKSEL1 CKSEL1 CKSEL1 CKSEL1 CKSEL11 CKSEL1 CKSEL1  CKSEL1  
+** L0  CKSEL0 CKSEL0 CKSEL0 CKSEL0 CKSEL00 CKSEL0 CKSEL0  CKSEL0  
+ *                                                                
+ * LO7 ----   ----   ----   -----  ------  -----  -----   -----   
+ * LO6 ----   ----   ----   -----  ------  -----  -----   -----   
+ * LO5 LB12   LB12   LB12   BLB12  BBLB12  BLB12  BLB12   BLB12   
+ * LO4 LB11   LB11   LB11   BLB11  BBLB11  BLB11  BLB11   BLB11   
+ * LO3 LB02   LB02   LB02   BLB02  BBLB02  BLB02  BLB02   BLB02   
+ * LO2 LB01   LB01   LB01   BLB01  BBLB01  BLB01  BLB01   BLB01   
+ * LO1 B1     B1     B1     LB1    LLB1    LB1    LB1     LB1     
+ * LO0 B1     B1     B1     LB1    LLB1    LB1    LB1     LB1     
  *
  *
  * Brownout Levels
@@ -119,8 +119,9 @@ void DecodeATMegaFuseBits(void)
   gFuseBitsAll.JTAGEN   = BVAL(gFuseByte[1],6);
   gFuseBitsAll.SPIEN    = BVAL(gFuseByte[1],5);
   gFuseBitsAll.EESAVE   = BVAL(gFuseByte[1],3);
-  gFuseBitsAll.BOOTSIZE =     (gFuseByte[1]>>1) & 0x3;
+  gFuseBitsAll.BOOTSIZE =     (gFuseByte[1]>>1) & 0x03;
   gFuseBitsAll.BOOTRST  = BVAL(gFuseByte[1],0);
+  gFuseBitsAll.CKSEL    =     (gFuseByte[0]   ) & 0x0f;
 
   switch(gDeviceData.Index)
   {
@@ -147,6 +148,11 @@ void DecodeATMegaFuseBits(void)
       break;
   case AT90USB1287:
       gFuseBitsAll.HWBE     = BVAL(gFuseByte[2],3);
+  case ATMEGA640:
+  case ATMEGA1280:
+  case ATMEGA1281:
+  case ATMEGA2560:
+  case ATMEGA2561:
       gFuseBitsAll.BODLEVEL =     (gFuseByte[2]  )&0x07;
       break;
   }
@@ -170,6 +176,11 @@ void DecodeATMegaFuseBits(void)
   case ATMEGA169:
   case AT90CAN128:
   case AT90USB1287:
+  case ATMEGA640:
+  case ATMEGA1280:
+  case ATMEGA1281:
+  case ATMEGA2560:
+  case ATMEGA2561:
       gFuseBitsAll.WDTON    = BVAL(gFuseByte[1],4);
       gFuseBitsAll.CKDIV8   = BVAL(gFuseByte[0],7);
       gFuseBitsAll.CKOUT    = BVAL(gFuseByte[0],6);
@@ -216,8 +227,13 @@ void EncodeATMegaFuseBits(void)
       gFuseByte[2]=tmp;
       break;
   case AT90USB1287:
-      tmp=0xf0;
-      tmp|=(gFuseBitsAll.HWBE    << 3);
+      tmp=0xf4;
+      tmp &= ~(gFuseBitsAll.HWBE    << 3);
+  case ATMEGA640:
+  case ATMEGA1280:
+  case ATMEGA1281:
+  case ATMEGA2560:
+  case ATMEGA2561:
       tmp|=(gFuseBitsAll.BODLEVEL     );
       gFuseByte[2]=tmp;
       break;
@@ -268,7 +284,12 @@ void DisplayATMegaFuseData(void)
   case ATMEGA169:
   case AT90CAN128:
   case AT90USB1287:
-      printf("Extended Fuse Byte: 0x%2.2X ",gFuseByte[2]);
+  case ATMEGA640:
+  case ATMEGA1280:
+  case ATMEGA1281:
+  case ATMEGA2560:
+  case ATMEGA2561:
+       printf("Extended Fuse Byte: 0x%2.2X ",gFuseByte[2]);
   }
   printf("High Fuse Byte: 0x%2.2X ",gFuseByte[1]);
   printf("Low Fuse Byte: 0x%2.2X\n",gFuseByte[0]);
@@ -312,23 +333,29 @@ void DisplayATMegaFuseData(void)
       break;
    case ATMEGA162:
       printf("M61C    : %d  (%s)\n",gFuseBitsAll.M161C   ,gTF[gFuseBitsAll.M161C]);
-      printf("BODLEVEL: 0x%X\n",gFuseBitsAll.BODLEVEL);
+      printf("BODLEVEL: %d\n",gFuseBitsAll.BODLEVEL);
       break;
    case ATMEGA169:
-      printf("BODLEVEL: 0x%X\n",gFuseBitsAll.BODLEVEL);
+      printf("BODLEVEL: %d\n",gFuseBitsAll.BODLEVEL);
       printf("RESETDIS: %d  (%s)\n",gFuseBitsAll.RESETDIS,gTF[gFuseBitsAll.RESETDIS]);
       break;
    case AT90CAN128:
-      printf("BODLEVEL: 0x%X\n",gFuseBitsAll.BODLEVEL);
+      printf("BODLEVEL: %d\n",gFuseBitsAll.BODLEVEL);
       printf("TA0SEL: %d  (%s)\n",gFuseBitsAll.TA0SEL ,gTF[gFuseBitsAll.TA0SEL]);
       break;
   case AT90USB1287:
       printf("HWBE    : %d  (%s)\n",gFuseBitsAll.HWBE    ,gTF[gFuseBitsAll.HWBE ]);
-      printf("WDTON   : %d  (%s)\n",gFuseBitsAll.WDTON   ,gTF[gFuseBitsAll.WDTON]);
-      break;
+  case ATMEGA640:
+  case ATMEGA1280:
+  case ATMEGA1281:
+  case ATMEGA2560:
+  case ATMEGA2561:
+       printf("BODLEVEL: %d\n",gFuseBitsAll.BODLEVEL);
+     break;
   }
   switch(gDeviceData.Index)
   {
+  case ATMEGA64:
   case ATMEGA128:
   case ATMEGA16:
   case ATMEGA32:
@@ -338,21 +365,32 @@ void DisplayATMegaFuseData(void)
       printf("SPIEN   : %d  (%s)\n",gFuseBitsAll.SPIEN   ,gTF[gFuseBitsAll.SPIEN]);
       printf("WDTON   : %d  (%s)\n",gFuseBitsAll.WDTON   ,gTF[gFuseBitsAll.WDTON]);
       printf("EESAVE  : %d  (%s)\n",gFuseBitsAll.EESAVE  ,gTF[gFuseBitsAll.EESAVE]);
-      printf("BOOTSIZE: %X  Size: %d Bytes  Start:0x%5.5lX\n",
-             gFuseBitsAll.BOOTSIZE, bootsize, gDeviceData.flash - bootsize);
+      printf("BOOTSIZE: %X  Size: %d Bytes", gFuseBitsAll.BOOTSIZE, bootsize);
+      if (bootsize)
+          printf("  Start:0x%5.5lX\n", gDeviceData.flash - bootsize);
+      else
+          printf("\n");
       printf("BOOTRST : %d  (%s)\n",gFuseBitsAll.BOOTRST ,gTF[gFuseBitsAll.BOOTRST]);
       break;
   case ATMEGA162:
   case ATMEGA169:
   case AT90CAN128:
   case AT90USB1287:
-      printf("OCDEN   : %d  (%s)\n",gFuseBitsAll.OCDEN   ,gTF[gFuseBitsAll.OCDEN]);
+  case ATMEGA640:
+  case ATMEGA1280:
+  case ATMEGA1281:
+  case ATMEGA2560:
+  case ATMEGA2561:
+       printf("OCDEN   : %d  (%s)\n",gFuseBitsAll.OCDEN   ,gTF[gFuseBitsAll.OCDEN]);
       printf("JTAGEN  : %d  (%s)\n",gFuseBitsAll.JTAGEN  ,gTF[gFuseBitsAll.JTAGEN]);
       printf("SPIEN   : %d  (%s)\n",gFuseBitsAll.SPIEN   ,gTF[gFuseBitsAll.SPIEN]);
       printf("WDTON   : %d  (%s)\n",gFuseBitsAll.WDTON   ,gTF[gFuseBitsAll.WDTON]);
       printf("EESAVE  : %d  (%s)\n",gFuseBitsAll.EESAVE  ,gTF[gFuseBitsAll.EESAVE]);
-      printf("BOOTSIZE: %X  Size: %d Bytes  Start:0x%5.5lX\n",
-             gFuseBitsAll.BOOTSIZE, bootsize, gDeviceData.flash - bootsize);
+      printf("BOOTSIZE: %X  Size: %d Bytes", gFuseBitsAll.BOOTSIZE, bootsize);
+      if (bootsize)
+          printf("  Start:0x%5.5lX\n", gDeviceData.flash - bootsize);
+      else
+          printf("\n");
       printf("BOOTRST : %d  (%s)\n",gFuseBitsAll.BOOTRST ,gTF[gFuseBitsAll.BOOTRST]);
       printf("CKDIV8  : %d  (%s)\n",gFuseBitsAll.CKDIV8  ,gTF[gFuseBitsAll.CKDIV8]);
       printf("CKOUT   : %d  (%s)\n",gFuseBitsAll.CKOUT   ,gTF[gFuseBitsAll.CKOUT]);
@@ -387,6 +425,7 @@ void DisplayATMegaFuseData(void)
               case 5 : bod_val = 4.0; break;
               case 6 : bod_val = 4.1; break;
               }
+              break;
           case AT90USB1287:
               switch (gFuseBitsAll.BODLEVEL)
               {
@@ -396,6 +435,7 @@ void DisplayATMegaFuseData(void)
               case 3 : bod_val = 2.6; break;
               default: bod_val = 1000;
               }
+              break;
           case ATMEGA162:
               switch (gFuseBitsAll.BODLEVEL)
               {
@@ -405,6 +445,12 @@ void DisplayATMegaFuseData(void)
               case 6 : bod_val = 1.8; break;
               default: bod_val = 1000;
               }
+              break;
+          case ATMEGA640:
+          case ATMEGA1280:
+          case ATMEGA1281:
+          case ATMEGA2560:
+          case ATMEGA2561:
           case ATMEGA169:
               switch (gFuseBitsAll.BODLEVEL)
               {
@@ -421,7 +467,7 @@ void DisplayATMegaFuseData(void)
       if (bod_val > 100)
           printf("Reserved Brownout Threshold\n");
       else
-          printf("Brownout Threshold %1.3f\n", bod_val);
+          printf("Brownout Threshold %1.1f Volt\n", bod_val);
   }
   else
       printf("Brownout Disabled\n");
@@ -695,6 +741,11 @@ void WriteATMegaFuseFile(char *name)
       break;
   case AT90USB1287:
       fprintf(fp,"HWBE: 0x%X" EOLINE,gFuseBitsAll.HWBE);
+  case ATMEGA640:
+  case ATMEGA1280:
+  case ATMEGA1281:
+  case ATMEGA2560:
+  case ATMEGA2561:
       fprintf(fp,"BODLEVEL: 0x%X" EOLINE,gFuseBitsAll.BODLEVEL);
       fprintf(fp,"OCDEN: %d" EOLINE,gFuseBitsAll.OCDEN);
       fprintf(fp,"JTAGEN: %d" EOLINE,gFuseBitsAll.JTAGEN);

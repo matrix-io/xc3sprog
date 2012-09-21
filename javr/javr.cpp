@@ -317,6 +317,11 @@ int main(int argc, char **args)
     case ATMEGA169:
     case AT90CAN128:
     case AT90USB1287:
+    case ATMEGA640:
+    case ATMEGA1280:
+    case ATMEGA1281:
+    case ATMEGA2560:
+    case ATMEGA2561:
       break;
     default:
       fprintf(stderr,"Supported devices: ");
@@ -328,6 +333,11 @@ int main(int argc, char **args)
       fprintf(stderr," ,ATMega169");
       fprintf(stderr," ,AT90CAN128");
       fprintf(stderr," ,AT90USB1287");
+      fprintf(stderr," ,ATMega640");
+      fprintf(stderr," ,ATMega1280");
+      fprintf(stderr," ,ATMega1281");
+      fprintf(stderr," ,ATMega2560");
+      fprintf(stderr," ,ATMega2561");
       fprintf(stderr,"\n");
       exit(-1);
       break;
