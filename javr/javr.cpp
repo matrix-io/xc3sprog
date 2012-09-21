@@ -474,7 +474,6 @@ void DisplayJTAG_ID(void)
            {
              gDeviceData=gAVR_Data[i];
              gDeviceData.Index=i;
-             gDeviceBOOTSize=gBOOT_Size[i];
              break;
            }
          }
