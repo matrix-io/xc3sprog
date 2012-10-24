@@ -374,8 +374,8 @@ void DisplayATMegaFuseData(void)
       printf("SUT: %X   ",gFuseBitsAll.SUT);
       DisplayATMegaStartUpTime(); printf("\n");
   }
-  bootsize = 128 * gFuseBitsAll.BOOTSIZE * gDeviceData.bootsize;
-  
+  bootsize = 256<<((~gFuseBitsAll.BOOTSIZE & 3) + gDeviceData.bootsize);
+
   switch(gDeviceData.Index)
   {
   case ATMEGA128:
