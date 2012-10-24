@@ -305,6 +305,25 @@ void EncodeATMegaFuseBits(void)
   }
   gFuseByte[1]=tmp;
 
+  tmp = gFuseBitsAll.CKSEL;
+  switch(gDeviceData.Index)
+  {
+  case ATMEGA16:
+  case ATMEGA32:
+  case ATMEGA64:
+  case ATMEGA128:
+      tmp |= gFuseBitsAll.SUT <<4;
+  case ATMEGA323:
+      tmp |= gFuseBitsAll.BODLEVEL <<7;
+      tmp |= gFuseBitsAll.BODEN  <<6;
+      break;
+  default:
+      tmp |= gFuseBitsAll.CKDIV8 <<7;
+      tmp |= gFuseBitsAll.CKOUT <<6;
+      tmp |= gFuseBitsAll.SUT <<4;
+  }
+  gFuseByte[0]=tmp;
+
   tmp=0xC0;
   tmp|=gLockBitsAll.LB;
   tmp|=(gLockBitsAll.BLB0<<2);
