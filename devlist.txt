@@ -245,7 +245,12 @@
 0984203f      4   0x3 ATxmega256A3
 0984303f      4   0x3 ATxmega256A3B
 
+#AT91 in JTAG Mode
 05b1703f      3   0x2 AT91SAM7X256
+
+#ARM 7 in ICE Mode (e.g. AT91SAM7X)
+3f0f0f0f      4   0xe  ARM-ICE-MODE
+
 #AVR32
 01e8203f     5   0x1 AT32AP7000
 
