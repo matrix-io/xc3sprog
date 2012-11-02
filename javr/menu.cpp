@@ -295,9 +295,10 @@ void ReadFlashDisplay(struct MENU_ITEM *ptr)
 
 void ReadFlashWriteFile(struct MENU_ITEM *ptr)
 {
-  char buffer[BUFSIZE];
+  char buffer[BUFSIZE] = {0};
   unsigned long add;
   FILE *fp;
+  char *p;
 
   AVR_Prog_Enable();
   ptr=ptr;
@@ -314,6 +315,11 @@ void ReadFlashWriteFile(struct MENU_ITEM *ptr)
     default:
       break;
   }
+  /* clean up the name */
+  if ((p = strchr(buffer, '\r')) != 0)
+      *p = '\0';
+  if ((p = strchr(buffer, '\n')) != 0)
+      *p = '\0';
 
   fp=fopen(buffer,"wb");
   if(!fp)
