@@ -124,6 +124,9 @@ void DecodeATMegaFuseBits(void)
   gFuseBitsAll.BOOTSIZE =     (gFuseByte[1]>>1) & 0x03;
   gFuseBitsAll.BOOTRST  = BVAL(gFuseByte[1],0);
   gFuseBitsAll.CKSEL    =     (gFuseByte[0]   ) & 0x0f;
+  gLockBitsAll.LB       =     (gLockByte      ) & 0x03;
+  gLockBitsAll.BLB0     =     (gLockByte   >>2) & 0x03;
+  gLockBitsAll.BLB1     =     (gLockByte   >>4) & 0x03;
 
   switch(gDeviceData.Index)
   {
