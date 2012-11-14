@@ -315,11 +315,6 @@ int WriteFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *src)
   instr|=((tmp>>8) & 0xff);
   Send_AVR_Prog_Command(instr);  /* Enter High Address Byte */
   instr=0x0300;
-  if ((tmp & 0x7f) !=0)
-    {
-      printf("error, uneven low byte 0x%04x\n",tmp&0xFF);
-      assert((tmp&0x7f) ==0);
-    }
   instr|=(tmp&0xFF);
   Send_AVR_Prog_Command(instr);  /* Enter Low Address Byte */
 
