@@ -203,7 +203,7 @@ void ReadFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *dest)
   //tmp<<=7; /* Page Size is 2^7=128 words */
   tmp>>=1; /* Get Word Address of Page  (word = 2 bytes ) */
 
-  if (gDeviceData.Index==AT90USB1287)
+  if ((gDeviceData.Index==AT90USB1287) || (gDeviceData.Index==ATMEGA640))
   {
       instr=0x0b00;
       instr|=(tmp>>16);
@@ -223,6 +223,7 @@ void ReadFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *dest)
   {
     case AT90USB1287:
     case AT90CAN128:
+    case ATMEGA640:
       cptr = (char*)gPageBuffer;
       for (i=0; i<pagesize; i ++) {
 	Send_Data_Output(8, cptr, cptr);
@@ -305,7 +306,7 @@ int WriteFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *src)
   //tmp<<=7;  /* Page Size is 2^7=128 words */
   tmp*=(pagesize/2);  /* Get word offset for pagenumber */
 
-  if (gDeviceData.Index==AT90USB1287)
+  if ((gDeviceData.Index == AT90USB1287) || (gDeviceData.Index == ATMEGA640))
   {
       instr=0x0b00;
       instr|=(tmp>>16);
@@ -324,6 +325,7 @@ int WriteFlashPage(unsigned pagenumber, unsigned pagesize, unsigned char *src)
   {
     case AT90USB1287:
     case AT90CAN128:
+    case ATMEGA640:
       cptr=(char*)gPageBuffer;
       for(i=0;i<pagesize; i++) {
 	Send_Data(8,cptr);
