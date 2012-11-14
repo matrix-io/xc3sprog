@@ -85,6 +85,7 @@ typedef struct
   unsigned long flash;
   unsigned short ram;
   unsigned char bootsize;  /* 0: 128/256/512/1024 1: 256/512/1024/2048 2: 512/...*/
+  unsigned int  pagesize;  /* in Bytes, 128 or 256*/
   avr_known_devices Index;  /* Use To access array of Device Specific routines */
   const char *name;
 }AVR_Data;
@@ -132,28 +133,28 @@ const char *gTAPStateNames[16]=
 
 const AVR_Data gAVR_Data[]=
 {
-/* jtag_id  eeprom  flash       ram    bootsize, Index  name  */
-    {0x9702, 4096  , 131072UL  , 4096  ,   2    , ATMEGA128     ,   "ATMega128"},
-    {0x9602, 2048  , 65536UL   , 4096  ,   2    , ATMEGA64      ,   "ATMega64"},
-    {0x9501, 1024  , 32768UL   , 2048  ,   1    , ATMEGA323     ,   "ATMega323"},
-    {0x9502, 1024  , 32768UL   , 2048  ,   1    , ATMEGA32      ,   "ATMega32"},
-    {0x9403, 512   , 16384UL   , 1024  ,   0    , ATMEGA16      ,   "ATMega16"},
-    {0x9404, 512   , 16384UL   , 1024  ,   0    , ATMEGA162     ,   "ATMega162"},
-    {0x9405, 512   , 16384UL   , 1024  ,   0    , ATMEGA169     ,   "ATMega169"},
-    {0x9781, 4096  , 131072UL  , 4096  ,   2    , AT90CAN128    ,   "AT90CAN128"},
-    {0x9782, 4096  , 131072UL  , 8192  ,   2    , AT90USB1287   ,   "AT90USB1287"},
-    {0x9608, 4096  ,  65536UL  , 8192  ,   2    , ATMEGA640     ,   "ATMega640"},
-    {0x9703, 4096  , 131072UL  , 8192  ,   2    , ATMEGA1280    ,   "ATMega1280"},
-    {0x9704, 4096  , 131072UL  , 8192  ,   2    , ATMEGA1281    ,   "ATMega1281"},
-    {0x9801, 4096  , 262144UL  , 8192  ,   2    , ATMEGA2560    ,   "ATMega2560"},
-    {0x9802, 4096  , 262144UL  , 8192  ,   2    , ATMEGA2561    ,   "ATMega2561"},
-    {0x9781, 1024  ,  32768UL  , 2048  ,   2    , AT90CAN32     ,   "AT90CAN32"},
-    {0x9781, 2048  ,  65536UL  , 4096  ,   2    , AT90CAN64     ,   "AT90CAN64"},
-    {0x950B, 512   , 16384UL   , 1024  ,   1    , ATMEGA329     ,   "ATMega329"},
-    {0x950c, 512   , 16384UL   , 1024  ,   1    , ATMEGA3290    ,   "ATMega3290"},
-    {0x960b, 512   , 16384UL   , 1024  ,   1    , ATMEGA649     ,   "ATMega649"},
-    {0x960c, 512   , 16384UL   , 1024  ,   1    , ATMEGA6490    ,   "ATMega6490"},
-    {0,0, 0, 0, 0, UNKNOWN_DEVICE, "Unknown"}                  
+/* jtag_id  eeprom  flash       ram    bootsize, pagesize, Index         ,  name  */
+    {0x9702, 4096  , 131072UL  , 4096  ,   2    ,     256, ATMEGA128     ,   "ATMega128"},
+    {0x9602, 2048  , 65536UL   , 4096  ,   2    ,     256, ATMEGA64      ,   "ATMega64"},
+    {0x9501, 1024  , 32768UL   , 2048  ,   1    ,     128, ATMEGA323     ,   "ATMega323"},
+    {0x9502, 1024  , 32768UL   , 2048  ,   1    ,     256, ATMEGA32      ,   "ATMega32"},
+    {0x9403, 512   , 16384UL   , 1024  ,   0    ,     128, ATMEGA16      ,   "ATMega16"},
+    {0x9404, 512   , 16384UL   , 1024  ,   0    ,     128, ATMEGA162     ,   "ATMega162"},
+    {0x9405, 512   , 16384UL   , 1024  ,   0    ,     128, ATMEGA169     ,   "ATMega169"},
+    {0x9781, 4096  , 131072UL  , 4096  ,   2    ,     256, AT90CAN128    ,   "AT90CAN128"},
+    {0x9782, 4096  , 131072UL  , 8192  ,   2    ,     256, AT90USB1287   ,   "AT90USB1287"},
+    {0x9608, 4096  ,  65536UL  , 8192  ,   2    ,     256, ATMEGA640     ,   "ATMega640"},
+    {0x9703, 4096  , 131072UL  , 8192  ,   2    ,     256, ATMEGA1280    ,   "ATMega1280"},
+    {0x9704, 4096  , 131072UL  , 8192  ,   2    ,     256, ATMEGA1281    ,   "ATMega1281"},
+    {0x9801, 4096  , 262144UL  , 8192  ,   2    ,     256, ATMEGA2560    ,   "ATMega2560"},
+    {0x9802, 4096  , 262144UL  , 8192  ,   2    ,     256, ATMEGA2561    ,   "ATMega2561"},
+    {0x9781, 1024  ,  32768UL  , 2048  ,   2    ,     256, AT90CAN32     ,   "AT90CAN32"},
+    {0x9781, 2048  ,  65536UL  , 4096  ,   2    ,     256, AT90CAN64     ,   "AT90CAN64"},
+    {0x950B, 512   , 16384UL   , 1024  ,   1    ,     128, ATMEGA329     ,   "ATMega329"},
+    {0x950c, 512   , 16384UL   , 1024  ,   1    ,     128, ATMEGA3290    ,   "ATMega3290"},
+    {0x960b, 512   , 16384UL   , 1024  ,   1    ,     256, ATMEGA649     ,   "ATMega649"},
+    {0x960c, 512   , 16384UL   , 1024  ,   1    ,     256, ATMEGA6490    ,   "ATMega6490"},
+    {0, 0, 0, 0, 0, 0, UNKNOWN_DEVICE, "Unknown"}
 };
 
 AVR_Data gDeviceData;

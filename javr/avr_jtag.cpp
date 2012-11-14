@@ -631,18 +631,7 @@ void WriteFlashBlock(unsigned long startaddress, unsigned long length, unsigned 
   {
     length=gDeviceData.flash;  /* Do not try and program more than flash size */
   }
-  switch(gDeviceData.Index)
-  {
-    case AT90USB1287:
-    case AT90CAN128:
-    case ATMEGA128:
-    case ATMEGA64:
-      blocksize=256;
-      break;
-    default:
-      blocksize=128;
-      break;
-  }
+  blocksize = gDeviceData.pagesize;
   printf("Flash Page Size: %d\n",blocksize);
   assert(blocksize<=sizeof(buffer));
   pagenumber=startaddress/blocksize;
@@ -686,18 +675,7 @@ int ReadFlashBlock(unsigned startaddress, unsigned length, unsigned char *dest)
   unsigned i;
   int count=0;
 
-  switch(gDeviceData.Index)
-  {
-    case AT90USB1287:
-    case AT90CAN128:
-    case ATMEGA128:
-    case ATMEGA64:
-      blocksize=256;
-      break;
-    default:
-      blocksize=128;
-      break;
-  }
+  blocksize = gDeviceData.pagesize;
   if(startaddress>=gDeviceData.flash)
     return(0);
   pagenumber=startaddress/blocksize;
