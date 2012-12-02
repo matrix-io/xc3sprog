@@ -319,9 +319,6 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf)
   byte fbuf[21]= {READ_IDENTIFICATION};
   int i, j = 0;
 
-  fprintf(stderr, "Found Numonyx Device, Device ID 0x%02x%02x\n",
-         buf[1], buf[2]);
-
   spi_xfer_user1(NULL,0,0,fbuf,20,1);
   spi_xfer_user1(fbuf, 20, 1, NULL,0, 0);
 
@@ -330,44 +327,66 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf)
   fbuf[2] = bitRevTable[fbuf[2]];
   fbuf[3] = bitRevTable[fbuf[3]];
 
-  if (fbuf[1] != 0x20)
+  switch (fbuf[1])
     {
+    case 0x20:
+      fprintf(stderr, "Found Numonyx M25P Device, Device ID 0x%02x%02x\n",
+              fbuf[1], fbuf[2]);
+      switch (fbuf[2])
+        {
+        case 0x11:
+          pages = 512;
+          sector_size = 32768; /* Bytes = 262144 bits*/
+          break;
+        case 0x12:
+          pages = 1024;
+          break;
+        case 0x13:
+          pages = 2048;
+          break;
+        case 0x14:
+          pages = 4096;
+          break;
+        case 0x15:
+          pages = 8192;
+          break;
+        case 0x16:
+          pages = 16384;
+          break;
+        case 0x17:
+          pages = 32768;
+          sector_size = 131072; /* Bytes = 1 Mi Bit*/
+          break;
+        case 0x18:
+          pages = 65536;
+          sector_size = 262144; /* Bytes = 2 Mi Bit*/
+          break;
+        default:
+          fprintf(stderr,"Unexpected M25P size ID 0x%02x\n", buf[2]);
+          return -1;
+        }
+      break;
+
+    case 0xba:
+      fprintf(stderr, "Found Numonyx N25Q Device, Device ID 0x%02x%02x\n",
+              fbuf[1], fbuf[2]);
+      switch (fbuf[2])
+        {
+        case 0x18:
+          pages = 65536;
+          sector_size = 65536;
+          break;
+        default:
+          fprintf(stderr,"Unexpected N25Q size ID 0x%02x\n", buf[2]);
+          return -1;
+        }
+      break;
+
+    default:
       fprintf(stderr,"M25P: Unexpected RDID upper Device ID 0x%02x\n", fbuf[1]);
       return -1;
     }
-  switch (fbuf[2])
-    {
-    case 0x11:
-      pages = 512;
-      sector_size = 32768; /* Bytes = 262144 bits*/
-      break;
-    case 0x12:
-      pages = 1024;
-      break;
-    case 0x13:
-      pages = 2048;
-      break;
-    case 0x14:
-      pages = 4096;
-      break;
-    case 0x15:
-      pages = 8192;
-      break;
-    case 0x16:
-      pages = 16384;
-      break;
-    case 0x17:
-      pages = 32768;
-      sector_size = 131072; /* Bytes = 1 Mi Bit*/
-      break;
-    case 0x18:
-      pages = 65536;
-      sector_size = 262144; /* Bytes = 2 Mi Bit*/
-      break;
-    default:
-      fprintf(stderr,"Unexpected M25P size ID 0x%02x\n", buf[2]);
-      return -1;
-    }
+
   pgsize = 256;
 
   if (fbuf[3] == 0x10)
