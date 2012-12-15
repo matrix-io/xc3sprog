@@ -219,7 +219,7 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
           {
           case TYPE_2232H:
           case TYPE_4232H:
-#ifdef TYPE_232H
+#ifdef DRIVE_OPEN_COLLECTOR
           case TYPE_232H:
 #endif
               device_has_fast_clock = true;
