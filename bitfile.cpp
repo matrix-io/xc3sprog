@@ -26,6 +26,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "bitfile.h"
 #include "io_exception.h"
 
+#include <inttypes.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -174,12 +175,12 @@ int BitFile::readMCSfile(FILE *fp)
   buffer=new byte[length];
   while ((fgets(buf, 1024, fp)) != 0)
     {
-      unsigned int count;
-      unsigned int address;
-      unsigned int record_type;
-      unsigned int checksum;
-      unsigned char cal_checksum = 0;
-      unsigned int bytes_read = 0;
+      uint32_t count;
+      uint32_t address;
+      uint32_t record_type;
+      uint32_t checksum;
+      uint8_t  cal_checksum = 0;
+      size_t   bytes_read = 0;
       if (sscanf(&buf[bytes_read], ":%2x%4x%2x",
 		 &count, &address, &record_type) != 3)
 	{
@@ -187,10 +188,10 @@ int BitFile::readMCSfile(FILE *fp)
 	  return 1;
 	}
       bytes_read += 9;
-      cal_checksum += (unsigned int)count;
-      cal_checksum += (unsigned int)(address >> 8);
-      cal_checksum += (unsigned int)address;
-      cal_checksum += (unsigned int)record_type;
+      cal_checksum += (uint8_t)count;
+      cal_checksum += (uint8_t)(address >> 8);
+      cal_checksum += (uint8_t)address;
+      cal_checksum += (uint8_t)record_type;
             
       switch (record_type)
 	{
@@ -202,8 +203,8 @@ int BitFile::readMCSfile(FILE *fp)
 	  
 	  while (count-- > 0)
 	    {
-	      unsigned char value;
-	      sscanf(&buf[bytes_read], "%2hhx", &value);
+	      unsigned int value;
+	      sscanf(&buf[bytes_read], "%2x", &value);
 	      buffer[full_address] = value;
 	      cal_checksum += buffer[full_address];
 	      bytes_read += 2;
@@ -215,10 +216,10 @@ int BitFile::readMCSfile(FILE *fp)
 	  return 0;
 	case 2:
 	  {
-	    unsigned short upper_address;
+	    uint16_t upper_address;
 	    sscanf(&buf[bytes_read], "%4hx", &upper_address);
-	    cal_checksum += (unsigned char)(upper_address >> 8);
-	    cal_checksum += (unsigned char)upper_address;
+	    cal_checksum += (uint8_t)(upper_address >> 8);
+	    cal_checksum += (uint8_t)upper_address;
 	    bytes_read += 4;
 
 	    if ((full_address >> 4) != upper_address)
@@ -229,24 +230,24 @@ int BitFile::readMCSfile(FILE *fp)
 	  }
 	case 3:
 	  {
-	    unsigned int dummy;
+	    uint32_t dummy;
 	    /* "Start Segment Address Record" will not be supported */
 	    /* but we must consume it, and do not create an error.  */
 	    while (count-- > 0)
 	      {
 		sscanf(&buf[bytes_read], "%2x", &dummy);
-		cal_checksum += (unsigned char)dummy;
+		cal_checksum += (uint8_t)dummy;
 		bytes_read += 2;
 	      }
   	    break;
 	  }
 	case 4:
 	  {
-	    unsigned short upper_address;
+	    uint16_t upper_address;
 
 	    sscanf(&buf[bytes_read], "%4hx", &upper_address);
-	    cal_checksum += (unsigned int)(upper_address >> 8);
-	    cal_checksum += (unsigned int)upper_address;
+	    cal_checksum += (uint8_t)(upper_address >> 8);
+	    cal_checksum += (uint8_t)upper_address;
 	    bytes_read += 4;
 	    
 	    if ((full_address >> 16) != upper_address)
@@ -257,13 +258,13 @@ int BitFile::readMCSfile(FILE *fp)
 	  }
 	case 5:
 	  {
-	    unsigned int start_address;
+	    uint32_t start_address;
 
 	    sscanf(&buf[bytes_read], "%8x", &start_address);
-	    cal_checksum += (unsigned char)(start_address >> 24);
-	    cal_checksum += (unsigned char)(start_address >> 16);
-	    cal_checksum += (unsigned char)(start_address >> 8);
-	    cal_checksum += (unsigned char)start_address;
+	    cal_checksum += (uint8_t)(start_address >> 24);
+	    cal_checksum += (uint8_t)(start_address >> 16);
+	    cal_checksum += (uint8_t)(start_address >> 8);
+	    cal_checksum += (uint8_t)start_address;
 	    bytes_read += 8;
 	    break;
 	  }
@@ -274,7 +275,7 @@ int BitFile::readMCSfile(FILE *fp)
       sscanf(&buf[bytes_read], "%2x", &checksum);
       bytes_read += 2;
 
-      if ((unsigned char)checksum != (unsigned char)(~cal_checksum + 1))
+      if ((uint8_t)checksum != (uint8_t)(~cal_checksum + 1))
 	{
 	  /* checksum failed */
 	  fprintf(stderr, "incorrect record checksum found in MCS file");
