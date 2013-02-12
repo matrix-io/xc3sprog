@@ -250,6 +250,7 @@
 
 #ARM 7 in ICE Mode (e.g. AT91SAM7X)
 3f0f0f0f      4   0xe  ARM-ICE-MODE
+4f1f0f0f      4   0xe  ARM-ICE-MODE(ARM7TDMI-S rev4)
 
 #AVR32
 01e8203f     5   0x1 AT32AP7000
