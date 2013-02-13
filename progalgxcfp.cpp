@@ -180,9 +180,11 @@ int ProgAlgXCFP::program(BitFile &file)
       for (unsigned long i = 0; i < 32768; i++)
         {
           if (jtag->getVerbose())
-            fprintf(stderr, "\rProgramming frames 0x%06lx to 0x%06lx     ",
-                    k*block_size+i*32, k*block_size+i*32+31);
-
+          {
+              fprintf(stderr, "\rProgramming frames 0x%06lx to 0x%06lx     ",
+                      k*block_size+i*32, k*block_size+i*32+31);
+              fflush(stderr);
+          }
           jtag->shiftIR(ISC_DATA_SHIFT);
           unsigned long p = (k * 32768 + i) * 256;
           if (p + 256 <= file.getLength())
