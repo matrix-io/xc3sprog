@@ -558,8 +558,8 @@ void IOFtdi::tx_tms(unsigned char *pat, int length, int force)
 
 unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
 {
-  //unsigned char buf[1] = { SEND_IMMEDIATE};
-  //mpsse_add_cmd(buf,1);
+    unsigned char buf[1] = { SEND_IMMEDIATE};
+    mpsse_add_cmd(buf,1);
     mpsse_send();
 #ifdef USE_FTD2XX
     DWORD read = 0;
