@@ -129,41 +129,26 @@ void Jtag::Usleep(unsigned int usec)
   io->flush_tms(false);
   io->flush();
 #ifdef __WIN32__
-  if (usec < 11000) 
-    /* Busy wait, as scheduler prolongs all waits for to least 10 ms
-       http://sourceforge.net/apps/trac/scummvm/browser/vendor/freesci/\
-       glutton/src/win32/usleep.c?rev=38187
-    */
-    {
-      LARGE_INTEGER lFrequency;
-      LARGE_INTEGER lEndTime;
-      LARGE_INTEGER lCurTime;
-      
-      QueryPerformanceFrequency (&lFrequency);
-      if (lFrequency.QuadPart)
-	{
-	  QueryPerformanceCounter (&lEndTime);
-	  lEndTime.QuadPart += (LONGLONG) usec * lFrequency.QuadPart / 1000000;
-	  do
-	    {
-	      QueryPerformanceCounter (&lCurTime);
-	      Sleep(0);
-	    } while (lCurTime.QuadPart < lEndTime.QuadPart);
-	}
-    }
-  else
-    {
-      /* from http://forums.devx.com/showthread.php?p=518756 without overheade calculation*/
-      HANDLE timer =   CreateWaitableTimer( 0, true, 0 ) ;
-      
-      __int64 due_time =  - ( __int64)usec * 10 ;   // time in 100 nanosecond units 
-      SetWaitableTimer( timer, PLARGE_INTEGER(&due_time), 0, 0, 0, 0 )  ; 
-      
-      DWORD result = WaitForSingleObject( timer, INFINITE ) ;
-      CloseHandle( timer ) ;
-      if(result !=WAIT_OBJECT_0)
-	fprintf(stderr,"Usleep failed\n");
-    }
+  /* Busy wait, as scheduler prolongs all waits for to least 10 ms
+     http://sourceforge.net/apps/trac/scummvm/browser/vendor/freesci/   \
+     glutton/src/win32/usleep.c?rev=38187
+  */
+  LARGE_INTEGER lFrequency;
+  LARGE_INTEGER lEndTime;
+  LARGE_INTEGER lCurTime;
+
+  QueryPerformanceFrequency (&lFrequency);
+  if (lFrequency.QuadPart)
+  {
+      QueryPerformanceCounter (&lEndTime);
+      lEndTime.QuadPart += (LONGLONG) usec * lFrequency.QuadPart / 1000000;
+      do
+      {
+          QueryPerformanceCounter (&lCurTime);
+          if (usec > 11000)
+              Sleep(0);
+      } while (lCurTime.QuadPart < lEndTime.QuadPart);
+  }
 #else
   usleep(usec);
 #endif
