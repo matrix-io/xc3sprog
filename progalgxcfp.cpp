@@ -66,6 +66,7 @@ ProgAlgXCFP::ProgAlgXCFP(Jtag &j, unsigned long id)
       fprintf(stderr, "Unknown XCF device ID 0x%08lx\n", idcode);
       throw std::invalid_argument("Unknown XCF device");
     }
+  fprintf(stderr, "ProgAlgXCFP $Rev$\n");
 }
 
 
@@ -139,7 +140,7 @@ int ProgAlgXCFP::erase(int array_mask)
   if (xcstatus[0] == 0x36)
     {
       if (jtag->getVerbose())
-        fprintf(stderr, "done\n");
+        fprintf(stderr, "done!");
     }
   else
     {
