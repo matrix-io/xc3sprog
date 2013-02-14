@@ -376,10 +376,11 @@ int ProgAlgXCFP::verify(BitFile &file)
           if (p + n > file.getLength())
             n = file.getLength() - p;
 
-          if (jtag->getVerbose())
+          if (jtag->getVerbose()) {
             fprintf(stderr, "\rVerifying frames 0x%06lx to 0x%06lx     ",
                     k*block_size+i*32, k*block_size+i*32+n/8-1);
-
+            fflush(stderr);
+          }
           jtag->shiftIR(ISC_READ);
           jtag->Usleep(25);
 
@@ -514,9 +515,11 @@ int ProgAlgXCFP::read(BitFile &file)
       for (unsigned long i = 0; i < 32768; i++)
         {
           if (jtag->getVerbose())
-            fprintf(stderr, "\rReading frames 0x%06lx to 0x%06lx     ",
-                    k*block_size+i*32,k*block_size+i*32+31);
-
+          {
+              fprintf(stderr, "\rReading frames 0x%06lx to 0x%06lx     ",
+                      k*block_size+i*32,k*block_size+i*32+31);
+              fflush(stderr);
+          }
           jtag->shiftIR(ISC_READ);
           jtag->Usleep(25);
 
