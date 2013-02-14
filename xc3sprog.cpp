@@ -342,10 +342,10 @@ void usage(bool all_options)
   fprintf(stderr, "\tDefault action is 'w'\n\n");
   fprintf(stderr, "\tDefault offset is 0\n\n");
   fprintf(stderr, "\tstyle: One of BIT|BIN|MCS|IHEX|HEX\n");
-  fprintf(stderr, "\tBIT: Xilinc .bit format\n");
+  fprintf(stderr, "\tBIT: Xilinx .bit format\n");
   fprintf(stderr, "\tBIN: Binary format\n");
-  fprintf(stderr, "\tMCS: XILINX Prom format\n");
-  fprintf(stderr, "\tIHEX: INTEL Hex format (= MCS with bits reversed)\n");
+  fprintf(stderr, "\tMCS: Intel Hex File, LSB first\n");
+  fprintf(stderr, "\tIHEX: INTEL Hex format, MSB first (Use for Xilinx .mcs files!)\n");
   fprintf(stderr, "\tHEX:  Hex dump format\n");
   fprintf(stderr, "\tDefault for FPGA|SPI|XCF is BIT\n");
   fprintf(stderr, "\tDefault for CPLD is JED\n");
