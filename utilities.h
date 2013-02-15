@@ -14,6 +14,8 @@ int getIO(std::auto_ptr<IOBase> *io, struct cable_t*,
           char const *dev, const char *serial, bool verbose, bool ftd2xx,
           unsigned int freq);
 const char *getCableName(int type);
+void xc3sprog_Usleep(unsigned int usec);
+
 #define OSNAME_LEN	64
 void get_os_name(char *buf, int buflen);
 
