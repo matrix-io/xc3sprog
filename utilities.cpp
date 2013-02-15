@@ -118,3 +118,32 @@ get_os_name(char *buf, int buflen)
   snprintf(buf, buflen - 1, "%s", uts.sysname);
 #endif
 }
+
+void xc3sprog_Usleep(unsigned int usec)
+{
+#if defined(__WIN32__)
+  /* Busy wait, as scheduler prolongs all waits for to least 10 ms
+     http://sourceforge.net/apps/trac/scummvm/browser/vendor/freesci/   \
+     glutton/src/win32/usleep.c?rev=38187
+  */
+  LARGE_INTEGER lFrequency;
+  LARGE_INTEGER lEndTime;
+  LARGE_INTEGER lCurTime;
+
+  QueryPerformanceFrequency (&lFrequency);
+  if (lFrequency.QuadPart)
+  {
+      QueryPerformanceCounter (&lEndTime);
+      lEndTime.QuadPart += (LONGLONG) usec * lFrequency.QuadPart / 1000000;
+      do
+      {
+          QueryPerformanceCounter (&lCurTime);
+          if (usec > 11000)
+              Sleep(0);
+      } while (lCurTime.QuadPart < lEndTime.QuadPart);
+  }
+#else
+  usleep(usec);
+#endif
+}
+

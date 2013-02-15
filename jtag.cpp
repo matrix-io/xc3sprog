@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include "jtag.h"
 #include <unistd.h>
+#include "utilities.h"
+
 Jtag::Jtag(IOBase *iob)
 {
   verbose = false;
@@ -128,30 +130,7 @@ void Jtag::Usleep(unsigned int usec)
 {
   io->flush_tms(false);
   io->flush();
-#ifdef __WIN32__
-  /* Busy wait, as scheduler prolongs all waits for to least 10 ms
-     http://sourceforge.net/apps/trac/scummvm/browser/vendor/freesci/   \
-     glutton/src/win32/usleep.c?rev=38187
-  */
-  LARGE_INTEGER lFrequency;
-  LARGE_INTEGER lEndTime;
-  LARGE_INTEGER lCurTime;
-
-  QueryPerformanceFrequency (&lFrequency);
-  if (lFrequency.QuadPart)
-  {
-      QueryPerformanceCounter (&lEndTime);
-      lEndTime.QuadPart += (LONGLONG) usec * lFrequency.QuadPart / 1000000;
-      do
-      {
-          QueryPerformanceCounter (&lCurTime);
-          if (usec > 11000)
-              Sleep(0);
-      } while (lCurTime.QuadPart < lEndTime.QuadPart);
-  }
-#else
-  usleep(usec);
-#endif
+  xc3sprog_Usleep(usec);
 }
 
 int Jtag::setDeviceIRLength(int dev, int len)
