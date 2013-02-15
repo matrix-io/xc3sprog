@@ -1,7 +1,7 @@
 /* JTAG GNU/Linux FTDI FT2232 low-level I/O
 
 Copyright (C) 2006 Dmitry Teytelman
-Additions (C) 2005-2011  Uwe Bonnes 
+Additions (C) 2005-2013  Uwe Bonnes
                          bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
@@ -55,6 +55,8 @@ class IOFtdi : public IOBase
   unsigned int bptr;
   int calls_rd, calls_wr, subtype, retries;
   FILE *fp_dbg;
+  bool device_has_fast_clock;
+  unsigned int tck_freq;
 
  public:
   IOFtdi(bool use_ftd2xx);
@@ -64,6 +66,7 @@ class IOFtdi : public IOBase
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
   void tx_tms(unsigned char *pat, int length, int force);
   void flush(void);
+  void Usleep(unsigned int usec);
 
  private:
   void deinit(void);
