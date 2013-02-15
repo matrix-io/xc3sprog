@@ -1,7 +1,7 @@
 /* JTAG low level functions and base class for cables
 
 Copyright (C) 2004 Andrew Rogers
-Additions (C) 2005-2011  Uwe Bonnes 
+Additions (C) 2005-2013  Uwe Bonnes
                          bon@elektron.ikp.physik.tu-darmstadt.de
 
 This program is free software; you can redistribute it and/or modify
@@ -49,6 +49,7 @@ class IOBase
  public:
   virtual int Init(struct cable_t *cable, const char *devopt, unsigned int freq);
   virtual void flush() {}
+  virtual void Usleep(unsigned int usec);
 
  public:
   void setVerbose(bool v) { verbose = v; }
@@ -58,7 +59,6 @@ class IOBase
   void shift(bool tdi, int length, bool last=true);
   void set_tms(bool value);
   void flush_tms(int force);
-  void Usleep(unsigned int usec);
 
  protected:
   virtual void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)=0;

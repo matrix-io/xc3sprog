@@ -1,6 +1,6 @@
 /* JTAG GNU/Linux FTDI FT2232 low-level I/O
 
-Copyright (C) 2005-2011 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
+Copyright (C) 2005-2013 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
 Copyright (C) 2006 Dmitry Teytelman
 
 This program is free software; you can redistribute it and/or modify
@@ -61,7 +61,7 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
   unsigned int divisor;
   int res;
   char *p = cable->optstring;
-  bool device_has_fast_clock = false;
+
 
       /* set for now. If we have a fast device, correct later */
   if ((freq == 0 )|| (freq >= 6000000)) /* freq = 0 means max rate, 3 MHz for now*/
@@ -388,11 +388,12 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
       buf[3] = (divisor >> 8) & 0xff;
       mpsse_add_cmd(buf, 4);
       mpsse_send();
-      if (verbose)
-          fprintf(stderr,"Using JTAG frequency %d from undivided clock", 30000000/(1+divisor));
+      tck_freq = 30000000/(1+divisor);
   }
-  else  if (verbose)
-      fprintf(stderr,"Using JTAG frequency %d", 6000000/(1+divisor));
+  else
+      tck_freq = 6000000/(1+divisor);
+  if (verbose)
+      fprintf(stderr,"Using JTAG frequency %d from undivided clock", freq);
   fprintf(stderr, "\n");
   return 0;
 
@@ -775,4 +776,67 @@ void IOFtdi::mpsse_send() {
 
 void IOFtdi::flush() {
   mpsse_send();
+}
+
+/* Short delays may be prolonged by flush causing an additional frame sent
+ * out on a next microframe.
+ *
+ * So make the FTDI toggle TCK for delays < 20 ms
+ */
+void IOFtdi::Usleep(unsigned int usec)
+{
+  flush_tms(false);
+
+  if(usec < 20000)
+  {
+      /* Make sure, we don't overflow!*/
+      unsigned int ticks = (usec * (tck_freq/100))/(1000000/100);
+      if (device_has_fast_clock)
+      {
+          /* Use the "clock for ..." commands*/
+          unsigned char buf[3] = {0x8f}; /* Clock For n x 8 bits*/
+          if (ticks > 8 )
+          {
+              buf[1] = ((ticks / 8)      ) & 0xff;
+              buf[2] = ((ticks / 8) >> 8 ) & 0xff;
+              mpsse_add_cmd(buf, 3);
+              ticks %= 8;
+          }
+          if (ticks)
+          {
+              buf[0] = 0x8e; /*Clock For n bits*/
+              buf[1] = ticks -1;
+              mpsse_add_cmd(buf, 2);
+          }
+      }
+      else
+      {
+          unsigned char buf[3];
+          if (ticks > 8)
+          {
+              buf[0] = MPSSE_DO_WRITE|MPSSE_LSB|MPSSE_WRITE_NEG;
+              buf[1] = ((ticks / 8)     ) & 0xff;
+              buf[2] = ((ticks / 8) >> 8) & 0xff;
+              mpsse_add_cmd (buf, 3);
+              buf[0] = 0;
+              while (ticks > 8)
+              {
+                  mpsse_add_cmd (buf, 1);
+                  ticks -= 8;
+              }
+          }
+          if (ticks)
+          {
+              buf[0] = MPSSE_DO_WRITE|MPSSE_LSB|MPSSE_BITMODE|MPSSE_WRITE_NEG;
+              buf[1] = ticks -1;
+              buf[2] = 0;
+              mpsse_add_cmd (buf, 1);
+          }
+      }
+  }
+  else
+  {
+      flush();
+      xc3sprog_Usleep(usec);
+  }
 }
