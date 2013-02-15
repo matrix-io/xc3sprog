@@ -58,6 +58,7 @@ class IOBase
   void shift(bool tdi, int length, bool last=true);
   void set_tms(bool value);
   void flush_tms(int force);
+  void Usleep(unsigned int usec);
 
  protected:
   virtual void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last)=0;

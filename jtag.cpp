@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include "jtag.h"
 #include <unistd.h>
-#include "utilities.h"
 
 Jtag::Jtag(IOBase *iob)
 {
@@ -124,13 +123,6 @@ void Jtag::cycleTCK(int n, bool tdi)
   if(fp_dbg)
       fprintf(fp_dbg, "cycleTCK %d TDI %s\n", n, (tdi)?"TRUE":"FALSE");
    io->shift(tdi, n, false);
-}
-
-void Jtag::Usleep(unsigned int usec)
-{
-  io->flush_tms(false);
-  io->flush();
-  xc3sprog_Usleep(usec);
 }
 
 int Jtag::setDeviceIRLength(int dev, int len)

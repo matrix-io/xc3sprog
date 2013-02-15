@@ -30,6 +30,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 
 #include "iobase.h"
+#include "utilities.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -101,4 +102,11 @@ void IOBase::shift(bool tdi, int length, bool last)
     shiftTDITDO(block, NULL, len, last);
 }
 
+
+void IOBase::Usleep(unsigned int usec)
+{
+  flush_tms(false);
+  flush();
+  xc3sprog_Usleep(usec);
+}
 

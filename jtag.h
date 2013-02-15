@@ -95,12 +95,12 @@ class Jtag
   void nextTapState(bool tms);
   void cycleTCK(int n, bool tdi=1);
   tapState_t getTapState(void);
-  void Usleep(unsigned int usec);
   int setDeviceIRLength(int dev, int len);
   unsigned long getDeviceID(unsigned int dev){
     if(dev>=devices.size())return 0;
     return devices[dev].idcode;
   }
+  void Usleep(unsigned int usec) {io->Usleep(usec);}
   int selectDevice(int dev);
   void shiftDR(const byte *tdi, byte *tdo, int length, int align=0, bool exit=true);// Some devices use TCK for aligning data, for example, Xilinx FPGAs for configuration data.
   void shiftIR(const byte *tdi, byte *tdo=0); // No length argumant required as IR length specified in chainParam_t 
