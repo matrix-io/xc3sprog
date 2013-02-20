@@ -7,6 +7,7 @@
 # Use 1500000 for all cable connected cables and max for all on board cables
 
 ftdi          ftdi    1500000 0x0403:0x6010:                                       
+minila        ftdi     800000 0x0403:0x6010:
 ft232h        ftdi    1500000 0x0403:0x6014:                                      
 ft4232h       ftdi    1500000 0x0403:0x6011:
 cm1           ftdi    1500000 0x0403:0x8350:
