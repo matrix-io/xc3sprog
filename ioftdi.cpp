@@ -393,7 +393,14 @@ int IOFtdi::Init(struct cable_t *cable, const char *serial, unsigned int freq)
   else
       tck_freq = 6000000/(1+divisor);
   if (verbose)
-      fprintf(stderr,"Using JTAG frequency %d from undivided clock", freq);
+  {
+      if (tck_freq > 1000000)
+          fprintf(stderr,"Using JTAG frequency %3d.%03d MHz from undivided clock",
+                  tck_freq/1000000,(tck_freq%1000000)/1000);
+      else
+          fprintf(stderr,"Using JTAG frequency %3d.%03d kHz from undivided clock",
+                  tck_freq/1000, tck_freq%1000);
+  }
   fprintf(stderr, "\n");
   return 0;
 
