@@ -796,8 +796,10 @@ void IOFtdi::Usleep(unsigned int usec)
 
   if(usec < 20000)
   {
-      /* Make sure, we don't overflow!*/
-      unsigned int ticks = (usec * (tck_freq/100))/(1000000/100);
+      /* Make sure, we don't overflow and we round up!*/
+      unsigned int ticks;
+
+      ticks = (usec * (tck_freq/100) + (tck_freq/100) - 1)/(1000000/100);
       if (device_has_fast_clock)
       {
           /* Use the "clock for ..." commands*/
