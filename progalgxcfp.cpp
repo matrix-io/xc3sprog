@@ -227,7 +227,7 @@ int ProgAlgXCFP::program(BitFile &file)
             }
 
           // no need to program after end of bitfile
-          if (k  * 32768 * (i+1) * 256 >= file.getLength())
+          if ((k  * 32768 + (i+1)) * 256 >= file.getLength())
               break;
         }
 
