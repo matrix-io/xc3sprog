@@ -66,11 +66,18 @@ class ProgAlgSPIFlash
   int spi_flashinfo_w25 (unsigned char * fbuf);
   int spi_flashinfo_at45(unsigned char * fbuf);
   int spi_flashinfo_m25p(unsigned char * fbuf);
+  int spi_flashinfo_sst(unsigned char * fbuf);
   int wait(byte command, int report, int limit, double *delta);
+  int wait(byte command, byte mask, byte value, int report, int limit, double *delta);
   int program_at45(BitFile &file);
+  int program_sst(BitFile &pfile);
+  void sst_disable_write_protect();
   int sectorerase_and_program(BitFile &file);
   int erase_at45();
   int erase_bulk();
+  int erase_sst();
+  int sst_has_completed();
+
  public:
   ProgAlgSPIFlash(Jtag &j);
   ~ProgAlgSPIFlash(void);

@@ -6,7 +6,8 @@
 # Max_Freq == 0 mean use maximum speed of device
 # Use 1500000 for all cable connected cables and max for all on board cables
 
-ftdi          ftdi    1500000 0x0403:0x6010:                                       
+ftdi          ftdi    1500000 0x0403:0x6010:                                    
+papilio       ftdi    6000000 0x0403:0x6010: 
 minila        ftdi     800000 0x0403:0x6010:
 ft232h        ftdi    1500000 0x0403:0x6014:                                      
 ft4232h       ftdi    1500000 0x0403:0x6011:
