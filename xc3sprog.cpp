@@ -862,6 +862,9 @@ int main(int argc, char **args)
       /* Probably XC4V and XC5V should work too. No devices to test at IKDA */
       if( (family == FAMILY_XC2S) ||
 	  (family == FAMILY_XC2SE) ||
+	  (family == FAMILY_XC4VLX) ||
+	  (family == FAMILY_XC4VFX) ||
+	  (family == FAMILY_XC4VSX) ||
 	  (family == FAMILY_XC3S) ||
 	  (family == FAMILY_XC3SE) ||
 	  (family == FAMILY_XC3SA) ||

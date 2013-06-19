@@ -33,7 +33,10 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define FAMILY_XC2SE    0x05
 #define FAMILY_XC2V     0x08
 #define FAMILY_XC3S     0x0a
+#define FAMILY_XC4VLX   0x0b
 #define FAMILY_XC3SE    0x0e
+#define FAMILY_XC4VFX   0x0f
+#define FAMILY_XC4VSX   0x10
 #define FAMILY_XC3SA    0x11
 #define FAMILY_XC3SAN   0x13
 #define FAMILY_XC5VLX   0x14
