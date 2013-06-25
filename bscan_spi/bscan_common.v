@@ -34,6 +34,7 @@
 	    end // if (!have_header)
        end // else: !if(CAPTRE || RESET || UPDATE || !SEL1)
 
+   reg         reset_header = 0;
    always @(posedge DRCK1 or posedge rst)
      if (rst)
        begin
@@ -42,6 +43,7 @@
 	  RAM_WADDR <= 0;
 	  RAM_RADDR <=0;
 	  RAM_WE <= 0;
+          reset_header <= 1;
        end
      else
        begin
@@ -49,7 +51,14 @@
 	  RAM_WE <= !CSB;
 	  if(RAM_WE)
 	    RAM_WADDR <= RAM_WADDR + 1;
-	  header <= {header[46:0], TDI};
+
+          reset_header <=0;
+          //For the next if, the value of reset_header is probed at rising
+          //clock, before "reset_header<=0" is executed:
+          if(reset_header)
+             header <={47'h000000000000, TDI};
+          else
+             header <= {header[46:0], TDI};
 	  CS_GO <= CS_GO_PREP;
 	  if (CS_GO && (len == 0))
 	    CS_STOP_PREP <= 1;
