@@ -43,6 +43,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define FAMILY_XC5VLXT  0x15
 #define FAMILY_XC5VSXT  0x17
 #define FAMILY_XC5VFXT  0x19
+#define FAMILY_XC7      0x1b
 #define FAMILY_XC3SD    0x1c
 #define FAMILY_XC6S     0x20
 #define FAMILY_XC5VTXT  0x22

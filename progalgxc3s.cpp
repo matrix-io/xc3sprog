@@ -61,6 +61,7 @@ ProgAlgXC3S::ProgAlgXC3S(Jtag &j, int fam)
     case FAMILY_XC5VSXT:
     case FAMILY_XC5VFXT:
     case FAMILY_XC5VTXT:
+    case FAMILY_XC7:
       tck_len = 12;
       array_transfer_len = 32;
       break;
@@ -97,14 +98,14 @@ void ProgAlgXC3S::flow_array_program(BitFile &file)
 {
   Timer timer;
   unsigned int i;
-  for(i=0; i<file.getLength(); i= i+ array_transfer_len)
+  for(i=0; i<file.getLength(); i += array_transfer_len)
     {
       jtag->shiftIR(ISC_PROGRAM);
       jtag->shiftDR(&(file.getData())[i/8],0,array_transfer_len);
       jtag->cycleTCK(1);
       if((i % (10000*array_transfer_len)) == 0)
 	{
-	  fprintf(stdout,".");
+	  fprintf(stderr,".");
 	  fflush(stderr);
 	}
     }
@@ -236,10 +237,15 @@ void ProgAlgXC3S::array_program(BitFile &file)
       }
     }
 
-  /* use leagcy, as large USB transfers are faster then chunks */
+  /* use legacy, as large USB transfers are faster then chunks */
   flow_program_legacy(file);
   /*flow_array_program(file);*/
   flow_disable();
+
+  /* NOTE: Virtex7 devices do not support flow_program_legacy according
+     to the Xilinx IEEE 1532 files. However, my tests with flow_array_program
+     failed, while flow_program_legacy appears to work just fine on XC7VX690T.
+     (jorisvr) */
 
   /* Wait until device comes up */
   while ((( buf[0] & 0x23) != 0x21) && (i <50))
