@@ -216,6 +216,9 @@ int ProgAlgSPIFlash::spi_flashinfo_w25(unsigned char *buf)
     case 0x18:
       pages = 65536;
       break;
+    case 0x19:
+      pages = 2*65536;
+      break;
     default:
       fprintf(stderr,"Unexpected W25 size ID 0x%02x\n", buf[2]);
       return -1;
