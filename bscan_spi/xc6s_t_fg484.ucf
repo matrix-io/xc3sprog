@@ -1,0 +1,7 @@
+CONFIG VCCAUX = 3.3;
+NET "*" IOSTANDARD = LVCMOS33;
+
+net "MISO" LOC = "AA20";
+net "MOSI" LOC = "AB20";
+net "DRCK1" LOC= "Y20";
+net "CSB"  LOC = "AA3";
