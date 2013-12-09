@@ -9,6 +9,10 @@ cmake_minimum_required(VERSION 2.6)
 
 if(${WIN32})
 set(USE_STATIC_FTDI ON)
+IF( ${CMAKE_COMPILER_IS_GNUCXX} )
+ # link libstdc++ and others statically
+ SET (CMAKE_EXE_LINKER_FLAGS    "-static-libstdc++ -static-libgcc")
+ENDIF( ${CMAKE_COMPILER_IS_GNUCXX} )
 endif(${WIN32})
 
 option(USE_FTD2XX "Use FTDI libFTD2XX instead of free libftdi" ON)

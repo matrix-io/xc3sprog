@@ -23,11 +23,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #ifndef IOFTDI_H
 #define IOFTDI_H
 
-#include <ftdi.h>
-#include <usb.h>
 #if defined (__WIN32__)
 #include <windows.h>
+#include <libusb/usb.h>
+#else
+#include <usb.h>
 #endif
+#include <ftdi.h>
 
 #ifdef USE_FTD2XX
 #include <ftd2xx.h>

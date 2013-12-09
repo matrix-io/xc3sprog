@@ -78,7 +78,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #  define PPDEV "\\\\.\\$VDMLPT1"
 #endif
 #include <windows.h>
-#include <ddk/ntddpar.h>
+#include <ntddpar.h>
 #include "par_nt.h"
 
 /*FIXME: These defines fit numerically, but not logically*/
@@ -345,6 +345,7 @@ int IOParport::Init(struct cable_t *cable, const char *dev, unsigned int freq)
       return res;
   }
 #endif
+  (void) res;
   cabletype = detectcable();
   if(cabletype == NO_CABLE)
   {
