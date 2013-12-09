@@ -22,7 +22,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef IOFX2_H
 #define IOFX2_H
 
+#if defined (__WIN32__)
+#include <windows.h>
+#include <libusb/usb.h>
+#else
 #include <usb.h>
+#endif
 
 #include "iobase.h"
 #include "cabledb.h"

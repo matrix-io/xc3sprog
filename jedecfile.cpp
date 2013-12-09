@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 #include <strings.h>
 #include <errno.h>
 #include <cstdio>
+#include <time.h>
 
 #include "jedecfile.h"
 #include "io_exception.h"
