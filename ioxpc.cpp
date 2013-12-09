@@ -23,6 +23,9 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <stdint.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+#include <unistd.h>
 
 #include <xguff/usrp_interfaces.h>
 #include <xguff/usrp_commands.h>
@@ -126,7 +129,7 @@ int IOXPC::Init(struct cable_t *cable, char const *serial, unsigned int freq)
               buf[1], buf[0], buf[1]<<8| buf[0]);
       if(hid)
 #ifdef __WIN32__
-          fprintf(stderr, "DLC HID = 0x%I64x\n", hid);
+          fprintf(stderr, "DLC HID = 0x%015" PRIx64 "\n", hid);
 #else
       fprintf(stderr, "DLC HID = 0x%015Lx\n", hid);
 #endif
