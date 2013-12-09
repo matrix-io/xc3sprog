@@ -607,7 +607,8 @@ unsigned int IOFtdi::readusb(unsigned char * rbuf, unsigned long len)
         }
         if (read != len)
         {
-            fprintf(stderr,"readusb: Short read %d vs %ld\n", read, len);
+            fprintf(stderr,"readusb: Short read %ld vs %ld\n",
+                    (unsigned long)read, len);
             throw  io_exception();
         }
     }
@@ -761,7 +762,8 @@ void IOFtdi::mpsse_send() {
       }
       if(written != bptr)
       {
-          fprintf(stderr,"mpsse_send: Short write %d vs %d\n", written, bptr);
+          fprintf(stderr,"mpsse_send: Short write %ld vs %d\n",
+                  (unsigned long int)written, bptr);
           throw  io_exception();
       }
   }

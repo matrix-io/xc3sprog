@@ -11,6 +11,7 @@ if(${WIN32})
 set(USE_STATIC_FTDI ON)
 IF( ${CMAKE_COMPILER_IS_GNUCXX} )
  # link libstdc++ and others statically
+ add_definitions( -D__USE_MINGW_ANSI_STDIO )
  SET (CMAKE_EXE_LINKER_FLAGS    "-static-libstdc++ -static-libgcc")
 ENDIF( ${CMAKE_COMPILER_IS_GNUCXX} )
 endif(${WIN32})
