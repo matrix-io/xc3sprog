@@ -468,9 +468,20 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
   
   switch (fbuf[0])
     {
-    case 0x1f:
-      res = spi_flashinfo_at45(fbuf);
-      break;
+    case 0x1f: {
+        switch (fbuf[1]>> 5) /* Family code*/ {
+        case 1:
+            res = spi_flashinfo_at45(fbuf);
+            break;
+        case 2:
+            fprintf(stderr, "Unhandled AT25 device\n");
+            return -1;
+        default:
+            fprintf(stderr, "Unhandled Adesto device\n");
+            return -1;
+        }
+        break;
+    }
     case 0x30:
       res = spi_flashinfo_amic(fbuf);
       break;
