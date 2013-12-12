@@ -9,5 +9,11 @@
 - Bitorder for Intel HEX format
 - Finer granularity for erasing XCFP
 - ... 
-- Check Byte Oder IHEX versus MCS
+- Check Byte Order IHEX versus MCS
 - Document cable Database
+- Break possible infinite loops, like ProgAlgXC3S::array_program
+    do
+    jtag->shiftIR(CFG_IN, buf);
+  while (! (buf[0] & 0x10)); /* wait until configuration cleared */
+- Progress in indicator when writing large bitfiles in legacy mode. Perhaps
+  have an indicator thread reading out variables when writing the JTAG bits
