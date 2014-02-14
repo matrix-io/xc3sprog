@@ -349,8 +349,7 @@ int ProgAlgSPIFlash::spi_flashinfo_sst(unsigned char *buf)
 
 
 
-int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf) 
- 
+int ProgAlgSPIFlash::spi_flashinfo_m25p_mx25l(unsigned char *buf, int is_mx25l)
 {
   byte fbuf[21]= {READ_IDENTIFICATION};
   int i, j = 0;
@@ -363,65 +362,89 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p(unsigned char *buf)
   fbuf[2] = bitRevTable[fbuf[2]];
   fbuf[3] = bitRevTable[fbuf[3]];
 
-  switch (fbuf[1])
-    {
-    case 0x20:
-      fprintf(stderr, "Found Numonyx M25P Device, Device ID 0x%02x%02x\n",
-              fbuf[1], fbuf[2]);
-      switch (fbuf[2])
-        {
-        case 0x11:
-          pages = 512;
-          sector_size = 32768; /* Bytes = 262144 bits*/
-          break;
-        case 0x12:
-          pages = 1024;
-          break;
-        case 0x13:
-          pages = 2048;
-          break;
-        case 0x14:
-          pages = 4096;
-          break;
-        case 0x15:
-          pages = 8192;
-          break;
-        case 0x16:
-          pages = 16384;
-          break;
-        case 0x17:
-          pages = 32768;
-          sector_size = 131072; /* Bytes = 1 Mi Bit*/
-          break;
-        case 0x18:
-          pages = 65536;
-          sector_size = 262144; /* Bytes = 2 Mi Bit*/
-          break;
-        default:
-          fprintf(stderr,"Unexpected M25P size ID 0x%02x\n", buf[2]);
-          return -1;
-        }
-      break;
+  if(is_mx25l) {
+    switch (fbuf[1])
+      {
+      case 0x20:
+        fprintf(stderr, "Found Macronix MX25L Device, Device ID 0x%02x%02x\n",
+                fbuf[1], fbuf[2]);
+        switch (fbuf[2])
+          {
+          case 0x17:
+            pages = 262144;
+            sector_size = 65536;
+            break;
+          default:
+            fprintf(stderr,"Unexpected MX25L size ID 0x%02x\n", buf[2]);
+            return -1;
+          }
+        break;
 
-    case 0xba:
-      fprintf(stderr, "Found Numonyx N25Q Device, Device ID 0x%02x%02x\n",
-              fbuf[1], fbuf[2]);
-      switch (fbuf[2])
-        {
-        case 0x18:
-          pages = 65536;
-          sector_size = 65536;
-          break;
-        default:
-          fprintf(stderr,"Unexpected N25Q size ID 0x%02x\n", buf[2]);
-          return -1;
-        }
-      break;
+      default:
+        fprintf(stderr,"MX25L: Unexpected RDID upper Device ID 0x%02x\n", fbuf[1]);
+        return -1;
+      }
+  } else {
+    switch (fbuf[1])
+      {
+      case 0x20:
+        fprintf(stderr, "Found Numonyx M25P Device, Device ID 0x%02x%02x\n",
+                fbuf[1], fbuf[2]);
+        switch (fbuf[2])
+          {
+          case 0x11:
+            pages = 512;
+            sector_size = 32768; /* Bytes = 262144 bits*/
+            break;
+          case 0x12:
+            pages = 1024;
+            break;
+          case 0x13:
+            pages = 2048;
+            break;
+          case 0x14:
+            pages = 4096;
+            break;
+          case 0x15:
+            pages = 8192;
+            break;
+          case 0x16:
+            pages = 16384;
+            break;
+          case 0x17:
+            pages = 32768;
+            sector_size = 131072; /* Bytes = 1 Mi Bit*/
+            break;
+          case 0x18:
+            pages = 65536;
+            sector_size = 262144; /* Bytes = 2 Mi Bit*/
+            break;
+          default:
+            fprintf(stderr,"Unexpected M25P size ID 0x%02x\n", buf[2]);
+            return -1;
+          }
+        break;
 
-    default:
-      fprintf(stderr,"M25P: Unexpected RDID upper Device ID 0x%02x\n", fbuf[1]);
-      return -1;
-    }
+      case 0xba:
+        fprintf(stderr, "Found Numonyx N25Q Device, Device ID 0x%02x%02x\n",
+                fbuf[1], fbuf[2]);
+        switch (fbuf[2])
+          {
+          case 0x18:
+            pages = 65536;
+            sector_size = 65536;
+            break;
+          default:
+            fprintf(stderr,"Unexpected N25Q size ID 0x%02x\n", buf[2]);
+            return -1;
+          }
+        break;
+
+      default:
+        fprintf(stderr,"M25P: Unexpected RDID upper Device ID 0x%02x\n", fbuf[1]);
+        return -1;
+      }
+  }
 
   pgsize = 256;
 
@@ -489,7 +512,10 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
       res = spi_flashinfo_amic_quad(fbuf);
       break;
     case 0x20:
-      res = spi_flashinfo_m25p(fbuf);
+      res = spi_flashinfo_m25p_mx25l(fbuf, 0);
+      break;
+    case 0xc2:
+      res = spi_flashinfo_m25p_mx25l(fbuf, 1);
       break;
     case 0x89:
       res = spi_flashinfo_s33(fbuf); 
@@ -1145,6 +1171,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
   case 0x1f: /* Atmel */
     return program_at45(pfile);
   case 0x20: /* Numonyx */
+  case 0xc2: /* Macronix */
   case 0x30: /* AMIC */
   case 0x40: /* AMIC Quad */
   case 0xef: /* Winbond */
@@ -1335,6 +1362,7 @@ int ProgAlgSPIFlash::erase(void)
   case 0x1f: /* Atmel */
     return erase_at45();
   case 0x20: /* Numonyx */
+  case 0xc2: /* Macronix */
   case 0x30: /* AMIC */
   case 0x40: /* AMIC Quad */
   case 0x89: /* Intel */
