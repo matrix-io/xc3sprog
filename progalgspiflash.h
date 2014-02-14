@@ -65,7 +65,7 @@ class ProgAlgSPIFlash
   int spi_flashinfo_amic_quad (unsigned char * fbuf);
   int spi_flashinfo_w25 (unsigned char * fbuf);
   int spi_flashinfo_at45(unsigned char * fbuf);
-  int spi_flashinfo_m25p(unsigned char * fbuf);
+  int spi_flashinfo_m25p_mx25l(unsigned char * fbuf, int is_mx25l);
   int spi_flashinfo_sst(unsigned char * fbuf);
   int wait(byte command, int report, int limit, double *delta);
   int wait(byte command, byte mask, byte value, int report, int limit, double *delta);
