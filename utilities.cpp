@@ -40,7 +40,7 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
             char const *serial, bool verbose, bool use_ftd2xx, 
             unsigned int freq)
 {
-    int res;
+    int res = 1;
     unsigned int use_freq;
 
     if (!cable)

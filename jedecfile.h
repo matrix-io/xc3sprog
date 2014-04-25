@@ -53,12 +53,9 @@ class JedecFile
 {
  private:
   struct jedec_data jed;
-
   bool Error;
   std::string errorStr;
   FILE *logfile;
-
- private:
 
  public:
   JedecFile(void);
