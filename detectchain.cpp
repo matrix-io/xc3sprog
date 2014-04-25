@@ -27,6 +27,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 
 
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <memory>

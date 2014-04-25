@@ -49,7 +49,6 @@ private:
   unsigned int EndAddr;
   unsigned int Bytes_Read;
   byte *buffer;
-  unsigned long bufsize;
 
   int ReadOneLine(FILE *fp,char *dest, int len);
   int DecodeSRecordLine(char *source, unsigned char *dest, S_Record *SRec);

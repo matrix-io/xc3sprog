@@ -26,7 +26,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 */
 
 
-
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <memory>
@@ -119,7 +119,7 @@ int main(int argc, char **args)
     char *devicedb = NULL;
     std::auto_ptr<IOBase>  io;
     DeviceDB db(devicedb);
-    int i, res;
+    int res;
    
     // Start from parsing command line arguments
     while(true) {
@@ -221,6 +221,7 @@ args_done:
   idata[0] = BYPASS;
   fprintf(stderr, "Will wait up to 10 seconds for device to reconfigure.");
   fflush(stderr);
+  int i = 0;
   do
     {
       jtag.Usleep(1000);
