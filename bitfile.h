@@ -129,6 +129,9 @@ class BitFile
   // Return length of bitfile in bits.
   inline uint32_t getLength()              { return length*8; }
 
+  // Return length of bitfile in bytes.
+  inline uint32_t getLengthBytes()              { return length; }
+
   inline const char *getError(){
     if(!Error)return("");
     Error=false;

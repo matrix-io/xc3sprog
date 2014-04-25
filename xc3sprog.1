@@ -134,6 +134,28 @@ Dump the device database and cable database to files \fIdevlist.txt\fR and
 \fIcablelist.txt\fR in the current directory. If a file already exists,
 xc3sprog tries to generate a unique name by appending an increasing number.
 
+.TP
+\fB\-X\fR \fIopt\fR[,\fIopt\fR...]
+Set configuration mode for XCFnnP PROM devices. Configuration from
+XCFnnP PROM may be done in several modes, depending on the wiring between
+XCFnnP and FPGA. By default, xc3sprog prepares XCFnnP devices for
+slave serial mode (FPGA running in master serial mode).
+
+To override the defaults, specify a comma-separated list of options.
+The following options are accepted:
+.br
+.TS
+tab (@);
+l l.
+\fBmaster\fR@XCFnnP is master (FPGA is slave)
+\fBslave\fR@XCFnnP is slave (FPGA is master, this is default)
+\fBparallel\fR@Parallel configuration data bus
+\fBserial\fR@Serial configuration data line (default)
+\fBextclk\fR@Use external clock in master mode
+\fBintclk\fR@Use internal clock in master mode
+\fBfastclk\fR@Use fast internal clock
+\fBslowclk\fR@Use slow internal clock
+.TE
 
 .TP
 .B \-v

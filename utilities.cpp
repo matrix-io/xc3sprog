@@ -147,3 +147,19 @@ void xc3sprog_Usleep(unsigned int usec)
 #endif
 }
 
+
+/* Split string on delimiting character. */
+std::vector<std::string> splitString(const std::string& s, char delim)
+{
+  std::vector<std::string> res;
+  for (std::string::size_type i = 0, n = s.size(); i < n; )
+    {
+      std::string::size_type k = s.find(delim, i);
+      if (k == std::string::npos)
+        k = n;
+      res.push_back(s.substr(i, k - i));
+      i = k + 1;
+    }
+  return res;
+}
+

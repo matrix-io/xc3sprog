@@ -23,7 +23,10 @@ class ProgAlgXCFP : public ProgAlg
   unsigned long idcode;
   unsigned int narray;
   unsigned int block_size;
-  virtual int erase(int array_mask);
+  bool ccbParallelMode;
+  bool ccbMasterMode;
+  bool ccbFastClock;
+  bool ccbExternalClock;
 
  public:
   ProgAlgXCFP(Jtag &j, unsigned long id);
@@ -36,9 +39,24 @@ class ProgAlgXCFP : public ProgAlg
   virtual void reconfig();
   virtual void disable();
 
+  void setParallelMode(bool v)      { ccbParallelMode = v; }
+  bool getParallelMode() const      { return ccbParallelMode; }
+
+  void setMasterMode(bool v)        { ccbMasterMode = v; }
+  bool getMasterMode() const        { return ccbMasterMode; }
+
+  void setFastClock(bool v)         { ccbFastClock = v; }
+  bool getFastClock() const         { return ccbFastClock; }
+
+  void setExternalClock(bool v)     { ccbExternalClock = v; }
+  bool getExternalClock() const     { return ccbExternalClock; }
+
  private:
   int  verify_idcode();
   void enable();
+  int  erase(int array_mask);
+  uint16_t encodeCCB() const;
+  void     decodeCCB(uint16_t ccb);
 };
 
 #endif //PROGALGXCFP_H

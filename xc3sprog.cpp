@@ -59,6 +59,8 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgnvm.h"
 #include "utilities.h"
 
+using namespace std;
+
 #define MAXPOSITIONS    8
 
 #define IDCODE_TO_FAMILY(id)        ((id>>21) & 0x7f)
@@ -77,7 +79,8 @@ int programXC3S(Jtag &g, int argc, char **args, bool verbose,
                 bool reconfig, int family);
 int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
                bool verbose, bool erase, bool reconfigure,
-               const char *device, int *chainpositions, int nchainpos);
+               const char *device, int *chainpositions, int nchainpos,
+               const vector<string>& xcfopts);
 int programXC95X(Jtag &jtag, unsigned long id, int argc, char **args, 
                  bool verbose, bool erase, const char *device);
 int programXC2C(Jtag &jtag, unsigned int id, int argc, char ** args, 
@@ -373,6 +376,7 @@ void usage(bool all_options)
   OPT("", "Only used for FTDI cables for now");
   OPT("-D", "Dump internal devlist and cablelist to files");
   OPT(""      , "In ISF Mode, test the SPI connection.");
+  OPT("-X opts", "Set options for XCFxxP programming");
   OPT("-v", "Verbose output.");
 
   fprintf(stderr, "\nProgrammer specific options:\n");
@@ -639,6 +643,7 @@ int main(int argc, char **args)
   int      chainpos     = 0;
   int      nchainpos    = 1;
   int      chainpositions[MAXPOSITIONS] = {0};
+  vector<string> xcfopts;
   int test_count = 0;
   char const *serial  = 0;
   char *bscanfile = 0;
@@ -661,7 +666,7 @@ int main(int argc, char **args)
 
   // Start from parsing command line arguments
   while(true) {
-      int c = getopt(argc, args, "?hCLc:d:DeE:F:i:I::jJ:Lm:o:p:Rs:S:T::v");
+      int c = getopt(argc, args, "?hCLc:d:DeE:F:i:I::jJ:Lm:o:p:Rs:S:T::vX:");
     switch(c) 
     {
     case -1:
@@ -781,7 +786,14 @@ int main(int argc, char **args)
     case 's':
       serial = optarg;
       break;
-      
+
+    case 'X':
+      {
+        vector<string> new_opts = splitString(string(optarg), ',');
+        xcfopts.insert(xcfopts.end(), new_opts.begin(), new_opts.end());
+        break;
+      }
+
     case '?':
     case 'h':
     default:
@@ -887,7 +899,7 @@ int main(int argc, char **args)
           return programXCF(jtag, db, argc, args, verbose,
                             erase, reconfigure,
                             db.getDeviceDescription(chainpos),
-                            chainpositions, nchainpos);
+                            chainpositions, nchainpos, xcfopts);
       }
       else if( family == 0x4b) /* XC95XL XC95XV*/
 	{
@@ -927,16 +939,45 @@ int main(int argc, char **args)
   return 1;
 }
 
-ProgAlg * makeProgAlg(Jtag &jtag, unsigned long id)
+ProgAlg * makeProgAlg(Jtag &jtag, unsigned long id,
+                      const vector<string>& xcfopts, bool checkopts)
 {
   if ((id & 0x000f0000) == 0x00050000)
     {
       // XCFxxP
-      return new ProgAlgXCFP(jtag, id);
+      ProgAlgXCFP *alg = new ProgAlgXCFP(jtag, id);
+      for (size_t i = 0; i < xcfopts.size(); i++)
+        {
+          const char *opt = xcfopts[i].c_str();
+          if (strcasecmp(opt, "parallel") == 0)
+            alg->setParallelMode(true);
+          else if (strcasecmp(opt, "serial") == 0)
+            alg->setParallelMode(false);
+          else if (strcasecmp(opt, "master") == 0)
+            alg->setMasterMode(true);
+          else if (strcasecmp(opt, "slave") == 0)
+            alg->setMasterMode(false);
+          else if (strcasecmp(opt, "fastclk") == 0)
+            alg->setFastClock(true);
+          else if (strcasecmp(opt, "slowclk") == 0)
+            alg->setFastClock(false);
+          else if (strcasecmp(opt, "extclk") == 0)
+            alg->setExternalClock(true);
+          else if (strcasecmp(opt, "intclk") == 0)
+            alg->setExternalClock(false);
+          else if (checkopts)
+            fprintf(stderr, "Ignoring unknown option '%s' for XCFxxP device\n", xcfopts[i].c_str());
+        }
+      return alg;
     }
   else
     {
       // XCFxxS
+      if (checkopts)
+        {
+          for (size_t i = 0; i < xcfopts.size(); i++)
+            fprintf(stderr, "Ignoring unknown option '%s' for XCFxxS device\n", xcfopts[i].c_str());
+        }
       return new ProgAlgXCF(jtag, (id & 0x000ff000) >> 12);
     }
 }
@@ -1021,7 +1062,8 @@ int programXC3S(Jtag &jtag, int argc, char** args,
 
 int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
                bool verbose, bool erase, bool reconfigure,
-               const char *device, int *chainpositions, int nchainpos)
+               const char *device, int *chainpositions, int nchainpos,
+               const vector<string>& xcfopts)
 {
   // identify all specified devices
   unsigned int total_size = 0;
@@ -1035,7 +1077,7 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
           fprintf(stderr, "Multiple positions only supported in case of XCF\n");
           usage(false);
         }
-      std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
+      std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id, xcfopts, true));
       total_size += alg->getSize();
     }
 
@@ -1044,7 +1086,7 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
       for (int k = 0; k < nchainpos; k++)
       {
           unsigned long id = get_id(jtag, db, chainpositions[k]);
-          std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
+          std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id, xcfopts, false));
           alg->erase();
       }
   }
@@ -1100,7 +1142,7 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
       for (int k = 0; k < nchainpos; k++)
       {
           unsigned long id = get_id(jtag, db, chainpositions[k]);
-          std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
+          std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id, xcfopts, false));
           BitFile tmp_bitfile;
           BitFile &cur_bitfile = (nchainpos == 1) ? promfile : tmp_bitfile;
           unsigned int current_promlen = alg->getSize() / 8;
@@ -1189,7 +1231,7 @@ int programXCF(Jtag &jtag, DeviceDB &db, int argc, char **args,
   if (reconfigure)
   {
       unsigned long id = get_id(jtag, db, chainpositions[0]);
-      std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id));
+      std::auto_ptr<ProgAlg> alg(makeProgAlg(jtag, id, xcfopts, false));
       alg->reconfig();
   }
   return 0;
