@@ -10,10 +10,11 @@
  *
  * Programming sequences are based on the Xilinx 1532 BSDL files.
  *
- * Note: Specific XCFP features are currently not supported
- *       (e.g. parallel configuration, multiple revisions).
- *       This code writes defaults to the PROM special registers,
- *       putting it in slave serial mode for revision 00.
+ * Note: Some XCFP features are not supported (such as multiple revisions).
+ *       The special PROM registers are written to always select revision 00.
+ *       The default is slave serial mode (FPGA in master serial mode).
+ *       A few other configuration modes may be selected by calling
+ *       setXxxMode() before programming.
  */
 
 #include <stdio.h>
@@ -54,7 +55,9 @@ ProgAlgXCFP::ProgAlgXCFP(Jtag &j, unsigned long id)
   jtag = &j;
   idcode = id;
 
+  // size of one array in bytes
   block_size = 0x100000;
+
   if (IDCODE_IS_XCF08P(idcode))
     narray = 1;
   else if (IDCODE_IS_XCF16P(idcode))
@@ -66,13 +69,21 @@ ProgAlgXCFP::ProgAlgXCFP(Jtag &j, unsigned long id)
       fprintf(stderr, "Unknown XCF device ID 0x%08lx\n", idcode);
       throw std::invalid_argument("Unknown XCF device");
     }
+
+  // default to slave serial mode (FPGA running in master serial mode)
+  ccbParallelMode  = false;
+  ccbMasterMode    = false;
+  ccbFastClock     = true;
+  ccbExternalClock = true;
+
   fprintf(stderr, "ProgAlgXCFP $Rev$\n");
 }
 
 
 unsigned int ProgAlgXCFP::getSize() const
 {
-    return narray * 32768 * 256;
+    // return storage capacity in bits
+    return narray * block_size * 8;
 }
 
 int ProgAlgXCFP::erase()
@@ -165,7 +176,7 @@ int ProgAlgXCFP::program(BitFile &file)
   int ret = 0;
 
   if (file.getOffset() != 0 ||
-      (file.getRLength() != 0 && file.getRLength() != file.getLength() / 8))
+      (file.getRLength() != 0 && file.getRLength() != file.getLengthBytes()))
     throw std::invalid_argument("XCFP does not yet support bitfile subranges");
  
   jtag->tapTestLogicReset();
@@ -177,34 +188,49 @@ int ProgAlgXCFP::program(BitFile &file)
 
   enable();
 
-  for (unsigned long k = 0; k < narray; k++)
+  unsigned int used_blocks = (file.getLengthBytes() + block_size - 1) / block_size;
+  if (used_blocks == 0)
+    used_blocks = 1;
+  if (used_blocks > narray)
     {
-      for (unsigned long i = 0; i < 32768; i++)
+      fprintf(stderr, "Program does not fit in PROM, clipping\n");
+      used_blocks = narray;
+    }
+
+  for (unsigned int k = 0; k < used_blocks; k++)
+    {
+      for (unsigned int i = 0; i < 32768; i++)
         {
+          unsigned int p = k * block_size + i * 32;
+
+          // no need to program after end of bitfile
+          if (p >= file.getLengthBytes())
+            break;
+
           if (jtag->getVerbose())
-          {
-              fprintf(stderr, "\rProgramming frames 0x%06lx to 0x%06lx     ",
-                      k*block_size+i*32, k*block_size+i*32+31);
-              fflush(stderr);
-          }
-          jtag->shiftIR(ISC_DATA_SHIFT);
-          unsigned long p = (k * 32768 + i) * 256;
-          if (p + 256 <= file.getLength())
             {
-              jtag->shiftDR(file.getData() + p/8, 0, 256);
+              fprintf(stderr, "\rProgramming frames 0x%06x to 0x%06x     ",
+                      p, p+31);
+              fflush(stderr);
+            }
+
+          jtag->shiftIR(ISC_DATA_SHIFT);
+          if (p + 32 <= file.getLengthBytes())
+            {
+              jtag->shiftDR(file.getData() + p, 0, 256);
             }
           else
             {
               memset(data, 0xff, 32);
-              if (p < file.getLength())
-                memcpy(data, file.getData() + p/8, (file.getLength() - p) / 8);
+              if (p < file.getLengthBytes())
+                memcpy(data, file.getData() + p, file.getLengthBytes() - p);
               jtag->shiftDR(data, 0, 256);
             }
           jtag->cycleTCK(1);
 
           if (i == 0)
             {
-              jtag->longToByteArray(k * block_size, data);
+              jtag->longToByteArray(p, data);
               jtag->shiftIR(ISC_ADDRESS_SHIFT);
               jtag->shiftDR(data, 0, 24);
               jtag->cycleTCK(1);
@@ -226,23 +252,16 @@ int ProgAlgXCFP::program(BitFile &file)
               fprintf(stderr,"\nProgramming failed! Aborting\n");
               break;
             }
-
-          // no need to program after end of bitfile
-          if ((k  * 32768 + (i+1)) * 256 >= file.getLength())
-              break;
         }
-
-      // no need to program more arrays after end of bitfile
-      if ((k + 1) * 32768 * 256 >= file.getLength())
-        break;
     }
 
   if (ret == 0)
     {
-      if (jtag->getVerbose())
-        fprintf(stderr, "\nProgramming BTC ");
+      unsigned long btc_data = 0xffffffe0 | ((used_blocks-1) << 2);
 
-      unsigned long btc_data = 0xffffffe0 | ((narray-1) << 2);
+      if (jtag->getVerbose())
+        fprintf(stderr, "\nProgramming BTC=0x%08lx\n", btc_data);
+
       jtag->longToByteArray(btc_data, data);
       jtag->shiftIR(XSC_DATA_BTC);
       jtag->shiftDR(data, 0, 32);
@@ -255,18 +274,19 @@ int ProgAlgXCFP::program(BitFile &file)
       jtag->shiftDR(0, data, 32);
       if (jtag->byteArrayToLong(data) != btc_data)
         {
-          fprintf(stderr,"\nProgramming BTC failed! Aborting\n");
+          fprintf(stderr,"Programming BTC failed! Aborting\n");
           ret = 1;
         }
     }
 
   if (ret == 0)
     {
-      if (jtag->getVerbose())
-        fprintf(stderr, ", CCB ");
+      uint16_t ccb_data = encodeCCB();
 
-      data[0] = 0xff;
-      data[1] = 0xff;
+      if (jtag->getVerbose())
+        fprintf(stderr, "Programming CCB=0x%04x\n", ccb_data);
+
+      jtag->shortToByteArray(ccb_data, data);
       jtag->shiftIR(XSC_DATA_CCB);
       jtag->shiftDR(data, 0, 16);
       jtag->cycleTCK(1);
@@ -276,20 +296,21 @@ int ProgAlgXCFP::program(BitFile &file)
       jtag->shiftIR(XSC_DATA_CCB);
       jtag->cycleTCK(1);
       jtag->shiftDR(0, data, 16);
-      if (data[0] != 0xff || data[1] != 0xff)
+      if (jtag->byteArrayToShort(data) != ccb_data)
         {
-          fprintf(stderr,"\nProgramming CCB failed! Aborting\n");
+          fprintf(stderr,"Programming CCB failed! Aborting\n");
           ret = 1;
         }
     }
 
   if (ret == 0)
     {
-      if (jtag->getVerbose())
-        fprintf(stderr, ", SUCR ");
+      uint16_t sucr_data = 0xfffc;
 
-      data[0] = 0xfc;
-      data[1] = 0xff;
+      if (jtag->getVerbose())
+        fprintf(stderr, "Programming SUCR=0x%04x\n", sucr_data);
+
+      jtag->shortToByteArray(sucr_data, data);
       jtag->shiftIR(XSC_DATA_SUCR);
       jtag->shiftDR(data, 0, 16);
       jtag->cycleTCK(1);
@@ -299,19 +320,20 @@ int ProgAlgXCFP::program(BitFile &file)
       jtag->shiftIR(XSC_DATA_SUCR);
       jtag->cycleTCK(1);
       jtag->shiftDR(0, data, 16);
-      if (data[0] != 0xfc || data[1] != 0xff)
+      if (jtag->byteArrayToShort(data) != sucr_data)
         {
-          fprintf(stderr,"\nProgramming SUCR failed! Aborting\n");
+          fprintf(stderr,"Programming SUCR failed! Aborting\n");
           ret = 1;
         }
     }
 
   if (ret == 0)
     {
-      if (jtag->getVerbose())
-        fprintf(stderr, ", DONE ");
-
       byte done_data = 0xc0 | (0x0f & (0x0f << narray));
+
+      if (jtag->getVerbose())
+        fprintf(stderr, "Programming DONE=0x%02x\n", done_data);
+
       data[0] = done_data;
       jtag->shiftIR(XSC_DATA_DONE);
       jtag->shiftDR(data, 0, 8);
@@ -324,7 +346,7 @@ int ProgAlgXCFP::program(BitFile &file)
       jtag->shiftDR(0, data, 8);
       if (data[0] != done_data)
         {
-          fprintf(stderr,"\nProgramming DONE failed! Aborting\n");
+          fprintf(stderr,"Programming DONE failed! Aborting\n");
           ret = 1;
         }
       else
@@ -350,7 +372,7 @@ int ProgAlgXCFP::verify(BitFile &file)
   int ret = 0;
 
   if (file.getOffset() != 0 ||
-      (file.getRLength() != 0 && file.getRLength() != file.getLength() / 8))
+      (file.getRLength() != 0 && file.getRLength() != file.getLengthBytes()))
     throw std::invalid_argument("XCFP does not yet support bitfile subranges");
 
   jtag->tapTestLogicReset();
@@ -362,29 +384,34 @@ int ProgAlgXCFP::verify(BitFile &file)
 
   enable();
 
-  for (unsigned long k = 0; k < narray; k++)
+  unsigned int used_blocks = (file.getLengthBytes() + block_size - 1) / block_size;
+  if (used_blocks == 0)
+    used_blocks = 1;
+  if (used_blocks > narray)
     {
-      // stop at end of file
-      if (k * 32768 * 256 >= file.getLength())
-        break;
+      fprintf(stderr, "Program does not fit in PROM, clipping\n");
+      used_blocks = narray;
+    }
 
+  for (unsigned int k = 0; k < used_blocks; k++)
+    {
       jtag->longToByteArray(k * block_size, data);
       jtag->shiftIR(ISC_ADDRESS_SHIFT);
       jtag->shiftDR(data, 0, 24);
       jtag->cycleTCK(1);
 
-      for (unsigned long i = 0; i < 32768; i++)
+      for (unsigned int i = 0; i < 32768; i++)
         {
-          unsigned long p = (k * 32768 + i) * 256;
-          unsigned long n = 256;
-          if (p >= file.getLength())
+          unsigned int p = k * block_size + i * 32;
+          unsigned int n = 32;
+          if (p >= file.getLengthBytes())
             break;
-          if (p + n > file.getLength())
-            n = file.getLength() - p;
+          if (p + n > file.getLengthBytes())
+            n = file.getLengthBytes() - p;
 
           if (jtag->getVerbose()) {
-            fprintf(stderr, "\rVerifying frames 0x%06lx to 0x%06lx     ",
-                    k*block_size+i*32, k*block_size+i*32+n/8-1);
+            fprintf(stderr, "\rVerifying frames 0x%06x to 0x%06x     ",
+                    p, p+n-1);
             fflush(stderr);
           }
           jtag->shiftIR(ISC_READ);
@@ -394,11 +421,11 @@ int ProgAlgXCFP::verify(BitFile &file)
           jtag->cycleTCK(1);
           jtag->shiftDR(0, data, 256);
 
-          if (memcmp(data, file.getData() + p/8, n/8))
+          if (memcmp(data, file.getData() + p, n))
             {
               ret = 1;
-	      fprintf(stderr, "\nVerify failed at frame 0x%06lx to 0x%06lx\n",
-		      k*block_size+i*32, k*block_size+i*32+n/8-1);
+	      fprintf(stderr, "\nVerify failed at frame 0x%06x to 0x%06x\n",
+		      p, p+n-1);
               break;
             }
         }
@@ -409,7 +436,7 @@ int ProgAlgXCFP::verify(BitFile &file)
 
   if (jtag->getVerbose())
     fprintf(stderr, "\nVerifying BTC  ");
-  unsigned long btc_data = 0xffffffe0 | ((narray-1) << 2);
+  unsigned long btc_data = 0xffffffe0 | ((used_blocks-1) << 2);
   jtag->shiftIR(XSC_DATA_BTC);
   jtag->cycleTCK(1);
   jtag->shiftDR(0, data, 32);
@@ -427,8 +454,8 @@ int ProgAlgXCFP::verify(BitFile &file)
   jtag->cycleTCK(1);
   jtag->shiftDR(0, data, 16);
   if (jtag->getVerbose())
-    fprintf(stderr, "= 0x%02x%02x\n", data[1], data[0]);
-  if (data[0] != 0xff || data[1] != 0xff)
+    fprintf(stderr, "= 0x%04x\n", jtag->byteArrayToShort(data));
+  if (jtag->byteArrayToShort(data) != encodeCCB())
     {
       fprintf(stderr, "Unexpected value in CCB register\n");
       ret = 1;
@@ -503,6 +530,10 @@ int ProgAlgXCFP::read(BitFile &file)
 
   unsigned int first_block = btc_data & 0x03;
   unsigned int last_block  = (btc_data & 0x0c) >> 2;
+
+  if (jtag->getVerbose())
+    fprintf(stderr, "BTC: first_block=%u, last_block=%u, content_len=%u bytes\n", first_block, last_block, (last_block + 1 - first_block) * block_size);
+
   if (first_block > last_block || last_block >= narray)
     {
       fprintf(stderr, "Invalid data in BTC register: first_block=%u, last_block=%u\n", first_block, last_block);
@@ -512,28 +543,28 @@ int ProgAlgXCFP::read(BitFile &file)
 
   file.setLength((last_block - first_block + 1) * 32768 * 256);
 
-  for (unsigned long k = first_block; k <= last_block; k++)
+  for (unsigned int k = first_block; k <= last_block; k++)
     {
       jtag->longToByteArray(k * block_size, data);
       jtag->shiftIR(ISC_ADDRESS_SHIFT);
       jtag->shiftDR(data, 0, 24);
       jtag->cycleTCK(1);
 
-      for (unsigned long i = 0; i < 32768; i++)
+      for (unsigned int i = 0; i < 32768; i++)
         {
           if (jtag->getVerbose())
           {
-              fprintf(stderr, "\rReading frames 0x%06lx to 0x%06lx     ",
+              fprintf(stderr, "\rReading frames 0x%06x to 0x%06x     ",
                       k*block_size+i*32,k*block_size+i*32+31);
               fflush(stderr);
           }
           jtag->shiftIR(ISC_READ);
           jtag->Usleep(25);
 
-          unsigned long p = ((k - first_block) * 32768 + i) * 256;
+          unsigned int p = (k - first_block) * block_size + i * 32;
           jtag->shiftIR(ISC_DATA_SHIFT);
           jtag->cycleTCK(1);
-          jtag->shiftDR(0, file.getData() + p/8, 256);
+          jtag->shiftDR(0, file.getData() + p, 256);
         }
     }
 
@@ -544,7 +575,15 @@ int ProgAlgXCFP::read(BitFile &file)
   jtag->cycleTCK(1);
   jtag->shiftDR(0, data, 16);
   if (jtag->getVerbose())
-    fprintf(stderr, "CCB  = 0x%02x%02x\n", data[1], data[0]);
+    fprintf(stderr, "CCB  = 0x%04x\n", jtag->byteArrayToShort(data));
+
+  decodeCCB(jtag->byteArrayToShort(data));
+  if (jtag->getVerbose())
+    fprintf(stderr, "CCB: %s, %s, %s, %s\n",
+            ccbMasterMode ? "master" : "slave",
+            ccbParallelMode ? "parallel" : "serial",
+            ccbExternalClock ? "extclk" : "intclk",
+            ccbFastClock ? "fastclk" : "slowclk" );
 
   jtag->shiftIR(XSC_DATA_DONE);
   jtag->cycleTCK(1);
@@ -609,5 +648,28 @@ void ProgAlgXCFP::disable()
   jtag->shiftIR(BYPASS);
   jtag->cycleTCK(1);
   jtag->tapTestLogicReset();
+}
+
+
+uint16_t ProgAlgXCFP::encodeCCB() const
+{
+  // The CCB register in the XCFnnP PROM deteremines the FPGA configuration
+  // mode, i.e. parallel or serial, master or slave, config clock, etc.
+  // See xcf32p_1532.bsd.
+  uint16_t ccb = 0xffc0;
+  ccb |= ccbParallelMode  ? 0x00 : 0x06;
+  ccb |= ccbMasterMode    ? 0x00 : 0x08;
+  ccb |= ccbFastClock     ? 0x30 : 0x10;
+  ccb |= ccbExternalClock ? 0x01 : 0x00;
+  return ccb;
+}
+
+
+void ProgAlgXCFP::decodeCCB(uint16_t ccb)
+{
+  ccbParallelMode  = ((ccb & 0x06) == 0x00);
+  ccbMasterMode    = ((ccb & 0x08) == 0x00);
+  ccbFastClock     = ((ccb & 0x20) == 0x20);
+  ccbExternalClock = ((ccb & 0x01) == 0x01);
 }
 

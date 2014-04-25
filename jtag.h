@@ -124,6 +124,9 @@ class Jtag
     return ((unsigned long)b[3]<<24)+((unsigned long)b[2]<<16)+
       ((unsigned long)b[1]<<8)+(unsigned long)b[0];
   }
+  static inline uint16_t byteArrayToShort(const byte *b) {
+    return ((uint16_t)b[0]) | (((uint16_t)b[1]) << 8);
+  }
 };
 
 #endif //JTAG_H

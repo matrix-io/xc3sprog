@@ -1,5 +1,6 @@
 #include <sys/time.h>
 #include <memory>
+#include <vector>
 #include "bitfile.h"
 
 #include "devicedb.h"
@@ -18,6 +19,10 @@ void xc3sprog_Usleep(unsigned int usec);
 
 #define OSNAME_LEN	64
 void get_os_name(char *buf, int buflen);
+
+
+/* Split string on delimiting character. */
+std::vector<std::string> splitString(const std::string& s, char delim);
 
 
 /* Utility class for measuring execution times. */
