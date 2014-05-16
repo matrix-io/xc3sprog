@@ -227,6 +227,8 @@
 05026093      8  0xfd XC18V04
 05023093      8  0xfd XC18V512
 
+0a001093      8  0x09 SystemACE
+
 ##Atmel
 #list should not care for the version part
 0978203f      4   0x1 AT90USB
