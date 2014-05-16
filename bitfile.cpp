@@ -621,7 +621,7 @@ void BitFile::set_bit(unsigned int idx, int blow)
   bval = idx / 8;
   if(bval >= length)
     {
-      fprintf(stderr,"set_bit invalid index %d lenght %d\n", idx, length*8);
+      fprintf(stderr,"set_bit invalid index %d length %d\n", idx, length*8);
       throw  io_exception(std::string("bit_set_fuse"));
     }
   bit  = idx % 8;
