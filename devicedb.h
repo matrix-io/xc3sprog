@@ -28,37 +28,40 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include <vector>
 #include <string>
-#include <sys/types.h>
 #include <stdint.h>
 
-typedef unsigned char byte;
+
+// Integer type to hold device IDCODE.
+typedef uint32_t DeviceID;
 
 
 class DeviceDB
 {
  private:
-  struct device_t
-  {
-    uint32_t idcode; // Store IDCODE
-    int irlen; // instruction register length.
-    int id_cmd; // instruction register length.
-    std::string text;
+  struct device_t {
+    DeviceID idcode;    // IDCODE of this device
+    int      irlen;     // instruction register length.
+    uint32_t id_cmd;    // instruction to request IDCODE
+    std::string text;   // description
   };
-  std::vector<device_t> id_db;
-  std::vector<device_t> devices;
-  std::string  filename;
+
+  std::vector<device_t>  dev_db;
+  std::vector<device_t*> dev_used;
+  std::string filename;
 
  public:
   DeviceDB(const char *fname);
 
- public:
-  std::string const& getFile() const { return  filename; }
+  std::string getFile() const { return filename; }
 
-  int loadDevice(const uint32_t id);
-  int getIRLength(unsigned int i);
-  int getIDCmd(unsigned int i);
-  const char *getDeviceDescription(unsigned int i);
-  int dumpDevices(FILE *fp_out);
+  int idToIRLength(DeviceID idcode);
+  uint32_t idToIDCmd(DeviceID idcode);
+  const char * idToDescription(DeviceID idcode);
+  int dumpDevices(FILE *fp_out) const;
+
+ private:
+  int parseLine(const char *linebuf);
+  const device_t * findDevice(DeviceID idcode);
 };
 
 #endif

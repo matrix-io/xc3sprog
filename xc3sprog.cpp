@@ -145,24 +145,25 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 
   for(i=0; i<num; i++)
     {
-      int k;
       jtag->setTapState(Jtag::TEST_LOGIC_RESET);
       jtag->selectDevice(i);
-      k = db.getIRLength(i);
-      if (k == 0)
+      DeviceID id = jtag->getDeviceID(i);
+      int irlen = db.idToIRLength(id);
+      if (irlen == 0)
       {
           run_irtest++;
           break;
       }
-      for (j = 0; j < db.getIRLength(i); j = j+8)
-        ir_in[j>>3] =  (db.getIDCmd(i)>>j) & 0xff;
+      uint32_t idcmd = db.idToIDCmd(id);
+      for (j = 0; j < irlen; j = j+8)
+        ir_in[j>>3] = (idcmd>>j) & 0xff;
       jtag->shiftIR(ir_in, ir_out);
       jtag->cycleTCK(1);
       jtag->shiftDR(NULL, &dout[i*4], 32);
-      if (jtag->byteArrayToLong(dout+i*4) != jtag->getDeviceID(i))
+      if (jtag->byteArrayToLong(dout+i*4) != id)
 	{
 	  fprintf(stderr, "IDCODE mismatch pos %d Read 0x%08lx vs 0x%08lx\n",
-		  i, jtag->byteArrayToLong(dout+i*4), jtag->getDeviceID(i));
+		  i, jtag->byteArrayToLong(dout+i*4), (unsigned long)id);
 	  run_irtest++;
 	}
     }
@@ -172,9 +173,7 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
       fprintf(stderr, "Running IR_TEST %d  times\n", test_count);
       /* exercise the chain */
       for(i=0; i<num; i++)
-	{
-	  len += db.loadDevice(jtag->getDeviceID(i));
-	}
+        len += db.idToIRLength(jtag->getDeviceID(i));
       fprintf(stderr, "IR len = %d\n", len);
       jtag->setTapState(Jtag::TEST_LOGIC_RESET);
       jtag->setTapState(Jtag::SHIFT_IR);
@@ -187,7 +186,8 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
       k=len-1;
       for(i = 0; i<num; i++)
 	{
-	  for(j=0; j<db.getIRLength(i); j++)
+          int irlen = db.idToIRLength(jtag->getDeviceID(i));
+	  for(j=0; j<irlen; j++)
 	    {
 	      fprintf(stderr, "%c", 
 		      (((dout[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
@@ -211,7 +211,8 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
 	      fprintf(stderr, " ");	      k=len-1;
 	      for(i = 0; i<num; i++)
 		{
-		  for(j=0; j<db.getIRLength(i); j++)
+                  int irlen = db.idToIRLength(jtag->getDeviceID(i));
+		  for(j=0; j<irlen; j++)
 		    {
 		      fprintf(stderr, "%c",
 			      (((dcmp[k>>3]>>(k&0x7)) &0x01) == 0x01)?'1':'0');
@@ -236,9 +237,11 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
       /* exercise the chain */
       for(i=num-1; i>=0 && !do_exit; i--)
 	{
-	  for(j=0; j< db.getIRLength(i); j++)
+          int irlen = db.idToIRLength(jtag->getDeviceID(i));
+          uint32_t idcmd = db.idToIDCmd(jtag->getDeviceID(i));
+	  for(j=0; j<irlen; j++)
 	    {
-	      char l = (db.getIDCmd(i) & (1<<j))?1:0;
+	      char l = (idcmd & (1<<j))?1:0;
 	      ir_in[len>>3] |= ((l)?(1<<(len & 0x7)):0);
 	      len++;
 	      jtag->longToByteArray(jtag->getDeviceID(i), dcmp+((num -1 -i)*4)); 
@@ -250,7 +253,7 @@ void test_IRChain(Jtag *jtag, IOBase *io,DeviceDB &db , int test_count)
       fprintf(stderr, "\n");
       fprintf(stderr, "Expecting %d IDCODES  :", num);
       for(i=num-1; i >= 0;  i--)
-	fprintf(stderr, " 0x%08lx", jtag->getDeviceID(i));
+	fprintf(stderr, " 0x%08lx", (unsigned long) jtag->getDeviceID(i));
 
       jtag->tapTestLogicReset();
       for(i=0; i<test_count&& !do_exit; i++)
@@ -294,8 +297,8 @@ int init_chain(Jtag &jtag, DeviceDB &db)
   // Synchronise database with chain of devices.
   for (int i=0; i<num; i++){
     unsigned long id = jtag.getDeviceID(i);
-    int length=db.loadDevice(id);
-    if (length>0)
+    int length = db.idToIRLength(id);
+    if (length > 0)
       jtag.setDeviceIRLength(i,length);
     else
       {
@@ -319,12 +322,11 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
               chainpos, num);
       return 0;
     }
-  const char *dd=db.getDeviceDescription(chainpos);
   unsigned long id = jtag.getDeviceID(chainpos);
   if (verbose && (last_pos != chainpos))
     {
       fprintf(stderr, "JTAG chainpos: %d Device IDCODE = 0x%08lx\tDesc: %s\n",
-              chainpos, id, dd);
+              chainpos, id, db.idToDescription(id));
       fflush(stderr);
       last_pos = chainpos;
     }
@@ -868,7 +870,7 @@ int main(int argc, char **args)
   if(spiflash)
       return programSPI(jtag, argc, args, verbose, erase,
                         reconfigure, test_count, 
-                        bscanfile, family, db.getDeviceDescription(chainpos));
+                        bscanfile, family, db.idToDescription(id));
   else if (manufacturer == MANUFACTURER_XILINX)
     {
       /* Probably XC4V and XC5V should work too. No devices to test at IKDA */
@@ -898,35 +900,35 @@ int main(int argc, char **args)
       {
           return programXCF(jtag, db, argc, args, verbose,
                             erase, reconfigure,
-                            db.getDeviceDescription(chainpos),
+                            db.idToDescription(id),
                             chainpositions, nchainpos, xcfopts);
       }
       else if( family == 0x4b) /* XC95XL XC95XV*/
 	{
 	  return programXC95X(jtag, id, argc,args, verbose, erase,
-			      db.getDeviceDescription(chainpos));
+			      db.idToDescription(id));
 	}
       else if ((family & 0x7e) == 0x36) /* XC2C */
 	{
             return programXC2C(jtag, id, argc, args, verbose, erase,
-                               mapdir, db.getDeviceDescription(chainpos));
+                               mapdir, db.idToDescription(id));
 	}
       else 
 	{
 	  fprintf(stderr,
 		  "Sorry, can't program Xilinx device '%s' from family 0x%02x "
 		  "A more recent release may be able to.\n", 
-		  db.getDeviceDescription(chainpos), family);
+		  db.idToDescription(id), family);
 	  return 1;
 	}
     }
   else if  ( manufacturer == MANUFACTURER_ATMEL)
     {
-	switch(db.getIDCmd(chainpos))
+	switch(db.idToIDCmd(id))
 	{
 	case 3:
 	    return programXMega(&jtag, id, argc, args, verbose, erase, reconfigure,
-				db.getDeviceDescription(chainpos));
+				db.idToDescription(id));
 	default:
 	    return jAVR (jtag, id, args[0],verify, lock, eepromfile, fusefile);
 	}
@@ -935,7 +937,7 @@ int main(int argc, char **args)
     fprintf(stderr,
 	    "Sorry, can't program device '%s' from manufacturer 0x%02x "
 	    "A more recent release may be able to.\n", 
-	    db.getDeviceDescription(chainpos), manufacturer);
+	    db.idToDescription(id), manufacturer);
   return 1;
 }
 
