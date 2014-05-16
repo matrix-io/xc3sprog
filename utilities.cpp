@@ -16,23 +16,23 @@
 extern char *optarg;
 void detect_chain(Jtag *jtag, DeviceDB *db)
 {
-  int dblast=0;
   int num=jtag->getChain();
   for(int i=0; i<num; i++)
     {
-      unsigned long id=jtag->getDeviceID(i);
-      int length=db->loadDevice(id);
-      fprintf(stderr,"JTAG loc.: %3d  IDCODE: 0x%08lx  ", i, id);
-      if(length>0){
-	jtag->setDeviceIRLength(i,length);
-	fprintf(stderr,"Desc: %30s Rev: %c  IR length: %2d\n",
-		db->getDeviceDescription(dblast),
-                (int)(id >> 28) | 'A', length);
-	dblast++;
-      } 
-      else{
-	fprintf(stderr,"not found in '%s'.\n", db->getFile().c_str());
-      }
+      DeviceID id = jtag->getDeviceID(i);
+      fprintf(stderr,"JTAG loc.: %3d  IDCODE: 0x%08lx  ", i, (unsigned long)id);
+      int length = db->idToIRLength(id);
+      if (length > 0)
+        {
+          jtag->setDeviceIRLength(i,length);
+          fprintf(stderr,"Desc: %30s Rev: %c  IR length: %2d\n",
+                  db->idToDescription(id),
+                  (int)(id >> 28) | 'A', length);
+        }
+      else
+        {
+          fprintf(stderr,"not found in '%s'.\n", db->getFile().c_str());
+        }
     }
 }
 

@@ -71,7 +71,7 @@ void usage(void)
 unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
 {
   int num=jtag.getChain();
-  unsigned int id;
+  DeviceID id;
 
   if (num == 0)
     {
@@ -80,13 +80,15 @@ unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
     }
   // Synchronise database with chain of devices.
   for(int i=0; i<num; i++){
-    int length=db.loadDevice(jtag.getDeviceID(i));
-    if(length>0)jtag.setDeviceIRLength(i,length);
-    else{
-      id=jtag.getDeviceID(i);
-      fprintf(stderr,"Cannot find device having IDCODE=%08x\n",id);
-      return 0;
-    }
+    id = jtag.getDeviceID(i);
+    int length = db.idToIRLength(id);
+    if (length > 0)
+      jtag.setDeviceIRLength(i, length);
+    else
+      {
+        fprintf(stderr,"Cannot find device having IDCODE=%08lx\n", (unsigned long)id);
+        return 0;
+      }
   }
   
   if(jtag.selectDevice(chainpos)<0){
@@ -94,13 +96,13 @@ unsigned int get_id(Jtag &jtag, DeviceDB &db, int chainpos, bool verbose)
     return 0;
   }
 
-  const char *dd=db.getDeviceDescription(chainpos);
   id = jtag.getDeviceID(chainpos);
   if (verbose)
   {
-    printf("JTAG chainpos: %d Device IDCODE = 0x%08x\tDesc: %s\nProgramming: ", chainpos,id, dd);
+    printf("JTAG chainpos: %d Device IDCODE = 0x%08lx Desc: %s\nProgramming: ", chainpos, (unsigned long)id, db.idToDescription(id));
     fflush(stdout);
   }
+
   return id;
 }
   

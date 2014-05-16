@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
- #include <unistd.h>
+#include <unistd.h>
 #include <memory>
 
 #include "srecdec.h"
@@ -265,7 +265,7 @@ int main(int argc, char **args)
     }
   
   // Produce release info from CVS tags
-  printf("Release $Rev: 630 $\nPlease provide feedback on success/failure/enhancement requests! Check Sourceforge SVN!\n");
+  printf("Release $Rev$\nPlease provide feedback on success/failure/enhancement requests! Check Sourceforge SVN!\n");
 
   CableDB cabledb(0);
   res = cabledb.getCable(cablename, &cable);
@@ -281,17 +281,15 @@ int main(int argc, char **args)
   if (verbose)
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
   int num=jtag.getChain();
-  int dblast=0;
   for(int i=0; i<num; i++){
-    unsigned long id=jtag.getDeviceID(i);
+    unsigned long id = jtag.getDeviceID(i);
     if (!id || (id == (unsigned long) -1))
       continue;
-    int length=db.loadDevice(id);
     printf("IDCODE: 0x%08lx",id);
+    int length = db.idToIRLength(id);
     if(length>0){
       jtag.setDeviceIRLength(i,length);
-      printf(" Desc: %15s IR length: %d\n",db.getDeviceDescription(dblast),length);
-      dblast++;
+      printf(" Desc: %15s IR length: %d\n",db.idToDescription(id),length);
     } 
     else{
       printf("not found in '%s'.\n", db.getFile().c_str());

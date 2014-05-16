@@ -27,6 +27,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define JTAG_H
 
 #include <stdio.h>
+#include <stdint.h>
 #include <vector>
 
 #include "iobase.h"
@@ -37,6 +38,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #endif
 
 typedef unsigned char byte;
+typedef uint32_t DeviceID;
 
 class Jtag
 {
@@ -68,7 +70,7 @@ class Jtag
  protected:
   struct chainParam_t
   {
-    unsigned long idcode; // Store IDCODE
+    DeviceID idcode; // Store IDCODE
     //byte bypass[4]; // The bypass instruction. Most instruction register lengths are a lot less than 32 bits.
     int irlen; // instruction register length.
   };
@@ -96,7 +98,7 @@ class Jtag
   void cycleTCK(int n, bool tdi=1);
   tapState_t getTapState(void);
   int setDeviceIRLength(int dev, int len);
-  unsigned long getDeviceID(unsigned int dev){
+  DeviceID getDeviceID(unsigned int dev){
     if(dev>=devices.size())return 0;
     return devices[dev].idcode;
   }

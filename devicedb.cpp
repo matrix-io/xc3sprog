@@ -30,6 +30,7 @@ Dmitry Teytelman [dimtey@gmail.com] 19 May 2006 [applied 13 Aug 2006]:
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <cstdio>
 #include "devicedb.h"
 
@@ -37,116 +38,166 @@ Dmitry Teytelman [dimtey@gmail.com] 19 May 2006 [applied 13 Aug 2006]:
 
 using namespace std;
 
-DeviceDB::DeviceDB(const char *fname) {
-  device_t id;
-  char text[256];
-  int irlen;
-  uint32_t idr;
-  int id_cmd;
+
+DeviceDB::DeviceDB(const char *fname)
+{
   // Fall back to environment or default if no file specified
-  if(!fname) {
-    if(!(fname = getenv("XCDB")))  fname = DEVICEDB;
-  }
-  
+  if (!fname)
+    {
+      fname = getenv("XCDB");
+      if (!fname)
+        fname = DEVICEDB;
+    }
+
   FILE *fp=fopen(fname,"rt");
   if(fp)
     {
+      // Read device list from file.
       filename = fname;
-      while(!feof(fp))
-	{
-	  char buffer[256];
-	  fgets(buffer,256,fp);  // Get next line from file
-	  if (sscanf(buffer,"%08x %d %x %s", &idr, &irlen, &id_cmd, text) == 4)
-	    {
-	      id.text = text;
-	      id.idcode = idr & 0x0fffffff; /* Mask out revisions*/
-	      id.irlen = irlen;
-	      id.id_cmd = id_cmd;
-	      id_db.push_back(id);
-	    }
-	}
+      int lineno = 0;
+      while (!feof(fp))
+        {
+          char buffer[256];
+          // read next line from file
+          if (fgets(buffer,256,fp) == NULL)
+            break;
+          lineno++;
+          if (parseLine(buffer) != 0)
+            fprintf(stderr, "ERROR: Invalid syntax in device list '%s' line %d\n", fname, lineno);
+        }
       fclose(fp);
     }
   else
     {
-      char buffer[256];
+      // Read devce list from built-in data.
       const char *p = fb_string;
-      
       filename = "built-in device list";
-      while(*p)
-	{
-	  int i;
-	  for(i=0; p[i] && (p[i] != ';'); i++)
-	    {
-	      buffer[i] = p[i];
-	    }
-	  p += i;
-	  buffer[i] = 0;
-	  while(*p && *p == ';')
-	    p++;
-	  if (i &&  (sscanf(buffer,"%08x %d %x %s", &idr, &irlen, &id_cmd, text) == 4))
-	    {
-	      id.text = text;
-	      id.idcode = idr & 0x0fffffff; /* Mask out revisions*/
-	      id.irlen = irlen;
-	      id.id_cmd = id_cmd;
-	      id_db.push_back(id);
-	    }
-	}
+      int lineno = 0;
+      while (*p != '\0')
+        {
+          char buffer[256];
+          unsigned int i;
+          for (i = 0; i < sizeof(buffer) - 1; i++)
+            {
+              if (p[i] == '\0' || p[i] == ';')
+                break;
+              buffer[i] = p[i];
+            }
+          buffer[i] = '\0';
+          p += i;
+          if (*p == ';')
+            p++;
+          lineno++;
+          if (parseLine(buffer) != 0)
+            fprintf(stderr, "ERROR: Invalid syntax in built-in device list line %d\n", lineno);
+        }
     }
 }
 
-int DeviceDB::loadDevice(const uint32_t id)
+
+// Parse one line from a device list file.
+// If the file contains a device description, add it to the database.
+// Return 0 on success, -1 on error.
+int DeviceDB::parseLine(const char *linebuf)
 {
-   uint32_t i;
-  for (i=0; i<id_db.size(); i++)
+  // ignore comment lines
+  if (linebuf[0] == '#')
+    return 0;
+
+  // ignore empty lines
+  for (unsigned int i = 0; ; i++)
     {
-      if((id & 0x0fffffff) == id_db[i].idcode)
-	{
-	  device_t dev;
-	  dev.text=id_db[i].text;
-	  dev.idcode=id_db[i].idcode;
-	  dev.irlen=id_db[i].irlen;
-	  dev.id_cmd=id_db[i].id_cmd;
-	  devices.push_back(dev);
-	  return dev.irlen;
-	}
+      if (linebuf[i] == '\0')
+        return 0;
+      if (!isspace(linebuf[i]))
+        break;
     }
+
+  device_t dev;
+  unsigned int idcode;
+  int irlen;
+  unsigned int id_cmd;
+
+  // allocate buffer for description
+  vector<char> textvec(strlen(linebuf) + 1);
+  char *textbuf = &(textvec.front());
+
+  // parse line: idcode, irlength, idcommand, description
+  if (sscanf(linebuf, "%08x %d %x %s", &idcode, &irlen, &id_cmd, textbuf) != 4)
+    return -1;
+
+  // add to database
+  dev.idcode = idcode & 0x0fffffff;
+  dev.irlen  = irlen;
+  dev.id_cmd = id_cmd;
+  dev.text   = string(textbuf);
+  dev_db.push_back(dev);
+
   return 0;
 }
 
-int DeviceDB::getIRLength(unsigned int i)
+
+// Find the device with specified IDCODE and return its properties.
+const DeviceDB::device_t * DeviceDB::findDevice(DeviceID idcode)
 {
-  if(i >= devices.size())return 0;
-  return devices[i].irlen;
+  // look in list of recently used devices
+  for (unsigned int i = 0, n = dev_used.size(); i < n; i++)
+    {
+      if ((idcode & 0x0fffffff) == dev_used[i]->idcode)
+        return dev_used[i];
+    }
+
+  // look in list of all devices
+  for (unsigned int i = 0, n = dev_db.size(); i < n; i++)
+    {
+      if ((idcode & 0x0fffffff) == dev_db[i].idcode)
+        {
+          dev_used.push_back(&(dev_db[i]));
+          return &(dev_db[i]);
+        }
+    }
+
+  // unknown device
+  return NULL;
 }
 
-int DeviceDB::getIDCmd(unsigned int i)
+
+// Find the device with specified IDCODE and return its IR length,
+// or return 0 if the IDCODE is unknown.
+int DeviceDB::idToIRLength(DeviceID idcode)
 {
-  if(i >= devices.size())return 0;
-  return devices[i].id_cmd;
+    const device_t *dev = findDevice(idcode);
+    return (dev) ? (dev->irlen) : 0;
 }
 
-const char *DeviceDB::getDeviceDescription(unsigned int i)
+
+// Find the device with specified IDCODE and returns its IDCODE instruction.
+uint32_t DeviceDB::idToIDCmd(DeviceID idcode)
 {
-  if(i>=devices.size())return 0;
-  return devices[i].text.c_str();
+    const device_t *dev = findDevice(idcode);
+    return (dev) ? (dev->id_cmd) : 0;
 }
 
-int DeviceDB::dumpDevices(FILE *fp_out)
+
+// Find the device with specified IDCODE and return a description,
+// or return NULL if the IDCODE is unknown.
+const char * DeviceDB::idToDescription(DeviceID idcode)
+{
+    const device_t *dev = findDevice(idcode);
+    return (dev) ? (dev->text.c_str()) : NULL;
+}
+
+
+int DeviceDB::dumpDevices(FILE *fp_out) const
 {
     unsigned int i;
 
-    if (!fp_out)
-    {
-        fprintf(stderr," No valid file to dump Cablelist\n");
-        return 1;
-    }
-    for(i = 0; i < id_db.size(); i++)
+    for(i = 0; i < dev_db.size(); i++)
         fprintf(fp_out,"%08x %6d 0x%04x %s\n",
-                id_db[i].idcode,
-                id_db[i].irlen,
-                id_db[i].id_cmd,
-                id_db[i].text.c_str());
+                (unsigned int)dev_db[i].idcode,
+                dev_db[i].irlen,
+                (unsigned int)dev_db[i].id_cmd,
+                dev_db[i].text.c_str());
     return 0;
-}       
+}
+
