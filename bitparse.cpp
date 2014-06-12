@@ -36,8 +36,8 @@ void usage() {
 	  "\nUsage:bitparse [-i input format] [-o output format ][-O outfile] infile\n"	  "   -h\t\tprint this help\n"
 	  "   -v\t\tverbose output\n"
 	  "   -O\t\toutput file (parse input file only if not given\n"
-	  "   -i\t\tinput  file format (BIT|BIN|HEX|MCS|IHEX)\n"
-	  "   -o\t\toutput file format (BIT|BIN|HEX|MCS|IHEX)\n");
+	  "   -i\t\tinput  file format (BIT|BIN|BPI|HEX|MCS|IHEX)\n"
+	  "   -o\t\toutput file format (BIT|BIN|BPI|HEX|MCS|IHEX)\n");
   exit(255);
 }
 

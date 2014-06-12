@@ -14,8 +14,8 @@ void usage() {
 	  "   -v\t\tverbose output\n"
 	  "   -m\t\tDirectory containg Map files\n"
 	  "   -O\t\toutput file (parse input file only if not given\n"
-	  "   -i\t\tintput file format (BIT|BIN|HEX)\n"
-	  "   -o\t\toutput file format (BIT|BIN|HEX)\n");
+	  "   -i\t\tintput file format (BIT|BIN|BPI|HEX)\n"
+	  "   -o\t\toutput file format (BIT|BIN|BPI|HEX)\n");
    exit(255);
 }
 

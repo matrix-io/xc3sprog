@@ -346,9 +346,10 @@ void usage(bool all_options)
   fprintf(stderr, "\tR: Read from device and write to file, overwrite existing file\n");
   fprintf(stderr, "\tDefault action is 'w'\n\n");
   fprintf(stderr, "\tDefault offset is 0\n\n");
-  fprintf(stderr, "\tstyle: One of BIT|BIN|MCS|IHEX|HEX\n");
+  fprintf(stderr, "\tstyle: One of BIT|BIN|BPI|MCS|IHEX|HEX\n");
   fprintf(stderr, "\tBIT: Xilinx .bit format\n");
   fprintf(stderr, "\tBIN: Binary format\n");
+  fprintf(stderr, "\tBPI: Binary format not bit reversed\n");
   fprintf(stderr, "\tMCS: Intel Hex File, LSB first\n");
   fprintf(stderr, "\tIHEX: INTEL Hex format, MSB first (Use for Xilinx .mcs files!)\n");
   fprintf(stderr, "\tHEX:  Hex dump format\n");

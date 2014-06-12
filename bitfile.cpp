@@ -86,9 +86,9 @@ int BitFile::readBitfile(FILE *fp)
   return 0;
 }
 
-/* Read in whole file with bitflip */
+/* Read in whole file with or without bitflip */
 
-int  BitFile::readBIN(FILE *fp)
+int  BitFile::readBIN(FILE *fp, bool do_bitrev)
 {
     unsigned int i;
 
@@ -100,6 +100,10 @@ int  BitFile::readBIN(FILE *fp)
     if (buffer == 0)
         return 1;
     fread(buffer,1, length, fp);
+
+    if (!do_bitrev)
+	    return 0;
+
     for(i=0; i<length; i++)
     {
         unsigned char data = buffer[i];
@@ -318,7 +322,9 @@ int BitFile::readFile(FILE *fp, FILE_STYLE in_style)
     case STYLE_HEX_RAW:
         return readHEXRAW(fp);
     case STYLE_BIN:
-        return readBIN(fp);
+        return readBIN(fp, true);
+    case STYLE_BPI:
+        return readBIN(fp, false);
     default: fprintf(stderr, " Unhandled style %s\n",styleToString(in_style));
       return 1;
     }
@@ -477,6 +483,7 @@ uint32_t BitFile::saveAs(FILE_STYLE style, const char  *device,
     {
     case STYLE_BIT:
     case STYLE_BIN:
+    case STYLE_BPI:
       if(style == STYLE_BIT)
 	{
 	  uint8_t buffer[256] = {0x00, 0x09, 0x0f, 0xf0, 0x0f, 0xf0, 0x0f, 0xf0,
@@ -522,7 +529,11 @@ uint32_t BitFile::saveAs(FILE_STYLE style, const char  *device,
 	}
       for(i=0; i<clip; i++)
 	{
-	  byte b=bitRevTable[buffer[i]]; // Reverse bit order
+	  byte b;
+	  if (style != STYLE_BPI)
+		  b = bitRevTable[buffer[i]]; // Reverse bit order
+	  else
+		  b = buffer[i];
 	  fwrite(&b,1,1,fp);
 	}
       break;
@@ -678,6 +689,8 @@ int BitFile::styleFromString(const char *stylestr, FILE_STYLE *style)
 	*style = STYLE_BIT;
     else if (!strncasecmp(stylestr, "BIN", len))
 	*style = STYLE_BIN;
+    else if (!strncasecmp(stylestr, "BPI", len))
+	*style = STYLE_BPI;
     else if (!strncasecmp(stylestr, "HEX", len))
 	*style = STYLE_HEX;
     else if (!strncasecmp(stylestr, "HEXRAW", len))
