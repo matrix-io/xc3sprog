@@ -302,6 +302,9 @@
 3BA00477     4   0xe ARM_Cortex-M3_r1p1-01rel0
 4BA00477     4   0xe ARM-Cortex-M4F_r0p1
 
+#Analog Devices
+027c80cb      5 0x0002 ADSP-BF537
+
 #Unsure about IR_Len...
 0270817f     11  0x1 BCM2835
 
