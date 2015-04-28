@@ -435,7 +435,14 @@ FILE *getFile_and_Attribute_from_name(
     else
     {
         q = strchr(p,':');
-        
+#if defined(__WIN32__)
+        if (p[1]  == ':') {
+            /* Assume we have a DOS path.
+             * Look for next colon or end-of-string.
+             */
+            q = strchr(p + 2, ':');
+        }
+#endif
         if (q)
             len = q-p;
         else
