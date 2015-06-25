@@ -239,7 +239,7 @@ static void m_Lfuse(int ch, struct state_mach*m)
       }
 }
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__MACH__)
 #define stricmp strcasecmp
 #define strnicmp strncasecmp
 #endif

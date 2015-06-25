@@ -57,9 +57,14 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
 
   if (cable->cabletype == CABLE_PP)
     {
+#ifdef __MACH__
+          fprintf(stderr, "Parallel port cables are not supported on OS X.\n");
+          return 1;
+#else
 	  io->reset(new IOParport());
           io->get()->setVerbose(verbose);
           res = io->get()->Init(cable, dev, use_freq);
+#endif
     }
   else if(cable->cabletype == CABLE_FTDI)  
   {

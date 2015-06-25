@@ -101,6 +101,10 @@ else("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
    set(CONDITIONAL_LIBS ${CONDITIONAL_LIBS} ${LIBUSB_LIBRARIES})
 endif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
 
+if(NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+        set (CONDITIONAL_FILES ${CONDITIONAL_FILES} "ioparport.cpp")
+endif(NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+
 set (LIBUSRP_INCLUDE_DIR "fallback/")
 include_directories(${LIBUSRP_INCLUDE_DIR})
 
@@ -126,7 +130,7 @@ ADD_CUSTOM_COMMAND(OUTPUT cables.h
 
 INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(xc3sproglib  STATIC ioparport.cpp ioftdi.cpp iofx2.cpp 
+add_library(xc3sproglib  STATIC ioftdi.cpp iofx2.cpp 
                       devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp  progalgxc95x.cpp utilities.cpp
 			progalgxcf.cpp progalgxcfp.cpp progalgxc3s.cpp

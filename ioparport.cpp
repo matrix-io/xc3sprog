@@ -42,7 +42,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #  include <linux/ppdev.h>
 #include <errno.h>
 
-#elif defined (__FreeBSD__)
+#elif defined (__FreeBSD__) || defined(__MACH__)
 // Default parport device
 #ifndef PPDEV
 #  define PPDEV "/dev/parport0"
