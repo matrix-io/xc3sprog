@@ -343,7 +343,7 @@ int GetParamInfo(void)
    return(DataCount);
 }
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__MACH__)
 #define stricmp strcasecmp
 #endif
 

@@ -15,7 +15,7 @@
 #include "mapfile_xc2c.h"
 
 #ifndef MAPDIR
-#if defined (__linux__) || defined(__FreeBSD__)
+#if defined (__linux__) || defined(__FreeBSD__) || defined(__MACH__)
 #define MAPDIR "/opt/Xilinx/12.4/ISE_DS/ISE/xbr/data"
 #elif defined(__WIN32__)
 #define MAPDIR "c:"
