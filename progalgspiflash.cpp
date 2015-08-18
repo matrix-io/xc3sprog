@@ -425,6 +425,21 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p_mx25l(unsigned char *buf, int is_mx25l)
           }
         break;
 
+      case 0x80:
+          fprintf(stderr, "Found Micron M25PE Device, Device ID 0x%02x%02x\n",
+                  fbuf[1], fbuf[2]);
+          switch (fbuf[2])
+          {
+          case 0x15:
+              pages = 65536;
+              sector_size = 65536;
+              break;
+          default:
+              fprintf(stderr,"Unexpected M25PE size ID 0x%02x\n", buf[2]);
+              return -1;
+          }
+          break;
+
       case 0xba:
         fprintf(stderr, "Found Numonyx N25Q Device, Device ID 0x%02x%02x\n",
                 fbuf[1], fbuf[2]);
