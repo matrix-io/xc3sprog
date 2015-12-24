@@ -265,7 +265,7 @@ int ProgAlgSPIFlash::spi_flashinfo_at45(unsigned char *buf)
   struct at45_t at45chips[NUM_AT45] =
       {
           {    3,  264,  256,  512, 128, "AT45DB011"},
-          {    7,  164,  256, 2048, 256, "AT45DB041"},
+          {    7,  264,  256, 2048, 256, "AT45DB041"},
           {    9,  264,  256, 4096, 256, "AT45DB801"},
           { 0x0b,  528,  512, 4096, 256, "AT45DB161"},
           { 0x0d,  528,  512, 8192, 256, "AT45DB321"},
