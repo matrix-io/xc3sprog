@@ -30,7 +30,8 @@ enum CABLES_TYPES
     CABLE_PP,
     CABLE_FTDI,
     CABLE_FX2,
-    CABLE_XPC
+    CABLE_XPC,
+    CABLE_MATRIX_PI
   };
 
 struct cable_t

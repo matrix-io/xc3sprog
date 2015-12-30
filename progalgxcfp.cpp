@@ -76,7 +76,7 @@ ProgAlgXCFP::ProgAlgXCFP(Jtag &j, unsigned long id)
   ccbFastClock     = true;
   ccbExternalClock = true;
 
-  fprintf(stderr, "ProgAlgXCFP $Rev$\n");
+  fprintf(stderr, "ProgAlgXCFP $Rev: 760 $\n");
 }
 
 

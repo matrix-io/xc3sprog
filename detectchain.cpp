@@ -127,6 +127,8 @@ args_done:
   CableDB cabledb(0);
   res = cabledb.getCable(cablename, &cable);
 
+  printf("cablename=%s (res=%d)\n", cablename, res);
+
   res |= getIO( &io, &cable, dev, serial, verbose, use_ftd2xx, jtag_freq);
   if (res) /* some error happend*/
     {

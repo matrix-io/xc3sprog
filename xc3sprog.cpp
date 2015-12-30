@@ -39,6 +39,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include "io_exception.h"
 #include "ioparport.h"
+#include "iomatrixpi.h"
 #include "iofx2.h"
 #include "ioftdi.h"
 #include "ioxpc.h"
@@ -666,7 +667,7 @@ int main(int argc, char **args)
 
   get_os_name(osname, sizeof(osname));
   // Produce release info from SVN tags
-  fprintf(stderr, "XC3SPROG (c) 2004-2011 xc3sprog project $Rev$ OS: %s\n"
+  fprintf(stderr, "XC3SPROG (c) 2004-2011 xc3sprog project $Rev: 774 $ OS: %s\n"
 	  "Free software: If you contribute nothing, expect nothing!\n"
 	  "Feedback on success/failure/enhancement requests:\n"
           "\thttp://sourceforge.net/mail/?group_id=170565 \n"
