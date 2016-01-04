@@ -155,7 +155,6 @@ target_link_libraries(readdna xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBR
 
 
 
-add_subdirectory(javr)
 
 install(TARGETS xc3sprog DESTINATION bin)
 install(TARGETS xc2c_warp DESTINATION bin)
