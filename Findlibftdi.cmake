@@ -18,6 +18,9 @@ if (NOT LIBFTDI_FOUND)
     if(NOT WIN32)
         include(FindPkgConfig)
         pkg_check_modules(LIBFTDI_PKG libftdi)
+        if(NOT LIBFTI_FOUND)
+          pkg_check_modules(LIBFTDI_PKG libftdi1)
+        endif()
     endif(NOT WIN32)
 
     find_path(LIBFTDI_INCLUDE_DIR
@@ -37,7 +40,7 @@ if (NOT LIBFTDI_FOUND)
 
     find_library(LIBFTDI_LIBRARIES
         NAMES
-            ftdi
+            ftdi ftdi1
         HINTS
             ${LIBFTDI_PKG_LIBRARY_DIRS}
         PATHS
@@ -53,16 +56,5 @@ if (NOT LIBFTDI_FOUND)
     # handle the QUIETLY AND REQUIRED arguments AND set LIBFTDI_FOUND to TRUE if
     # all listed variables are TRUE
     find_package_handle_standard_args(LIBFTDI DEFAULT_MSG LIBFTDI_LIBRARIES LIBFTDI_INCLUDE_DIR)
-
-    if(USE_STATIC_FTDI)
-        add_library(libftdi STATIC IMPORTED)
-    else(USE_STATIC_FTDI)
-        add_library(libftdi SHARED IMPORTED)
-    endif(USE_STATIC_FTDI)
-
-    set_target_properties(libftdi PROPERTIES IMPORTED_LOCATION ${LIBFTDI_LIBRARIES})
-    set(${LIBFTDI_LIBRARIES} libftdi)
-
-    #mark_as_advanced(LIBFTDI_INCLUDE_DIR LIBFTDI_LIBRARIES)
 
 endif(NOT LIBFTDI_FOUND)
