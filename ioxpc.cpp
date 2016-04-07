@@ -718,15 +718,6 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
 		    }
 		}
 	      
-	      if (usb_set_configuration (xpcu, dev->config[0].bConfigurationValue) < 0)
-		{
-		  fprintf (stderr, "%s: usb_set_configuration: failed conf %d\n",
-			   __FUNCTION__, dev->config[0].bConfigurationValue);
-		  fprintf (stderr, "%s\n", usb_strerror());
-		  usb_close (xpcu);
-		  xpc_error_return(-10, 
-				       "unable to set configuration");
-		}
 	      if (usb_claim_interface (xpcu, 0) < 0){
 		fprintf (stderr, "%s:usb_claim_interface: failed interface 0\n",
 			 __FUNCTION__);
