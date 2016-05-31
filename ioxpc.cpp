@@ -747,6 +747,7 @@ int IOXPC::xpc_usb_open_desc(int vendor, int product, const char* description,
 		    usb_close (xpcu);
 		    continue;
 		  }
+	      printf("Found serial number %llx\n", hid);
 	      return 0;
 	    }
 	}
