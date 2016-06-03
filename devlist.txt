@@ -320,3 +320,4 @@
 #Manufacturer list
 00000093        99  0 Xilinx_Unknown
 0000003f        99  0 Atmel_Unknown
+069a962b        4  0 EM35x
