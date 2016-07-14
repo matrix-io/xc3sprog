@@ -62,7 +62,7 @@ things go wrong, an endless loop is entered to facilitate hardware degugging
 with the scope.
 Stop with `^C`.
 
-####Programming:
+###Programming
 The Platform Flash PROM of the Xilinx Spartan3 Starter Kit can be programmed
 by specifying it's location in the JTAG chain. Example command line below.
 ```
