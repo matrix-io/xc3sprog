@@ -37,6 +37,7 @@ $ mkdir build-win32; cd build-win32;
 $ cmake -DCMAKE_TOOLCHAIN_FILE=../Toolchain-mingw32.cmake ..
 ```
 
+### Programmer Options
 Get a description with 
 ```
 $ ./xc3sprog -h
