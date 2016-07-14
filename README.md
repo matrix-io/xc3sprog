@@ -1,4 +1,4 @@
-Spartan3, XCF and CPLD JTAG programmer and other utilities
+# Spartan3, XCF and CPLD JTAG programmer and other utilities
 
 Copyright (C) 2004 Andrew Rogers
           (C) 2005-2011 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
@@ -20,13 +20,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 Please also read the file "COPYING" which is a copy of the GNU General
 Public License
 
-### Prerequisites
+## Prerequisites
 This program should run without installation. For accessing USB cables, `libusb0`
-is required as runtime dynamic linked libray.
+is required as runtime dynamic linked library.
 
 To compile, you need `CMAKE`, the static `libftdi` library and `usb.h`. 
 
-### Compilation
+## Compilation
+---------------
 ```
 $ mkdir build; cd build; cmake ..; make
 ```
@@ -37,29 +38,31 @@ $ mkdir build-win32; cd build-win32;
 $ cmake -DCMAKE_TOOLCHAIN_FILE=../Toolchain-mingw32.cmake ..
 ```
 
-### Programmer Options
-Get a description with 
+## Options
+---------------
+####Get a description:
 ```
 $ ./xc3sprog -h
 ```
-This will also list the supported cables.
+Note: This will also list the supported cables.
 
-Get a chain description:
+####Get a chain description:
 ```
 $ ./xcs3prog -j
 ```
-Device descrption is searched in the file pointed to by the XCDB environment 
-variable, or when not found the built-in list is used
+Device description is searched in the file pointed to by the XCDB environment 
+variable, or when not found the built-in list is used.
 
-Test the chain integrity
+####Test the chain integrity:
 ```
 $ ./xc3sprog -T -j
 ```
 Here "-j" stops xc3sprog from entering the program/verify/read the part. If
 things go wrong, an endless loop is entered to facilitate hardware degugging
 with the scope.
-Stop with ^C.
+Stop with `^C`.
 
+####Programming
 The Platform Flash PROM of the Xilinx Spartan3 Starter Kit can be programmed
 by specifying it's location in the JTAG chain. Example command line below.
 ```
@@ -156,7 +159,8 @@ $ ./xc3sprog -R -I<boot_header_only_SPI_x1.hex> <golden image>:w:0x10000 \
    <normal image>:w:0x190000
 ```
 
-### Special Thanks
+## Special Thanks
+----------------
 * nahitafu@nifty.com (naxjp, XC95X algorithm example),
 * zoltan_csizmadia at yahoo dot (xilprg)
 * Benedikt Heinz <Zn000h@googlemail.com> for the XC3SAN ISF 
