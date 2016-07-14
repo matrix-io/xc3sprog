@@ -27,7 +27,7 @@ is required as runtime dynamic linked library.
 To compile, you need `CMAKE`, the static `libftdi` library and `usb.h`. 
 
 ## Compilation
----------------
+
 ```
 $ mkdir build; cd build; cmake ..; make
 ```
@@ -39,7 +39,7 @@ $ cmake -DCMAKE_TOOLCHAIN_FILE=../Toolchain-mingw32.cmake ..
 ```
 
 ## Options
----------------
+
 ####Get a description:
 ```
 $ ./xc3sprog -h
@@ -62,7 +62,7 @@ things go wrong, an endless loop is entered to facilitate hardware degugging
 with the scope.
 Stop with `^C`.
 
-####Programming
+####Programming:
 The Platform Flash PROM of the Xilinx Spartan3 Starter Kit can be programmed
 by specifying it's location in the JTAG chain. Example command line below.
 ```
@@ -160,7 +160,7 @@ $ ./xc3sprog -R -I<boot_header_only_SPI_x1.hex> <golden image>:w:0x10000 \
 ```
 
 ## Special Thanks
-----------------
+
 * nahitafu@nifty.com (naxjp, XC95X algorithm example),
 * zoltan_csizmadia at yahoo dot (xilprg)
 * Benedikt Heinz <Zn000h@googlemail.com> for the XC3SAN ISF 
