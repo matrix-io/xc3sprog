@@ -17,22 +17,16 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
 
-
-
 Please also read the file "COPYING" which is a copy of the GNU General
 Public License
 
-Thanks to
-- nahitafu@nifty.com (naxjp, XC95X algorithm example),
-- zoltan_csizmadia at yahoo dot (xilprg)
-- Benedikt Heinz <Zn000h@googlemail.com> for the XC3SAN ISF 
-- and many others
-
-This program should run without installation. For accessing USB cables, libusb0
+### Prerequisites
+This program should run without installation. For accessing USB cables, `libusb0`
 is required as runtime dynamic linked libray.
 
-To compile, you need CMAKE, the static libftdi library and usb.h. 
+To compile, you need `CMAKE`, the static `libftdi` library and `usb.h`. 
 
+### Compilation
 ```
 $ mkdir build; cd build; cmake ..; make
 ```
@@ -160,3 +154,9 @@ All all in one
 $ ./xc3sprog -R -I<boot_header_only_SPI_x1.hex> <golden image>:w:0x10000 \
    <normal image>:w:0x190000
 ```
+
+### Special Thanks
+* nahitafu@nifty.com (naxjp, XC95X algorithm example),
+* zoltan_csizmadia at yahoo dot (xilprg)
+* Benedikt Heinz <Zn000h@googlemail.com> for the XC3SAN ISF 
+* and many others
