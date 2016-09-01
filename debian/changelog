@@ -1,4 +1,4 @@
-xc3sprog (1.0.0.001-1.2) unstable; urgency=medium
+xc3sprog (1.0.0.001-2) unstable; urgency=medium
 
   * Adding README. Not really useful: we are testing Debian
   packaging workflow.
