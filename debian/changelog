@@ -1,3 +1,10 @@
+xc3sprog (1.0.0.001-1.2) unstable; urgency=medium
+
+  * Adding README. Not really useful: we are testing Debian
+  packaging workflow.
+
+ --  <pi@raspberrypi>  Thu, 01 Sep 2016 07:27:35 -0800
+
 xc3sprog (1.0.0.001-1) unstable; urgency=low
 
   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
