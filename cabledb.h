@@ -31,7 +31,7 @@ enum CABLES_TYPES
     CABLE_FTDI,
     CABLE_FX2,
     CABLE_XPC,
-    CABLE_MATRIX_PI
+    CABLE_SYSFS_GPIO
   };
 
 struct cable_t

@@ -130,7 +130,7 @@ ADD_CUSTOM_COMMAND(OUTPUT cables.h
 
 INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(xc3sproglib  STATIC iomatrixpi.cpp ioftdi.cpp iofx2.cpp 
+add_library(xc3sproglib  STATIC sysfs.cpp ioftdi.cpp iofx2.cpp 
                       devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp  progalgxc95x.cpp utilities.cpp
 			progalgxcf.cpp progalgxcfp.cpp progalgxc3s.cpp
@@ -139,7 +139,6 @@ add_library(xc3sproglib  STATIC iomatrixpi.cpp ioftdi.cpp iofx2.cpp
                         cabledb.cpp pdioverjtag.cpp xmega_pdi_nvm.cpp
                         ${CONDITIONAL_FILES} devices.h cables.h)
 
-set(LIBS ${LIBS} wiringPiDev wiringPi) 
 add_executable(xc2c_warp xc2c_warp.cpp)
 target_link_libraries(xc2c_warp xc3sproglib ${CONDITIONAL_LIBS})
 

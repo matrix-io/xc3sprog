@@ -39,10 +39,10 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include "io_exception.h"
 #include "ioparport.h"
-#include "iomatrixpi.h"
 #include "iofx2.h"
 #include "ioftdi.h"
 #include "ioxpc.h"
+#include "sysfs.h"
 #include "bitfile.h"
 #include "jtag.h"
 #include "devicedb.h"
@@ -393,7 +393,6 @@ void usage(bool all_options)
   fprintf(stderr, "\nDevice specific options:\n");
   OPT("-E file", "(AVR only) EEPROM file.");
   OPT("-F file", "(AVR only) File with fuse bits.");
-
 #undef OPT
 
   exit(255);
@@ -840,12 +839,18 @@ int main(int argc, char **args)
       cabledb.dumpCables(stderr);
       exit(1);
   }
+  
   res = getIO( &io, &cable, dev, serial, verbose, use_ftd2xx, jtag_freq);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);
       else usage(false);
     }
+
+  if (cable.cabletype == CABLE_SYSFS_GPIO)
+  {
+    static_cast<IOSysFsGPIO*>(io.get())->setupGPIOs(0,1,2,3);
+  }
   
   Jtag jtag = Jtag(io.get());
   jtag.setVerbose(verbose);

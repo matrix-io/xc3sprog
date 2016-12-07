@@ -1,10 +1,11 @@
 #include "iobase.h"
 
-class IOMatrixPi : public IOBase
+class IOSysFsGPIO : public IOBase
 {
  public:
-  IOMatrixPi();
-  virtual ~IOMatrixPi();
+  IOSysFsGPIO();
+  int setupGPIOs(int tck, int tms, int tdi, int tdo);
+  virtual ~IOSysFsGPIO();
 
  protected:
   void tx(bool tms, bool tdi);
