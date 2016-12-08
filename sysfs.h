@@ -1,16 +1,30 @@
 #include "iobase.h"
 
-class IOSysFsGPIO : public IOBase
-{
+class IOSysFsGPIO : public IOBase {
  public:
   IOSysFsGPIO();
   int setupGPIOs(int tck, int tms, int tdi, int tdo);
   virtual ~IOSysFsGPIO();
 
- protected:
+ private:
   void tx(bool tms, bool tdi);
   bool txrx(bool tms, bool tdi);
 
-  void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
+  void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length,
+                  bool last);
   void tx_tms(unsigned char *pat, int length, int force);
+
+  int open_write_close(const char *name, const char *valstr);
+  int setup_gpio(int gpio, int is_output, int init_high);
+  void unexport_gpio(int gpio);
+  bool is_gpio_valid(int gpio) { return gpio >= 0 && gpio < 1000; }
+
+ private:
+  int tck_fd;
+  int tms_fd;
+  int tdi_fd;
+  int tdo_fd;
+
+  const char *one;
+  const char *zero;
 };
