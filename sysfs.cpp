@@ -17,10 +17,10 @@ const int TDOPin = 27;
 
 IOSysFsGPIO::IOSysFsGPIO()
     : tck_fd(-1), tms_fd(-1), tdi_fd(-1), tdo_fd(-1), one("1"), zero("0") {
-  tdi_fd = setup_gpio(TDIPin, 0, 0);
-  tms_fd = setup_gpio(TMSPin, 0, 0);
-  tck_fd = setup_gpio(TCKPin, 0, 0);
-  tdo_fd = setup_gpio(TDOPin, 1, 0);
+  tdi_fd = setup_gpio(TDIPin, 0);
+  tms_fd = setup_gpio(TMSPin, 0);
+  tck_fd = setup_gpio(TCKPin, 0);
+  tdo_fd = setup_gpio(TDOPin, 1);
 }
 
 IOSysFsGPIO::~IOSysFsGPIO() {
@@ -55,7 +55,7 @@ void IOSysFsGPIO::txrx_block(const unsigned char *tdi, unsigned char *tdo,
   tdo_byte = tdo_byte + (txrx(last, (tdi_byte & 1) == 1) << (i % 8));
   if (tdo) tdo[j] = tdo_byte;
 
-  write(tck_fd, &zero, 1);
+  write(tck_fd, zero, 1);
 
   return;
 }
@@ -69,17 +69,17 @@ void IOSysFsGPIO::tx_tms(unsigned char *pat, int length, int force) {
     tms = tms >> 1;
   }
 
-  write(tck_fd, &zero, 1);
+  write(tck_fd, zero, 1);
 }
 
 void IOSysFsGPIO::tx(bool tms, bool tdi) {
-  write(tck_fd, &zero, 1);
+  write(tck_fd, zero, 1);
 
-  write(tdi_fd, tdi ? &one : &zero, 1);
+  write(tdi_fd, tdi ? one : zero, 1);
 
-  write(tms_fd, tms ? &one : &zero, 1);
+  write(tms_fd, tms ? one : zero, 1);
 
-  write(tck_fd, &one, 1);
+  write(tck_fd, one, 1);
 }
 
 bool IOSysFsGPIO::txrx(bool tms, bool tdi) {
@@ -107,7 +107,7 @@ int IOSysFsGPIO::open_write_close(const char *name, const char *valstr) {
   return ret;
 }
 
-int IOSysFsGPIO::setup_gpio(int gpio, int is_input, int init_high) {
+int IOSysFsGPIO::setup_gpio(int gpio, int is_input) {
   char buf[40];
   char gpiostr[4];
 
@@ -122,8 +122,7 @@ int IOSysFsGPIO::setup_gpio(int gpio, int is_input, int init_high) {
   }
 
   snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%d/direction", gpio);
-  if (open_write_close(buf, is_input ? "in" : (init_high ? "high" : "low")) <
-      0) {
+  if (open_write_close(buf, is_input ? "in" : "out") < 0) {
     std::cerr << "ERROR: Couldn't set direction for gpio " << gpio << std::endl;
     unexport_gpio(gpio);
     return 0;
