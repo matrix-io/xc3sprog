@@ -15,7 +15,7 @@ class IOSysFsGPIO : public IOBase {
   void tx_tms(unsigned char *pat, int length, int force);
 
   int open_write_close(const char *name, const char *valstr);
-  int setup_gpio(int gpio, int is_output, int init_high);
+  int setup_gpio(int gpio, int is_input, int init_high);
   void unexport_gpio(int gpio);
   bool is_gpio_valid(int gpio) { return gpio >= 0 && gpio < 1000; }
 
