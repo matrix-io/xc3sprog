@@ -5,12 +5,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
+#include <unistd.h>
 #include <memory>
 
 #include "ioparport.h"
-#include "iofx2.h"
-#include "ioftdi.h"
-#include "ioxpc.h"
 #include "sysfs.h"
 #include "utilities.h"
 
@@ -56,36 +54,7 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
     else
         use_freq = freq;
 
-  if (cable->cabletype == CABLE_PP)
-    {
-#ifdef __MACH__
-          fprintf(stderr, "Parallel port cables are not supported on OS X.\n");
-          return 1;
-#else
-	  io->reset(new IOParport());
-          io->get()->setVerbose(verbose);
-          res = io->get()->Init(cable, dev, use_freq);
-#endif
-    }
-  else if(cable->cabletype == CABLE_FTDI)  
-  {
-      io->reset(new IOFtdi(use_ftd2xx));
-      io->get()->setVerbose(verbose);
-      res = io->get()->Init(cable, serial, use_freq);
-  }
-  else if(cable->cabletype  == CABLE_FX2)
-  { 
-      io->reset(new IOFX2());
-      io->get()->setVerbose(verbose);
-      res = io->get()->Init(cable, serial, use_freq);
-  }
-  else if(cable->cabletype == CABLE_XPC)  
-  {
-      io->reset(new IOXPC());
-      io->get()->setVerbose(verbose);
-      res = io->get()->Init(cable, serial, use_freq);
-  }
-  else if(cable->cabletype == CABLE_SYSFS_GPIO)  
+  if(cable->cabletype == CABLE_SYSFS_GPIO)  
   {
       io->reset(new IOSysFsGPIO());
       io->get()->setVerbose(verbose);
@@ -102,10 +71,6 @@ const char *getCableName(int type)
 {
     switch (type)
     {
-    case CABLE_PP: return "pp"; break;
-    case CABLE_FTDI: return "ftdi"; break;
-    case CABLE_FX2: return "fx2"; break;
-    case CABLE_XPC: return "xpc"; break;
     case CABLE_SYSFS_GPIO: return "sysfsgpio"; break;
     case CABLE_UNKNOWN: return "unknown"; break;
     default:

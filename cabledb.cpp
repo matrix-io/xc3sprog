@@ -147,14 +147,6 @@ int CableDB::getCable(const char *name, struct cable_t *cable)
 
 CABLES_TYPES CableDB::getCableType(const char *given_name)
 {
-  if (strcasecmp(given_name, "pp") == 0)
-    return CABLE_PP;
-  if (strcasecmp(given_name, "ftdi") == 0)
-    return CABLE_FTDI;
-  if (strcasecmp(given_name, "fx2") == 0)
-    return CABLE_FX2;
-  if (strcasecmp(given_name, "xpc") == 0)
-    return CABLE_XPC;
   if (strcasecmp(given_name, "sysfsgpio") == 0)
     return CABLE_SYSFS_GPIO;
   return CABLE_UNKNOWN;
@@ -164,10 +156,6 @@ const char *CableDB::getCableName(const CABLES_TYPES type )
 {
     switch (type)
     {
-    case CABLE_PP: return "pp";
-    case CABLE_FTDI: return "ftdi";
-    case CABLE_FX2: return  "fx2";
-    case CABLE_XPC: return "xpc";
     case CABLE_SYSFS_GPIO: return "sysfsgpio";
     case CABLE_NONE: return "none";
     case CABLE_UNKNOWN: return "unknown";

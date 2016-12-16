@@ -27,10 +27,6 @@ enum CABLES_TYPES
   { 
     CABLE_NONE, 
     CABLE_UNKNOWN,
-    CABLE_PP,
-    CABLE_FTDI,
-    CABLE_FX2,
-    CABLE_XPC,
     CABLE_SYSFS_GPIO
   };
 

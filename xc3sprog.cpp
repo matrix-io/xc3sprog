@@ -28,6 +28,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 #include <list>
 #include <memory>
 #include <errno.h>
@@ -39,9 +40,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 #include "io_exception.h"
 #include "ioparport.h"
-#include "iofx2.h"
-#include "ioftdi.h"
-#include "ioxpc.h"
 #include "sysfs.h"
 #include "bitfile.h"
 #include "jtag.h"

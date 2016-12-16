@@ -7,30 +7,6 @@ SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 set(CMAKE_CXX_FLAGS "-g -Wall")
 cmake_minimum_required(VERSION 2.6)
 
-if(${WIN32})
-set(USE_STATIC_FTDI ON)
-IF( ${CMAKE_COMPILER_IS_GNUCXX} )
- # link libstdc++ and others statically
- add_definitions( -D__USE_MINGW_ANSI_STDIO )
- SET (CMAKE_EXE_LINKER_FLAGS    "-static-libstdc++ -static-libgcc")
-ENDIF( ${CMAKE_COMPILER_IS_GNUCXX} )
-endif(${WIN32})
-
-option(USE_FTD2XX "Use FTDI libFTD2XX instead of free libftdi" ON)
-
-find_package(libftdi)
-include_directories(${LIBFTDI_INCLUDE_DIR})
-
-if(USE_FTD2XX)
-  find_package(libFTD2XX)
-endif(USE_FTD2XX)
-
-if(LIBFTD2XX_FOUND)
-  include_directories(${LIBFTD2XX_INCLUDE_DIR})
-  add_definitions( -DUSE_FTD2XX )
-else(LIBFTD2XX_FOUND)
-  set(LIBFTD2XX_LIBRARIES "")
-endif(LIBFTD2XX_FOUND)
 
 if(EXISTS ${PROJECT_SOURCE_DIR}/.git) 
   set(VERSION_STRING "${xc3sprog_VERSION_MAJOR}.${xc3sprog_VERSION_MINOR}-git")
@@ -67,17 +43,6 @@ if(${UNIX})
   set(CPACK_PACKAGE_FILE_NAME            ${PROJECT_NAME}-${VERSION_STRING}${PACK_ARCH})
 endif(${UNIX})
 
-if(${WIN32})
-  set(CPACK_GENERATOR                    "NSIS")
-  set(CPACK_CMAKE_GENERATOR              "MinGW Makefiles")
-  set(CPACK_PACKAGE_NAME                 "${PROJECT_NAME}")
-  set(CPACK_PACKAGE_VENDOR               "")
-  set(CPACK_PACKAGE_INSTALL_DIRECTORY    "libftdi")
-  set(CPACK_PACKAGE_FILE_NAME            "${PROJECT_NAME}-${VERSION_STRING}-win32")
-  set(CPACK_NSIS_DISPLAY_NAME            "libftdi")
-  set(CPACK_NSIS_MODIFY_PATH             "ON")
-endif(${WIN32})
-
 set(CPACK_RESOURCE_FILE_LICENSE        ${CMAKE_SOURCE_DIR}/LICENSE)
 
 set(CPACK_SOURCE_GENERATOR             TGZ)
@@ -93,30 +58,11 @@ endif(${UNIX})
 #this circumvents a problem with Debian
 set (CONDITIONAL_FILES)
 set (CONDITIONAL_LIBS)
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-   set (CONDITIONAL_FILES ${CONDITIONAL_FILES} "libusb_dyn.c")
-else("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-   find_package(libusb)
-   include_directories(${LIBUSB_INCLUDE_DIR})
-   set(CONDITIONAL_LIBS ${CONDITIONAL_LIBS} ${LIBUSB_LIBRARIES})
-endif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-
-if(NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
-        set (CONDITIONAL_FILES ${CONDITIONAL_FILES} "ioparport.cpp")
-endif(NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 
 set (LIBUSRP_INCLUDE_DIR "fallback/")
 include_directories(${LIBUSRP_INCLUDE_DIR})
 
-
 include_directories(${CMAKE_SOURCE_DIR})
-
-#add_executable(debug debug.cpp iobase.cpp ioparport.cpp iodebug.cpp)
-
-add_executable(bitparse bitrev.cpp bitfile.cpp bitparse.cpp)
-add_executable(jedecparse  jedecparse.cpp jedecfile.cpp)
-add_executable(srecparse  srecparse.cpp srecfile.cpp)
-add_executable(avrfuseparse  avrfuseparse.cpp avrfusefile.cpp)
 
 ADD_CUSTOM_COMMAND(OUTPUT devices.h
     COMMAND ${CMAKE_COMMAND} -DDEVLIST_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/devlist.cmk
@@ -130,38 +76,20 @@ ADD_CUSTOM_COMMAND(OUTPUT cables.h
 
 INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(xc3sproglib  STATIC sysfs.cpp ioftdi.cpp iofx2.cpp 
-                      devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
+add_library(xc3sproglib  STATIC sysfs.cpp  
+                        devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp  progalgxc95x.cpp utilities.cpp
 			progalgxcf.cpp progalgxcfp.cpp progalgxc3s.cpp
 			progalgavr.cpp progalgxc2c.cpp  mapfile_xc2c.cpp
-			ioxpc.cpp progalgspiflash.cpp bitrev.cpp
+			progalgspiflash.cpp bitrev.cpp
                         cabledb.cpp pdioverjtag.cpp xmega_pdi_nvm.cpp
                         ${CONDITIONAL_FILES} devices.h cables.h)
 
-add_executable(xc2c_warp xc2c_warp.cpp)
-target_link_libraries(xc2c_warp xc3sproglib ${CONDITIONAL_LIBS})
-
-add_executable(detectchain detectchain.cpp cables.h devices.h)
-target_link_libraries(detectchain xc3sproglib ${LIBFTDI_LIBRARIES} ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS} ${LIBS} )
-
 add_executable(xc3sprog xc3sprog.cpp javr.cpp srecfile.cpp progalgavr.cpp 
 			devices.h)
-target_link_libraries(xc3sprog xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS}  ${LIBS} )
-
-add_executable(readdna readdna.cpp devices.h)
-target_link_libraries(readdna xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS}  ${LIBS} )
-
-
-
+target_link_libraries(xc3sprog xc3sproglib ${CONDITIONAL_LIBS}  ${LIBS} )
 
 install(TARGETS xc3sprog DESTINATION bin)
-install(TARGETS xc2c_warp DESTINATION bin)
-install(TARGETS readdna DESTINATION bin)
-install(TARGETS bitparse DESTINATION bin)
-install(TARGETS jedecparse DESTINATION bin)
-install(TARGETS srecparse DESTINATION bin)
-install(TARGETS detectchain DESTINATION bin)
 add_subdirectory(packages)
 include(CPack)
 
