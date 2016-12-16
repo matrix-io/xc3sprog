@@ -1,66 +1,9 @@
 # Project
 project(xc3sprog)
-set(xc3sprog_VERSION_MAJOR 0)
-set(xc3sprog_VERSION_MINOR 0)
 
-SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 set(CMAKE_CXX_FLAGS "-g -Wall")
 cmake_minimum_required(VERSION 2.6)
 
-
-if(EXISTS ${PROJECT_SOURCE_DIR}/.git) 
-  set(VERSION_STRING "${xc3sprog_VERSION_MAJOR}.${xc3sprog_VERSION_MINOR}-git")
-else(EXISTS ${PROJECT_SOURCE_DIR}/.git)
-  FIND_PACKAGE(Subversion)
-  IF(Subversion_FOUND AND EXISTS ${PROJECT_SOURCE_DIR}/.svn)
-    Subversion_WC_INFO(${PROJECT_SOURCE_DIR} Project)
-    set(VERSION_STRING "${xc3sprog_VERSION_MAJOR}.${xc3sprog_VERSION_MINOR}-svn${Project_WC_REVISION}")
-  ELSE(Subversion_FOUND AND EXISTS ${PROJECT_SOURCE_DIR}/.svn)
-    set(VERSION_STRING "unknown")
-  ENDIF(Subversion_FOUND AND EXISTS ${PROJECT_SOURCE_DIR}/.svn)
-endif(EXISTS ${PROJECT_SOURCE_DIR}/.git)
-
-# Create suffix to eventually install inlib64
-IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    SET(LIB_SUFFIX "")
-    SET(PACK_ARCH ".x86")
-  ELSE(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    SET(LIB_SUFFIX 64)
-    SET(PACK_ARCH .x86_64)
-endif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-
-# Package information
-set(CPACK_PACKAGE_VERSION              ${VERSION_STRING})
-set(CPACK_PACKAGE_CONTACT              "Uwe Bonnes <bon@elektron.ikp.physik.tu-darmstadt.de>")
-set(CPACK_PACKAGE_DESCRIPTION          "JTAG Progarmming tools")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY  ${CPACK_PACKAGE_DESCRIPTION}
-                                       )
-# Package settings
-if(${UNIX})
-  set(CPACK_GENERATOR                    "DEB;RPM")
-  set(CPACK_CMAKE_GENERATOR              "Unix Makefiles")
-  set(CPACK_PACKAGE_NAME                 ${PROJECT_NAME})
-  set(CPACK_PACKAGE_FILE_NAME            ${PROJECT_NAME}-${VERSION_STRING}${PACK_ARCH})
-endif(${UNIX})
-
-set(CPACK_RESOURCE_FILE_LICENSE        ${CMAKE_SOURCE_DIR}/LICENSE)
-
-set(CPACK_SOURCE_GENERATOR             TGZ)
-set(CPACK_SOURCE_IGNORE_FILES          "\\\\.svn" "build*")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME     ${CPACK_PACKAGE_FILE_NAME})
-
-# Subdirectories
-if(${UNIX})
-  set(CPACK_SET_DESTDIR "ON")
-endif(${UNIX})
-
-#link libusb dynamic at runtime on windows at at compile time else
-#this circumvents a problem with Debian
-set (CONDITIONAL_FILES)
-set (CONDITIONAL_LIBS)
-
-set (LIBUSRP_INCLUDE_DIR "fallback/")
-include_directories(${LIBUSRP_INCLUDE_DIR})
 
 include_directories(${CMAKE_SOURCE_DIR})
 
