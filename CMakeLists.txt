@@ -1,8 +1,17 @@
 # Project
-project(xc3sprog)
+cmake_minimum_required (VERSION 2.8.4 FATAL_ERROR)
 
-set(CMAKE_CXX_FLAGS "-g -Wall")
-cmake_minimum_required(VERSION 2.6)
+project(xc3sprog CXX)
+if (CMAKE_VERSION VERSION_LESS 100)
+  # C language still needed because the following required CMake modules
+  # (or their dependencies, respectively) are not correctly handling
+  # the case where only CXX is enabled.
+  # - CheckTypeSize.cmake (fixed in CMake 3.1, cf. http://www.cmake.org/Bug/view.php?id=14056)
+  # - FindThreads.cmake (--> CheckIncludeFiles.cmake <--)
+  enable_language (C)
+endif ()
+
+
 
 
 include_directories(${CMAKE_SOURCE_DIR})
@@ -31,6 +40,7 @@ add_library(xc3sproglib  STATIC sysfs.cpp
 add_executable(xc3sprog xc3sprog.cpp javr.cpp srecfile.cpp progalgavr.cpp 
 			devices.h)
 target_link_libraries(xc3sprog xc3sproglib ${CONDITIONAL_LIBS}  ${LIBS} )
+set_property(TARGET xc3sprog PROPERTY CXX_STANDARD 11)
 
 install(TARGETS xc3sprog DESTINATION bin)
 add_subdirectory(packages)
