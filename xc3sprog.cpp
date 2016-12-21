@@ -49,7 +49,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgxc3s.h"
 #include "jedecfile.h"
 #include "mapfile_xc2c.h"
-#include "progalgnvm.h"
+//$#include "progalgnvm.h"
 #include "utilities.h"
 
 using namespace std;
@@ -119,29 +119,6 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
   
 void usage(bool all_options)
 {
-  fprintf(stderr, "usage:\txc3sprog -c cable [options] <file0spec> <file1spec> ...\n");
-  fprintf(stderr, "\tList of known cables is given with -c follow by no or invalid cablename\n");
-  fprintf(stderr, "\tfilespec is filename:action:offset:style:length\n");
-  fprintf(stderr, "\taction on of 'w|W|v|r|R'\n");
-  fprintf(stderr, "\tw: erase whole area, write and verify\n");
-  fprintf(stderr, "\tW: Write with auto-sector erase and verify\n");
-  fprintf(stderr, "\tv: Verify device against filename\n");
-  fprintf(stderr, "\tr: Read from device,write to file, don't overwrite existing file\n");
-  fprintf(stderr, "\tR: Read from device and write to file, overwrite existing file\n");
-  fprintf(stderr, "\tDefault action is 'w'\n\n");
-  fprintf(stderr, "\tDefault offset is 0\n\n");
-  fprintf(stderr, "\tstyle: One of BIT|BIN|BPI|MCS|IHEX|HEX\n");
-  fprintf(stderr, "\tBIT: Xilinx .bit format\n");
-  fprintf(stderr, "\tBIN: Binary format\n");
-  fprintf(stderr, "\tBPI: Binary format not bit reversed\n");
-  fprintf(stderr, "\tMCS: Intel Hex File, LSB first\n");
-  fprintf(stderr, "\tIHEX: INTEL Hex format, MSB first (Use for Xilinx .mcs files!)\n");
-  fprintf(stderr, "\tHEX:  Hex dump format\n");
-  fprintf(stderr, "\tDefault for FPGA|SPI|XCF is BIT\n");
-  fprintf(stderr, "\tDefault for CPLD is JED\n");
-  fprintf(stderr, "\tDefault for XMEGA is IHEX\n");
-  fprintf(stderr, "\tDefault length is whole device\n");
-
   if (!all_options) exit(255);
 
   fprintf(stderr, "\nPossible options:\n");
@@ -149,33 +126,9 @@ void usage(bool all_options)
   fprintf(stderr, "   %-8s  %s\n", (arg), (desc))
   OPT("-p val[,val...]", "Use device at JTAG Chain position <val>.");
   OPT("",   "Default (0) is device connected to JTAG Adapter TDO.");
-  OPT("-e", "Erase whole device.");
   OPT("-h", "Print this help.");
-  OPT("-I[file]", "Work on connected SPI Flash (ISF Mode),");
-  OPT(""  , "after loading 'bscan_spi' bitfile if given.");
   OPT("-j", "Detect JTAG chain, nothing else (default action).");
-  OPT("-l", "Program lockbits if defined in fusefile.");
-  OPT("-m <dir>", "Directory with XC2C mapfiles.");
-  OPT("-R", "Try to reconfigure device(No other action!).");
-  OPT("-T val", "Test chain 'val' times (0 = forever) or 10000 times"
-      " default.");
-  OPT("-J val", "Run at max with given JTAG Frequency, 0(default) means max. Rate of device");
-  OPT("", "Only used for FTDI cables for now");
-  OPT("-D", "Dump internal devlist and cablelist to files");
-  OPT(""      , "In ISF Mode, test the SPI connection.");
-  OPT("-X opts", "Set options for XCFxxP programming");
   OPT("-v", "Verbose output.");
-
-  fprintf(stderr, "\nProgrammer specific options:\n");
-  /* Parallel cable */
-  OPT("-d", "(pp only     ) Parallel port device.");
-  /* USB devices */
-  OPT("-s num" , "(usb devices only) Serial number string.");
-  OPT("-L     ", "(ftdi only       ) Don't use LibUSB.");
-
-  fprintf(stderr, "\nDevice specific options:\n");
-  OPT("-E file", "(AVR only) EEPROM file.");
-  OPT("-F file", "(AVR only) File with fuse bits.");
 #undef OPT
 
   exit(255);
@@ -444,14 +397,6 @@ int main(int argc, char **args)
   int res;
 
   get_os_name(osname, sizeof(osname));
-  // Produce release info from SVN tags
-  fprintf(stderr, "XC3SPROG (c) 2004-2011 xc3sprog project $Rev: 774 $ OS: %s\n"
-	  "Free software: If you contribute nothing, expect nothing!\n"
-	  "Feedback on success/failure/enhancement requests:\n"
-          "\thttp://sourceforge.net/mail/?group_id=170565 \n"
-	  "Check Sourceforge for updates:\n"
-          "\thttp://sourceforge.net/projects/xc3sprog/develop\n\n",
-	  osname);
 
   // Start from parsing command line arguments
   while(true) {
@@ -473,56 +418,8 @@ int main(int argc, char **args)
       detectchain = true;
       break;
 
-    case 'J':
-      jtag_freq = atoi(optarg);
-      break;
-
-    case 'l':
-      lock = true;
-      break;
-
     case 'c':
       cablename =  optarg;
-      break;
-
-    case 'm':
-      mapdir = optarg;
-      break;
-
-    case 'e':
-      erase = true;
-      break;
-
-    case 'D':
-      dump = true;
-      break;
-
-    case 'E':
-      eepromfile = optarg;
-      break;
-
-    case 'F':
-      fusefile = optarg;
-      break;
-
-    case 'o':
-      if (BitFile::styleFromString(optarg, &out_style) != 0)
-	{
-	  fprintf(stderr, "\nUnknown format \"%s\"\n", optarg);
-	  usage(false);
-	}
-      break;
-
-    case 'i':
-      if (BitFile::styleFromString(optarg, &in_style) != 0)
-	{
-	  fprintf(stderr, "\nUnknown format \"%s\"\n", optarg);
-	  usage(false);
-	}
-      break;
-      
-     case 'd':
-      dev = optarg;
       break;
 
     case 'p':
@@ -548,17 +445,6 @@ int main(int argc, char **args)
       }
       chainpos = chainpositions[0];
       break;
-
-    case 's':
-      serial = optarg;
-      break;
-
-    case 'X':
-      {
-        vector<string> new_opts = splitString(string(optarg), ',');
-        xcfopts.insert(xcfopts.end(), new_opts.begin(), new_opts.end());
-        break;
-      }
 
     case '?':
     case 'h':
