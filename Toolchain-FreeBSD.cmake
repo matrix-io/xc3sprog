@@ -1,4 +1,0 @@
-set(CMAKE_SYSTEM_NAME FreeBSD)
-set(CMAKE_C_COMPILER cc -m32)
-set(CMAKE_CXX_COMPILER c++ -m32)
-set(CMAKE_FIND_ROOT_PATH /usr/lib)

@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <memory>
 
-#include "ioparport.h"
 #include "sysfs.h"
 #include "utilities.h"
 

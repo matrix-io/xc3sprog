@@ -30,15 +30,14 @@ INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(xc3sproglib  STATIC sysfs.cpp  
                         devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
-			iobase.cpp  progalgxc95x.cpp utilities.cpp
-			progalgxcf.cpp progalgxcfp.cpp progalgxc3s.cpp
-			progalgavr.cpp progalgxc2c.cpp  mapfile_xc2c.cpp
-			progalgspiflash.cpp bitrev.cpp
-                        cabledb.cpp pdioverjtag.cpp xmega_pdi_nvm.cpp
+			iobase.cpp  utilities.cpp
+			progalgxc3s.cpp progalgxcfp.cpp
+			mapfile_xc2c.cpp progalgxcf.cpp
+			bitrev.cpp
+                        cabledb.cpp pdioverjtag.cpp 
                         ${CONDITIONAL_FILES} devices.h cables.h)
 
-add_executable(xc3sprog xc3sprog.cpp javr.cpp srecfile.cpp progalgavr.cpp 
-			devices.h)
+add_executable(xc3sprog xc3sprog.cpp srecfile.cpp devices.h)
 target_link_libraries(xc3sprog xc3sproglib ${CONDITIONAL_LIBS}  ${LIBS} )
 set_property(TARGET xc3sprog PROPERTY CXX_STANDARD 11)
 
