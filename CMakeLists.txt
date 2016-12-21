@@ -32,9 +32,9 @@ add_library(xc3sproglib  STATIC sysfs.cpp
                         devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp  utilities.cpp
 			progalgxc3s.cpp progalgxcfp.cpp
-			mapfile_xc2c.cpp progalgxcf.cpp
+			progalgxcf.cpp
 			bitrev.cpp
-                        cabledb.cpp pdioverjtag.cpp 
+                        cabledb.cpp 
                         ${CONDITIONAL_FILES} devices.h cables.h)
 
 add_executable(xc3sprog xc3sprog.cpp srecfile.cpp devices.h)
