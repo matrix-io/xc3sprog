@@ -49,7 +49,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgxc3s.h"
 #include "jedecfile.h"
 #include "mapfile_xc2c.h"
-//$#include "progalgnvm.h"
 #include "utilities.h"
 
 using namespace std;
@@ -61,7 +60,7 @@ using namespace std;
 
 #define MANUFACTURER_XILINX         0x049
 
-    int do_exit = 0;
+int do_exit = 0;
 void ctrl_c(int sig)
 {
   do_exit = 1;
@@ -117,23 +116,6 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
   return id;
 }
   
-void usage(bool all_options)
-{
-  if (!all_options) exit(255);
-
-  fprintf(stderr, "\nPossible options:\n");
-#define OPT(arg, desc)	\
-  fprintf(stderr, "   %-8s  %s\n", (arg), (desc))
-  OPT("-p val[,val...]", "Use device at JTAG Chain position <val>.");
-  OPT("",   "Default (0) is device connected to JTAG Adapter TDO.");
-  OPT("-h", "Print this help.");
-  OPT("-j", "Detect JTAG chain, nothing else (default action).");
-  OPT("-v", "Verbose output.");
-#undef OPT
-
-  exit(255);
-}
-
 /* Parse a filename in the form
  *           aaaa.bb:action:0x10000|section:0x10000:rawhex:0x1000
  * for name, action, offset|area, style, length 
@@ -440,7 +422,7 @@ int main(int argc, char **args)
         if (*p != '\0')
           {
             fprintf(stderr, "Invalid position specification \"%s\"\n", optarg);
-            usage(false);
+            exit(255);
           }
       }
       chainpos = chainpositions[0];
@@ -456,7 +438,7 @@ int main(int argc, char **args)
             exit(1);
         }
         fprintf(stderr, "Unknown option -%c\n", c);
-        usage(true);
+        exit(255);
     }
   }
  args_done:
@@ -465,7 +447,7 @@ int main(int argc, char **args)
   if (dump)
       dump_lists(&cabledb, &db);
 
-  if((argc < 0) || (cablename == 0))  usage(true);
+  if((argc < 0) || (cablename == 0))  exit(255);
   if (verbose)
   {
     fprintf(stderr, "Using %s\n", db.getFile().c_str());
@@ -485,7 +467,7 @@ int main(int argc, char **args)
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);
-      else usage(false);
+      else exit(255);
     }
 
   if (cable.cabletype == CABLE_SYSFS_GPIO)
@@ -517,7 +499,7 @@ int main(int argc, char **args)
       (manufacturer != MANUFACTURER_XILINX )) 
     {
       fprintf(stderr, "Multiple positions only supported in case of XCF\n");
-      usage(false);
+      exit(255);
     }
 
   if (manufacturer == MANUFACTURER_XILINX)
