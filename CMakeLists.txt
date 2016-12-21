@@ -31,8 +31,7 @@ INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 add_library(xc3sproglib  STATIC sysfs.cpp  
                         devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp  utilities.cpp
-			progalgxc3s.cpp progalgxcfp.cpp
-			progalgxcf.cpp
+			progalgxc3s.cpp 
 			bitrev.cpp
                         cabledb.cpp 
                         ${CONDITIONAL_FILES} devices.h cables.h)

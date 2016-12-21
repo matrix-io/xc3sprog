@@ -44,8 +44,8 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "jtag.h"
 #include "devicedb.h"
 #include "cabledb.h"
-#include "progalgxcf.h"
-#include "progalgxcfp.h"
+//#include "progalgxcf.h"
+//#include "progalgxcfp.h"
 #include "progalgxc3s.h"
 #include "jedecfile.h"
 #include "mapfile_xc2c.h"
@@ -347,14 +347,58 @@ void dump_lists(CableDB *cabledb, DeviceDB *db)
     exit(0);
 }
 
-int main(int argc, char **args)
+int detect_chain()
 {
-  bool        verbose   = false;
+  struct cable_t cable;
+  CableDB cabledb(NULL);
+  int res;
+  std::auto_ptr<IOBase>  io;
+  char const *serial  = 0;
+  unsigned long id;
+  DeviceDB db(NULL);
+  char const *dev       = 0;
+  unsigned int jtag_freq= 0;
+  int      chainpos     = 0;
+
+  res = cabledb.getCable("sysfsgpio", &cable);
+  if(res)
+  {
+      fprintf(stderr,"Can't find description for a cable named %s\n",
+             "sysfsgpio");
+      fprintf(stdout, "Known Cables\n");
+      cabledb.dumpCables(stderr);
+      exit(1);
+  }
+  
+  res = getIO( &io, &cable, dev, serial, false, false, jtag_freq);
+  if (res) /* some error happend*/
+    {
+      if (res == 1) exit(1);
+      else exit(255);
+    }
+
+  if (cable.cabletype == CABLE_SYSFS_GPIO)
+  {
+    static_cast<IOSysFsGPIO*>(io.get())->setupGPIOs(0,1,2,3);
+  }
+  
+  Jtag jtag = Jtag(io.get());
+  jtag.setVerbose(false);
+
+  if (init_chain(jtag, db))
+    id = get_id (jtag, db, chainpos);
+  else
+    id = 0;
+
+      detect_chain(&jtag, &db);
+      return 0;
+}
+
+int program(int argc, char **args)
+{
   bool        dump      = false;
   bool        verify    = false;
   bool        lock      = false;
-  bool     detectchain  = false;
-  bool     erase        = false;
   unsigned int jtag_freq= 0;
   unsigned long id;
   struct cable_t cable;
@@ -378,212 +422,33 @@ int main(int argc, char **args)
   std::auto_ptr<IOBase>  io;
   int res;
 
-  get_os_name(osname, sizeof(osname));
+  chainpos = 1;
 
-  // Start from parsing command line arguments
-  while(true) {
-      int c = getopt(argc, args, "?hCLc:d:DeE:F:i:I::jJ:Lm:o:p:Rs:S:T::vX:");
-    switch(c) 
-    {
-    case -1:
-      goto args_done;
-
-    case 'v':
-      verbose = true;
-      break;
-
-    case 'C':
-      verify = true;
-      break;
-
-    case 'j':
-      detectchain = true;
-      break;
-
-    case 'c':
-      cablename =  optarg;
-      break;
-
-    case 'p':
-      {
-        char *p = optarg, *q;
-        for (nchainpos = 0; nchainpos <= MAXPOSITIONS; )
-          {
-            chainpositions[nchainpos] = strtoul(p, &q, 10);
-            if (p == q)
-              break;
-            p = q;
-            nchainpos++;
-            if (*p == ',')
-              p++;
-            else
-              break;
-          }
-        if (*p != '\0')
-          {
-            fprintf(stderr, "Invalid position specification \"%s\"\n", optarg);
-            exit(255);
-          }
-      }
-      chainpos = chainpositions[0];
-      break;
-
-    case '?':
-    case 'h':
-    default:
-        if (optopt == 'c')
-        {
-            fprintf(stdout, "Known Cables\n");
-            cabledb.dumpCables(stderr);
-            exit(1);
-        }
-        fprintf(stderr, "Unknown option -%c\n", c);
-        exit(255);
-    }
-  }
- args_done:
-  argc -= optind;
-  args += optind;
-  if (dump)
-      dump_lists(&cabledb, &db);
-
-  if((argc < 0) || (cablename == 0))  exit(255);
-  if (verbose)
-  {
-    fprintf(stderr, "Using %s\n", db.getFile().c_str());
-    fprintf(stderr, "Using %s\n", cabledb.getFile().c_str());
-  }
-  res = cabledb.getCable(cablename, &cable);
-  if(res)
-  {
-      fprintf(stderr,"Can't find description for a cable named %s\n",
-             cablename);
-      fprintf(stdout, "Known Cables\n");
-      cabledb.dumpCables(stderr);
-      exit(1);
-  }
+  res = cabledb.getCable("sysfsgpio", &cable);
   
-  res = getIO( &io, &cable, dev, serial, verbose, false, jtag_freq);
+  res = getIO( &io, &cable, dev, serial, false, false, jtag_freq);
   if (res) /* some error happend*/
     {
       if (res == 1) exit(1);
       else exit(255);
     }
 
-  if (cable.cabletype == CABLE_SYSFS_GPIO)
-  {
     static_cast<IOSysFsGPIO*>(io.get())->setupGPIOs(0,1,2,3);
-  }
   
   Jtag jtag = Jtag(io.get());
-  jtag.setVerbose(verbose);
+  jtag.setVerbose(false);
 
   if (init_chain(jtag, db))
     id = get_id (jtag, db, chainpos);
   else
     id = 0;
 
-  if (detectchain)
-    {
-      detect_chain(&jtag, &db);
-      return 0;
-    }
-
-  if (id == 0)
-    return 2;
-
   unsigned int family = IDCODE_TO_FAMILY(id);
   unsigned int manufacturer = IDCODE_TO_MANUFACTURER(id);
+  /* TODO: check family/manufacturer */
 
-  if (nchainpos != 1 &&
-      (manufacturer != MANUFACTURER_XILINX )) 
-    {
-      fprintf(stderr, "Multiple positions only supported in case of XCF\n");
-      exit(255);
-    }
-
-  if (manufacturer == MANUFACTURER_XILINX)
-    {
-      /* Probably XC4V and XC5V should work too. No devices to test at IKDA */
-      if( (family == FAMILY_XC2S) ||
-	  (family == FAMILY_XC2SE) ||
-	  (family == FAMILY_XC4VLX) ||
-	  (family == FAMILY_XC4VFX) ||
-	  (family == FAMILY_XC4VSX) ||
-	  (family == FAMILY_XC3S) ||
-	  (family == FAMILY_XC3SE) ||
-	  (family == FAMILY_XC3SA) ||
-	  (family == FAMILY_XC3SAN) ||
-	  (family == FAMILY_XC3SD) ||
-	  (family == FAMILY_XC6S) ||
-	  (family == FAMILY_XC2V) ||
-          (family == FAMILY_XC5VLX) ||
-          (family == FAMILY_XC5VLXT) ||
-          (family == FAMILY_XC5VSXT) ||
-          (family == FAMILY_XC5VFXT) ||
-          (family == FAMILY_XC5VTXT) ||
-          (family == FAMILY_XC7)
-	  )
-          return  programXC3S(jtag, argc, args, verbose,
+  return  programXC3S(jtag, argc, args, false,
                               false, family);
-      else 
-	{
-	  fprintf(stderr,
-		  "Sorry, can't program Xilinx device '%s' from family 0x%02x "
-		  "A more recent release may be able to.\n", 
-		  db.idToDescription(id), family);
-	  return 1;
-	}
-    }
-  else
-    fprintf(stderr,
-	    "Sorry, can't program device '%s' from manufacturer 0x%02x "
-	    "A more recent release may be able to.\n", 
-	    db.idToDescription(id), manufacturer);
-  return 1;
-}
-
-ProgAlg * makeProgAlg(Jtag &jtag, unsigned long id,
-                      const vector<string>& xcfopts, bool checkopts)
-{
-  if ((id & 0x000f0000) == 0x00050000)
-    {
-      // XCFxxP
-      ProgAlgXCFP *alg = new ProgAlgXCFP(jtag, id);
-      for (size_t i = 0; i < xcfopts.size(); i++)
-        {
-          const char *opt = xcfopts[i].c_str();
-          if (strcasecmp(opt, "parallel") == 0)
-            alg->setParallelMode(true);
-          else if (strcasecmp(opt, "serial") == 0)
-            alg->setParallelMode(false);
-          else if (strcasecmp(opt, "master") == 0)
-            alg->setMasterMode(true);
-          else if (strcasecmp(opt, "slave") == 0)
-            alg->setMasterMode(false);
-          else if (strcasecmp(opt, "fastclk") == 0)
-            alg->setFastClock(true);
-          else if (strcasecmp(opt, "slowclk") == 0)
-            alg->setFastClock(false);
-          else if (strcasecmp(opt, "extclk") == 0)
-            alg->setExternalClock(true);
-          else if (strcasecmp(opt, "intclk") == 0)
-            alg->setExternalClock(false);
-          else if (checkopts)
-            fprintf(stderr, "Ignoring unknown option '%s' for XCFxxP device\n", xcfopts[i].c_str());
-        }
-      return alg;
-    }
-  else
-    {
-      // XCFxxS
-      if (checkopts)
-        {
-          for (size_t i = 0; i < xcfopts.size(); i++)
-            fprintf(stderr, "Ignoring unknown option '%s' for XCFxxS device\n", xcfopts[i].c_str());
-        }
-      return new ProgAlgXCF(jtag, (id & 0x000ff000) >> 12);
-    }
 }
 
 int programXC3S(Jtag &jtag, int argc, char** args,
@@ -597,7 +462,7 @@ int programXC3S(Jtag &jtag, int argc, char** args,
       alg.reconfig();
   else
   {
-      for(i=0; i< argc; i++)
+      for(i=1; i< argc; i++)
       {
           int res;
           unsigned int bitfile_offset = 0;
@@ -664,4 +529,9 @@ int programXC3S(Jtag &jtag, int argc, char** args,
   return 0;
 }
 
+int main(int argc, char **args)
+{
+//  detect_chain();
+  program(argc,args);
+}
 
