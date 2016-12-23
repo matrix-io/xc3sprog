@@ -1,7 +1,7 @@
 # Project
 cmake_minimum_required (VERSION 2.8.4 FATAL_ERROR)
 
-project(xc3sprog CXX)
+project(xc3sprog C CXX)
 if (CMAKE_VERSION VERSION_LESS 100)
   # C language still needed because the following required CMake modules
   # (or their dependencies, respectively) are not correctly handling
@@ -10,8 +10,6 @@ if (CMAKE_VERSION VERSION_LESS 100)
   # - FindThreads.cmake (--> CheckIncludeFiles.cmake <--)
   enable_language (C)
 endif ()
-
-
 
 
 include_directories(${CMAKE_SOURCE_DIR})
@@ -44,3 +42,16 @@ install(TARGETS xc3sprog DESTINATION bin)
 
 
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 
+
+if(ANDROID)
+  add_definitions(-frtti -fexceptions -fpermissive -std=c++11)
+  add_library(xc3loader SHARED xc3loader.cpp android_utils.cpp)
+  set_property(TARGET xc3loader PROPERTY CXX_STANDARD 11)
+  target_link_libraries(xc3loader log)
+  target_link_libraries(xc3loader ${CONDITIONAL_LIBS} ${LIBS})
+  # set back RUNTIME_OUTPUT_DIRECTORY
+  set_target_properties(xc3loader PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/android")
+  # install
+  install(TARGETS xc3loader DESTINATION lib)
+endif()
+
