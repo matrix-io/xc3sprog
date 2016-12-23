@@ -62,7 +62,7 @@ using namespace std;
 int do_exit = 0;
 void ctrl_c(int sig) { do_exit = 1; }
 
-bool programXC3S(Jtag &g, std::string filename, bool verbose, int family);
+bool programXC3S(Jtag &g, std::string filename, int family);
 
 int init_chain(Jtag &jtag, DeviceDB &db) {
   int num = jtag.getChain();
@@ -123,12 +123,13 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos) {
  * a:
  *
  */
-FILE *getFile_and_Attribute_from_name(char *name, char *action, char *section,
-                                      unsigned int *offset, FILE_STYLE *style,
-                                      unsigned int *length) {
+FILE *getFile_and_Attribute_from_name(const char *name, char *action,
+                                      char *section, unsigned int *offset,
+                                      FILE_STYLE *style, unsigned int *length) {
   FILE *ret;
   char filename[256];
-  char *p = name, *q;
+  char *p = (char *)name;
+  char *q;
   int len;
   char localaction = 'w';
   char localsection = 'a';
@@ -140,14 +141,6 @@ FILE *getFile_and_Attribute_from_name(char *name, char *action, char *section,
     return NULL;
   else {
     q = strchr(p, ':');
-#if defined(__WIN32__)
-    if (p[1] == ':') {
-      /* Assume we have a DOS path.
-       * Look for next colon or end-of-string.
-       */
-      q = strchr(p + 2, ':');
-    }
-#endif
     if (q)
       len = q - p;
     else
@@ -256,49 +249,6 @@ FILE *getFile_and_Attribute_from_name(char *name, char *action, char *section,
   return ret;
 }
 
-void dump_lists(CableDB *cabledb, DeviceDB *db) {
-  int fd;
-  FILE *fp_out;
-  char outname[17] = "cablelist.txt";
-
-  fd = open(outname, O_WRONLY | O_CREAT | O_EXCL, 0644);
-  if (fd < 0) {
-    sprintf(outname, "cablelist.txt.1");
-    fd = open(outname, O_WRONLY | O_CREAT, 0644);
-  }
-  if (fd < 0) {
-    fprintf(stderr, "Error creating file\n");
-  } else {
-    fprintf(stderr, "Dumping internal cablelist to %s\n", outname);
-    fp_out = fdopen(fd, "w");
-    if (fp_out) {
-      fprintf(fp_out, "%-20s%-8s%-10sOptString\n", "#Alias", "Type",
-              "Frequency");
-      cabledb->dumpCables(fp_out);
-      fclose(fp_out);
-    }
-  }
-
-  sprintf(outname, "devlist.txt");
-  fd = open(outname, O_WRONLY | O_CREAT | O_EXCL, 0644);
-  if (fd < 0) {
-    sprintf(outname, "devlist.txt.1");
-    fd = open(outname, O_WRONLY | O_CREAT, 0644);
-  }
-  if (fd < 0) {
-    fprintf(stderr, "Error creating file\n");
-  } else {
-    fprintf(stderr, "Dumping internal devicelist to %s\n", outname);
-    fp_out = fdopen(fd, "w");
-    if (fp_out) {
-      fprintf(fp_out, "# IDCODE IR_len ID_Cmd Text\n");
-      db->dumpDevices(fp_out);
-      fclose(fp_out);
-    }
-  }
-  exit(0);
-}
-
 int detect_chain() {
   struct cable_t cable;
   CableDB cabledb(NULL);
@@ -345,7 +295,7 @@ int detect_chain() {
   return 0;
 }
 
-bool program(std::string filename) {
+bool fpga_program(std::string filename) {
   bool dump = false;
   bool verify = false;
   bool lock = false;
@@ -399,10 +349,10 @@ bool program(std::string filename) {
   unsigned int manufacturer = IDCODE_TO_MANUFACTURER(id);
   /* TODO: check family/manufacturer */
 
-  return programXC3S(jtag, filename, false, family);
+  return programXC3S(jtag, filename, family);
 }
 
-bool programXC3S(Jtag &jtag, std::string filename, bool verbose, int family) {
+bool programXC3S(Jtag &jtag, std::string filename, int family) {
   ProgAlgXC3S alg(jtag, family);
 
   int res;
@@ -413,46 +363,36 @@ bool programXC3S(Jtag &jtag, std::string filename, bool verbose, int family) {
   FILE *fp;
   BitFile bitfile;
 
-  fp = getFile_and_Attribute_from_name((char *)filename.c_str(), &action, NULL,
+  fp = getFile_and_Attribute_from_name(filename.c_str(), &action, NULL,
                                        &bitfile_offset, &bitfile_style,
                                        &bitfile_length);
   if (tolower(action) != 'w') {
-    if (verbose) {
-      fprintf(stderr, "Action %c not supported for XC3S\n", action);
-    }
+    fprintf(stderr, "Action %c not supported for XC3S\n", action);
     return false;
   }
   if (bitfile_offset != 0) {
-    if (verbose) {
-      fprintf(stderr, "Offset %d not supported for XC3S\n", bitfile_offset);
-    }
+    fprintf(stderr, "Offset %d not supported for XC3S\n", bitfile_offset);
     return false;
   }
   if (bitfile_length != 0) {
-    if (verbose) {
-      fprintf(stderr, "Length %d not supported for XC3S\n", bitfile_length);
-    }
+    fprintf(stderr, "Length %d not supported for XC3S\n", bitfile_length);
     return false;
   }
   res = bitfile.readFile(fp, bitfile_style);
   if (res != 0) {
-    if (verbose) {
-      fprintf(stderr, "Reading Bitfile %s failed\n", filename.c_str());
-    }
+    fprintf(stderr, "Reading Bitfile %s failed\n", filename.c_str());
     return false;
   }
 
-  if (verbose) {
-    fprintf(stderr, "Created from NCD file: %s\n", bitfile.getNCDFilename());
-    fprintf(stderr, "Target device: %s\n", bitfile.getPartName());
-    fprintf(stderr, "Created: %s %s\n", bitfile.getDate(), bitfile.getTime());
-    fprintf(stderr, "Bitstream length: %u bits\n", bitfile.getLength());
-  }
+  fprintf(stderr, "Created from NCD file: %s\n", bitfile.getNCDFilename());
+  fprintf(stderr, "Target device: %s\n", bitfile.getPartName());
+  fprintf(stderr, "Created: %s %s\n", bitfile.getDate(), bitfile.getTime());
+  fprintf(stderr, "Bitstream length: %u bits\n", bitfile.getLength());
   alg.array_program(bitfile);
   return true;
 }
 
 int main(int argc, char **args) {
   //  detect_chain();
-  program(std::string(args[1]));
+  fpga_program(std::string(args[1]));
 }
