@@ -393,7 +393,3 @@ bool programXC3S(Jtag &jtag, std::string filename, int family) {
   return true;
 }
 
-int main(int argc, char **args) {
-  //  detect_chain();
-  fpga_program(std::string(args[1]));
-}

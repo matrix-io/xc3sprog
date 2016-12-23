@@ -31,10 +31,12 @@ add_library(xc3sproglib  STATIC sysfs.cpp
 			iobase.cpp  utilities.cpp
 			progalgxc3s.cpp 
 			bitrev.cpp
-                        cabledb.cpp 
+                        cabledb.cpp
+                        xc3sprog.cpp 
+                        srecfile.cpp  
                         ${CONDITIONAL_FILES} devices.h cables.h)
 
-add_executable(xc3sprog xc3sprog.cpp srecfile.cpp devices.h)
+add_executable(xc3sprog simple_main.cpp devices.h)
 target_link_libraries(xc3sprog xc3sproglib ${CONDITIONAL_LIBS}  ${LIBS} )
 set_property(TARGET xc3sprog PROPERTY CXX_STANDARD 11)
 
