@@ -25,101 +25,90 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
     Installable device database location.
 */
 
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include <limits.h>
 #include <list>
 #include <memory>
-#include <errno.h>
-#include <assert.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <signal.h>
+#include <string>
 
-#include "io_exception.h"
-#include "sysfs.h"
 #include "bitfile.h"
-#include "jtag.h"
-#include "devicedb.h"
 #include "cabledb.h"
-//#include "progalgxcf.h"
-//#include "progalgxcfp.h"
-#include "progalgxc3s.h"
+#include "devicedb.h"
+#include "io_exception.h"
 #include "jedecfile.h"
+#include "jtag.h"
 #include "mapfile_xc2c.h"
+#include "progalgxc3s.h"
+#include "sysfs.h"
 #include "utilities.h"
 
 using namespace std;
 
-#define MAXPOSITIONS    8
+#define MAXPOSITIONS 8
 
-#define IDCODE_TO_FAMILY(id)        ((id>>21) & 0x7f)
-#define IDCODE_TO_MANUFACTURER(id)  ((id>>1) & 0x3ff)
+#define IDCODE_TO_FAMILY(id) ((id >> 21) & 0x7f)
+#define IDCODE_TO_MANUFACTURER(id) ((id >> 1) & 0x3ff)
 
-#define MANUFACTURER_XILINX         0x049
+#define MANUFACTURER_XILINX 0x049
 
 int do_exit = 0;
-void ctrl_c(int sig)
-{
-  do_exit = 1;
-}
+void ctrl_c(int sig) { do_exit = 1; }
 
-int programXC3S(Jtag &g, int argc, char **args, bool verbose,
-                bool reconfig, int family);
+bool programXC3S(Jtag &g, std::string filename, bool verbose, int family);
 
-int init_chain(Jtag &jtag, DeviceDB &db)
-{
+int init_chain(Jtag &jtag, DeviceDB &db) {
   int num = jtag.getChain();
-  if (num == 0)
-    {
-      fprintf(stderr,"No JTAG Chain found\n");
-      return 0;
-    }
+  if (num == 0) {
+    fprintf(stderr, "No JTAG Chain found\n");
+    return 0;
+  }
   // Synchronise database with chain of devices.
-  for (int i=0; i<num; i++){
+  for (int i = 0; i < num; i++) {
     unsigned long id = jtag.getDeviceID(i);
     int length = db.idToIRLength(id);
     if (length > 0)
-      jtag.setDeviceIRLength(i,length);
-    else
-      {
-        fprintf(stderr,"Cannot find device having IDCODE=%07lx Revision %c\n",
-                id & 0x0fffffff,  (int)(id  >>28) + 'A');
-        return 0;
-      }
+      jtag.setDeviceIRLength(i, length);
+    else {
+      fprintf(stderr, "Cannot find device having IDCODE=%07lx Revision %c\n",
+              id & 0x0fffffff, (int)(id >> 28) + 'A');
+      return 0;
+    }
   }
   return num;
 }
 
 static int last_pos = -1;
 
-unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
-{
+unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos) {
   bool verbose = jtag.getVerbose();
   int num = jtag.getChain();
-  if (jtag.selectDevice(chainpos)<0)
-    {
-      fprintf(stderr, "Invalid chain position %d, must be >= 0 and < %d\n",
-              chainpos, num);
-      return 0;
-    }
+  if (jtag.selectDevice(chainpos) < 0) {
+    fprintf(stderr, "Invalid chain position %d, must be >= 0 and < %d\n",
+            chainpos, num);
+    return 0;
+  }
   unsigned long id = jtag.getDeviceID(chainpos);
-  if (verbose && (last_pos != chainpos))
-    {
-      fprintf(stderr, "JTAG chainpos: %d Device IDCODE = 0x%08lx\tDesc: %s\n",
-              chainpos, id, db.idToDescription(id));
-      fflush(stderr);
-      last_pos = chainpos;
-    }
+  if (verbose && (last_pos != chainpos)) {
+    fprintf(stderr, "JTAG chainpos: %d Device IDCODE = 0x%08lx\tDesc: %s\n",
+            chainpos, id, db.idToDescription(id));
+    fflush(stderr);
+    last_pos = chainpos;
+  }
   return id;
 }
-  
+
 /* Parse a filename in the form
  *           aaaa.bb:action:0x10000|section:0x10000:rawhex:0x1000
- * for name, action, offset|area, style, length 
- * 
+ * for name, action, offset|area, style, length
+ *
  * return the Open File
  *
  * possible action
@@ -132,314 +121,277 @@ unsigned long get_id(Jtag &jtag, DeviceDB &db, int chainpos)
  * possible sections:
  * f: Flash
  * a:
- * 
+ *
  */
-FILE *getFile_and_Attribute_from_name(
-    char *name, char * action, char * section, 
-    unsigned int *offset, FILE_STYLE *style, unsigned int *length)
-{
-    FILE *ret;
-    char filename[256];
-    char *p = name, *q;
-    int len;
-    char localaction = 'w';
-    char localsection = 'a';
-    unsigned int localoffset = 0;
-    FILE_STYLE localstyle=STYLE_BIT;
-    unsigned int locallength = 0;
-    
-    if(!p)
-        return NULL;
-    else
-    {
-        q = strchr(p,':');
+FILE *getFile_and_Attribute_from_name(char *name, char *action, char *section,
+                                      unsigned int *offset, FILE_STYLE *style,
+                                      unsigned int *length) {
+  FILE *ret;
+  char filename[256];
+  char *p = name, *q;
+  int len;
+  char localaction = 'w';
+  char localsection = 'a';
+  unsigned int localoffset = 0;
+  FILE_STYLE localstyle = STYLE_BIT;
+  unsigned int locallength = 0;
+
+  if (!p)
+    return NULL;
+  else {
+    q = strchr(p, ':');
 #if defined(__WIN32__)
-        if (p[1]  == ':') {
-            /* Assume we have a DOS path.
-             * Look for next colon or end-of-string.
-             */
-            q = strchr(p + 2, ':');
-        }
+    if (p[1] == ':') {
+      /* Assume we have a DOS path.
+       * Look for next colon or end-of-string.
+       */
+      q = strchr(p + 2, ':');
+    }
 #endif
-        if (q)
-            len = q-p;
-        else
-            len = strlen(p);
-        if (len>0)
-        {
-            int num = (len>255)?255:len;
-            strncpy(filename, p, num);
-            filename[num] = 0;
-        }
-        else
-            return NULL;
-        p = q;
-        if(p)
-            p ++;
-    }
-    /* Action*/
-    if(p)
-    {
-        q = strchr(p,':');
-        
-        if (q)
-            len = q-p;
-        else
-            len = strlen(p);
-        if (len == 1)
-            localaction = *p;
-        else
-            localaction = 'w';
-        if (action)
-        {
-            if(localaction == 'W')
-                *action =  localaction;
-            else
-                *action =  tolower(localaction);
-        }
-        p = q;
-        if(p)
-            p ++;
-    }
-    /*Offset/Area*/
-    if(p)
-    {
-        q = strchr(p,':');
-        if (q)
-            len = q-p;
-        else
-            len = strlen(p);
-        if (!isdigit(*p))
-        {
-            localsection = *p;
-            if (section)
-                *section = localsection;
-            p++;
-        }
-        localoffset = strtol(p, NULL, 0);
-        if (offset)
-            *offset = localoffset;
-        p = q;
-        if(p)
-            p ++;
-    }
-    /*Style*/
-    if(p )
-    {
-        int res = 0;
-        q = strchr(p,':');
-        
-        if (q)
-            len = q-p;
-        else
-            len = strlen(p);
-        if (len)
-            res = BitFile::styleFromString(p, &localstyle);
-        if(res)
-        {
-            fprintf(stderr, "\nUnknown format \"%*s\"\n", len, p);
-            return 0;
-        }
-        if (len && style)
-            *style = localstyle;
-        p = q;
-        if(p)
-            p ++;
-    }
-    /*Length*/
-    
-    if(p)
-    {
-        locallength = strtol(p, NULL, 0);
-        p = strchr(p,':');
-        if (length)
-            *length = locallength;
-        if(p)
-            p ++;
-    }
-    
-    if  (tolower(localaction) == 'r')
-    {
-        if (!(strcasecmp(filename,"stdout")))
-            ret= stdout;
-        else
-        {
-            int res; 
-            struct stat  stats;
-            res = stat(filename, &stats);
-            if ((res == 0) && (localaction == 'r') && stats.st_size !=0)
-            {
-                fprintf(stderr, "File %s already exists. Aborting\n", filename);
-                return NULL;
-            }
-            ret=fopen(filename,"wb");
-            if(!ret)
-                fprintf(stderr, "Unable to open File %s. Aborting\n", filename);
-        }
-    }
+    if (q)
+      len = q - p;
     else
-    {
+      len = strlen(p);
+    if (len > 0) {
+      int num = (len > 255) ? 255 : len;
+      strncpy(filename, p, num);
+      filename[num] = 0;
+    } else
+      return NULL;
+    p = q;
+    if (p) p++;
+  }
+  /* Action*/
+  if (p) {
+    q = strchr(p, ':');
+
+    if (q)
+      len = q - p;
+    else
+      len = strlen(p);
+    if (len == 1)
+      localaction = *p;
+    else
+      localaction = 'w';
+    if (action) {
+      if (localaction == 'W')
+        *action = localaction;
+      else
+        *action = tolower(localaction);
+    }
+    p = q;
+    if (p) p++;
+  }
+  /*Offset/Area*/
+  if (p) {
+    q = strchr(p, ':');
+    if (q)
+      len = q - p;
+    else
+      len = strlen(p);
+    if (!isdigit(*p)) {
+      localsection = *p;
+      if (section) *section = localsection;
+      p++;
+    }
+    localoffset = strtol(p, NULL, 0);
+    if (offset) *offset = localoffset;
+    p = q;
+    if (p) p++;
+  }
+  /*Style*/
+  if (p) {
+    int res = 0;
+    q = strchr(p, ':');
+
+    if (q)
+      len = q - p;
+    else
+      len = strlen(p);
+    if (len) res = BitFile::styleFromString(p, &localstyle);
+    if (res) {
+      fprintf(stderr, "\nUnknown format \"%*s\"\n", len, p);
+      return 0;
+    }
+    if (len && style) *style = localstyle;
+    p = q;
+    if (p) p++;
+  }
+  /*Length*/
+
+  if (p) {
+    locallength = strtol(p, NULL, 0);
+    p = strchr(p, ':');
+    if (length) *length = locallength;
+    if (p) p++;
+  }
+
+  if (tolower(localaction) == 'r') {
+    if (!(strcasecmp(filename, "stdout")))
+      ret = stdout;
+    else {
+      int res;
+      struct stat stats;
+      res = stat(filename, &stats);
+      if ((res == 0) && (localaction == 'r') && stats.st_size != 0) {
+        fprintf(stderr, "File %s already exists. Aborting\n", filename);
+        return NULL;
+      }
+      ret = fopen(filename, "wb");
+      if (!ret) fprintf(stderr, "Unable to open File %s. Aborting\n", filename);
+    }
+  } else {
 #if 0
         if (!(strcasecmp(filename,"stdin")))
             ret = stdin;
         else
 #endif
-        {
-            ret = fopen(filename,"rb");
-            if(!ret)
-                fprintf(stderr, "Can't open datafile %s: %s\n", filename, 
-                        strerror(errno));
-        }
+    {
+      ret = fopen(filename, "rb");
+      if (!ret)
+        fprintf(stderr, "Can't open datafile %s: %s\n", filename,
+                strerror(errno));
     }
-    return ret;
+  }
+  return ret;
 }
 
-void dump_lists(CableDB *cabledb, DeviceDB *db)
-{
-    int fd;
-    FILE *fp_out;
-    char outname[17] = "cablelist.txt";
+void dump_lists(CableDB *cabledb, DeviceDB *db) {
+  int fd;
+  FILE *fp_out;
+  char outname[17] = "cablelist.txt";
 
-   fd = open(outname, O_WRONLY|O_CREAT|O_EXCL, 0644);
-    if (fd <0 )
-    {
-        sprintf(outname,"cablelist.txt.1");
-        fd = open(outname, O_WRONLY|O_CREAT, 0644);
+  fd = open(outname, O_WRONLY | O_CREAT | O_EXCL, 0644);
+  if (fd < 0) {
+    sprintf(outname, "cablelist.txt.1");
+    fd = open(outname, O_WRONLY | O_CREAT, 0644);
+  }
+  if (fd < 0) {
+    fprintf(stderr, "Error creating file\n");
+  } else {
+    fprintf(stderr, "Dumping internal cablelist to %s\n", outname);
+    fp_out = fdopen(fd, "w");
+    if (fp_out) {
+      fprintf(fp_out, "%-20s%-8s%-10sOptString\n", "#Alias", "Type",
+              "Frequency");
+      cabledb->dumpCables(fp_out);
+      fclose(fp_out);
     }
-    if (fd <0 )
-    {
-        fprintf(stderr, "Error creating file\n");
-    }
-    else
-    {
-        fprintf(stderr, "Dumping internal cablelist to %s\n", outname);
-        fp_out = fdopen(fd, "w");
-        if (fp_out)
-        {
-            fprintf(fp_out, "%-20s%-8s%-10sOptString\n", "#Alias", "Type", "Frequency");
-            cabledb->dumpCables(fp_out);
-            fclose(fp_out);
-        }
-    }
+  }
 
-    sprintf(outname,"devlist.txt");
-   fd = open(outname, O_WRONLY|O_CREAT|O_EXCL, 0644);
-    if (fd <0 )
-    {
-        sprintf(outname,"devlist.txt.1");
-        fd = open(outname, O_WRONLY|O_CREAT, 0644);
+  sprintf(outname, "devlist.txt");
+  fd = open(outname, O_WRONLY | O_CREAT | O_EXCL, 0644);
+  if (fd < 0) {
+    sprintf(outname, "devlist.txt.1");
+    fd = open(outname, O_WRONLY | O_CREAT, 0644);
+  }
+  if (fd < 0) {
+    fprintf(stderr, "Error creating file\n");
+  } else {
+    fprintf(stderr, "Dumping internal devicelist to %s\n", outname);
+    fp_out = fdopen(fd, "w");
+    if (fp_out) {
+      fprintf(fp_out, "# IDCODE IR_len ID_Cmd Text\n");
+      db->dumpDevices(fp_out);
+      fclose(fp_out);
     }
-    if (fd <0 )
-    {
-        fprintf(stderr, "Error creating file\n");
-    }
-    else
-    {
-        fprintf(stderr, "Dumping internal devicelist to %s\n", outname);
-        fp_out = fdopen(fd, "w");
-        if (fp_out)
-        {
-            fprintf(fp_out, "# IDCODE IR_len ID_Cmd Text\n");
-            db->dumpDevices(fp_out);
-            fclose(fp_out);
-        }
-    }
-    exit(0);
+  }
+  exit(0);
 }
 
-int detect_chain()
-{
+int detect_chain() {
   struct cable_t cable;
   CableDB cabledb(NULL);
   int res;
-  std::auto_ptr<IOBase>  io;
-  char const *serial  = 0;
+  std::auto_ptr<IOBase> io;
+  char const *serial = 0;
   unsigned long id;
   DeviceDB db(NULL);
-  char const *dev       = 0;
-  unsigned int jtag_freq= 0;
-  int      chainpos     = 0;
+  char const *dev = 0;
+  unsigned int jtag_freq = 0;
+  int chainpos = 0;
 
   res = cabledb.getCable("sysfsgpio", &cable);
-  if(res)
-  {
-      fprintf(stderr,"Can't find description for a cable named %s\n",
-             "sysfsgpio");
-      fprintf(stdout, "Known Cables\n");
-      cabledb.dumpCables(stderr);
-      exit(1);
+  if (res) {
+    fprintf(stderr, "Can't find description for a cable named %s\n",
+            "sysfsgpio");
+    fprintf(stdout, "Known Cables\n");
+    cabledb.dumpCables(stderr);
+    exit(1);
   }
-  
-  res = getIO( &io, &cable, dev, serial, false, false, jtag_freq);
-  if (res) /* some error happend*/
-    {
-      if (res == 1) exit(1);
-      else exit(255);
-    }
 
-  if (cable.cabletype == CABLE_SYSFS_GPIO)
+  res = getIO(&io, &cable, dev, serial, false, false, jtag_freq);
+  if (res) /* some error happend*/
   {
-    static_cast<IOSysFsGPIO*>(io.get())->setupGPIOs(0,1,2,3);
+    if (res == 1)
+      exit(1);
+    else
+      exit(255);
   }
-  
+
+  if (cable.cabletype == CABLE_SYSFS_GPIO) {
+    static_cast<IOSysFsGPIO *>(io.get())->setupGPIOs(0, 1, 2, 3);
+  }
+
   Jtag jtag = Jtag(io.get());
   jtag.setVerbose(false);
 
   if (init_chain(jtag, db))
-    id = get_id (jtag, db, chainpos);
+    id = get_id(jtag, db, chainpos);
   else
     id = 0;
 
-      detect_chain(&jtag, &db);
-      return 0;
+  detect_chain(&jtag, &db);
+  return 0;
 }
 
-int program(int argc, char **args)
-{
-  bool        dump      = false;
-  bool        verify    = false;
-  bool        lock      = false;
-  unsigned int jtag_freq= 0;
+bool program(std::string filename) {
+  bool dump = false;
+  bool verify = false;
+  bool lock = false;
+  unsigned int jtag_freq = 0;
   unsigned long id;
   struct cable_t cable;
-  char const *dev       = 0;
-  char const *eepromfile= 0;
-  char const *fusefile  = 0;
-  char const *mapdir    = 0;
-  FILE_STYLE in_style  = STYLE_BIT;
+  char const *dev = 0;
+  char const *eepromfile = 0;
+  char const *fusefile = 0;
+  char const *mapdir = 0;
+  FILE_STYLE in_style = STYLE_BIT;
   FILE_STYLE out_style = STYLE_BIT;
-  int      chainpos     = 0;
-  int      nchainpos    = 1;
-  int      chainpositions[MAXPOSITIONS] = {0};
+  int chainpos = 0;
+  int nchainpos = 1;
+  int chainpositions[MAXPOSITIONS] = {0};
   vector<string> xcfopts;
   int test_count = 0;
-  char const *serial  = 0;
+  char const *serial = 0;
   char *bscanfile = 0;
   char *cablename = 0;
   char osname[OSNAME_LEN];
   DeviceDB db(NULL);
   CableDB cabledb(NULL);
-  std::auto_ptr<IOBase>  io;
+  std::auto_ptr<IOBase> io;
   int res;
 
   chainpos = 1;
 
   res = cabledb.getCable("sysfsgpio", &cable);
-  
-  res = getIO( &io, &cable, dev, serial, false, false, jtag_freq);
-  if (res) /* some error happend*/
-    {
-      if (res == 1) exit(1);
-      else exit(255);
-    }
 
-    static_cast<IOSysFsGPIO*>(io.get())->setupGPIOs(0,1,2,3);
-  
+  res = getIO(&io, &cable, dev, serial, false, false, jtag_freq);
+  if (res) /* some error happend*/
+  {
+    if (res == 1)
+      exit(1);
+    else
+      exit(255);
+  }
+
+  static_cast<IOSysFsGPIO *>(io.get())->setupGPIOs(0, 1, 2, 3);
+
   Jtag jtag = Jtag(io.get());
   jtag.setVerbose(false);
 
   if (init_chain(jtag, db))
-    id = get_id (jtag, db, chainpos);
+    id = get_id(jtag, db, chainpos);
   else
     id = 0;
 
@@ -447,91 +399,60 @@ int program(int argc, char **args)
   unsigned int manufacturer = IDCODE_TO_MANUFACTURER(id);
   /* TODO: check family/manufacturer */
 
-  return  programXC3S(jtag, argc, args, false,
-                              false, family);
+  return programXC3S(jtag, filename, false, family);
 }
 
-int programXC3S(Jtag &jtag, int argc, char** args,
-                bool verbose, bool reconfig, int family)
-{
-
+bool programXC3S(Jtag &jtag, std::string filename, bool verbose, int family) {
   ProgAlgXC3S alg(jtag, family);
-  int i;
 
-  if(reconfig)
-      alg.reconfig();
-  else
-  {
-      for(i=1; i< argc; i++)
-      {
-          int res;
-          unsigned int bitfile_offset = 0;
-          unsigned int bitfile_length = 0;
-          char action = 'w';
-          FILE_STYLE bitfile_style = STYLE_BIT;
-          FILE *fp;
-          BitFile bitfile;
-          
-          fp = getFile_and_Attribute_from_name
-              (args[i], &action, NULL, &bitfile_offset,
-               &bitfile_style, &bitfile_length);
-          if (tolower(action) != 'w')
-          {
-              if (verbose)
-              {
-                  fprintf(stderr,"Action %c not supported for XC3S\n", action);
-              }
-              continue;
-          }
-          if( bitfile_offset != 0)
-          {
-              if (verbose)
-              {
-                  fprintf(stderr,"Offset %d not supported for XC3S\n",
-                      bitfile_offset);
-              }
-              continue;
-          }
-          if( bitfile_length != 0)
-          {
-              if (verbose)
-              {
-                  fprintf(stderr,"Length %d not supported for XC3S\n",
-                      bitfile_length);
-              }
-              continue;
-          }
-          res = bitfile.readFile(fp, bitfile_style);
-          if (res != 0)
-          {
-              if (verbose)
-              {
-                  fprintf(stderr,"Reading Bitfile %s failed\n",
-                      args[i]);
-              }
-              continue;
-          }
- 
-          if(verbose) 
-          {
-              fprintf(stderr, "Created from NCD file: %s\n",
-                      bitfile.getNCDFilename());
-              fprintf(stderr, "Target device: %s\n",
-                      bitfile.getPartName());
-              fprintf(stderr, "Created: %s %s\n",
-                      bitfile.getDate(), bitfile.getTime());
-              fprintf(stderr, "Bitstream length: %u bits\n",
-                      bitfile.getLength());
-          }
-          alg.array_program(bitfile);
-      }
+  int res;
+  unsigned int bitfile_offset = 0;
+  unsigned int bitfile_length = 0;
+  char action = 'w';
+  FILE_STYLE bitfile_style = STYLE_BIT;
+  FILE *fp;
+  BitFile bitfile;
+
+  fp = getFile_and_Attribute_from_name((char *)filename.c_str(), &action, NULL,
+                                       &bitfile_offset, &bitfile_style,
+                                       &bitfile_length);
+  if (tolower(action) != 'w') {
+    if (verbose) {
+      fprintf(stderr, "Action %c not supported for XC3S\n", action);
+    }
+    return false;
   }
-  return 0;
+  if (bitfile_offset != 0) {
+    if (verbose) {
+      fprintf(stderr, "Offset %d not supported for XC3S\n", bitfile_offset);
+    }
+    return false;
+  }
+  if (bitfile_length != 0) {
+    if (verbose) {
+      fprintf(stderr, "Length %d not supported for XC3S\n", bitfile_length);
+    }
+    return false;
+  }
+  res = bitfile.readFile(fp, bitfile_style);
+  if (res != 0) {
+    if (verbose) {
+      fprintf(stderr, "Reading Bitfile %s failed\n", filename.c_str());
+    }
+    return false;
+  }
+
+  if (verbose) {
+    fprintf(stderr, "Created from NCD file: %s\n", bitfile.getNCDFilename());
+    fprintf(stderr, "Target device: %s\n", bitfile.getPartName());
+    fprintf(stderr, "Created: %s %s\n", bitfile.getDate(), bitfile.getTime());
+    fprintf(stderr, "Bitstream length: %u bits\n", bitfile.getLength());
+  }
+  alg.array_program(bitfile);
+  return true;
 }
 
-int main(int argc, char **args)
-{
-//  detect_chain();
-  program(argc,args);
+int main(int argc, char **args) {
+  //  detect_chain();
+  program(std::string(args[1]));
 }
-
