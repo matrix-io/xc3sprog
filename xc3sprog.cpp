@@ -39,6 +39,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <memory>
 #include <string>
 
+#include "xc3sprog.h"
 #include "bitfile.h"
 #include "cabledb.h"
 #include "devicedb.h"
