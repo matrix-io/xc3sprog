@@ -50,7 +50,7 @@ if(ANDROID)
   add_library(xc3loader SHARED xc3loader.cpp android_utils.cpp)
   set_property(TARGET xc3loader PROPERTY CXX_STANDARD 11)
   target_link_libraries(xc3loader log)
-  target_link_libraries(xc3loader ${CONDITIONAL_LIBS} ${LIBS})
+  target_link_libraries(xc3loader xc3sproglib)
   # set back RUNTIME_OUTPUT_DIRECTORY
   set_target_properties(xc3loader PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/android")
   # install
