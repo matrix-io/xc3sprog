@@ -10,6 +10,7 @@
 #include <jni.h>
 
 #include "./android_utils.h"
+#include "./xc3sprog.h"
 
 #include <android/log.h>
 
@@ -45,7 +46,7 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_burnFirmware
 }
 
 extern "C"
-JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_loadFirmware
+JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirmware
 (JNIEnv* env, jobject thiz, jobject ctx, jstring path)
 {
   LOGI("==LoadTracker init==");
@@ -55,7 +56,7 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_loadFirmware
   LOGD("-->loading cascade from: %s",(char*)cascadepath.c_str());
 
   LOGI("Loading Java classes..");
-  jclass clz = env->FindClass("admobilize/matrix/gt/XC3Sprog/JNICallBacks");
+  jclass clz = env->FindClass("admobilize/matrix/gt/XC3Sprog/JNICallbacks");
   g_ctx.jniHelperClz = env->NewGlobalRef(clz);
   LOGD("-->JniHandler class founded.");
 
@@ -68,7 +69,7 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_loadFirmware
   g_ctx.onFacesCount = env->GetMethodID(g_ctx.jniHelperClz,"onFirmwareLoad","(I)V");
   if (!g_ctx.onFacesCount) {
     LOGE("Failed to retrieve getRuntimeMemorySize() methodID @ line %d",__LINE__);
-    return;
+    return 0;
   }
 
   LOGD("-->RuntimeInfo:");
@@ -76,6 +77,8 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_loadFirmware
 
   LOGD("-->Main context ready");
   LOGI("==Finish Init==");
+
+  return 1;
 
 }
 
