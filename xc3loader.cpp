@@ -33,7 +33,7 @@ typedef struct tick_context {
     jmethodID writeTMS;
     jmethodID writeTCK;
     jmethodID readTDO;
-    jmethodID gpioLED;
+    jmethodID writeLED;
     jmethodID readLED;
     pthread_mutex_t  lock;
     int      done;
@@ -59,8 +59,8 @@ bool readTDO(){
   return (g_ctx.env->CallBooleanMethod(g_ctx.jniHelperObj,g_ctx.readTDO));
 }
 
-void gpioLED(bool state){
-  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.gpioLED, state);
+void writeLED(bool state){
+  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.writeLED, state);
 }
 
 bool readLED(){
@@ -75,7 +75,7 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_burnFirm
   g_ctx.env = env;
   bool state=false;
   for (int i=0;i<6;i++){
-    gpioLED(state);
+    writeLED(state);
     LOGD("-->LED state: %i",state);
     state=!state;
     usleep(100000);
@@ -136,8 +136,8 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirm
     return 0;
   }
 
-  g_ctx.gpioLED = env->GetMethodID(g_ctx.jniHelperClz, "gpioLED", "(Z)V");
-  if (!g_ctx.gpioLED) {
+  g_ctx.writeLED = env->GetMethodID(g_ctx.jniHelperClz, "writeLED", "(Z)V");
+  if (!g_ctx.writeLED) {
     LOGE("Failed to retrieve methodID @ line %d",__LINE__);
     return 0;
   }
