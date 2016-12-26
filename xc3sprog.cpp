@@ -332,10 +332,6 @@ bool fpga_program(std::string filename) {
     else
       exit(255);
   }
-<<<<<<< HEAD
-
-=======
->>>>>>> 574f19a9e96fccfd04a66ffed5478d3eb0ec3dbf
   Jtag jtag = Jtag(io.get());
   jtag.setVerbose(false);
 
