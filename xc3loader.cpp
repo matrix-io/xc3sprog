@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <iostream>
 #include <vector>
+#include <unistd.h>
 #include <jni.h>
 
 #include "./android_utils.h"
@@ -26,23 +27,63 @@ typedef struct tick_context {
     jobject  jniHelperObj;
     jclass   mainActivityClz;
     jobject  mainActivityObj;
-    jmethodID onSendFace;
-    jmethodID onFacesCount;
-    jmethodID onFinishDetection;
-    jmethodID onTrackerFrame;
+    JNIEnv  *env;
+    jmethodID onFirmwareLoad;
+    jmethodID writeTDI;
+    jmethodID writeTMS;
+    jmethodID writeTCK;
+    jmethodID readTDO;
+    jmethodID gpioLED;
+    jmethodID readLED;
     pthread_mutex_t  lock;
     int      done;
 } MainContext;
 MainContext g_ctx;
 
 using namespace std;
+std::string firmware;
+
+void writeTDI(bool state){
+  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.writeTDI, state);
+}
+
+void writeTMS(bool state){
+  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.writeTMS, state);
+}
+
+void writeTCK(bool state){
+  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.writeTCK, state);
+}
+
+bool readTDO(){
+  return (g_ctx.env->CallBooleanMethod(g_ctx.jniHelperObj,g_ctx.readTDO));
+}
+
+void gpioLED(bool state){
+  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.gpioLED, state);
+}
+
+bool readLED(){
+  return (g_ctx.env->CallBooleanMethod(g_ctx.jniHelperObj,g_ctx.readLED));
+}
+
 
 extern "C"
-JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_burnFirmware
+JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_burnFirmware
 (JNIEnv* env, jobject object, jint size )
 {
+  g_ctx.env = env;
+  bool state=false;
+  for (int i=0;i<6;i++){
+    gpioLED(state);
+    LOGD("-->LED state: %i",state);
+    state=!state;
+    usleep(100000);
+  }
+  LOGD("-->LED final state: %i",readLED());
 
-
+  return 1;
+ 
 }
 
 extern "C"
@@ -52,8 +93,8 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirm
   LOGI("==LoadTracker init==");
   LOGD("-->isLittleEndian: %i",isLittleEndian());
   
-  std::string cascadepath = ConvertJString( env, path );
-  LOGD("-->loading cascade from: %s",(char*)cascadepath.c_str());
+  firmware = ConvertJString( env, path );
+  LOGD("-->loading cascade from: %s",(char*)firmware.c_str());
 
   LOGI("Loading Java classes..");
   jclass clz = env->FindClass("admobilize/matrix/gt/XC3Sprog/JNICallbacks");
@@ -64,11 +105,46 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirm
   jobject    handler = env->NewObject(g_ctx.jniHelperClz,jniHelperCtor,ctx);
   g_ctx.jniHelperObj = env->NewGlobalRef(handler);
   LOGD("-->JniHandler global reference");
-
  
-  g_ctx.onFacesCount = env->GetMethodID(g_ctx.jniHelperClz,"onFirmwareLoad","(I)V");
-  if (!g_ctx.onFacesCount) {
-    LOGE("Failed to retrieve getRuntimeMemorySize() methodID @ line %d",__LINE__);
+  g_ctx.onFirmwareLoad = env->GetMethodID(g_ctx.jniHelperClz,"onFirmwareLoad","(I)V");
+  if (!g_ctx.onFirmwareLoad) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
+    return 0;
+  }
+
+  g_ctx.writeTDI = env->GetMethodID(g_ctx.jniHelperClz, "writeTDI", "(Z)V");
+  if (!g_ctx.writeTDI) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
+    return 0;
+  }
+
+  g_ctx.writeTMS = env->GetMethodID(g_ctx.jniHelperClz, "writeTMS", "(Z)V");
+  if (!g_ctx.writeTMS) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
+    return 0;
+  }
+
+  g_ctx.writeTCK = env->GetMethodID(g_ctx.jniHelperClz, "writeTCK", "(Z)V");
+  if (!g_ctx.writeTCK) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
+    return 0;
+  }
+
+  g_ctx.readTDO= env->GetMethodID(g_ctx.jniHelperClz, "readTDO", "()Z");
+  if (!g_ctx.readTDO) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
+    return 0;
+  }
+
+  g_ctx.gpioLED = env->GetMethodID(g_ctx.jniHelperClz, "gpioLED", "(Z)V");
+  if (!g_ctx.gpioLED) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
+    return 0;
+  }
+
+  g_ctx.readLED = env->GetMethodID(g_ctx.jniHelperClz, "readLED", "()Z");
+  if (!g_ctx.readLED) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
     return 0;
   }
 
