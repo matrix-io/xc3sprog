@@ -67,11 +67,7 @@ bool readLED(){
   return (g_ctx.env->CallBooleanMethod(g_ctx.jniHelperObj,g_ctx.readLED));
 }
 
-
-extern "C"
-JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_burnFirmware
-(JNIEnv* env, jobject object, jint size )
-{
+void testWriteReadFunctions(JNIEnv *env){
   g_ctx.env = env;
   bool state=false;
   for (int i=0;i<6;i++){
@@ -81,9 +77,16 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_burnFirm
     usleep(100000);
   }
   LOGD("-->LED final state: %i",readLED());
+}
 
+extern "C"
+JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_burnFirmware
+(JNIEnv* env, jobject object, jint size )
+{
+  testWriteReadFunctions(env);
+  g_ctx.env = env;
+  //fpga_program(firmware);
   return 1;
- 
 }
 
 extern "C"
