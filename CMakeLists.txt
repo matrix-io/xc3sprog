@@ -42,7 +42,6 @@ add_library(xc3sproglib  STATIC
   xc3loader.cpp
   ${CONDITIONAL_FILES} devices.h cables.h xc3loader.h sysfs.h)
 
-
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 
 
 if(ANDROID)
