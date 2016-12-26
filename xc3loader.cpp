@@ -85,8 +85,10 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_burnFirm
 (JNIEnv* env, jobject object, jint size )
 {
   testWriteReadFunctions(env);
+  LOGI("==Starting FPGA flashing..");
   g_ctx.env = env;
   fpga_program(firmware);
+  LOGI("==FPGA flashing finish!");
   return 1;
 }
 
