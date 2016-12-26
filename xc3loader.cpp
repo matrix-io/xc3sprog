@@ -68,9 +68,10 @@ bool readLED(){
 }
 
 void testWriteReadFunctions(JNIEnv *env){
+  LOGI("==Testing READ/WRITE on LED:");
   g_ctx.env = env;
   bool state=false;
-  for (int i=0;i<6;i++){
+  for (int i=0;i<5;i++){
     writeLED(state);
     LOGD("-->LED state: %i",state);
     state=!state;
@@ -153,6 +154,7 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirm
 
   LOGD("-->RuntimeInfo:");
   queryRuntimeInfo(env, g_ctx.jniHelperObj, g_ctx.jniHelperClz);
+  g_ctx.env=env;
 
   LOGD("-->Main context ready");
   LOGI("==Finish Init==");
