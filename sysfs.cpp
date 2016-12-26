@@ -6,16 +6,27 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
-#include "xc3loader.h"
+#include <iostream>
+
+const int TDIPin = 22;
+const int TMSPin = 4;
+const int TCKPin = 17;
+const int TDOPin = 27;
 
 IOSysFsGPIO::IOSysFsGPIO()
-{
+    : tck_fd(-1), tms_fd(-1), tdi_fd(-1), tdo_fd(-1), one("1"), zero("0") {
+  tdi_fd = setup_gpio(TDIPin, 0);
+  tms_fd = setup_gpio(TMSPin, 0);
+  tck_fd = setup_gpio(TCKPin, 0);
+  tdo_fd = setup_gpio(TDOPin, 1);
 }
 
 IOSysFsGPIO::~IOSysFsGPIO() {
 }
 
+int IOSysFsGPIO::setupGPIOs(int tck, int tms, int tdi, int tdo) { return 1; }
 
 void IOSysFsGPIO::txrx_block(const unsigned char *tdi, unsigned char *tdo,
                              int length, bool last) {
@@ -40,7 +51,7 @@ void IOSysFsGPIO::txrx_block(const unsigned char *tdi, unsigned char *tdo,
   tdo_byte = tdo_byte + (txrx(last, (tdi_byte & 1) == 1) << (i % 8));
   if (tdo) tdo[j] = tdo_byte;
 
-  writeTCK(false);
+  write(tck_fd, zero, 1);
 
   return;
 }
@@ -54,17 +65,17 @@ void IOSysFsGPIO::tx_tms(unsigned char *pat, int length, int force) {
     tms = tms >> 1;
   }
 
-  writeTCK(false);
+  write(tck_fd, zero, 1);
 }
 
 void IOSysFsGPIO::tx(bool tms, bool tdi) {
-  writeTCK(false);
+  write(tck_fd, zero, 1);
 
-  writeTDI(tdi);
+  write(tdi_fd, tdi ? one : zero, 1);
 
-  writeTMS(tms);
+  write(tms_fd, tms ? one : zero, 1);
 
-  writeTCK(true);
+  write(tck_fd, one, 1);
 }
 
 bool IOSysFsGPIO::txrx(bool tms, bool tdi) {
@@ -72,9 +83,36 @@ bool IOSysFsGPIO::txrx(bool tms, bool tdi) {
 
   tx(tms, tdi);
 
-  return readTDO();
+  lseek(tdo_fd, 0, SEEK_SET);
+
+  if (read(tdo_fd, &buf, sizeof(buf)) < 0) {
+    /* reading tdo failed */
+    return false;
+  }
+  return buf[0] != '0';
 }
 
-int setupGPIOs(int tck, int tms, int tdi, int tdo){
-  return 1;
+int IOSysFsGPIO::open_write_close(const char *name, const char *valstr) {
+  int ret;
+  int fd = open(name, O_WRONLY);
+  if (fd < 0) return fd;
+
+  ret = write(fd, valstr, strlen(valstr));
+  close(fd);
+
+  return ret;
 }
+
+int IOSysFsGPIO::setup_gpio(int gpio, int is_input) {
+  char buf[40];
+  char gpiostr[4];
+
+  snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%d/value", gpio);
+  int fd = open(buf, O_RDWR | O_NONBLOCK | O_SYNC);
+  if (fd < 0) {
+    std::cerr << "ERROR: Couldn't open value for gpio " << gpio << std::endl;
+  }
+
+  return fd;
+}
+

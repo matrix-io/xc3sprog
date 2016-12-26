@@ -13,4 +13,17 @@ class IOSysFsGPIO : public IOBase {
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length,
                   bool last);
   void tx_tms(unsigned char *pat, int length, int force);
+
+  int open_write_close(const char *name, const char *valstr);
+  int setup_gpio(int gpio, int is_input);
+  bool is_gpio_valid(int gpio) { return gpio >= 0 && gpio < 1000; }
+
+ private:
+  int tck_fd;
+  int tms_fd;
+  int tdi_fd;
+  int tdo_fd;
+
+  const char *one;
+  const char *zero;
 };
