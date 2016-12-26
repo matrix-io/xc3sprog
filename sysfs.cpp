@@ -26,8 +26,6 @@ IOSysFsGPIO::IOSysFsGPIO()
 IOSysFsGPIO::~IOSysFsGPIO() {
 }
 
-int IOSysFsGPIO::setupGPIOs(int tck, int tms, int tdi, int tdo) { return 1; }
-
 void IOSysFsGPIO::txrx_block(const unsigned char *tdi, unsigned char *tdo,
                              int length, bool last) {
   int i = 0;
