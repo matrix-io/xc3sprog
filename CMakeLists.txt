@@ -26,28 +26,33 @@ ADD_CUSTOM_COMMAND(OUTPUT cables.h
 
 INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(xc3sproglib  STATIC sysfs.cpp  
-                        devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
-			iobase.cpp  utilities.cpp
-			progalgxc3s.cpp 
-			bitrev.cpp
-                        cabledb.cpp
-                        xc3sprog.cpp 
-                        srecfile.cpp  
-                        ${CONDITIONAL_FILES} devices.h cables.h)
+add_library(xc3sproglib  STATIC 
+  sysfs.cpp 
+  devicedb.cpp 
+  jtag.cpp 
+  jedecfile.cpp 
+  bitfile.cpp 
+  iobase.cpp
+  utilities.cpp
+  progalgxc3s.cpp
+  bitrev.cpp
+  cabledb.cpp
+  xc3sprog.cpp
+  srecfile.cpp
+  xc3loader.cpp
+  ${CONDITIONAL_FILES} devices.h cables.h xc3loader.h sysfs.h)
 
-add_executable(xc3sprog simple_main.cpp devices.h)
-target_link_libraries(xc3sprog xc3sproglib ${CONDITIONAL_LIBS}  ${LIBS} )
+add_executable(xc3sprog devices.h sysfs.h)
+target_link_libraries(xc3sprog xc3sproglib xc3loader ${CONDITIONAL_LIBS}  ${LIBS} )
 set_property(TARGET xc3sprog PROPERTY CXX_STANDARD 11)
 
 install(TARGETS xc3sprog DESTINATION bin)
-
 
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 
 
 if(ANDROID)
   add_definitions(-frtti -fexceptions -fpermissive -std=c++11)
-  add_library(xc3loader SHARED xc3loader.cpp android_utils.cpp)
+  add_library(xc3loader SHARED xc3loader.cpp android_utils.cpp sysfs.cpp)
   set_property(TARGET xc3loader PROPERTY CXX_STANDARD 11)
   target_link_libraries(xc3loader log)
   target_link_libraries(xc3loader xc3sproglib)

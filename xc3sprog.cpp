@@ -40,6 +40,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <string>
 
 #include "xc3sprog.h"
+#include "xc3loader.h"
 #include "bitfile.h"
 #include "cabledb.h"
 #include "devicedb.h"

@@ -86,7 +86,7 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_burnFirm
 {
   testWriteReadFunctions(env);
   g_ctx.env = env;
-  //fpga_program(firmware);
+  fpga_program(firmware);
   return 1;
 }
 

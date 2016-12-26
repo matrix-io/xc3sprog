@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "android_gpio_h"
+#include "xc3loader.h"
 
 IOSysFsGPIO::IOSysFsGPIO()
 {
@@ -75,3 +75,6 @@ bool IOSysFsGPIO::txrx(bool tms, bool tdi) {
   return readTDO();
 }
 
+int setupGPIOs(int tck, int tms, int tdi, int tdo){
+  return 1;
+}
