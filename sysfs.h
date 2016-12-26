@@ -3,7 +3,6 @@
 class IOSysFsGPIO : public IOBase {
  public:
   IOSysFsGPIO();
-  int setupGPIOs(int tck, int tms, int tdi, int tdo);
   virtual ~IOSysFsGPIO();
 
  private:
