@@ -281,10 +281,6 @@ int detect_chain() {
       exit(255);
   }
 
-  if (cable.cabletype == CABLE_SYSFS_GPIO) {
-    static_cast<IOSysFsGPIO *>(io.get())->setupGPIOs(0, 1, 2, 3);
-  }
-
   Jtag jtag = Jtag(io.get());
   jtag.setVerbose(false);
 
@@ -336,9 +332,6 @@ bool fpga_program(std::string filename) {
     else
       exit(255);
   }
-
-  static_cast<IOSysFsGPIO *>(io.get())->setupGPIOs(0, 1, 2, 3);
-
   Jtag jtag = Jtag(io.get());
   jtag.setVerbose(false);
 
