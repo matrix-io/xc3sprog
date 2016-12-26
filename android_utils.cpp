@@ -1,16 +1,16 @@
 #include "./android_utils.h"
 
-void queryRuntimeInfo(JNIEnv *env, jobject instance, jclass helper) {
+void queryRuntimeInfo(JNIEnv *env, jobject jniHelperObj, jclass jniHelperClz) {
 
   jmethodID versionFunc =
-      env->GetStaticMethodID(helper, "getBuildVersion", "()Ljava/lang/String;");
+      env->GetStaticMethodID(jniHelperClz, "getBuildVersion", "()Ljava/lang/String;");
 
   if (!versionFunc) {
     LOGE("Failed to retrieve methodID @ line %d", __LINE__);
     return;
   }
 
-  jstring buildVersion = env->CallStaticObjectMethod(helper, versionFunc);
+  jstring buildVersion = env->CallStaticObjectMethod(jniHelperClz, versionFunc);
   const char *version = env->GetStringUTFChars(buildVersion, NULL);
 
   if (!version) {
@@ -24,14 +24,14 @@ void queryRuntimeInfo(JNIEnv *env, jobject instance, jclass helper) {
   // leaking
   env->DeleteLocalRef(buildVersion);
 
-  jmethodID memFunc = env->GetMethodID(helper, "getRuntimeMemorySize", "()J");
+  jmethodID memFunc = env->GetMethodID(jniHelperClz, "getRuntimeMemorySize", "()J");
 
   if (!memFunc) {
     LOGE("Failed to retrieve methodID @ line %d", __LINE__);
     return;
   }
 
-  jlong result = env->CallLongMethod(instance, memFunc);
+  jlong result = env->CallLongMethod(jniHelperObj, memFunc);
   LOGD("-->Runtime free memory size: %lld", result);
   (void)result; // silence the compiler warning
 }
