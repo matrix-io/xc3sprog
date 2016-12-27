@@ -29,6 +29,9 @@ typedef struct tick_context {
     jobject  mainActivityObj;
     JNIEnv  *env;
     jmethodID onFirmwareLoad;
+    jmethodID txrx_block;
+    jmethodID txrx;
+    jmethodID tx;
     jmethodID writeTDI;
     jmethodID writeTMS;
     jmethodID writeTCK;
@@ -42,6 +45,18 @@ MainContext g_ctx;
 
 using namespace std;
 std::string firmware;
+
+void txrx_block(jbyteArray tdo, jbyteArray tdi, jint length, jboolean last){
+  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.txrx_block, tdo, tdi, length, last);
+}
+
+jbyte txrx(jboolean tms, jboolean tdi){
+  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.txrx, tms, tdi);
+}
+
+void tx(jboolean tms, jboolean tdi){
+  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.tx, tms, tdi);
+}
 
 void writeTDI(bool state){
   g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.writeTDI, state);
@@ -94,7 +109,7 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_burnFirm
 
 extern "C"
 JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirmware
-(JNIEnv* env, jobject thiz, jobject ctx, jstring path)
+(JNIEnv* env, jobject thiz, jobject obj, jstring path)
 {
   LOGI("==Load Firmware path ==");
   LOGD("-->isLittleEndian: %i",isLittleEndian());
@@ -103,18 +118,36 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirm
   LOGD("-->cascade path: %s",(char*)firmware.c_str());
 
   LOGI("Loading Java Callbacks..");
-  jclass clz = env->FindClass("admobilize/matrix/gt/XC3Sprog/JNICallbacks");
+  jclass clz = env->FindClass("admobilize/matrix/gt/XC3Sprog/JNIPrimitives");
   g_ctx.jniHelperClz = env->NewGlobalRef(clz);
   LOGD("-->JniHandler class founded.");
 
   LOGI("Loading Java Context..");
-  jmethodID  jniHelperCtor = env->GetMethodID(g_ctx.jniHelperClz,"<init>", "(Landroid/content/Context;)V");
-  jobject    handler = env->NewObject(g_ctx.jniHelperClz,jniHelperCtor,ctx);
-  g_ctx.jniHelperObj = env->NewGlobalRef(handler);
+  //jmethodID  jniHelperCtor = env->GetMethodID(g_ctx.jniHelperClz,"<init>", "(Landroid/content/Context;)V");
+  //jobject    handler = env->NewObject(g_ctx.jniHelperClz,jniHelperCtor,ctx);
+  g_ctx.jniHelperObj =  env->NewGlobalRef(obj);
  
   LOGD("-->Loading Java Methods..");
   g_ctx.onFirmwareLoad = env->GetMethodID(g_ctx.jniHelperClz,"onFirmwareLoad","(I)V");
   if (!g_ctx.onFirmwareLoad) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
+    return 0;
+  }
+
+  g_ctx.txrx_block = env->GetMethodID(g_ctx.jniHelperClz, "txrx_block", "([B[BIZ)V");
+  if (!g_ctx.txrx_block) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
+    return 0;
+  }
+
+  g_ctx.txrx = env->GetMethodID(g_ctx.jniHelperClz, "txrx", "(ZZ)B");
+  if (!g_ctx.txrx) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
+    return 0;
+  }
+
+  g_ctx.tx = env->GetMethodID(g_ctx.jniHelperClz, "tx", "(ZZ)V");
+  if (!g_ctx.tx) {
     LOGE("Failed to retrieve methodID @ line %d",__LINE__);
     return 0;
   }

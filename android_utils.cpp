@@ -24,14 +24,14 @@ void queryRuntimeInfo(JNIEnv *env, jobject jniHelperObj, jclass jniHelperClz) {
   // leaking
   env->DeleteLocalRef(buildVersion);
 
-  jmethodID memFunc = env->GetMethodID(jniHelperClz, "getRuntimeMemorySize", "()J");
+  jmethodID memFunc = env->GetStaticMethodID(jniHelperClz, "getRuntimeMemorySize", "()J");
 
   if (!memFunc) {
     LOGE("Failed to retrieve methodID @ line %d", __LINE__);
     return;
   }
 
-  jlong result = env->CallLongMethod(jniHelperObj, memFunc);
+  jlong result = env->CallStaticLongMethod(jniHelperClz, memFunc);
   LOGD("-->Runtime free memory size: %lld", result);
   (void)result; // silence the compiler warning
 }
