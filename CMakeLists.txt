@@ -42,6 +42,13 @@ add_library(xc3sproglib  STATIC
   xc3loader.cpp
   ${CONDITIONAL_FILES} devices.h cables.h xc3loader.h sysfs.h)
 
+add_executable(xc3sprog simple_main.cpp devices.h sysfs.h)
+target_link_libraries(xc3sprog xc3sproglib ${CONDITIONAL_LIBS}  ${LIBS} )
+set_property(TARGET xc3sprog PROPERTY CXX_STANDARD 11)
+
+install(TARGETS xc3sprog DESTINATION bin)
+
+
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 
 
 if(ANDROID)

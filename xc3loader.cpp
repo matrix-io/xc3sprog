@@ -96,22 +96,23 @@ extern "C"
 JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirmware
 (JNIEnv* env, jobject thiz, jobject ctx, jstring path)
 {
-  LOGI("==LoadTracker init==");
+  LOGI("==Load Firmware path ==");
   LOGD("-->isLittleEndian: %i",isLittleEndian());
   
   firmware = ConvertJString( env, path );
-  LOGD("-->loading cascade from: %s",(char*)firmware.c_str());
+  LOGD("-->cascade path: %s",(char*)firmware.c_str());
 
-  LOGI("Loading Java classes..");
+  LOGI("Loading Java Callbacks..");
   jclass clz = env->FindClass("admobilize/matrix/gt/XC3Sprog/JNICallbacks");
   g_ctx.jniHelperClz = env->NewGlobalRef(clz);
   LOGD("-->JniHandler class founded.");
 
+  LOGI("Loading Java Context..");
   jmethodID  jniHelperCtor = env->GetMethodID(g_ctx.jniHelperClz,"<init>", "(Landroid/content/Context;)V");
   jobject    handler = env->NewObject(g_ctx.jniHelperClz,jniHelperCtor,ctx);
   g_ctx.jniHelperObj = env->NewGlobalRef(handler);
-  LOGD("-->JniHandler global reference");
  
+  LOGD("-->Loading Java Methods..");
   g_ctx.onFirmwareLoad = env->GetMethodID(g_ctx.jniHelperClz,"onFirmwareLoad","(I)V");
   if (!g_ctx.onFirmwareLoad) {
     LOGE("Failed to retrieve methodID @ line %d",__LINE__);
