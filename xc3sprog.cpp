@@ -52,6 +52,13 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "sysfs.h"
 #include "utilities.h"
 
+#include <android/log.h>
+
+#define  LOG_TAG    "NDK_DEBUG: "
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+
 using namespace std;
 
 #define MAXPOSITIONS 8
@@ -379,6 +386,8 @@ bool programXC3S(Jtag &jtag, std::string filename, int family) {
     return false;
   }
 
+  LOGD("-->loading path name: %s", bitfile.getNCDFilename());
+  LOGD("-->Bitstream length: %u bits\n", bitfile.getLength());
   fprintf(stderr, "Created from NCD file: %s\n", bitfile.getNCDFilename());
   fprintf(stderr, "Target device: %s\n", bitfile.getPartName());
   fprintf(stderr, "Created: %s %s\n", bitfile.getDate(), bitfile.getTime());

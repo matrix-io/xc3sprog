@@ -25,6 +25,14 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "progalgxc3s.h"
 #include "utilities.h"
 
+#include <android/log.h>
+
+#define  LOG_TAG    "NDK_DEBUG: "
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+
+
 
 /*
  * Note: instruction lengths differ:
@@ -205,7 +213,8 @@ void ProgAlgXC3S::array_program(BitFile &file)
 
   if (family == FAMILY_XC2S || family == FAMILY_XC2SE)
       return flow_program_xc2s(file);
-  
+
+  LOGD("-->flow enabled..");
   flow_enable();
 
   /* JPROGAM: Triger reconfiguration, not explained in ug332, but
@@ -214,28 +223,28 @@ void ProgAlgXC3S::array_program(BitFile &file)
   do
     jtag->shiftIR(CFG_IN, buf);
   while (! (buf[0] & 0x10)); /* wait until configuration cleared */
+  LOGD("-->configuration cleared..");
 
   /* As ISC_DNA only works on a unconfigured device, see AR #29977*/
-  switch(family)
-    {
-    case 0x11: /* XC3SA*/
-    case 0x13: /* XC3SAN*/
-    case 0x1c: /* SC3SADSP*/
-    case 0x20: /* SC3SADSP*/
-      {
-	byte data[8];
-	jtag->shiftIR(ISC_ENABLE);
-	jtag->shiftIR(ISC_DNA);
-	jtag->shiftDR(0, data, 64);
-	jtag->cycleTCK(1);
-	if (*(long long*)data != -1LL)
-	  /* ISC_DNA only works on a unconfigured device, see AR #29977*/
-	  fprintf(stderr, "DNA is 0x%02x%02x%02x%02x%02x%02x%02x%02x\n", 
-		 data[0], data[1], data[2], data[3], 
-		 data[4], data[5], data[6], data[7]);
-	break;
-      }
+  switch (family) {
+  case 0x11: /* XC3SA*/
+  case 0x13: /* XC3SAN*/
+  case 0x1c: /* SC3SADSP*/
+  case 0x20: /* SC3SADSP*/
+  {
+    byte data[8];
+    jtag->shiftIR(ISC_ENABLE);
+    jtag->shiftIR(ISC_DNA);
+    jtag->shiftDR(0, data, 64);
+    jtag->cycleTCK(1);
+    if (*(long long *)data != -1LL) {
+      /* ISC_DNA only works on a unconfigured device, see AR #29977*/
+      LOGD("-->DNA is 0x%02x%02x%02x%02x%02x%02x%02x%02x\n", data[0], data[1],
+           data[2], data[3], data[4], data[5], data[6], data[7]);
     }
+    break;
+  }
+  }
 
   /* use legacy, as large USB transfers are faster then chunks */
   flow_program_legacy(file);
