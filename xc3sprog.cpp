@@ -293,9 +293,10 @@ bool detect_chain() {
   if (init_chain(jtag, db))
     id = get_id(jtag, db, chainpos);
   else
-    id = 0;
+    return false;
 
-  return detect_chain(&jtag, &db);
+  detect_chain(&jtag, &db);
+  return true;
 }
 
 bool fpga_program(std::string filename) {
