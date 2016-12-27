@@ -9,6 +9,13 @@
 #include <unistd.h>
 
 #include <iostream>
+#include "xc3loader.h"
+#include <android/log.h>
+
+#define  LOG_TAG    "NDK_DEBUG: "
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 const int TDIPin = 22;
 const int TMSPin = 4;
@@ -17,17 +24,17 @@ const int TDOPin = 27;
 
 IOSysFsGPIO::IOSysFsGPIO()
     : tck_fd(-1), tms_fd(-1), tdi_fd(-1), tdo_fd(-1), one("1"), zero("0") {
-  tdi_fd = setup_gpio(TDIPin, 0);
+  /*tdi_fd = setup_gpio(TDIPin, 0);
   tms_fd = setup_gpio(TMSPin, 0);
   tck_fd = setup_gpio(TCKPin, 0);
-  tdo_fd = setup_gpio(TDOPin, 1);
+  tdo_fd = setup_gpio(TDOPin, 1);*/
 }
 
 IOSysFsGPIO::~IOSysFsGPIO() {
-  unexport_gpio(TDIPin);
-  unexport_gpio(TMSPin);
-  unexport_gpio(TCKPin);
-  unexport_gpio(TDOPin);
+//  unexport_gpio(TDIPin);
+//  unexport_gpio(TMSPin);
+//  unexport_gpio(TCKPin);
+//  unexport_gpio(TDOPin);
 }
 
 int IOSysFsGPIO::setupGPIOs(int tck, int tms, int tdi, int tdo) { return 1; }
@@ -41,6 +48,8 @@ void IOSysFsGPIO::txrx_block(const unsigned char *tdi, unsigned char *tdo,
 
   if (tdi) tdi_byte = tdi[j];
 
+  LOGD ("lenght %d",length);
+  LOGD ("last %d",last);
   while (i < length - 1) {
     tdo_byte = tdo_byte + (txrx(false, (tdi_byte & 1) == 1) << (i % 8));
     if (tdi) tdi_byte = tdi_byte >> 1;
@@ -55,7 +64,8 @@ void IOSysFsGPIO::txrx_block(const unsigned char *tdi, unsigned char *tdo,
   tdo_byte = tdo_byte + (txrx(last, (tdi_byte & 1) == 1) << (i % 8));
   if (tdo) tdo[j] = tdo_byte;
 
-  write(tck_fd, zero, 1);
+  //write(tck_fd, zero, 1);
+  writeTCK(false);
 
   return;
 }
@@ -69,31 +79,37 @@ void IOSysFsGPIO::tx_tms(unsigned char *pat, int length, int force) {
     tms = tms >> 1;
   }
 
-  write(tck_fd, zero, 1);
+  //write(tck_fd, zero, 1);
+  writeTCK(false);
 }
 
 void IOSysFsGPIO::tx(bool tms, bool tdi) {
-  write(tck_fd, zero, 1);
+  //write(tck_fd, zero, 1);
+  writeTCK(false);
 
-  write(tdi_fd, tdi ? one : zero, 1);
+  //write(tdi_fd, tdi ? one : zero, 1);
+  writeTDI(tdi);
 
-  write(tms_fd, tms ? one : zero, 1);
+  //write(tms_fd, tms ? one : zero, 1);
+  writeTMS(tms);
 
-  write(tck_fd, one, 1);
+  //write(tck_fd, one, 1);
+  writeTCK(true);
 }
 
 bool IOSysFsGPIO::txrx(bool tms, bool tdi) {
   static char buf[1];
 
   tx(tms, tdi);
+  
+  //lseek(tdo_fd, 0, SEEK_SET);
 
-  lseek(tdo_fd, 0, SEEK_SET);
-
-  if (read(tdo_fd, &buf, sizeof(buf)) < 0) {
+  //if (read(tdo_fd, &buf, sizeof(buf)) < 0) {
     /* reading tdo failed */
-    return false;
-  }
-  return buf[0] != '0';
+  //  return false;
+  //}
+  //return buf[0] != '0';
+  return readTDO();
 }
 
 int IOSysFsGPIO::open_write_close(const char *name, const char *valstr) {
@@ -110,7 +126,7 @@ int IOSysFsGPIO::open_write_close(const char *name, const char *valstr) {
 int IOSysFsGPIO::setup_gpio(int gpio, int is_input) {
   char buf[40];
   char gpiostr[4];
-
+/*
   snprintf(gpiostr, sizeof(gpiostr), "%d", gpio);
   if (open_write_close("/sys/class/gpio/export", gpiostr) < 0) {
     if (errno == EBUSY) {
@@ -127,12 +143,13 @@ int IOSysFsGPIO::setup_gpio(int gpio, int is_input) {
     unexport_gpio(gpio);
     return 0;
   }
-
+*/
   snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%d/value", gpio);
   int fd = open(buf, O_RDWR | O_NONBLOCK | O_SYNC);
   if (fd < 0) {
     std::cerr << "ERROR: Couldn't open value for gpio " << gpio << std::endl;
-    unexport_gpio(gpio);
+    LOGE ("ERROR: Couldn't open value for gpio %d",gpio);
+    //unexport_gpio(gpio);
   }
 
   return fd;
