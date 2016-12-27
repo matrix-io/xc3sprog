@@ -214,8 +214,8 @@ void ProgAlgXC3S::array_program(BitFile &file)
   if (family == FAMILY_XC2S || family == FAMILY_XC2SE)
       return flow_program_xc2s(file);
 
-  LOGD("-->flow enabled..");
   flow_enable();
+  LOGD("-->flow enabled.");
 
   /* JPROGAM: Triger reconfiguration, not explained in ug332, but
      DS099 Figure 28:  Boundary-Scan Configuration Flow Diagram (p.49) */

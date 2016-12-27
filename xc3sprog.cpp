@@ -386,8 +386,11 @@ bool programXC3S(Jtag &jtag, std::string filename, int family) {
     return false;
   }
 
-  LOGD("-->loading path name: %s", bitfile.getNCDFilename());
-  LOGD("-->Bitstream length: %u bits\n", bitfile.getLength());
+  LOGD("-->Bitstream length: %u bits", bitfile.getLength());
+  LOGD("-->Created: %s %s", bitfile.getDate(), bitfile.getTime());
+  LOGD("-->Created from NCD file: %s", bitfile.getNCDFilename());
+  LOGD("-->Target device: %s", bitfile.getPartName());
+
   fprintf(stderr, "Created from NCD file: %s\n", bitfile.getNCDFilename());
   fprintf(stderr, "Target device: %s\n", bitfile.getPartName());
   fprintf(stderr, "Created: %s %s\n", bitfile.getDate(), bitfile.getTime());
