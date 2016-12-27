@@ -24,7 +24,13 @@ IOSysFsGPIO::IOSysFsGPIO()
 }
 
 IOSysFsGPIO::~IOSysFsGPIO() {
+  unexport_gpio(TDIPin);
+  unexport_gpio(TMSPin);
+  unexport_gpio(TCKPin);
+  unexport_gpio(TDOPin);
 }
+
+int IOSysFsGPIO::setupGPIOs(int tck, int tms, int tdi, int tdo) { return 1; }
 
 void IOSysFsGPIO::txrx_block(const unsigned char *tdi, unsigned char *tdo,
                              int length, bool last) {
@@ -105,12 +111,41 @@ int IOSysFsGPIO::setup_gpio(int gpio, int is_input) {
   char buf[40];
   char gpiostr[4];
 
+  snprintf(gpiostr, sizeof(gpiostr), "%d", gpio);
+  if (open_write_close("/sys/class/gpio/export", gpiostr) < 0) {
+    if (errno == EBUSY) {
+      std::cerr << "WARNING: gpio " << gpio << " already exported" << std::endl;
+    } else {
+      std::cerr << "ERROR: Couldn't export gpio " << gpio << std::endl;
+      return 0;
+    }
+  }
+
+  snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%d/direction", gpio);
+  if (open_write_close(buf, is_input ? "in" : "out") < 0) {
+    std::cerr << "ERROR: Couldn't set direction for gpio " << gpio << std::endl;
+    unexport_gpio(gpio);
+    return 0;
+  }
+
   snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%d/value", gpio);
   int fd = open(buf, O_RDWR | O_NONBLOCK | O_SYNC);
   if (fd < 0) {
     std::cerr << "ERROR: Couldn't open value for gpio " << gpio << std::endl;
+    unexport_gpio(gpio);
   }
 
   return fd;
 }
 
+void IOSysFsGPIO::unexport_gpio(int gpio) {
+  char gpiostr[4];
+
+  if (!is_gpio_valid(gpio)) return;
+
+  snprintf(gpiostr, sizeof(gpiostr), "%d", gpio);
+  if (open_write_close("/sys/class/gpio/unexport", gpiostr) <
+      0) {  // LOG_ERROR("Couldn't unexport gpio %d", gpio);
+  }
+  return;
+}

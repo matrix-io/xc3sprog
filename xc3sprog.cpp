@@ -258,7 +258,7 @@ FILE *getFile_and_Attribute_from_name(const char *name, char *action,
   return ret;
 }
 
-int detect_chain() {
+bool detect_chain() {
   LOGD("Detecting chain..");
   struct cable_t cable;
   CableDB cabledb(NULL);
@@ -278,16 +278,13 @@ int detect_chain() {
     fprintf(stderr, "Can't find description for a cable named %s\n","sysfsgpio");
     fprintf(stdout, "Known Cables\n");
     cabledb.dumpCables(stderr);
-    exit(1);
+    return false;
   }
 
   res = getIO(&io, &cable, dev, serial, false, false, jtag_freq);
   if (res) /* some error happend*/
-  {
-    if (res == 1)
-      exit(1);
-    else
-      exit(255);
+  { 
+    return false;
   }
 
   Jtag jtag = Jtag(io.get());
@@ -298,8 +295,7 @@ int detect_chain() {
   else
     id = 0;
 
-  detect_chain(&jtag, &db);
-  return 0;
+  return detect_chain(&jtag, &db);
 }
 
 bool fpga_program(std::string filename) {

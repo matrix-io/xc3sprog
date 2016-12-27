@@ -3,6 +3,7 @@
 class IOSysFsGPIO : public IOBase {
  public:
   IOSysFsGPIO();
+  int setupGPIOs(int tck, int tms, int tdi, int tdo);
   virtual ~IOSysFsGPIO();
 
  private:
@@ -15,6 +16,7 @@ class IOSysFsGPIO : public IOBase {
 
   int open_write_close(const char *name, const char *valstr);
   int setup_gpio(int gpio, int is_input);
+  void unexport_gpio(int gpio);
   bool is_gpio_valid(int gpio) { return gpio >= 0 && gpio < 1000; }
 
  private:

@@ -2,7 +2,9 @@
 
 
 int main(int argc, char **args) {
-  //  detect_chain();
-  fpga_program(std::string(args[1]));
+  if(detect_chain())
+  {
+    fpga_program(std::string(args[1]));
+  }
 }
 
