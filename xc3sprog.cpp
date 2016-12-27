@@ -259,6 +259,7 @@ FILE *getFile_and_Attribute_from_name(const char *name, char *action,
 }
 
 int detect_chain() {
+  LOGD("Detecting chain..");
   struct cable_t cable;
   CableDB cabledb(NULL);
   int res;
@@ -272,8 +273,9 @@ int detect_chain() {
 
   res = cabledb.getCable("sysfsgpio", &cable);
   if (res) {
-    fprintf(stderr, "Can't find description for a cable named %s\n",
-            "sysfsgpio");
+    LOGD("Can't find description for a cable named %s","sysfsgpio");
+    LOGD("Known Cables:");
+    fprintf(stderr, "Can't find description for a cable named %s\n","sysfsgpio");
     fprintf(stdout, "Known Cables\n");
     cabledb.dumpCables(stderr);
     exit(1);

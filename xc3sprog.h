@@ -5,5 +5,6 @@
 
 
 bool fpga_program(std::string filename);
+int detect_chain();
 
 #endif
