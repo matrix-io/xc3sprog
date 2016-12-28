@@ -52,7 +52,7 @@ add_library(xc3sproglib  STATIC
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${GENERATED_FILES}") 
 
 if(ANDROID)
-  add_definitions(-frtti -fexceptions -fpermissive -std=c++11)
+  add_definitions(-frtti -fexceptions -std=c++11)
   add_library(xc3loader SHARED xc3loader.cpp android_utils.cpp sysfs.cpp)
   set_property(TARGET xc3loader PROPERTY CXX_STANDARD 11)
   target_link_libraries(xc3loader log)
