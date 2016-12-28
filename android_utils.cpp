@@ -10,7 +10,7 @@ void queryRuntimeInfo(JNIEnv *env, jobject jniHelperObj, jclass jniHelperClz) {
     return;
   }
 
-  jstring buildVersion = env->CallStaticObjectMethod(jniHelperClz, versionFunc);
+  jstring buildVersion = (jstring)env->CallStaticObjectMethod(jniHelperClz, versionFunc);
   const char *version = env->GetStringUTFChars(buildVersion, NULL);
 
   if (!version) {
