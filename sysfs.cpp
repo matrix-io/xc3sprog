@@ -37,79 +37,22 @@ IOSysFsGPIO::~IOSysFsGPIO() {
 //  unexport_gpio(TDOPin);
 }
 
-int IOSysFsGPIO::setupGPIOs(int tck, int tms, int tdi, int tdo) { return 1; }
+//int IOSysFsGPIO::setupGPIOs(int tck, int tms, int tdi, int tdo) { return 1; }
 
-void IOSysFsGPIO::txrx_block(const unsigned char *tdi, unsigned char *tdo,
-                             int length, bool last) {
-  int i = 0;
-  int j = 0;
-  unsigned char tdo_byte = 0;
-  unsigned char tdi_byte;
-
-  if (tdi) tdi_byte = tdi[j];
-
-  LOGD ("lenght %d",length);
-  LOGD ("last %d",last);
-  while (i < length - 1) {
-    tdo_byte = tdo_byte + (txrx(false, (tdi_byte & 1) == 1) << (i % 8));
-    if (tdi) tdi_byte = tdi_byte >> 1;
-    i++;
-    if ((i % 8) == 0) {            // Next byte
-      if (tdo) tdo[j] = tdo_byte;  // Save the TDO byte
-      tdo_byte = 0;
-      j++;
-      if (tdi) tdi_byte = tdi[j];  // Get the next TDI byte
-    }
-  };
-  tdo_byte = tdo_byte + (txrx(last, (tdi_byte & 1) == 1) << (i % 8));
-  if (tdo) tdo[j] = tdo_byte;
-
-  //write(tck_fd, zero, 1);
-  writeTCK(false);
-
-  return;
+void IOSysFsGPIO::txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last) {
+  java_txrx_block(tdi, tdo, length, last);
 }
 
 void IOSysFsGPIO::tx_tms(unsigned char *pat, int length, int force) {
-  int i;
-  unsigned char tms;
-  for (i = 0; i < length; i++) {
-    if ((i & 0x7) == 0) tms = pat[i >> 3];
-    tx((tms & 0x01), true);
-    tms = tms >> 1;
-  }
-
-  //write(tck_fd, zero, 1);
-  writeTCK(false);
+  java_tx_tms(pat, length, force); 
 }
 
 void IOSysFsGPIO::tx(bool tms, bool tdi) {
-  //write(tck_fd, zero, 1);
-  writeTCK(false);
-
-  //write(tdi_fd, tdi ? one : zero, 1);
-  writeTDI(tdi);
-
-  //write(tms_fd, tms ? one : zero, 1);
-  writeTMS(tms);
-
-  //write(tck_fd, one, 1);
-  writeTCK(true);
+  java_tx(tms, tdi);
 }
 
 bool IOSysFsGPIO::txrx(bool tms, bool tdi) {
-  static char buf[1];
-
-  tx(tms, tdi);
-  
-  //lseek(tdo_fd, 0, SEEK_SET);
-
-  //if (read(tdo_fd, &buf, sizeof(buf)) < 0) {
-    /* reading tdo failed */
-  //  return false;
-  //}
-  //return buf[0] != '0';
-  return readTDO();
+  return java_txrx(tms, tdi);  
 }
 
 int IOSysFsGPIO::open_write_close(const char *name, const char *valstr) {
