@@ -32,6 +32,7 @@ typedef struct tick_context {
     jmethodID txrx_block;
     jmethodID txrx;
     jmethodID tx;
+    jmethodID tx_tms;
     jmethodID writeTDI;
     jmethodID writeTMS;
     jmethodID writeTCK;
@@ -46,17 +47,38 @@ MainContext g_ctx;
 using namespace std;
 std::string firmware;
 
-void txrx_block(jbyteArray tdo, jbyteArray tdi, jint length, jboolean last){
-  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.txrx_block, tdo, tdi, length, last);
+void java_txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last){
+  // prepare tdi
+  jbyteArray jtdi=g_ctx.env->NewByteArray(length);
+  g_ctx.env->SetByteArrayRegion(jtdi, 0, length, (jbyte *)tdi);
+  // prepare tdo 
+  jbyteArray jtdo = g_ctx.env->NewByteArray(length);
+  // exec java function
+  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.txrx_block, jtdo, jtdi, length, last);
+  // recall jtdo elements
+  jbyte * pjtdo = g_ctx.env->GetByteArrayElements(jtdo, 0);
+  tdo=(unsigned char *)pjtdo;
+  g_ctx.env->ReleaseByteArrayElements(jtdo,pjtdo, 0);
+  //LOGD("java_txrx_block: ReleaseByteArrayElements");
 }
 
-jbyte txrx(jboolean tms, jboolean tdi){
-  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.txrx, tms, tdi);
+bool java_txrx(bool tms, bool tdi){
+  jbyte out=g_ctx.env->CallByteMethod(g_ctx.jniHelperObj,g_ctx.txrx, tms, tdi); 
+  if(out==0)return false;
+  else return true;
 }
 
-void tx(jboolean tms, jboolean tdi){
+void java_tx(bool tms, bool tdi){
   g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.tx, tms, tdi);
 }
+
+void java_tx_tms(unsigned char *pat, int length, int force){
+  jbyteArray jpat = g_ctx.env->NewByteArray(length);
+  g_ctx.env->SetByteArrayRegion(jpat, 0, length, (jbyte *)pat);
+  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.tx_tms, jpat, length, force);
+}
+
+
 
 void writeTDI(bool state){
   g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.writeTDI, state);
@@ -119,7 +141,7 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirm
 
   LOGI("Loading Java Callbacks..");
   jclass clz = env->FindClass("admobilize/matrix/gt/XC3Sprog/JNIPrimitives");
-  g_ctx.jniHelperClz = env->NewGlobalRef(clz);
+  g_ctx.jniHelperClz = (jclass)env->NewGlobalRef(clz);
   LOGD("-->JniHandler class founded.");
 
   LOGI("Loading Java Context..");
@@ -148,6 +170,12 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirm
 
   g_ctx.tx = env->GetMethodID(g_ctx.jniHelperClz, "tx", "(ZZ)V");
   if (!g_ctx.tx) {
+    LOGE("Failed to retrieve methodID @ line %d",__LINE__);
+    return 0;
+  }
+
+  g_ctx.tx_tms = env->GetMethodID(g_ctx.jniHelperClz, "tx_tms", "([BII)V");
+  if (!g_ctx.tx_tms) {
     LOGE("Failed to retrieve methodID @ line %d",__LINE__);
     return 0;
   }
