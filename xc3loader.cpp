@@ -18,6 +18,7 @@
 #define  LOG_TAG    "NDK_DEBUG: "
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 // processing callback to handler class
@@ -47,38 +48,52 @@ MainContext g_ctx;
 using namespace std;
 std::string firmware;
 
+
 void java_txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last){
-  // prepare tdi
-  jbyteArray jtdi=g_ctx.env->NewByteArray(length);
-  g_ctx.env->SetByteArrayRegion(jtdi, 0, length, (jbyte *)tdi);
-  // prepare tdo 
-  jbyteArray jtdo = g_ctx.env->NewByteArray(length);
-  // exec java function
+  jbyteArray jtdo = g_ctx.env->NewByteArray(0);
+  jbyteArray jtdi = g_ctx.env->NewByteArray(0);
+
+  if(tdi){
+    LOGW("PRE txrx_block ==> length=%d",length);
+    jtdi = g_ctx.env->NewByteArray(length);
+    g_ctx.env->SetByteArrayRegion(jtdi, 0, length, (jbyte *)tdi);
+    LOGW("PRE txrx_block ==> jtdi length:%d",(int)g_ctx.env->GetArrayLength(jtdi));
+  }
+
+  if (tdo) jtdo = g_ctx.env->NewByteArray(length);
+
   g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.txrx_block, jtdo, jtdi, length, last);
-  // recall jtdo elements
-  jbyte * pjtdo = g_ctx.env->GetByteArrayElements(jtdo, 0);
-  tdo=(unsigned char *)pjtdo;
-  g_ctx.env->ReleaseByteArrayElements(jtdo,pjtdo, 0);
-  //LOGD("java_txrx_block: ReleaseByteArrayElements");
+  
+  if(tdo){
+    jbyte *pjtdo = g_ctx.env->GetByteArrayElements(jtdo, 0);
+    memcpy(tdo, pjtdo, length);
+    LOGW("POST txrx_block ==> tdo length:%d",(int)g_ctx.env->GetArrayLength(jtdo));
+    g_ctx.env->ReleaseByteArrayElements(jtdo,pjtdo, 0);
+  }
+    //LOGD("java_txrx_block: ReleaseByteArrayElements");
 }
 
 bool java_txrx(bool tms, bool tdi){
+  LOGW("PRE txrx");
   jbyte out=g_ctx.env->CallByteMethod(g_ctx.jniHelperObj,g_ctx.txrx, tms, tdi); 
+  LOGW("POST txrx");
   if(out==0)return false;
   else return true;
 }
 
 void java_tx(bool tms, bool tdi){
+  LOGW("PRE tx");
   g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.tx, tms, tdi);
+  LOGW("POST tx");
 }
 
 void java_tx_tms(unsigned char *pat, int length, int force){
+  LOGW("PRE tx_tms");
   jbyteArray jpat = g_ctx.env->NewByteArray(length);
   g_ctx.env->SetByteArrayRegion(jpat, 0, length, (jbyte *)pat);
   g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.tx_tms, jpat, length, force);
+  LOGW("POST tx_tms");
 }
-
-
 
 void writeTDI(bool state){
   g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.writeTDI, state);
