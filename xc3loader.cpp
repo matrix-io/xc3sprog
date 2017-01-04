@@ -80,8 +80,9 @@ void java_txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, b
     else{
       LOGI("==> starting TDI NewDirectByteBuffer..");
       jobject buf_tdi = g_ctx.env->NewDirectByteBuffer((void *)tdi,length);
+      void*  pbuf_tdi = g_ctx.env->GetDirectBufferAddress(buf_tdi);
       LOGD("==> memcopy..");
-      memcpy(g_ctx.cBuf, buf_tdi, length);
+      memcpy(g_ctx.cBuf, pbuf_tdi, length);
     }
   }
 
