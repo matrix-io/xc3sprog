@@ -48,20 +48,42 @@ MainContext g_ctx;
 using namespace std;
 std::string firmware;
 
+void printArrayToHex(const unsigned char *array,int length){
+  char buffer[4096];
+  memset(buffer,0,4096);
+  for(int i=0; i<length; i++)
+  {
+    sprintf(&buffer[i*2],"%02x",array[i]);
+  }
+  LOGI("0x%s", buffer);  
+}
 
 void java_txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last){
+ /* 
+  LOGI("java_txrx_block TDI IN:");  
+  if(tdi)printArrayToHex(tdi,length);
+  LOGI("java_txrx_block TDO IN:");  
+  if(tdo)printArrayToHex(tdo,length);
+*/
   jbyteArray jtdo = g_ctx.env->NewByteArray(0);
   jbyteArray jtdi = g_ctx.env->NewByteArray(0);
 
   if(tdi){
-    LOGW("PRE txrx_block ==> length=%d",length);
+    LOGW("PRE txrx_block ==> for TDI length=%d",length);
     jtdi = g_ctx.env->NewByteArray(length);
+    //jtdi = (jbyteArray) g_ctx.env->NewDirectByteBuffer((void *)tdi,length);
+    LOGW("PRE txrx_block ==> starting TDI SetByteArrayRegion..");
     g_ctx.env->SetByteArrayRegion(jtdi, 0, length, (jbyte *)tdi);
-    LOGW("PRE txrx_block ==> jtdi length:%d",(int)g_ctx.env->GetArrayLength(jtdi));
   }
 
-  if (tdo) jtdo = g_ctx.env->NewByteArray(length);
+  if (tdo) {
+    LOGW("PRE txrx_block ==> for TDO length=%d",length);
+    jtdo = g_ctx.env->NewByteArray(length);
+    LOGW("PRE txrx_block ==> starting TDO SetByteArrayRegion..");
+    g_ctx.env->SetByteArrayRegion(jtdo, 0, length, (jbyte *)tdo);
+  }
 
+  LOGW("PRE txrx_block ==> starting txrx_block on java..");
   g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.txrx_block, jtdo, jtdi, length, last);
   
   if(tdo){
@@ -70,21 +92,21 @@ void java_txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, b
     LOGW("POST txrx_block ==> tdo length:%d",(int)g_ctx.env->GetArrayLength(jtdo));
     g_ctx.env->ReleaseByteArrayElements(jtdo,pjtdo, 0);
   }
-    //LOGD("java_txrx_block: ReleaseByteArrayElements");
+  //LOGD("java_txrx_block: ReleaseByteArrayElements");
 }
 
 bool java_txrx(bool tms, bool tdi){
-  LOGW("PRE txrx");
+  //LOGW("PRE txrx");
   jbyte out=g_ctx.env->CallByteMethod(g_ctx.jniHelperObj,g_ctx.txrx, tms, tdi); 
-  LOGW("POST txrx");
+  //LOGW("POST txrx");
   if(out==0)return false;
   else return true;
 }
 
 void java_tx(bool tms, bool tdi){
-  LOGW("PRE tx");
+  //LOGW("PRE tx");
   g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.tx, tms, tdi);
-  LOGW("POST tx");
+  //LOGW("POST tx");
 }
 
 void java_tx_tms(unsigned char *pat, int length, int force){
@@ -137,9 +159,12 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_burnFirm
 (JNIEnv* env, jobject object, jint size )
 {
   testWriteReadFunctions(env);
-  LOGI("==Starting FPGA flashing..");
   g_ctx.env = env;
-  if(detect_chain())fpga_program(firmware);
+  if(detect_chain()){
+    LOGI("==Starting FPGA flashing..");
+    fpga_program(firmware);
+  }
+  else LOGE("detect_chain() failed");
   LOGI("==FPGA flashing finish!");
   return 1;
 }
