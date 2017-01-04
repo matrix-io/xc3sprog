@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h>
+#include <algorithm>
 #include <jni.h>
 
 #include "xc3sprog.h"
@@ -42,7 +43,7 @@ typedef struct tick_context {
     jmethodID readLED;
     pthread_mutex_t  lock;
     int      done;
-    void *cBuf;
+    jbyte *cBuf;
 } MainContext;
 MainContext g_ctx;
 
@@ -60,48 +61,43 @@ void printArrayToHex(const unsigned char *array,int length){
 }
 
 void java_txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last){
- /* 
-  LOGI("java_txrx_block TDI IN:");  
-  if(tdi)printArrayToHex(tdi,length);
-  LOGI("java_txrx_block TDO IN:");  
-  if(tdo)printArrayToHex(tdo,length);
-*/
+
   LOGI("START TXRX_BLOCK");
   jbyteArray jtdo = g_ctx.env->NewByteArray(0);
   jbyteArray jtdi = g_ctx.env->NewByteArray(0);
 
-  if(tdi){
-    LOGD("==> pre TDI length=%d",length);
-    if(length<10000){
-      jtdi = g_ctx.env->NewByteArray(length);
+  int remaining=length;
+  int offset=0;
+  do{
+    int len=std::min(remaining,400000);
+    remaining=remaining-len;
+    LOGI("==> remaining=%d",remaining);
+    if(tdi){
+      LOGD("==> pre TDI length=%d",len);
+      jtdi = g_ctx.env->NewByteArray(len);
       LOGD("==> starting TDI SetByteArrayRegion..");
-      g_ctx.env->SetByteArrayRegion(jtdi, 0, length, (jbyte *)tdi);
+      g_ctx.env->SetByteArrayRegion(jtdi, 0, len, (jbyte *)&tdi[offset]);
     }
-    else{
-      LOGI("==> starting TDI NewDirectByteBuffer..");
-      jobject buf_tdi = g_ctx.env->NewDirectByteBuffer((void *)tdi,length);
-      void*  pbuf_tdi = g_ctx.env->GetDirectBufferAddress(buf_tdi);
-      LOGD("==> memcopy..");
-      memcpy(g_ctx.cBuf, pbuf_tdi, length);
+
+    if (tdo) {
+      //LOGD("PRE txrx_block ==> for TDO length=%d",length);
+      jtdo = g_ctx.env->NewByteArray(len);
+      //LOGD("PRE txrx_block ==> starting TDO SetByteArrayRegion..");
+      g_ctx.env->SetByteArrayRegion(jtdo, 0, len, (jbyte *)&tdo[offset]);
     }
-  }
 
-  if (tdo) {
-    //LOGD("PRE txrx_block ==> for TDO length=%d",length);
-    jtdo = g_ctx.env->NewByteArray(length);
-    //LOGD("PRE txrx_block ==> starting TDO SetByteArrayRegion..");
-    g_ctx.env->SetByteArrayRegion(jtdo, 0, length, (jbyte *)tdo);
-  }
+    LOGD("==> starting txrx_block on java..");
+    g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.txrx_block, jtdo, jtdi, len, (bool)(remaining==0), last);
 
-  LOGD("==> starting txrx_block on java..");
-  g_ctx.env->CallVoidMethod(g_ctx.jniHelperObj,g_ctx.txrx_block, jtdo, jtdi, length, last);
-  
-  if(tdo){
-    jbyte *pjtdo = g_ctx.env->GetByteArrayElements(jtdo, 0);
-    memcpy(tdo, pjtdo, length);
-    LOGD("==> post TDO length:%d",(int)g_ctx.env->GetArrayLength(jtdo));
-    g_ctx.env->ReleaseByteArrayElements(jtdo,pjtdo, 0);
-  }
+    if(tdo){
+      jbyte *pjtdo = g_ctx.env->GetByteArrayElements(jtdo, 0);
+      memcpy(&tdo[offset], pjtdo, len);
+      LOGD("==> post TDO len:%d",(int)g_ctx.env->GetArrayLength(jtdo));
+      g_ctx.env->ReleaseByteArrayElements(jtdo,pjtdo, 0);
+    }
+
+  }while(remaining>0);
+ 
   LOGD("==> END TXRX_BLOCK");
 }
 
@@ -206,7 +202,7 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirm
     return 0;
   }
 
-  g_ctx.txrx_block = env->GetMethodID(g_ctx.jniHelperClz, "txrx_block", "([B[BIZ)V");
+  g_ctx.txrx_block = env->GetMethodID(g_ctx.jniHelperClz, "txrx_block", "([B[BIZZ)V");
   if (!g_ctx.txrx_block) {
     LOGE("Failed to retrieve methodID @ line %d",__LINE__);
     return 0;
@@ -266,7 +262,7 @@ JNIEXPORT jint JNICALL Java_admobilize_matrix_gt_XC3Sprog_JNIPrimitives_loadFirm
     return 0;
   }
 
-  g_ctx.cBuf = env->GetDirectBufferAddress(buf);
+  g_ctx.cBuf = (jbyte*) env->GetDirectBufferAddress(buf);
   LOGD("-->BufferCapacity: %1d",(long)env->GetDirectBufferCapacity(buf));
 
   LOGD("-->RuntimeInfo:");
