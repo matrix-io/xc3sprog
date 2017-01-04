@@ -30,6 +30,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define  LOG_TAG    "NDK_DEBUG: "
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 
@@ -215,7 +216,7 @@ void ProgAlgXC3S::array_program(BitFile &file)
       return flow_program_xc2s(file);
 
   flow_enable();
-  LOGD("-->flow enabled.");
+  LOGI("-->flow enabled.");
 
   /* JPROGAM: Triger reconfiguration, not explained in ug332, but
      DS099 Figure 28:  Boundary-Scan Configuration Flow Diagram (p.49) */
@@ -223,7 +224,7 @@ void ProgAlgXC3S::array_program(BitFile &file)
   do
     jtag->shiftIR(CFG_IN, buf);
   while (! (buf[0] & 0x10)); /* wait until configuration cleared */
-  LOGD("-->configuration cleared..");
+  LOGI("-->configuration cleared..");
 
   /* As ISC_DNA only works on a unconfigured device, see AR #29977*/
   switch (family) {
@@ -239,7 +240,7 @@ void ProgAlgXC3S::array_program(BitFile &file)
     jtag->cycleTCK(1);
     if (*(long long *)data != -1LL) {
       /* ISC_DNA only works on a unconfigured device, see AR #29977*/
-      LOGD("-->DNA is 0x%02x%02x%02x%02x%02x%02x%02x%02x\n", data[0], data[1],
+      LOGW("-->DNA is 0x%02x%02x%02x%02x%02x%02x%02x%02x\n", data[0], data[1],
            data[2], data[3], data[4], data[5], data[6], data[7]);
     }
     break;

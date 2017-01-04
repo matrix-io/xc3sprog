@@ -57,6 +57,7 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #define  LOG_TAG    "NDK_DEBUG: "
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 using namespace std;
@@ -273,8 +274,8 @@ bool detect_chain() {
 
   res = cabledb.getCable("sysfsgpio", &cable);
   if (res) {
-    LOGD("Can't find description for a cable named %s","sysfsgpio");
-    LOGD("Known Cables:");
+    LOGE("Can't find description for a cable named %s","sysfsgpio");
+    LOGE("Known Cables:");
     fprintf(stderr, "Can't find description for a cable named %s\n","sysfsgpio");
     fprintf(stdout, "Known Cables\n");
     cabledb.dumpCables(stderr);
@@ -385,10 +386,10 @@ bool programXC3S(Jtag &jtag, std::string filename, int family) {
     return false;
   }
 
-  LOGD("-->Bitstream length: %u bits", bitfile.getLength());
-  LOGD("-->Created: %s %s", bitfile.getDate(), bitfile.getTime());
-  LOGD("-->Created from NCD file: %s", bitfile.getNCDFilename());
-  LOGD("-->Target device: %s", bitfile.getPartName());
+  LOGI("-->Bitstream length: %u bits", bitfile.getLength());
+  LOGI("-->Created: %s %s", bitfile.getDate(), bitfile.getTime());
+  LOGI("-->Created from NCD file: %s", bitfile.getNCDFilename());
+  LOGI("-->Target device: %s", bitfile.getPartName());
 
   fprintf(stderr, "Created from NCD file: %s\n", bitfile.getNCDFilename());
   fprintf(stderr, "Target device: %s\n", bitfile.getPartName());
