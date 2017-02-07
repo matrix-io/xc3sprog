@@ -6,7 +6,7 @@
 class IOWiringPi : public IOBase
 {
  public:
-  IOWiringPi();
+  IOWiringPi(int tms, int tck, int tdi, int tdo);
   virtual ~IOWiringPi();
 
  protected:
@@ -16,9 +16,9 @@ class IOWiringPi : public IOBase
   void txrx_block(const unsigned char *tdi, unsigned char *tdo, int length, bool last);
   void tx_tms(unsigned char *pat, int length, int force);
 
-  int TDIPin;
   int TMSPin;
   int TCKPin;
+  int TDIPin;
   int TDOPin;
 };
 

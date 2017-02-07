@@ -2,7 +2,8 @@
 
 #include <wiringPi.h>
 
-IOWiringPi::IOWiringPi()
+IOWiringPi::IOWiringPi(int tms, int tck, int tdi, int tdo)
+ : TMSPin(tms), TCKPin(tck), TDIPin(tdi), TDOPin(tdo)
 {
     wiringPiSetupGpio(); 
     pinMode(TDIPin, OUTPUT);

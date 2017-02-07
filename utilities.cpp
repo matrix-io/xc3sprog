@@ -12,6 +12,8 @@
 #include "ioftdi.h"
 #include "ioxpc.h"
 #include "sysfs.h"
+#include "iomatrixpi.h"
+#include "iomatrixvoice.h"
 #include "utilities.h"
 
 extern char *optarg;
@@ -88,6 +90,18 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
   else if(cable->cabletype == CABLE_SYSFS_GPIO)  
   {
       io->reset(new IOSysFsGPIO());
+      io->get()->setVerbose(verbose);
+      res = io->get()->Init(cable, serial, use_freq);
+  }
+  else if(cable->cabletype == CABLE_MATRIX_PI)
+  {
+      io->reset(new IOMatrixPi());
+      io->get()->setVerbose(verbose);
+      res = io->get()->Init(cable, serial, use_freq);
+  }
+  else if(cable->cabletype == CABLE_MATRIX_VOICE)
+  {
+      io->reset(new IOMatrixVoice());
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }
