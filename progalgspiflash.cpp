@@ -379,6 +379,20 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p_mx25l(unsigned char *buf, int is_mx25l)
             return -1;
           }
         break;
+      case 0x28:
+        fprintf(stderr, "Found Macronix MX25R Device, Device ID 0x%02x%02x\n",
+                fbuf[1], fbuf[2]);
+        switch (fbuf[2])
+          {
+          case 0x17:
+            pages = 32768;
+            sector_size = 65536;
+            break;
+          default:
+            fprintf(stderr,"Unexpected MX25L size ID 0x%02x\n", buf[2]);
+            return -1;
+          }
+          break;
 
       default:
         fprintf(stderr,"MX25L: Unexpected RDID upper Device ID 0x%02x\n", fbuf[1]);
