@@ -483,6 +483,55 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p_mx25l(unsigned char *buf, int is_mx25l)
   return 1;
 }
 
+int ProgAlgSPIFlash::spi_flashinfo_issi(unsigned char *buf) 
+{
+  byte fbuf[21]= {READ_IDENTIFICATION};
+  int mb;
+
+  spi_xfer_user1(NULL,0,0,fbuf,20,1);
+  spi_xfer_user1(fbuf, 20, 1, NULL,0, 0);
+
+  fbuf[0] = bitRevTable[fbuf[0]];
+  fbuf[1] = bitRevTable[fbuf[1]];
+  fbuf[2] = bitRevTable[fbuf[2]];
+
+  sector_size = 4096;
+  pgsize = 256;
+  sector_erase_cmd = 0x20; 
+
+  switch (fbuf[1])
+    {
+    case 0x40:
+      switch (fbuf[2])
+        {
+        case 0x14: // 8Mb
+          mb = 8;
+          break;
+
+        case 0x15: // 16Mb
+          mb = 16;
+          break;
+
+        case 0x16: // 32Mb
+          mb = 32;
+          break;
+        default:
+          fprintf(stderr,"Unexpected IS25LQ ID 0x%02x\n", buf[2]);
+          return -1;
+        }
+      fprintf(stderr, "Found ISSI IS25LQ%03d Device (ID 0x%02x%02x)\n",
+              mb, fbuf[1], fbuf[2]);
+      pages = mb * 1024 * 1024 / 8 / pgsize;
+      break;
+
+    default:
+      fprintf(stderr,"ISSI: Unexpected RDID upper Device ID 0x%02x\n", fbuf[1]);
+      return -1;
+    }
+
+  return 1;
+}
+
 int ProgAlgSPIFlash::spi_flashinfo(void) 
 {
   byte fbuf[8]={READ_IDENTIFICATION, 0, 0, 0, 0, 0, 0, 0};
@@ -541,6 +590,9 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
       break;
     case 0xef:
       res = spi_flashinfo_w25(fbuf); 
+      break;
+    case 0x9d:
+      res = spi_flashinfo_issi(fbuf); 
       break;
     case 0xbf:
       res = spi_flashinfo_sst(fbuf);
@@ -1193,6 +1245,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
   case 0xc2: /* Macronix */
   case 0x30: /* AMIC */
   case 0x40: /* AMIC Quad */
+  case 0x9d: /* ISSI */
   case 0xef: /* Winbond */
   case 0x89: /* Intel S33 */
     return sectorerase_and_program(pfile);
@@ -1385,6 +1438,7 @@ int ProgAlgSPIFlash::erase(void)
   case 0x30: /* AMIC */
   case 0x40: /* AMIC Quad */
   case 0x89: /* Intel */
+  case 0x9d: /* ISSI */
   case 0xef: /* Winbond */
     return erase_bulk();
   case 0xbf: /* SST */
