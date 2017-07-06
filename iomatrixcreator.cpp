@@ -1,6 +1,6 @@
 #include "iomatrixpi.h"
 
-IOMatrixPi::IOMatrixPi()
+IOMatrixCreator::IOMatrixCreator()
  : IOWiringPi(4, 17, 22, 27) 
 {
 }

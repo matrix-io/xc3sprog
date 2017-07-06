@@ -12,7 +12,7 @@
 #include "ioftdi.h"
 #include "ioxpc.h"
 #include "sysfs.h"
-#include "iomatrixpi.h"
+#include "iomatrixcreator.h"
 #include "iomatrixvoice.h"
 #include "utilities.h"
 
@@ -93,9 +93,9 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }
-  else if(cable->cabletype == CABLE_MATRIX_PI)
+  else if(cable->cabletype == CABLE_MATRIX_CREATOR)
   {
-      io->reset(new IOMatrixPi());
+      io->reset(new IOMatrixCreator());
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }

@@ -1,7 +1,7 @@
 #include "iomatrixvoice.h"
 
 IOMatrixVoice::IOMatrixVoice()
- : IOWiringPi(27, 4, 17, 22)                     
+ : IOWiringPi(17,27,23,22)                     
 {
 }
 
