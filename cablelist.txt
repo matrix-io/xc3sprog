@@ -44,5 +44,5 @@ turtelizer    ftdi    1500000 0x0403:0xbdc8:Turtelizer JTAG/RS232 Adapter:0:0x00
 arm-usb-ocd-h ftdi    1500000 0x15ba:0x002b::1:0x00:0x10:0x00:0x08
 tumpa         ftdi    1500000 0x0403:0x8a98:TIAO USB Multi-Protocol Adapter:1
 sysfsgpio     sysfsgpio 0     NULL
-matrix_pi     matrix_pi 0     NULL
+matrix_creator matrix_creator 0     NULL
 matrix_voice  matrix_voice 0  NULL
