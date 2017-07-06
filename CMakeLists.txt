@@ -132,7 +132,7 @@ INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(xc3sproglib  STATIC sysfs.cpp ioftdi.cpp iofx2.cpp 
                         devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
-                        iomatrixpi.cpp iomatrixvoice.cpp iowiringpi.cpp
+                        iomatrixcreator.cpp iomatrixvoice.cpp iowiringpi.cpp
 			iobase.cpp  progalgxc95x.cpp utilities.cpp
 			progalgxcf.cpp progalgxcfp.cpp progalgxc3s.cpp
 			progalgavr.cpp progalgxc2c.cpp  mapfile_xc2c.cpp
