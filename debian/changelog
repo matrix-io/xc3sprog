@@ -1,3 +1,9 @@
+xc3sprog (1.1.1) unstable; urgency=medium
+
+  * MATRIX Voice support added
+
+ --  <andres.calderon@admobilize.com>  Thu, 31 Aug 2017 14:33:36 +0000
+
 xc3sprog (1.1) unstable; urgency=medium
 
   * Adding Support for MATRIX_Voice
