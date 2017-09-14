@@ -1,4 +1,4 @@
-Source: xc3sprog
+Source: matrixio-xc3sprog
 Section: embedded
 Priority: optional
 Maintainer: Admobilize <info@admobilize.com>
@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 9), cmake, wiringpi, libftdi-dev
 Standards-Version: 3.9.5
 Homepage: https://github.com/matrix-io/xc3sprog
 
-Package: xc3sprog
+Package: matrixio-xc3sprog
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, wiringpi
 Description: Spartan3, XCF and CPLD JTAG programmer and other utilities.
