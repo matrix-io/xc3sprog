@@ -26,7 +26,6 @@ pipeline:
         --access-key-id $${AWS_ACCESS_KEY_ID}
         --secret-access-key $${AWS_SECRET_ACCESS_KEY}
         matrixio-xc3sprog_${DRONE_TAG##v}-${CODENAME}_armhf.deb
-        .
 
   notify-always:
     image: plugins/slack
