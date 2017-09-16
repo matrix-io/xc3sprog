@@ -18,13 +18,14 @@ pipeline:
     image: gcr.io/admobilize-testing/gce-builder:latest
     secrets: [aws_access_key_id, aws_secret_access_key]
     commands:
-      - gsutil cp ./*.deb gs://raspbian-images/
+      - mv matrixio-xc3sprog_${DRONE_TAG##v}_armhf.deb 
+           matrixio-xc3sprog_${DRONE_TAG##v}-${CODENAME}_armhf.deb
       - deb-s3 upload --bucket packages.matrixlabs.ai 
         --prefix $DISTRIBUTION
         --codename $CODENAME
         --access-key-id $${AWS_ACCESS_KEY_ID}
         --secret-access-key $${AWS_SECRET_ACCESS_KEY}
-        ./*.deb
+        matrixio-xc3sprog_${DRONE_TAG##v}-${CODENAME}_armhf.deb
 
   notify-always:
     image: plugins/slack
