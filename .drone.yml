@@ -18,7 +18,8 @@ pipeline:
     image: gcr.io/admobilize-testing/gce-builder:latest
     secrets: [aws_access_key_id, aws_secret_access_key]
     commands:
-      - gsutil cp ./*.deb gs://raspbian-images/
+      - gsutil cp ./*.deb gs://raspbian-images/$CODENAME
+      - echo "$DISTRIBUTION/$CODENAME"
       - deb-s3 upload --bucket packages.matrixlabs.ai 
         --prefix $DISTRIBUTION
         --codename $CODENAME
