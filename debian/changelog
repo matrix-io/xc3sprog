@@ -1,6 +1,24 @@
-matrixio-xc3sprog (1.1.1) unstable; urgency=medium
+xc3sprog (1.1.1) unstable; urgency=medium
 
   * MATRIX Voice support added
 
  --  <andres.calderon@admobilize.com>  Thu, 31 Aug 2017 14:33:36 +0000
 
+xc3sprog (1.1) unstable; urgency=medium
+
+  * Adding Support for MATRIX_Voice
+
+ -- Kevin Patino <kevin.patino@admobilize.com>  Mon, 20 Feb 2017 16:01:18 +0000
+
+xc3sprog (1.0.0.001-2) unstable; urgency=medium
+
+  * Adding README. Not really useful: we are testing Debian
+  packaging workflow.
+
+ --  <pi@raspberrypi>  Thu, 01 Sep 2016 07:27:35 -0800
+
+xc3sprog (1.0.0.001-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- unknown <pi@unknown>  Tue, 12 Jul 2016 17:10:06 -0800
