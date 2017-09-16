@@ -1,0 +1,60 @@
+pipeline:
+  build-debs:
+    when:
+      event: tag
+    image: gcr.io/admobilize-testing/builder-qemu:latest
+    privileged: true
+    mountimg: ${MOUNTIMG}
+    mountoffset: ${MOUNTOFFSET}
+    body: |
+      apt-get update
+      apt-get install --yes wiringpi libftdi-dev
+      debuild -us -uc -b
+      mv ../*.deb .
+
+  upload-debs:
+    when:
+      event: tag
+    image: gcr.io/admobilize-testing/gce-builder:latest
+    secrets: [aws_access_key_id, aws_secret_access_key]
+    commands:
+      - gsutil cp ./*.deb gs://raspbian-images/
+      - deb-s3 upload --bucket packages.matrixlabs.ai 
+        --prefix $DISTRIBUTION
+        --codename $CODENAME
+        --access-key-id $${AWS_ACCESS_KEY_ID}
+        --secret-access-key $${AWS_SECRET_ACCESS_KEY}
+        ./*.deb
+
+  notify-always:
+    image: plugins/slack
+    secrets: [slack_webhook]
+    username: drone-ci-builder
+    channel: notifications
+    when:
+      status: [ success, failure ]
+      event: tag 
+    template: |
+      {{#success build.status}}
+        {{build.author}} just built `{{repo.name}}:{{build.branch}}` from <{{repo.link}}|#{{truncate build.commit 8}}>
+        :new: {{build.message}}
+        :debian: The new `matrixio-xc3sprog_{{drone.tag}}_armhf.deb` was created
+      {{else}}
+        {{build.author}} just broke the build of `{{repo.name}}:{{build.branch}}` with <{{repo.link}}|#{{truncate build.commit 8}}>
+        :new: :zombie: {{build.message}}
+      {{/success}}
+      :stopwatch: {{ since build.started}}
+      :gear: {{build.link}}
+
+matrix:
+  include: 
+    - CODENAME: jessie
+      DISTRIBUTION: raspbian
+      MOUNTOFFSET: 48234496
+      MOUNTDIR: /drone/src/github.com/matrix-io/xc3sprog
+      MOUNTIMG: https://storage.googleapis.com/raspbian-images/2017-07-05-raspbian-jessie-debuild.img.gz
+    - CODENAME: stretch
+      MOUNTOFFSET: 48234496
+      MOUNTDIR: /drone/src/github.com/matrix-io/xc3sprog
+      DISTRIBUTION: raspbian
+      MOUNTIMG: https://storage.googleapis.com/raspbian-images/2017-08-16-raspbian-stretch-debuild.img.gz
