@@ -1,7 +1,7 @@
 Source: matrixio-xc3sprog
 Section: embedded
 Priority: optional
-Maintainer: Admobilize <info@admobilize.com>
+Maintainer: MATRIX Labs <info@matrix.one>
 Build-Depends: debhelper (>= 9), cmake, wiringpi, libftdi-dev
 Standards-Version: 3.9.5
 Homepage: https://github.com/matrix-io/xc3sprog
