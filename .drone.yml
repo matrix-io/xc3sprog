@@ -20,7 +20,7 @@ pipeline:
     commands:
       - mv matrixio-xc3sprog_${DRONE_TAG##v}_armhf.deb 
            matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${DRONE_TAG##v}_armhf.deb
-      - echo $${GPG_KEY} > /tmp/tmpgpgkey && gpg --import /tmp/tmpgpgkey && rm /tmp/tmpgpgkey
+      - echo $${GPG_KEY} > /tmp/tmpkey && gpg --import /tmp/tmpkey && rm /tmp/tmpkey
       - echo "personal-digest-preferences SHA512" >> /root/.gnupg/gpg.conf
       - echo "$${GPG_PASS}" | deb-s3 upload --bucket apt.matrix.one 
         --prefix $DISTRIBUTION
