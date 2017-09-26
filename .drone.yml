@@ -16,16 +16,19 @@ pipeline:
     when:
       event: tag
     image: gcr.io/admobilize-testing/gce-builder:latest
-    secrets: [aws_access_key_id, aws_secret_access_key]
+    secrets: [aws_access_key_id, aws_secret_access_key, gpg_key, gpg_pass]
     commands:
       - mv matrixio-xc3sprog_${DRONE_TAG##v}_armhf.deb 
-           matrixio-xc3sprog_${DRONE_TAG##v}-${CODENAME}_armhf.deb
-      - deb-s3 upload --bucket packages.matrixlabs.ai 
+           matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${DRONE_TAG##v}_armhf.deb
+      - echo $${GPG_KEY} > /tmp/tmpkey && gpg --import /tmp/tmpkey && rm /tmp/tmpkey
+      - echo $${GPG_PASS} | deb-s3 upload --bucket packages.matrixlabs.ai 
         --prefix $DISTRIBUTION
         --codename $CODENAME
         --access-key-id $${AWS_ACCESS_KEY_ID}
         --secret-access-key $${AWS_SECRET_ACCESS_KEY}
-        matrixio-xc3sprog_${DRONE_TAG##v}-${CODENAME}_armhf.deb
+        --sign info@matrix.one 
+        --gpg-options="--batch --passphrase-fd 0"
+        matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${DRONE_TAG##v}_armhf.deb
 
   notify-always:
     image: plugins/slack
