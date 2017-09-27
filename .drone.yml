@@ -20,7 +20,7 @@ pipeline:
     commands:
       - mv matrixio-xc3sprog_${DRONE_TAG##v}_armhf.deb 
            matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${DRONE_TAG##v}_armhf.deb
-      - echo $${GPG_KEY} > /tmp/tmpkey && gpg --import /tmp/tmpkey && rm /tmp/tmpkey
+      - echo "$${GPG_KEY}" > /tmp/tmpkey && gpg --import /tmp/tmpkey && rm /tmp/tmpkey
       - echo "personal-digest-preferences SHA512" >> /root/.gnupg/gpg.conf
       - echo "$${GPG_PASS}" | deb-s3 upload --bucket apt.matrix.one 
         --prefix $DISTRIBUTION
@@ -28,7 +28,7 @@ pipeline:
         --access-key-id $${AWS_ACCESS_KEY_ID}
         --secret-access-key $${AWS_SECRET_ACCESS_KEY}
         --sign info@matrix.one 
-        --gpg-options="--batch --passphrase-fd 0 -u info@matrix.one"
+        --gpg-options="--batch --passphrase-fd 0"
         matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${DRONE_TAG##v}_armhf.deb
 
   notify-always:
@@ -43,10 +43,11 @@ pipeline:
       {{#success build.status}}
         {{build.author}} just built `{{repo.name}}:{{build.branch}}` from <{{repo.link}}|#{{truncate build.commit 8}}>
         :new: {{build.message}}
-        :debian: The new `matrixio-xc3sprog_{{drone.tag}}_armhf.deb` was created
+        :debian: The new `matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-{{drone.tag##v}}_armhf.deb` was created
       {{else}}
         {{build.author}} just broke the build of `{{repo.name}}:{{build.branch}}` with <{{repo.link}}|#{{truncate build.commit 8}}>
         :new: :zombie: {{build.message}}
+        :debian: The package `matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-{{drone.tag}}_armhf.deb` failed to build.
       {{/success}}
       :stopwatch: {{ since build.started}}
       :gear: {{build.link}}
