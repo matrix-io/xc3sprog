@@ -28,7 +28,7 @@ pipeline:
         --access-key-id $${AWS_ACCESS_KEY_ID}
         --secret-access-key $${AWS_SECRET_ACCESS_KEY}
         --sign info@matrix.one 
-        --gpg-options="--batch --passphrase-fd 0"
+        --gpg-options="--batch --passphrase-fd 0 -u info@matrix.one"
         matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${DRONE_TAG##v}_armhf.deb
 
   notify-always:
