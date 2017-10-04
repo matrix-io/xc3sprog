@@ -8,6 +8,10 @@ echo "deb https://apt.matrix.one/raspbian $(lsb_release -sc) main" | sudo tee /e
 # Update packages and install
 sudo apt-get update
 sudo apt-get upgrade
+
+#Installation
+sudo apt install matrixio-xc3sprog
+
 ```
 
 # Spartan3, XCF and CPLD JTAG programmer and other utilities
