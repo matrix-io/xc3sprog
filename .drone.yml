@@ -9,7 +9,7 @@ pipeline:
     mountoffset: ${MOUNTOFFSET}
     body: |
       apt-get update
-      apt-get install --yes wiringpi libftdi-dev
+      apt-get install --yes --no-install-recommends wiringpi libftdi-dev
       debuild -us -uc -b
       mv ../*.deb .
 
@@ -26,10 +26,11 @@ pipeline:
 
       # Only TAG events are published to main
       - export COMPONENT=$([ "${DRONE_BUILD_EVENT}" = "tag" ] && echo "main" || echo "unstable")
+      - export PKG_VER=$(dpkg-parsechangelog --show-field Version -ldebian/changelog)
 
       # Upload packages
-      - mv matrixio-xc3sprog_${DRONE_TAG##v}_armhf.deb 
-           matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${DRONE_TAG##v}_armhf.deb
+      - mv matrixio-xc3sprog_${PKG_VER}_armhf.deb 
+           matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${PKG_VER}_armhf.deb
       - echo "$${GPG_PASS}" | deb-s3 upload --bucket apt.matrix.one 
         --prefix $DISTRIBUTION
         --component $COMPONENT
@@ -38,7 +39,7 @@ pipeline:
         --secret-access-key $${AWS_SECRET_ACCESS_KEY}
         --sign info@matrix.one 
         --gpg-options="--batch --passphrase-fd 0"
-        matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${DRONE_TAG##v}_armhf.deb
+        matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${PKG_VER}_armhf.deb
 
   notify-always:
     image: plugins/slack
