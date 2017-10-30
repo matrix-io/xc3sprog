@@ -1,7 +1,8 @@
 pipeline:
   build-debs:
     when:
-      event: tag
+      branch: master
+      event: [ push, pull_request, tag ]
     image: gcr.io/admobilize-testing/builder-qemu:latest
     privileged: true
     mountimg: ${MOUNTIMG}
@@ -14,7 +15,8 @@ pipeline:
 
   upload-debs:
     when:
-      event: tag
+      branch: master
+      event: [ push, pull_request, tag ]
     image: gcr.io/admobilize-testing/gce-builder:latest
     secrets: [aws_access_key_id, aws_secret_access_key, gpg_key, gpg_pass]
     commands:
@@ -22,11 +24,15 @@ pipeline:
       - echo "$${GPG_KEY}" > /tmp/tmpkey && gpg --import /tmp/tmpkey && rm /tmp/tmpkey
       - echo "personal-digest-preferences SHA512" >> /root/.gnupg/gpg.conf
 
+      # Only TAG events are published to main
+      - export COMPONENT=$([ "${DRONE_BUILD_EVENT}" = "tag" ] && echo "main" || echo "unstable")
+
       # Upload packages
       - mv matrixio-xc3sprog_${DRONE_TAG##v}_armhf.deb 
            matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-${DRONE_TAG##v}_armhf.deb
       - echo "$${GPG_PASS}" | deb-s3 upload --bucket apt.matrix.one 
         --prefix $DISTRIBUTION
+        --component $COMPONENT
         --codename $CODENAME
         --access-key-id $${AWS_ACCESS_KEY_ID}
         --secret-access-key $${AWS_SECRET_ACCESS_KEY}
@@ -41,7 +47,8 @@ pipeline:
     channel: notifications
     when:
       status: [ success, failure ]
-      event: tag 
+      branch: master
+      event: [push, pull_request, tag]
     template: |
       {{#success build.status}}
         {{build.author}} just built `{{repo.name}}:{{build.branch}}` from <${DRONE_COMMIT_LINK}|#{{truncate build.commit 8}}>
