@@ -27,8 +27,6 @@ pipeline:
       # Only TAG events are published to main
       - export COMPONENT=$([ "${DRONE_BUILD_EVENT}" = "tag" ] && echo "main" || echo "unstable")
       - export PKG_VER=$(dpkg-parsechangelog --show-field Version -ldebian/changelog)
-      - echo "COMPONENT=$COMPONENT" > tmpenv && echo "PKG_VER=$PKG_VER" >> tmpenv
-      - cat tmpenv
 
       # Upload packages
       - mv matrixio-xc3sprog_$${PKG_VER}_armhf.deb 
@@ -43,7 +41,10 @@ pipeline:
         --gpg-options="--batch --passphrase-fd 0"
         matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-$${PKG_VER}_armhf.deb
 
-  notify-always:
+      # Render the notification template for the notify-slack step
+      - j2 --var-delimiter '%%' .drone/slack.tpl > notification.tpl
+
+  notify-slack:
     image: plugins/slack
     secrets: [slack_webhook]
     username: drone-ci-builder
@@ -53,18 +54,7 @@ pipeline:
       status: [ success, failure ]
       branch: master
       event: [push, pull_request, tag]
-    template: |
-      {{#success build.status}}
-        {{build.author}} just built `{{repo.name}}:{{build.branch}}` from <${DRONE_COMMIT_LINK}|#{{truncate build.commit 8}}>
-        :new: {{build.message}}
-        :debian: The new `matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-{{pkg_ver}}_armhf.deb` was published to apt.matrix.one {{COMPONENT}} [{{component}}]
-      {{else}}
-        {{build.author}} just broke the build of `{{repo.name}}:{{build.branch}}` with <${DRONE_COMMIT_LINK}|#{{truncate build.commit 8}}>
-        :new: :zombie: {{build.message}}
-        :debian: The package `matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-{{PKG_VER}}_armhf.deb` failed to build.
-      {{/success}}
-      :stopwatch: {{ since build.started}}
-      :gear: {{build.link}}
+    template: file:///drone/src/github.com/matrix-io/xc3sprog/notification.tpl
 
 matrix:
   include: 
