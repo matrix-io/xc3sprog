@@ -30,7 +30,7 @@ pipeline:
 
       # Upload packages
       - mv matrixio-xc3sprog_$${PKG_VER}_armhf.deb 
-           matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-$${PKG_VER}_armhf.deb
+           matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-$${PKG_VER}-$${COMPONENT}_armhf.deb
       - echo "$${GPG_PASS}" | deb-s3 upload --bucket apt.matrix.one 
         --prefix $DISTRIBUTION
         --component $COMPONENT
@@ -39,7 +39,7 @@ pipeline:
         --secret-access-key $${AWS_SECRET_ACCESS_KEY}
         --sign info@matrix.one 
         --gpg-options="--batch --passphrase-fd 0"
-        matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-$${PKG_VER}_armhf.deb
+        matrixio-xc3sprog_${DISTRIBUTION}-${CODENAME}-$${PKG_VER}-$${COMPONENT}_armhf.deb
 
       # Render the notification template for the notify-slack step
       - j2 --var-delimiter '%%' .drone/slack.tpl > notification.tpl
@@ -49,7 +49,6 @@ pipeline:
     secrets: [slack_webhook]
     username: drone-ci-builder
     channel: notifications
-    env-file: tmpenv
     when:
       status: [ success, failure ]
       branch: master
