@@ -5,7 +5,7 @@
 IOWiringPi::IOWiringPi(int tms, int tck, int tdi, int tdo)
  : TMSPin(tms), TCKPin(tck), TDIPin(tdi), TDOPin(tdo)
 {
-    wiringPiSetupGpio(); 
+    wiringPiSetup(); 
     pinMode(TDIPin, OUTPUT);
     pinMode(TMSPin, OUTPUT);
     pinMode(TCKPin, OUTPUT);
