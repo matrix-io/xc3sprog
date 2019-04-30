@@ -5,7 +5,7 @@ pipeline:
       event: [ push, pull_request, tag ]
     image: gcr.io/admobilize-testing/creator-builder-${ARCHITECTURE}-${DISTRIBUTION}-${CODENAME}:${IMAGE_TAG}
     privileged: true
-    body: |
+    commands:
       apt-get update
       apt-get install --yes --no-install-recommends wiringpi libftdi-dev
       debuild -us -uc -b
