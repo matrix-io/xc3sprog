@@ -3,7 +3,7 @@ pipeline:
     when:
       branch: master
       event: [ push, pull_request, tag ]
-    image: gcr.io/admobilize-testing/creator-builder-${ARCHITECTURE}-${DISTRIBUTION}-${CODENAME}-${IMAGE_TAG}
+    image: gcr.io/admobilize-testing/creator-builder-${ARCHITECTURE}-${DISTRIBUTION}-${CODENAME}:${IMAGE_TAG}
     privileged: true
     body: |
       apt-get update
