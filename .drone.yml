@@ -6,6 +6,7 @@ pipeline:
     image: gcr.io/admobilize-testing/creator-builder-${ARCHITECTURE}-${DISTRIBUTION}-${CODENAME}:${IMAGE_TAG}
     privileged: true
     commands:
+      - echo "build-debs for ${ARCHITECTURE}-${DISTRIBUTION}-${CODENAME}:${IMAGE_TAG}
       - apt-get update
       - apt-get install --yes --no-install-recommends wiringpi libftdi-dev
       - debuild -us -uc -b
