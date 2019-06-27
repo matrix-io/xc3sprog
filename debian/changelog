@@ -1,3 +1,9 @@
+matrixio-xc3sprog (1.1.1.002) unstable; urgency=medium
+
+  * Buster support added
+
+ --  Andres Calderon <andres.calderon@admobilize.com>  Thu, 27 Aug 2019 015:00:36 +0000
+
 matrixio-xc3sprog (1.1.1) unstable; urgency=medium
 
   * MATRIX Voice support added
