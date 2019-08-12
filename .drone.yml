@@ -7,7 +7,7 @@ pipeline:
     privileged: true
     commands:
       - echo "build-debs for ${ARCHITECTURE}-${DISTRIBUTION}-${CODENAME}:${IMAGE_TAG}"
-      - apt-get update
+      - ${UPDATE_CMD}
       - apt-get install --yes --no-install-recommends wiringpi libftdi-dev
       - debuild -us -uc -b
       - mv ../*.deb .
@@ -76,9 +76,11 @@ matrix:
     - CODENAME: stretch
       DISTRIBUTION: raspbian
       ARCHITECTURE: armhf
+      UPDATE_CMD: "apt update"
       IMAGE_TAG: 84d9bfb7 
 
     - CODENAME: buster
       DISTRIBUTION: raspbian
       ARCHITECTURE: armhf
+      UPDATE_CMD: "apt update -y --allow-releaseinfo-change"
       IMAGE_TAG: 84d9bfb7
