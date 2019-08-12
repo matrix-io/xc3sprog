@@ -127,7 +127,8 @@ const char *getCableName(int type)
     case CABLE_FTDI: return "ftdi"; break;
     case CABLE_FX2: return "fx2"; break;
     case CABLE_XPC: return "xpc"; break;
-    case CABLE_SYSFS_GPIO: return "sysfsgpio"; break;
+    case CABLE_SYSFS_GPIO_MATRIX: return "sysfsgpio_matrix"; break;
+    case CABLE_SYSFS_GPIO_VOICE: return "sysfsgpio_voice"; break;
     case CABLE_UNKNOWN: return "unknown"; break;
     default:
         return "Unknown";
