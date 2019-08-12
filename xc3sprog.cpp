@@ -846,11 +846,6 @@ int main(int argc, char **args)
       if (res == 1) exit(1);
       else usage(false);
     }
-
-  if (cable.cabletype == CABLE_SYSFS_GPIO)
-  {
-    static_cast<IOSysFsGPIO*>(io.get())->setupGPIOs(0,1,2,3);
-  }
   
   Jtag jtag = Jtag(io.get());
   jtag.setVerbose(verbose);

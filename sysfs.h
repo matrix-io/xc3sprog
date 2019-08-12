@@ -1,9 +1,11 @@
+#ifndef __IO_SYSFS__
+#define __IO_SYSFS__
+
 #include "iobase.h"
 
 class IOSysFsGPIO : public IOBase {
  public:
-  IOSysFsGPIO();
-  int setupGPIOs(int tck, int tms, int tdi, int tdo);
+  IOSysFsGPIO(int tms, int tck, int tdi, int tdo);
   virtual ~IOSysFsGPIO();
 
  private:
@@ -20,6 +22,11 @@ class IOSysFsGPIO : public IOBase {
   bool is_gpio_valid(int gpio) { return gpio >= 0 && gpio < 1000; }
 
  private:
+  int TMSPin;
+  int TCKPin;
+  int TDIPin;
+  int TDOPin;
+
   int tck_fd;
   int tms_fd;
   int tdi_fd;
@@ -28,3 +35,4 @@ class IOSysFsGPIO : public IOBase {
   const char *one;
   const char *zero;
 };
+#endif

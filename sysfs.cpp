@@ -10,13 +10,9 @@
 
 #include <iostream>
 
-const int TDIPin = 22;
-const int TMSPin = 4;
-const int TCKPin = 17;
-const int TDOPin = 27;
-
-IOSysFsGPIO::IOSysFsGPIO()
-    : tck_fd(-1), tms_fd(-1), tdi_fd(-1), tdo_fd(-1), one("1"), zero("0") {
+IOSysFsGPIO::IOSysFsGPIO(int tms, int tck, int tdi, int tdo)
+ : TMSPin(tms), TCKPin(tck), TDIPin(tdi), TDOPin(tdo), tck_fd(-1), tms_fd(-1), tdi_fd(-1), tdo_fd(-1), one("1"), zero("0")
+{
   tdi_fd = setup_gpio(TDIPin, 0);
   tms_fd = setup_gpio(TMSPin, 0);
   tck_fd = setup_gpio(TCKPin, 0);
@@ -29,8 +25,6 @@ IOSysFsGPIO::~IOSysFsGPIO() {
   unexport_gpio(TCKPin);
   unexport_gpio(TDOPin);
 }
-
-int IOSysFsGPIO::setupGPIOs(int tck, int tms, int tdi, int tdo) { return 1; }
 
 void IOSysFsGPIO::txrx_block(const unsigned char *tdi, unsigned char *tdo,
                              int length, bool last) {
