@@ -11,7 +11,8 @@
 #include "iofx2.h"
 #include "ioftdi.h"
 #include "ioxpc.h"
-#include "sysfs.h"
+#include "sysfscreator.h"
+#include "sysfsvoice.h"
 #include "iomatrixcreator.h"
 #include "iomatrixvoice.h"
 #include "utilities.h"
@@ -87,9 +88,15 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }
-  else if(cable->cabletype == CABLE_SYSFS_GPIO)  
+  else if(cable->cabletype == CABLE_SYSFS_GPIO_CREATOR)  
   {
-      io->reset(new IOSysFsGPIO());
+      io->reset(new IOSysFsMatrixCreator());
+      io->get()->setVerbose(verbose);
+      res = io->get()->Init(cable, serial, use_freq);
+  }
+  else if(cable->cabletype == CABLE_SYSFS_GPIO_VOICE)  
+  {
+      io->reset(new IOSysFsMatrixVoice());
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }

@@ -1,9 +1,11 @@
+#ifndef __IO_SYSFS__
+#define __IO_SYSFS__
+
 #include "iobase.h"
 
 class IOSysFsGPIO : public IOBase {
  public:
-  IOSysFsGPIO();
-  int setupGPIOs(int tck, int tms, int tdi, int tdo);
+  IOSysFsGPIO(int tms, int tck, int tdi, int tdo);
   virtual ~IOSysFsGPIO();
 
  private:
@@ -25,6 +27,12 @@ class IOSysFsGPIO : public IOBase {
   int tdi_fd;
   int tdo_fd;
 
+  int TMSPin;
+  int TCKPin;
+  int TDIPin;
+  int TDOPin;
+
   const char *one;
   const char *zero;
 };
+#endif
