@@ -11,7 +11,7 @@
 #include <iostream>
 
 IOSysFsGPIO::IOSysFsGPIO(int tms, int tck, int tdi, int tdo)
- : TMSPin(tms), TCKPin(tck), TDIPin(tdi), TDOPin(tdo)
+ : TMSPin(tms), TCKPin(tck), TDIPin(tdi), TDOPin(tdo), tck_fd(-1), tms_fd(-1), tdi_fd(-1), tdo_fd(-1), one("1"), zero("0")
 {
   tdi_fd = setup_gpio(TDIPin, 0);
   tms_fd = setup_gpio(TMSPin, 0);

@@ -22,15 +22,15 @@ class IOSysFsGPIO : public IOBase {
   bool is_gpio_valid(int gpio) { return gpio >= 0 && gpio < 1000; }
 
  private:
-  int tck_fd;
-  int tms_fd;
-  int tdi_fd;
-  int tdo_fd;
-
   int TMSPin;
   int TCKPin;
   int TDIPin;
   int TDOPin;
+
+  int tck_fd;
+  int tms_fd;
+  int tdi_fd;
+  int tdo_fd;
 
   const char *one;
   const char *zero;
