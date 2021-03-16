@@ -100,6 +100,7 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }
+#ifdef USE_WIRINGPI
   else if(cable->cabletype == CABLE_MATRIX_CREATOR)
   {
       io->reset(new IOMatrixCreator());
@@ -112,6 +113,7 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }
+#endif /*USE_WIRINGPI*/
   else
   {
       fprintf(stderr, "Unknown Cable \"%s\" \n", getCableName(cable->cabletype));
