@@ -130,7 +130,7 @@ ADD_CUSTOM_COMMAND(OUTPUT cables.h
 
 INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
-option(USE_WIRINGPI "Use WiringPi" ON)
+option(USE_WIRINGPI "Use WiringPi" OFF)
 
 if(USE_WIRINGPI)
     set (CONDITIONAL_FILES ${CONDITIONAL_FILES} "iomatrixcreator.cpp" "iomatrixvoice.cpp" "iowiringpi.cpp")
