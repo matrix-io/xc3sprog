@@ -370,6 +370,9 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p_mx25l(unsigned char *buf, int is_mx25l)
                 fbuf[1], fbuf[2]);
         switch (fbuf[2])
           {
+          case 0x16: // Adding support for new flash Macronix MX25L32
+            pages = 16384;
+            break;
           case 0x17:
             pages = 262144;
             sector_size = 65536;
