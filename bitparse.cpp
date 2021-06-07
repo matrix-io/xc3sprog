@@ -33,11 +33,15 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 
 void usage() {
   fprintf(stderr,
-	  "\nUsage:bitparse [-i input format] [-o output format ][-O outfile] infile\n"	  "   -h\t\tprint this help\n"
+	  "\nUsage:bitparse [-i input format] [-o output format ][-O outfile] [-p padlen] [-P padvalue] infile\n"
+	  "   -h\t\tprint this help\n"
 	  "   -v\t\tverbose output\n"
 	  "   -O\t\toutput file (parse input file only if not given\n"
 	  "   -i\t\tinput  file format (BIT|BIN|BPI|HEX|MCS|IHEX)\n"
-	  "   -o\t\toutput file format (BIT|BIN|BPI|HEX|MCS|IHEX)\n");
+	  "   -o\t\toutput file format (BIT|BIN|BPI|HEX|MCS|IHEX)\n"
+	  "   -p\t\tROM size to compute Xilinx MCS checksum\n"
+	  "   -P\t\tPad value when computing Xilinx MCS checksum (default 0xff)\n"
+  );
   exit(255);
 }
 
@@ -47,12 +51,12 @@ int main(int argc, char**args)
   FILE_STYLE in_style  = STYLE_BIT;
   FILE_STYLE out_style = STYLE_BIT;
   uint64_t sum = 0L;
-  unsigned int i;
+  unsigned int i, padlen = 0, padvalue = 0xff;
 
   const char * outfile = NULL;
   while(true)
     {
-      switch(getopt(argc, args, "?i:vo:O:"))
+      switch(getopt(argc, args, "?i:vo:O:p:P:"))
 	{
 	case -1: goto args_done;
 	case 'i':
@@ -74,6 +78,20 @@ int main(int argc, char**args)
 	case 'O':
 	  outfile = optarg;
 	  break;
+
+	case 'p':
+	    padlen = strtol(optarg, NULL, 0);
+	    break;
+
+	case 'P':
+	    padvalue = strtol(optarg, NULL, 0);
+	    if (padvalue < 0 || padvalue > 255)
+	      {
+		  fprintf(stderr, "Pad value must be 0-255");
+		  usage();
+	      }
+	    break;
+
 	case '?':
 	case 'h':
 	default:
@@ -116,7 +134,19 @@ int main(int argc, char**args)
         sum += (file.getData()[i]) ^0xff;
     }
     fprintf(stderr, "64-bit sum: %" PRIu64 "\n", sum);
-    
+
+    /* Calculate MCS compatible checksum if given the ROM size */
+    if (padlen != 0) {
+	byte *d = file.getData();
+        sum = 0;
+        for (i = 0; i < file.getLengthBytes(); i++)
+            sum += d[i];
+        if (padlen > file.getLengthBytes())
+            for (i = 0; i < padlen - file.getLengthBytes(); i++)
+                sum += padvalue;
+        fprintf(stderr, "Xilinx sum: %08" PRIx64 "\n", sum);
+    }
+
     if(outfile) {
       if(outfile[0] == '-')
 	fp = stdout;
