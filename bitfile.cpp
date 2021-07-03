@@ -35,8 +35,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include <time.h>
 #include "bitrev.h"
 
-using namespace std;
-
 BitFile::BitFile()
   : length(0)
   , buffer(0)
@@ -607,14 +605,14 @@ uint32_t BitFile::saveAs(FILE_STYLE style, const char  *device,
   return clip;
 }
 
-void BitFile::error(const string &str)
+void BitFile::error(const std::string &str)
 {
   errorStr=str;
   Error=true;
   fprintf(logfile,"%s\n",str.c_str());
 }
 
-void BitFile::readField(string &field, FILE *fp)
+void BitFile::readField(std::string &field, FILE *fp)
 {
   byte t[2];
   fread(t,1,2,fp); 
