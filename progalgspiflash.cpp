@@ -82,6 +82,34 @@ ProgAlgSPIFlash::~ProgAlgSPIFlash(void)
     fclose(fp_dbg);
 }
 
+int ProgAlgSPIFlash::spi_flashinfo_amd(unsigned char *buf) 
+{
+  fprintf(stderr, "Found AMD / Cypress / Spansion Device, Device ID 0x%02x%02x\n",
+	  buf[1], buf[2]);
+  switch (buf[1])
+    {
+    case 0x02: {
+      switch (buf[2])
+        {
+        case 0x20:
+          pages = 131072;
+          pgsize = 512;
+          sector_size = 262144;
+          break;
+        default:
+          fprintf(stderr, "Unexpected AMD Device ID LSB 0x%02x\n", buf[2]);
+        }
+      break;
+    }
+    default:
+      fprintf(stderr, "Unexpected AMD Device ID MSB 0x%02x\n", buf[1]);
+      return -1;
+    }
+  fprintf(stderr, " \n");
+
+  return 1;
+}
+
 int ProgAlgSPIFlash::spi_flashinfo_s33(unsigned char *buf) 
 {
   fprintf(stderr, "Found Intel Device, Device ID 0x%02x%02x\n",
@@ -445,6 +473,10 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p_mx25l(unsigned char *buf, int is_mx25l)
                 fbuf[1], fbuf[2]);
         switch (fbuf[2])
           {
+          case 0x16:
+            pages = 16384;
+            sector_size = 65536;
+            break;
           case 0x17:
             pages = 32768;
             sector_size = 65536;
@@ -559,6 +591,9 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
   
   switch (fbuf[0])
     {
+    case 0x01:
+        res = spi_flashinfo_amd(fbuf);
+        break;
     case 0x1f: {
         switch (fbuf[1]>> 5) /* Family code*/ {
         case 1:
@@ -1241,6 +1276,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
   switch (manf_id) {
   case 0x1f: /* Atmel */
     return program_at45(pfile);
+  case 0x01: /* AMD */
   case 0x20: /* Numonyx */
   case 0xc2: /* Macronix */
   case 0x30: /* AMIC */
@@ -1433,6 +1469,7 @@ int ProgAlgSPIFlash::erase(void)
   switch (manf_id) {
   case 0x1f: /* Atmel */
     return erase_at45();
+  case 0x01: /* AMD */
   case 0x20: /* Numonyx */
   case 0xc2: /* Macronix */
   case 0x30: /* AMIC */
