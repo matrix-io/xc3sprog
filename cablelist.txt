@@ -47,3 +47,4 @@ sysfsgpio_creator  sysfsgpio_creator 0     NULL
 sysfsgpio_voice    sysfsgpio_voice   0     NULL
 matrix_creator     matrix_creator    0     NULL
 matrix_voice       matrix_voice      0     NULL
+mimas_a7      ftdi   15000000 0x2A19:0x1009::2:0x00:0x4B:0x00:0x00
