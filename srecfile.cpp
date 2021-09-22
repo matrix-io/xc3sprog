@@ -28,8 +28,6 @@ Modifyied from srecdec
 #include <string.h>
 #include <stdlib.h>
 
-using namespace std;
-
 int SrecFile::DecodeSRecordLine(char *source, unsigned char *dest, S_Record *SRec)
 {
   char buffer[16];
