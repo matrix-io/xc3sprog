@@ -35,6 +35,9 @@ To compile, you need CMAKE, the static libftdi library and usb.h.
 
 $ mkdir build; cd build; cmake ..; make
 
+On debian, you can use:
+$ sudo apt install libftdi1 libftdi-dev; mkdir build; cd build; cmake .. -DUSE_WIRINGPI=0; make
+
 To crosscompile for Win32 with mingw:
 
 $ mkdir build-win32; cd build-win32; 
