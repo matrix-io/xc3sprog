@@ -60,6 +60,7 @@ class ProgAlgSPIFlash
   int xc_user(byte *in, byte *out, int len);
   int spi_xfer_user1(uint8_t *last_miso, int miso_len, int miso_skip, 
 		     uint8_t *mosi, int mosi_len, int preamble);
+  int spi_flashinfo_amd (unsigned char * fbuf);
   int spi_flashinfo_s33 (unsigned char * fbuf);
   int spi_flashinfo_amic (unsigned char * fbuf);
   int spi_flashinfo_amic_quad (unsigned char * fbuf);
