@@ -413,7 +413,7 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p_mx25l(unsigned char *buf, int is_mx25l)
             break;
           case 0x17:
             pages = 32768;
-            sector_size = 131072; /* Bytes = 1 Mi Bit*/
+            sector_size = 65536; /* Bytes = 512k Bits*/
             break;
           case 0x18:
             pages = 65536;
