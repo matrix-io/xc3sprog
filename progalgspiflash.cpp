@@ -532,6 +532,42 @@ int ProgAlgSPIFlash::spi_flashinfo_issi(unsigned char *buf)
   return 1;
 }
 
+int ProgAlgSPIFlash::spi_flashinfo_cypress(unsigned char *buf) 
+{
+
+    sector_size = 4096;
+    sector_erase_cmd = 0x20; 
+    pgsize = 256;
+    
+    switch (buf[1])
+    {
+        case 0x60:
+            switch (buf[2])
+            {
+                case 0x18: // 128Mbit
+                    pages = 65536;
+                    break;
+                    
+                case 0x19: // 256Mbit
+                    pages = 131072;
+                    break;
+
+                default:
+                    fprintf(stderr,"Cypress: Unexpected Device ID 0x%02x\n", buf[2]);
+                    return -1;
+            }
+            fprintf(stderr, "Found Spansion/Cypress Device, Device ID 0x%02x%02x\n",
+                    buf[1], buf[2]);
+            break;
+            
+        default:
+            fprintf(stderr,"Cypress: Unexpected upper Device ID 0x%02x\n", buf[1]);
+            return -1;
+    }
+    
+    return 1;
+}
+
 int ProgAlgSPIFlash::spi_flashinfo(void) 
 {
   byte fbuf[8]={READ_IDENTIFICATION, 0, 0, 0, 0, 0, 0, 0};
@@ -596,6 +632,9 @@ int ProgAlgSPIFlash::spi_flashinfo(void)
       break;
     case 0xbf:
       res = spi_flashinfo_sst(fbuf);
+      break;
+    case 0x01:
+      res = spi_flashinfo_cypress(fbuf);
       break;
     default:
       fprintf(stderr, "unknown JEDEC manufacturer: %02x\n",fbuf[0]);
@@ -1248,6 +1287,7 @@ int ProgAlgSPIFlash::program(BitFile &pfile)
   case 0x9d: /* ISSI */
   case 0xef: /* Winbond */
   case 0x89: /* Intel S33 */
+  case 0x01: /* Spansion / Cypress */
     return sectorerase_and_program(pfile);
   case 0xbf:
     return program_sst(pfile);
