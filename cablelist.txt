@@ -9,7 +9,7 @@
 ftdi          ftdi    1500000 0x0403:0x6010:                                    
 papilio       ftdi    6000000 0x0403:0x6010: 
 minila        ftdi     800000 0x0403:0x6010:
-saturn        ftdi    6000000 0x0403:0x6010:
+saturn        ftdi    6000000 0x0403:0x6010:Saturn Spartan 6 FPGA Module::0:0x00:0x0B:0x00:0x00
 ft232h        ftdi    1500000 0x0403:0x6014:                                      
 ft4232h       ftdi    1500000 0x0403:0x6011:
 cm1           ftdi    1500000 0x0403:0x8350:
