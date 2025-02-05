@@ -370,7 +370,11 @@ int ProgAlgSPIFlash::spi_flashinfo_m25p_mx25l(unsigned char *buf, int is_mx25l)
                 fbuf[1], fbuf[2]);
         switch (fbuf[2])
           {
-          case 0x17:
+          case 0x16:            // MX25L3233F
+            pages = 131072;
+            sector_size = 65536;
+            break;
+          case 0x17:            // MX25L6433F
             pages = 262144;
             sector_size = 65536;
             break;
