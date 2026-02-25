@@ -11,10 +11,8 @@
 #include "iofx2.h"
 #include "ioftdi.h"
 #include "ioxpc.h"
-#include "sysfscreator.h"
-#include "sysfsvoice.h"
-#include "iomatrixcreator.h"
-#include "iomatrixvoice.h"
+#include "iogpiomatrixcreator.h"
+#include "iogpiomatrixvoice.h"
 #include "utilities.h"
 
 extern char *optarg;
@@ -88,32 +86,18 @@ int  getIO( std::auto_ptr<IOBase> *io, struct cable_t * cable, char const *dev,
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }
-  else if(cable->cabletype == CABLE_SYSFS_GPIO_CREATOR)  
+  else if(cable->cabletype == CABLE_GPIOD_CREATOR)
   {
-      io->reset(new IOSysFsMatrixCreator());
+      io->reset(new IOGPIOMatrixCreator());
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }
-  else if(cable->cabletype == CABLE_SYSFS_GPIO_VOICE)  
+    else if(cable->cabletype == CABLE_GPIOD_VOICE)
   {
-      io->reset(new IOSysFsMatrixVoice());
+      io->reset(new IOGPIOMatrixVoice());
       io->get()->setVerbose(verbose);
       res = io->get()->Init(cable, serial, use_freq);
   }
-#ifdef USE_WIRINGPI
-  else if(cable->cabletype == CABLE_MATRIX_CREATOR)
-  {
-      io->reset(new IOMatrixCreator());
-      io->get()->setVerbose(verbose);
-      res = io->get()->Init(cable, serial, use_freq);
-  }
-  else if(cable->cabletype == CABLE_MATRIX_VOICE)
-  {
-      io->reset(new IOMatrixVoice());
-      io->get()->setVerbose(verbose);
-      res = io->get()->Init(cable, serial, use_freq);
-  }
-#endif /*USE_WIRINGPI*/
   else
   {
       fprintf(stderr, "Unknown Cable \"%s\" \n", getCableName(cable->cabletype));
@@ -129,9 +113,10 @@ const char *getCableName(int type)
     case CABLE_FTDI: return "ftdi"; break;
     case CABLE_FX2: return "fx2"; break;
     case CABLE_XPC: return "xpc"; break;
-    case CABLE_SYSFS_GPIO_CREATOR: return "sysfsgpio_creator"; break;
-    case CABLE_SYSFS_GPIO_VOICE: return "sysfsgpio_voice"; break;
+    case CABLE_GPIOD_CREATOR: return "gpiod_creator"; break;
+    case CABLE_GPIOD_VOICE: return "gpiod_voice"; break;
     case CABLE_UNKNOWN: return "unknown"; break;
+
     default:
         return "Unknown";
     }

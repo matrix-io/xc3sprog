@@ -8,7 +8,7 @@ pipeline:
     commands:
       - echo "build-debs for ${ARCHITECTURE}-${DISTRIBUTION}-${CODENAME}:${IMAGE_TAG}"
       - ${UPDATE_CMD}
-      - apt-get install --yes --no-install-recommends wiringpi libftdi-dev
+      - apt-get install --yes --no-install-recommends libftdi-dev
       - debuild -us -uc -b
       - mv ../*.deb .
 

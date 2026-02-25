@@ -42,7 +42,6 @@ Dmitry Teytelman [dimtey@gmail.com] 14 Jun 2006 [applied 13 Aug 2006]:
 #include "iofx2.h"
 #include "ioftdi.h"
 #include "ioxpc.h"
-#include "sysfs.h"
 #include "bitfile.h"
 #include "jtag.h"
 #include "devicedb.h"

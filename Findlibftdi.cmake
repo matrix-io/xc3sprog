@@ -17,7 +17,10 @@ if (NOT LIBFTDI_FOUND)
 
     if(NOT WIN32)
         include(FindPkgConfig)
-        pkg_check_modules(LIBFTDI_PKG libftdi)
+        pkg_check_modules(LIBFTDI_PKG QUIET libftdi)
+        if(NOT LIBFTDI_PKG_FOUND)
+            pkg_check_modules(LIBFTDI_PKG QUIET libftdi1)
+        endif(NOT LIBFTDI_PKG_FOUND)
     endif(NOT WIN32)
 
     find_path(LIBFTDI_INCLUDE_DIR
@@ -25,6 +28,8 @@ if (NOT LIBFTDI_FOUND)
             ftdi.h
         HINTS
             ${LIBFTDI_PKG_INCLUDE_DIRS}
+        PATH_SUFFIXES
+            libftdi1
         PATHS
             /usr/include
             /usr/local/include
@@ -38,10 +43,12 @@ if (NOT LIBFTDI_FOUND)
     find_library(LIBFTDI_LIBRARIES
         NAMES
             ftdi
+            ftdi1
         HINTS
             ${LIBFTDI_PKG_LIBRARY_DIRS}
         PATHS
             /usr/lib
+            /usr/lib64
             /usr/local/lib
     )
 

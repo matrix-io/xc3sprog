@@ -1,3 +1,48 @@
+# Raspberry Pi specific fork
+
+This fork repurposed this project and replaced obsolete librarary sysfs, and wiringpi as it was not working reliably enough to program without frequent mismatch errors or validation errors.
+
+## Installation
+This project has been tested on Raspberry Pi 4 with Bullseye 32-bit and Bookworm 32-bit and 64-bit.
+It was checked only on cpld Xillinx XC9500XL series.
+
+
+```
+sudo apt install build-essential libusb-dev libftdi-dev libgpiod-dev git cmake
+git clone https://github.com/arkadiuszmakarenko/xc3sprog.git
+mkdir xc3sprog/build
+cd xc3sprog/build
+cmake ..
+make
+sudo make install
+```
+## Connecting GPIO 
+cable type : gpiod_creator
+
+|GPIO |Header Pin |Function|
+--- | --- | ---|
+|4|7|TMS|
+|17|11|TCK|
+|22|13|TDO|
+|27|15|TDI|
+
+## JTAG Chain discovery
+
+```
+sudo xc3sprog -c gpiod_creator -j
+
+```
+
+## Programming
+```
+xc3sprog -c gpiod_creator -v -p {chain poistion eg. 0} {filename}.jed
+```
+
+---
+Old docs
+---
+
+
 
 # Installation
 ```

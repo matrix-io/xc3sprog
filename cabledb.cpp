@@ -155,14 +155,10 @@ CABLES_TYPES CableDB::getCableType(const char *given_name)
     return CABLE_FX2;
   if (strcasecmp(given_name, "xpc") == 0)
     return CABLE_XPC;
-  if (strcasecmp(given_name, "sysfsgpio_creator") == 0)
-    return CABLE_SYSFS_GPIO_CREATOR;
-  if (strcasecmp(given_name, "sysfsgpio_voice") == 0)
-    return CABLE_SYSFS_GPIO_VOICE;
-  if (strcasecmp(given_name, "matrix_creator") == 0)
-    return CABLE_MATRIX_CREATOR;
-  if (strcasecmp(given_name, "matrix_voice") == 0)
-    return CABLE_MATRIX_VOICE;
+  if (strcasecmp(given_name, "gpiod_creator") == 0)
+    return CABLE_GPIOD_CREATOR;
+    if (strcasecmp(given_name, "gpiod_voice") == 0)
+    return CABLE_GPIOD_VOICE;
 
   return CABLE_UNKNOWN;
 }
@@ -175,10 +171,8 @@ const char *CableDB::getCableName(const CABLES_TYPES type )
     case CABLE_FTDI: return "ftdi";
     case CABLE_FX2: return  "fx2";
     case CABLE_XPC: return "xpc";
-    case CABLE_MATRIX_CREATOR: return "matrix_creator";
-    case CABLE_MATRIX_VOICE: return "matrix_voice";
-    case CABLE_SYSFS_GPIO_CREATOR: return "sysfsgpio_creator";
-    case CABLE_SYSFS_GPIO_VOICE: return "sysfsgpio_voice";
+    case CABLE_GPIOD_CREATOR: return "gpiod_creator";
+    case CABLE_GPIOD_VOICE: return "gpiod_voice";
     case CABLE_NONE: return "none";
     case CABLE_UNKNOWN: return "unknown";
     }

@@ -1,20 +1,20 @@
 # Project
+cmake_minimum_required(VERSION 3.10)
 project(xc3sprog)
 set(xc3sprog_VERSION_MAJOR 0)
 set(xc3sprog_VERSION_MINOR 0)
 
-SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 set(CMAKE_CXX_FLAGS "-g -Wall")
-cmake_minimum_required(VERSION 2.6)
 
-if(${WIN32})
+if(WIN32)
 set(USE_STATIC_FTDI ON)
-IF( ${CMAKE_COMPILER_IS_GNUCXX} )
+IF(CMAKE_COMPILER_IS_GNUCXX)
  # link libstdc++ and others statically
  add_definitions( -D__USE_MINGW_ANSI_STDIO )
  SET (CMAKE_EXE_LINKER_FLAGS    "-static-libstdc++ -static-libgcc")
-ENDIF( ${CMAKE_COMPILER_IS_GNUCXX} )
-endif(${WIN32})
+ENDIF()
+endif()
 
 option(USE_FTD2XX "Use FTDI libFTD2XX instead of free libftdi" ON)
 
@@ -60,14 +60,14 @@ set(CPACK_PACKAGE_DESCRIPTION          "JTAG Progarmming tools")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY  ${CPACK_PACKAGE_DESCRIPTION}
                                        )
 # Package settings
-if(${UNIX})
+if(UNIX)
   set(CPACK_GENERATOR                    "DEB;RPM")
   set(CPACK_CMAKE_GENERATOR              "Unix Makefiles")
   set(CPACK_PACKAGE_NAME                 ${PROJECT_NAME})
   set(CPACK_PACKAGE_FILE_NAME            ${PROJECT_NAME}-${VERSION_STRING}${PACK_ARCH})
-endif(${UNIX})
+endif()
 
-if(${WIN32})
+if(WIN32)
   set(CPACK_GENERATOR                    "NSIS")
   set(CPACK_CMAKE_GENERATOR              "MinGW Makefiles")
   set(CPACK_PACKAGE_NAME                 "${PROJECT_NAME}")
@@ -76,7 +76,7 @@ if(${WIN32})
   set(CPACK_PACKAGE_FILE_NAME            "${PROJECT_NAME}-${VERSION_STRING}-win32")
   set(CPACK_NSIS_DISPLAY_NAME            "libftdi")
   set(CPACK_NSIS_MODIFY_PATH             "ON")
-endif(${WIN32})
+endif()
 
 set(CPACK_RESOURCE_FILE_LICENSE        ${CMAKE_SOURCE_DIR}/LICENSE)
 
@@ -85,9 +85,9 @@ set(CPACK_SOURCE_IGNORE_FILES          "\\\\.svn" "build*")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME     ${CPACK_PACKAGE_FILE_NAME})
 
 # Subdirectories
-if(${UNIX})
+if(UNIX)
   set(CPACK_SET_DESTDIR "ON")
-endif(${UNIX})
+endif()
 
 #link libusb dynamic at runtime on windows at at compile time else
 #this circumvents a problem with Debian
@@ -130,14 +130,7 @@ ADD_CUSTOM_COMMAND(OUTPUT cables.h
 
 INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
-option(USE_WIRINGPI "Use WiringPi" ON)
-
-if(USE_WIRINGPI)
-    set (CONDITIONAL_FILES ${CONDITIONAL_FILES} "iomatrixcreator.cpp" "iomatrixvoice.cpp" "iowiringpi.cpp")
-    add_definitions( -DUSE_WIRINGPI )
-endif(USE_WIRINGPI)
-
-add_library(xc3sproglib  STATIC sysfs.cpp sysfscreator.cpp sysfsvoice.cpp ioftdi.cpp 
+add_library(xc3sproglib  STATIC iogpiomatrixcreator.cpp iogpiomatrixvoice.cpp iogpiodpi.cpp ioftdi.cpp 
                         iofx2.cpp devicedb.cpp jtag.cpp jedecfile.cpp bitfile.cpp 
 			iobase.cpp  progalgxc95x.cpp utilities.cpp
 			progalgxcf.cpp progalgxcfp.cpp progalgxc3s.cpp
@@ -146,22 +139,21 @@ add_library(xc3sproglib  STATIC sysfs.cpp sysfscreator.cpp sysfsvoice.cpp ioftdi
                         cabledb.cpp pdioverjtag.cpp xmega_pdi_nvm.cpp
                         ${CONDITIONAL_FILES} devices.h cables.h)
 
-if(USE_WIRINGPI)
-  set(LIBS ${LIBS} wiringPiDev wiringPi)
-endif(USE_WIRINGPI)
+
+set(GPIO_LIBS ${GPIO_LIBS} gpiod)
 
 add_executable(xc2c_warp xc2c_warp.cpp)
-target_link_libraries(xc2c_warp xc3sproglib ${CONDITIONAL_LIBS})
+target_link_libraries(xc2c_warp xc3sproglib ${CONDITIONAL_LIBS} ${GPIO_LIBS})
 
 add_executable(detectchain detectchain.cpp cables.h devices.h)
-target_link_libraries(detectchain xc3sproglib ${LIBFTDI_LIBRARIES} ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS} ${LIBS} )
+target_link_libraries(detectchain xc3sproglib ${LIBFTDI_LIBRARIES} ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS} ${GPIO_LIBS})
 
 add_executable(xc3sprog xc3sprog.cpp javr.cpp srecfile.cpp progalgavr.cpp 
 			devices.h)
-target_link_libraries(xc3sprog xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS}  ${LIBS} )
+target_link_libraries(xc3sprog xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS}  ${GPIO_LIBS})
 
 add_executable(readdna readdna.cpp devices.h)
-target_link_libraries(readdna xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS}  ${LIBS} )
+target_link_libraries(readdna xc3sproglib ${LIBFTDI_LIBRARIES}  ${LIBFTD2XX_LIBRARIES} ${CONDITIONAL_LIBS}  ${GPIO_LIBS})
 
 
 

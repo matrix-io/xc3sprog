@@ -1,7 +1,7 @@
 # Project
+cmake_minimum_required(VERSION 3.10)
 project(javr)
-SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
-cmake_minimum_required(VERSION 2.6)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 
 include_directories (${XC3SPROG_SOURCE_DIR})
 link_directories (${XC3SPROG_BINARY_DIR}/xc3sproglib)
