@@ -31,7 +31,7 @@ void detect_chain(Jtag *jtag, DeviceDB *db)
           jtag->setDeviceIRLength(i,length);
           fprintf(stderr,"Desc: %30s Rev: %c  IR length: %2d\n",
                   db->idToDescription(id),
-                  (int)(id >> 28) | 'A', length);
+                  (int)(id >> 28) + 'A', length);
         }
       else
         {
